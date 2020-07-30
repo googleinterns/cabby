@@ -23,8 +23,6 @@ class SpeakTest(unittest.TestCase):
   def testSingleOutput(self):
     expected = 'go to the pharmacy near the Empire State Building.'
     output = speak.describe_route('Empire State Building', 'pharmacy')
-    print(expected)
-    print(output)
     self.assertEqual(output, expected)
 
 if __name__ == "__main__":
