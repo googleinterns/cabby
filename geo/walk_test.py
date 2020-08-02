@@ -49,9 +49,7 @@ class WalkTest(unittest.TestCase):
           self.assertLessEqual(point.x, start_point.x+eps)
           self.assertGreaterEqual(point.x, end_point.x-eps)
           self.assertLessEqual(point.y, end_point.y+eps)
-          self.assertGreaterEqual(point.y, start_point.y-eps)
-    
-          
+          self.assertGreaterEqual(point.y, start_point.y-eps)       
 
 if __name__ == "__main__":
     unittest.main()
