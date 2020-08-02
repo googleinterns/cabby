@@ -14,24 +14,44 @@
 
 '''Tests for speak.py'''
 
-from geo import walk
-
+import walk
+import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
 
 class WalkTest(unittest.TestCase):
+    def setUp(self):
 
-  def testSingleOutput(self):
-    start_point=(40.748432,-73.982473)
-    end_point=(40.74907,-73.98403)
-    list_points = walk.compute_route(start_point,end_point)
-    eps=0.0005
-    for point in list_points:
-      self.assertLessEqual(point.y,end_point[0]+eps)
-      self.assertGreaterEqual(point.y,start_point[0]-eps)
-      self.assertLessEqual(point.x,start_point[1]+eps)
-      self.assertGreaterEqual(point.x,end_point[1]-eps)
+      # compute graph over Manhattan
+      self.graph = ox.graph_from_place('Manhattan, New York City, New York, USA')
+
+      #Convert a graph to nodes and edge GeoDataFrames.
+      self.nodes, _ = ox.graph_to_gdfs(self.graph)
+
+
+    def testSingleOutput(self):
+      start_point = Point(-73.982473,40.748432)
+      end_point = Point(-73.98403,40.74907)
+      list_points = walk.compute_route(start_point, end_point, self.graph, self.nodes)
+
+      #check that two points have arrived
+      self.assertEqual(len(list_points),2) 
+
+      #check that the correct points have arrived
+      first_point=walk.tuple_from_point(list_points[0])
+      second_point=walk.tuple_from_point(list_points[1])
+      self.assertEqual(first_point, (40.749102, -73.984076))
+      self.assertEqual(second_point, (40.748432, -73.982473))
+
+      #check that all points are in a bounding box. 
+      eps = 0.0005
+      for point in list_points:
+          self.assertLessEqual(point.x, start_point.x+eps)
+          self.assertGreaterEqual(point.x, end_point.x-eps)
+          self.assertLessEqual(point.y, end_point.y+eps)
+          self.assertGreaterEqual(point.y, start_point.y-eps)
+    
+          
 
 if __name__ == "__main__":
     unittest.main()
-
