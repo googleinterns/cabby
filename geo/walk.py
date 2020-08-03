@@ -4,12 +4,12 @@ from geopandas import GeoDataFrame
 from networkx import MultiDiGraph
 from shapely.geometry.point import Point
 from typing import Tuple
-'''Library to support geographical computations .'''
+'''Library to support geographical computations.'''
 
 
 def compute_route(start_point: Point, end_point: Point, graph: MultiDiGraph,
                   nodes: GeoDataFrame) -> list:
-    '''Returns the shortest path between a starting and end point 
+    '''Returns the shortest path between a starting and end point. 
 
     Arguments:
       start_point(Point): The lat-lng point of the origin point.
@@ -17,17 +17,17 @@ def compute_route(start_point: Point, end_point: Point, graph: MultiDiGraph,
       graph(MultiDiGraph): The directed graph class that can store multiedges.
       nodes(GeoDataFrame): The GeoDataFrame of graph nodes.
     Returns:
-      A list of Points which construct the geometry of the path
+      A list of Points which construct the geometry of the path.
 
     '''
 
-    # get closest nodes to points
+    # Get closest nodes to points
     orig = ox.get_nearest_node(graph, tuple_from_point(start_point))
     dest = ox.get_nearest_node(graph, tuple_from_point(end_point))
 
-    # get route
+    # Get route
     route = nx.shortest_path(
-        graph, orig, dest, weight='length')  # shortest path
+        graph, orig, dest, weight='length')  # Shortest path
     route_nodes = nodes[nodes['osmid'].isin(route)]
     route_points = route_nodes['geometry']
     return route_points.tolist()
@@ -39,7 +39,7 @@ def tuple_from_point(point: Point) -> Tuple[float, float]:
     Arguments:
       point(Point): A lat-lng point.
     Returns:
-      A lat-lng Tuple[float, float]
+      A lat-lng Tuple[float, float].
 
     '''
 
