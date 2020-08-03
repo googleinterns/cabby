@@ -19,16 +19,21 @@ flags.mark_flag_as_required("orig_lon")
 flags.mark_flag_as_required("dest_lat")
 flags.mark_flag_as_required("dest_lon")
 
+
 def main(argv):
-  del argv  # Unused.
+    del argv  # Unused.
 
-  # compute graph over Manhattan
-  graph = ox.graph_from_place('Manhattan, New York City, New York, USA')
+    # compute graph over Manhattan
+    graph = ox.graph_from_place('Manhattan, New York City, New York, USA')
 
-  #Convert a graph to nodes and edge GeoDataFrames.
-  nodes, _ = ox.graph_to_gdfs(graph)
+    # convert a graph to nodes and edge GeoDataFrames.
+    nodes, _ = ox.graph_to_gdfs(graph)
 
-  print(compute_route(Point(FLAGS.orig_lat,FLAGS.orig_lon), Point(FLAGS.dest_lat,FLAGS.dest_lon),graph,nodes))
+    print(
+        compute_route(
+            Point(FLAGS.orig_lat, FLAGS.orig_lon),
+            Point(FLAGS.dest_lat, FLAGS.dest_lon), graph, nodes))
+
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)
