@@ -3,12 +3,12 @@ import osmnx as ox
 from geopandas import GeoDataFrame
 from networkx import MultiDiGraph
 from shapely.geometry.point import Point
-
-
+from typing import Tuple
 '''Library to support geographical computations .'''
 
 
-def compute_route(start_point: Point, end_point: Point, graph: MultiDiGraph, nodes: GeoDataFrame) -> list:
+def compute_route(start_point: Point, end_point: Point, graph: MultiDiGraph,
+                  nodes: GeoDataFrame) -> list:
     '''Returns the shortest path between a starting and end point 
 
     Arguments:
@@ -26,20 +26,21 @@ def compute_route(start_point: Point, end_point: Point, graph: MultiDiGraph, nod
     dest = ox.get_nearest_node(graph, tuple_from_point(end_point))
 
     # get route
-    route = nx.shortest_path(graph, orig, dest, weight='length')  # shortest path
+    route = nx.shortest_path(
+        graph, orig, dest, weight='length')  # shortest path
     route_nodes = nodes[nodes['osmid'].isin(route)]
-    route_points=route_nodes['geometry']
+    route_points = route_nodes['geometry']
     return route_points.tolist()
 
-def tuple_from_point(point: Point):   
-    '''Returns the a lat-lng tuple
+
+def tuple_from_point(point: Point) -> Tuple[float, float]:
+    '''Convert a Point into a tuple, with latitude as first element, and longitude as second.
 
     Arguments:
       point(Point): A lat-lng point.
     Returns:
-      A lat-lng tuple
+      A lat-lng Tuple[float, float]
 
-    ''' 
+    '''
 
-    return (point.y,point.x)
-
+    return (point.y, point.x)
