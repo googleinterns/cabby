@@ -23,7 +23,7 @@ flags.mark_flag_as_required("dest_lon")
 def main(argv):
     del argv  # Unused.
 
-    # Compute graph over Manhattan
+    # Compute graph over Manhattan.
     graph = ox.graph_from_place('Manhattan, New York City, New York, USA')
 
     # Convert a graph to nodes and edge GeoDataFrames.
@@ -31,8 +31,8 @@ def main(argv):
 
     print(
         compute_route(
-            Point(FLAGS.orig_lat, FLAGS.orig_lon),
-            Point(FLAGS.dest_lat, FLAGS.dest_lon), graph, nodes))
+            Point(FLAGS.orig_lon, FLAGS.orig_lat),
+            Point(FLAGS.dest_lon, FLAGS.dest_lat), graph, nodes))
 
 
 if __name__ == '__main__':
