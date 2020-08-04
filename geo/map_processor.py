@@ -1,22 +1,22 @@
-'''Example command line method to compute the route between two given points.'''
-
 from absl import app
 from absl import flags
 
 from shapely.geometry.point import Point
 import osmnx as ox
+from map_structure import Map
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string("place", None, "map area - Manhattan\Pittsburgh.")
+flags.DEFINE_string("place", None, "map area - Manhattan or Pittsburgh.")
 
 # Required flags.
 flags.mark_flag_as_required("place")
 
 
 def main(argv):
-  del argv  # Unused.
+    del argv  # Unused.
 
-  print(compute_route(Point(FLAGS.orig_lat,FLAGS.orig_lon), Point(FLAGS.dest_lat,FLAGS.dest_lon),graph,nodes))
+    pittsburgh_map = Map(FLAGS.place)
+
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)
