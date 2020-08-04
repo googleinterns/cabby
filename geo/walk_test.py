@@ -39,7 +39,7 @@ class WalkTest(unittest.TestCase):
         # Check that two points have arrived.
         self.assertEqual(len(list_points), 2)
 
-        # Check that the correct points have arrived
+        # Check that the correct points have arrived.
         first_point = walk.tuple_from_point(list_points[0])
         second_point = walk.tuple_from_point(list_points[1])
         self.assertEqual(first_point, (40.749102, -73.984076))
