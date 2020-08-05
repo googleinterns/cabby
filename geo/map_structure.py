@@ -11,6 +11,9 @@ import shapely.wkt
 import time
 from collections import Counter
 from graph import Graph
+import cartopy.crs as ccrs
+import cartopy.io.img_tiles as cimgt
+import matplotlib.pyplot as plt
 
 
 class Map:
@@ -121,6 +124,29 @@ class Map:
                 return None
         return self.cellid_from_s2shape(s2_polygon, level)
 
+    def plot_cells(self, cells):
+        proj = cimgt.MapQuestOSM()
+        plt.figure(figsize=(20, 20), dpi=200)
+        ax = plt.axes(projection=proj.crs)
+        geoms = []
+        for cellid in cells:
+            new_cell = s2.S2Cell(cellid[0])
+            vertices = []
+            for i in range(0, 4):
+                vertex = new_cell.GetVertex(i)
+                latlng = s2.S2LatLng(vertex)
+                vertices.append((latlng.lat().degrees(),
+                                 latlng.lng().degrees()))
+            geo = Polygon(vertices)
+            geoms.append(geo)
+        print("Total Geometries: {}".format(len(geoms)))
+
+        ax.add_geometries(geoms, ccrs.PlateCarree(), facecolor='coral',
+                          edgecolor='black', alpha=0.4)
+        plt.show()
+        plt.savefig('check.png')
+
+
     def cellid_from_geometry_streets(self, geo, level):
         assert isinstance(geo, Point) or isinstance(geo, Polygon), type(geo)
         if isinstance(geo, Point):
@@ -146,6 +172,7 @@ class Map:
         self.poi['cellids'] = self.poi['geometry'].apply(
             self.cellid_from_geometry, args=[level])
         self.poi = self.poi[self.poi['cellids'].notnull()]
+        self.plot_cells(self.poi['cellids'].tolist())
 
         # Get cellids for streets
         self.streets['cellids'] = self.streets['geometry'].apply(
