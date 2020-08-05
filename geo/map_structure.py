@@ -42,7 +42,6 @@ class Map:
 
         return osm_poi, osm_poi_streets
 
-
     def cellid_from_s2shape(self, s2shape, level):
         # OpenStreetMaps Ways type to cellids
 
@@ -51,6 +50,8 @@ class Map:
         coverer.set_max_level(level)
         coverer.set_max_cells(100)
         covering = coverer.GetCovering(s2shape)
+        for cell in covering:
+            assert cell.level() == level
 
         return covering
 
@@ -69,9 +70,14 @@ class Map:
         latlng = s2.S2LatLng.FromDegrees(y, x)
         return latlng.ToPoint()
 
+    def s2polygon_from_shapely_point(self, shapely_point):
+        y, x = shapely_point.y, shapely_point.x
+        latlng = s2.S2LatLng.FromDegrees(y, x)
+        return s2.S2Polygon(s2.S2Cell(s2.S2CellId(latlng)))
+
     def cellid_from_point(self, s2_point, level):
         # OpenStreetMaps Nodes type to cellids
-        return s2.S2CellId(s2_point)
+        return s2.S2CellId(s2_point, level)
 
     def s2point_from_coord_xy(self, coord):
         latlng = s2.S2LatLng.FromDegrees(coord[1], coord[0])
@@ -91,7 +97,7 @@ class Map:
         s2point_list = list(map(self.s2point_from_coord_xy, list_coords))
         s2point_list = s2point_list[::-1]  # Counterclockwise
         return s2.S2Polygon(s2.S2Loop(s2point_list))
-    
+
     def s2polygon_from_shapely_polyline(self, shapely_polygon):
 
         list_coords = list(shapely_polygon.exterior.coords)
@@ -108,29 +114,26 @@ class Map:
     def cellid_from_geometry(self, geo, level):
         assert isinstance(geo, Point) or isinstance(geo, Polygon), type(geo)
         if isinstance(geo, Point):
-            s2_point = self.s2point_from_shapely_point(geo)
-            return self.cellid_from_point(s2_point, level)
+            s2_polygon = self.s2polygon_from_shapely_point(geo)
         else:
             s2_polygon = self.s2polygon_from_shapely_polygon(geo)
             if s2_polygon is None:
                 return None
-            return self.cellid_from_s2shape(s2_polygon, level)
-
+        return self.cellid_from_s2shape(s2_polygon, level)
 
     def cellid_from_geometry_streets(self, geo, level):
         assert isinstance(geo, Point) or isinstance(geo, Polygon), type(geo)
         if isinstance(geo, Point):
-            s2_point = self.s2point_from_shapely_point(geo)
-            return self.cellid_from_point(s2_point, level)
+            s2_shape = self.s2polygon_from_shapely_point(geo)
         else:
-            s2_polyline = self.s2polygon_from_shapely_polyline(geo)
-            return self.cellid_from_s2shape(s2_polyline, level)
+            s2_shape = self.s2polygon_from_shapely_polyline(geo)
+        return self.cellid_from_s2shape(s2_shape, level)
 
     def add_poi_to_graph(self, row):
         cells = row.cellids
         poi = row.osmid
         self.graph.add_poi(cells, poi)
-    
+
     def add_street_to_graph(self, row):
         cells = row.cellids
         street = row.osmid
@@ -149,20 +152,19 @@ class Map:
             self.cellid_from_geometry_streets, args=[level])
         self.streets = self.streets[self.streets['cellids'].notnull()]
 
-
         # Create graph.
         self.graph = Graph()
 
         # Add POI to graph
         self.poi[['cellids', 'osmid']].apply(self.add_poi_to_graph, axis=1)
 
-
         # Add street to graph
-        self.streets[['cellids', 'osmid']].apply(self.add_street_to_graph, axis=1)
+        self.streets[['cellids', 'osmid']].apply(
+            self.add_street_to_graph, axis=1)
 
         '''
         TODO: 
-        1. add streets to graph
+        1. add streets to graph -done
         2. add multiple cell levels
         '''
 
@@ -170,4 +172,4 @@ class Map:
 if __name__ == "__main__":
 
     pittsburgh_map = Map("Pittsburgh")
-    print ("END")
+    print("END")
