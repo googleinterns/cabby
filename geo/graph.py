@@ -5,71 +5,79 @@ MAX_LEVEL = 30
 POS_BITS = 2 * MAX_LEVEL + 1
 START_BIT = POS_BITS - 2
 
+
 class Node:
-  def __init__(self, parent):
-    self.parent = parent
-    self.neighbors = [None, None, None, None, None, None]
-    self.children = [None, None, None, None]
-    self.poi = []
-    self.streets=[]
-    self.level = 0
-    if self.parent:
-      self.level = self.parent.level+1
+    def __init__(self, parent):
+        self.parent = parent
+        self.neighbors = [None, None, None, None, None, None]
+        self.children = [None, None, None, None]
+        self.poi = []
+        self.streets = []
+        self.level = 0
+        if self.parent:
+            self.level = self.parent.level+1
+
 
 class Graph:
-  def __init__(self):
-    self.faces = tuple([Node(None) for x in range(0, NUM_FACES)])
+    def __init__(self):
+        self.faces = tuple([Node(None) for x in range(0, NUM_FACES)])
 
-  def add_street(self, cells, street):
-    if isinstance(cells,s2.S2CellId):
-      cells=[cells]
-    for cell in cells:
-      curr_node = self.faces[cell.face()]
-      last_bit = POS_BITS - 2 * cell.level()
-      cellid = cell.id()
+    def get_cell_neighbors(self, cell):
+        curr_node = self.faces[cell.face()]
+        last_bit = POS_BITS - 2 * cell.level()
+        cellid = cell.id()
+        adjacent = cell.next()
 
-      for i in range(START_BIT, last_bit-1, -2):
-        lvlVal = (cellid >> i) & 3
+    def add_street(self, cells, street):
+        if isinstance(cells, s2.S2CellId):
+            cells = [cells]
+        for cell in cells:
+            curr_node = self.faces[cell.face()]
+            last_bit = POS_BITS - 2 * cell.level()
+            cellid = cell.id()
 
-        if not curr_node.children[lvlVal]:
-          curr_node.children[lvlVal] = Node(curr_node)
+            for i in range(START_BIT, last_bit-1, -2):
+                lvlVal = (cellid >> i) & 3
 
-        curr_node = curr_node.children[lvlVal]
+                if not curr_node.children[lvlVal]:
+                    curr_node.children[lvlVal] = Node(curr_node)
 
-      curr_node.streets.append(street)
+                curr_node = curr_node.children[lvlVal]
 
-  def add_poi(self, cells, poi):
-    if isinstance(cells,s2.S2CellId):
-      cells=[cells]
-    for cell in cells:
-      curr_node = self.faces[cell.face()]
-      last_bit = POS_BITS - 2 * cell.level()
-      cellid = cell.id()
+            curr_node.streets.append(street)
 
-      for i in range(START_BIT, last_bit-1, -2):
-        lvlVal = (cellid >> i) & 3
+    def add_poi(self, cells, poi):
+        if isinstance(cells, s2.S2CellId):
+            cells = [cells]
+        for cell in cells:
+            curr_node = self.faces[cell.face()]
+            last_bit = POS_BITS - 2 * cell.level()
+            cellid = cell.id()
 
-        if not curr_node.children[lvlVal]:
-          curr_node.children[lvlVal] = Node(curr_node)
+            for i in range(START_BIT, last_bit-1, -2):
+                lvlVal = (cellid >> i) & 3
 
-        curr_node = curr_node.children[lvlVal]
+                if not curr_node.children[lvlVal]:
+                    curr_node.children[lvlVal] = Node(curr_node)
 
-      curr_node.poi.append(poi)
+                curr_node = curr_node.children[lvlVal]
 
-  def search(self, cell):
-    curr_node = self.faces[cell.face()]
-    last_bit = POS_BITS - 2 * cell.level()
-    accum_poi = []
-    cellid = cell.id()
+            curr_node.poi.append(poi)
 
-    for i in range(START_BIT, last_bit-1, -2):
-      lvlVal = (cellid >> i) & 3
+    def search(self, cell):
+        curr_node = self.faces[cell.face()]
+        last_bit = POS_BITS - 2 * cell.level()
+        accum_poi = []
+        cellid = cell.id()
 
-      curr_node = curr_node.children[lvlVal]
-      if not curr_node:
-        return accum_values
+        for i in range(START_BIT, last_bit-1, -2):
+            lvlVal = (cellid >> i) & 3
 
-      if curr_node.poi:
-        accum_poi = accum_poi + curr_node.poi
+            curr_node = curr_node.children[lvlVal]
+            if not curr_node:
+                return accum_poi
 
-    return accum_poi
+            if curr_node.poi:
+                accum_poi = accum_poi + curr_node.poi
+
+        return accum_poi
