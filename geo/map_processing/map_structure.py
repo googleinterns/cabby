@@ -1,4 +1,7 @@
 from s2geometry import pywraps2 as s2
+from s2geometry.pywraps2 import S2Point, S2Polygon, S2Polyline, S2Cell
+
+
 import networkx as nx
 import osmnx as ox
 from geopandas import GeoDataFrame
@@ -16,7 +19,9 @@ import cartopy.io.img_tiles as cimgt
 import matplotlib.pyplot as plt
 import matplotlib
 import folium
-import webbrowser
+from typing import Tuple
+from pandas import Series
+
 '''
 TODO: 
 1. add streets to graph -done
@@ -42,7 +47,9 @@ class Map:
         self.poi, self.streets = self.__get_poi()
         self.__create_graph()
 
-    def __get_poi(self) -> list :
+    def __get_poi(self) -> list:
+        # Extracts POI for the defined location
+
         osm_items = []
         tags = {'name': True}
 
@@ -53,8 +60,7 @@ class Map:
 
         return osm_poi_no_streets, osm_poi_streets
 
-    def cellid_from_s2shape(self, s2shape, level):
-        # OpenStreetMaps Ways type to cellids
+    def cellid_from_s2shape(self, s2shape, level: int) -> S2Cell:
 
         coverer = s2.S2RegionCoverer()
         coverer.set_min_level(level)
@@ -66,7 +72,7 @@ class Map:
 
         return covering
 
-    def latlng_from_point(self, point):
+    def latlng_from_point(self, point: Point) -> [float, float]:
         '''Returns the a lat-lng 
         Arguments:
         point(Point): A lat-lng point.
@@ -76,29 +82,35 @@ class Map:
 
         return point.y, point.x
 
-    def s2point_from_shapely_point(self, shapely_point):
+    def s2point_from_shapely_point(self, shapely_point: Point) -> S2Point:
+        '''Returns the s2Point 
+        Arguments:
+        point(Shapely Point): a Shapely type Point.
+        Returns:
+        The S2Point 
+        '''
         y, x = shapely_point.y, shapely_point.x
         latlng = s2.S2LatLng.FromDegrees(y, x)
         return latlng.ToPoint()
 
-    def s2polygon_from_shapely_point(self, shapely_point):
+    def s2polygon_from_shapely_point(self, shapely_point: Point) -> S2Polygon:
         y, x = shapely_point.y, shapely_point.x
         latlng = s2.S2LatLng.FromDegrees(y, x)
         return s2.S2Polygon(s2.S2Cell(s2.S2CellId(latlng)))
 
-    def cellid_from_point(self, s2_point, level):
+    def cellid_from_point(self, s2_point: S2Point, level: int) -> S2Cell:
         # OpenStreetMaps Nodes type to cellids
         return s2.S2CellId(s2_point, level)
 
-    def s2point_from_coord_xy(self, coord):
+    def s2point_from_coord_xy(self, coord: Tuple) -> S2Point:
         latlng = s2.S2LatLng.FromDegrees(coord[1], coord[0])
         return latlng.ToPoint()
 
-    def latlng_from_coord_xy(self, coord):
+    def latlng_from_coord_xy(self, coord: Tuple):
         latlng = s2.S2LatLng.FromDegrees(coord[1], coord[0])
         return latlng
 
-    def s2polygon_from_shapely_polygon(self, shapely_polygon):
+    def s2polygon_from_shapely_polygon(self, shapely_polygon: Polygon) -> S2Polygon:
         if not hasattr(shapely_polygon.buffer(0.00005), 'exterior'):
             return
         else:
@@ -108,7 +120,7 @@ class Map:
         s2point_list = s2point_list[::-1]  # Counterclockwise
         return s2.S2Polygon(s2.S2Loop(s2point_list))
 
-    def s2polygon_from_shapely_polyline(self, shapely_polygon):
+    def s2polygon_from_shapely_polyline(self, shapely_polygon: Polygon) -> S2Polygon:
 
         list_coords = list(shapely_polygon.exterior.coords)
 
@@ -123,9 +135,10 @@ class Map:
 
     def cellid_from_geometry(self, geo, level):
         assert isinstance(geo, Point) or isinstance(geo, Polygon), type(geo)
-        if isinstance(geo, Point):
+        if isinstance(geo, Point): # OpenStreetMaps Nodes as a Shapely Point type.
             s2_polygon = self.s2polygon_from_shapely_point(geo)
-        else:
+        else:  # OpenStreetMaps Ways as a Shapely Polygon type.
+
             s2_polygon = self.s2polygon_from_shapely_polygon(geo)
             if s2_polygon is None:
                 return None
@@ -165,18 +178,18 @@ class Map:
 
     def cellid_from_geometry_streets(self, geo, level):
         assert isinstance(geo, Point) or isinstance(geo, Polygon), type(geo)
-        if isinstance(geo, Point):
-            s2_shape = self.s2polygon_from_shapely_point(geo)
-        else:
-            s2_shape = self.s2polygon_from_shapely_polyline(geo)
-        return self.cellid_from_s2shape(s2_shape, level)
+        if isinstance(geo, Point): # OpenStreetMaps Nodes as a Shapely Point type.
+            s2shape = self.s2polygon_from_shapely_point(geo)
+        else: # OpenStreetMaps Ways as a Shapely Polygon type.
+            s2shape = self.s2polygon_from_shapely_polyline(geo)
+        return self.cellid_from_s2shape(s2shape, level)
 
-    def add_poi_to_graph(self, row):
+    def add_poi_to_graph(self, row: Series):
         cells = row.cellids
         poi = row.osmid
         self.graph.add_poi(cells, poi)
 
-    def add_street_to_graph(self, row):
+    def add_street_to_graph(self, row: Series):
         cells = row.cellids
         street = row.osmid
         self.graph.add_street(cells, street)
