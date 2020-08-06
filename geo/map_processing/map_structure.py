@@ -17,8 +17,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 import folium
 import webbrowser
-
-
 '''
 TODO: 
 1. add streets to graph -done
@@ -104,8 +102,7 @@ class Map:
         if not hasattr(shapely_polygon.buffer(0.00005), 'exterior'):
             return
         else:
-            list_coords = list(shapely_polygon.buffer(
-                0.00005).exterior.coords)
+            list_coords = list(shapely_polygon.buffer(0.00005).exterior.coords)
 
         s2point_list = list(map(self.s2point_from_coord_xy, list_coords))
         s2point_list = s2point_list[::-1]  # Counterclockwise
@@ -139,7 +136,8 @@ class Map:
         map_osm = folium.Map(
             location=[40.7434, -73.9847], zoom_start=12, tiles='Stamen Toner')
 
-        def style_function(x): return {'weight': 1, 'fillColor': '#eea500'}
+        def style_function(x):
+            return {'weight': 1, 'fillColor': '#eea500'}
 
         geoms = []
         for cellid in cells:
@@ -152,8 +150,12 @@ class Map:
                 latlng = s2.S2LatLng(vertex)
                 vertices.append((latlng.lat().degrees(),
                                  latlng.lng().degrees()))
-            gj = folium.GeoJson({"type": "Polygon", "coordinates": [
-                                vertices]}, style_function=style_function)
+            gj = folium.GeoJson(
+                {
+                    "type": "Polygon",
+                    "coordinates": [vertices]
+                },
+                style_function=style_function)
             gj.add_children(folium.Popup(cellid.ToToken()))
             gj.add_to(map_osm)
 

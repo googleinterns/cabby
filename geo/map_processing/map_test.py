@@ -30,12 +30,12 @@ class MapTest(unittest.TestCase):
 
     def testSingleOutput(self):
         # Check a known POI is there.
-        self.assertEqual(
-            self.pittsburgh_map.poi[self.pittsburgh_map.poi['name'] == 'Frick Building'].shape[0], 1)
+        self.assertEqual(self.pittsburgh_map.poi[self.pittsburgh_map.poi[
+            'name'] == 'Frick Building'].shape[0], 1)
 
         # Check the cellid.
-        list_cells = self.pittsburgh_map.poi[self.pittsburgh_map.poi['name'] == 'Frick Building']['cellids'].tolist()[
-            0]
+        list_cells = self.pittsburgh_map.poi[self.pittsburgh_map.poi[
+            'name'] == 'Frick Building']['cellids'].tolist()[0]
         self.assertEqual(list_cells[0].id(), 9814734816715735040)
         self.assertEqual(list_cells[1].id(), 9814734845337665536)
         self.assertEqual(list_cells[2].id(), 9814734856679063552)
