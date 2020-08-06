@@ -7,6 +7,12 @@ MAX_LEVEL = 30
 POS_BITS = 2 * MAX_LEVEL + 1
 START_BIT = POS_BITS - 2
 
+'''
+TODO 
+1. add adjacent cells connections
+2. change graph to networkx
+'''
+
 
 class Node:
     def __init__(self, parent):
@@ -24,7 +30,6 @@ class Graph:
     def __init__(self):
         self.faces = tuple([Node(None) for x in range(0, NUM_FACES)])
 
-
     def get_cell_neighbors(self, cell):
         curr_node = self.faces[cell.face()]
         last_bit = POS_BITS - 2 * cell.level()
@@ -40,7 +45,7 @@ class Graph:
             cellid = cell.id()
 
             for i in range(START_BIT, last_bit-1, -2):
-                lvlVal = (cellid >> i) & 3 #bits shift
+                lvlVal = (cellid >> i) & 3  # bits shift
 
                 if not curr_node.children[lvlVal]:
                     curr_node.children[lvlVal] = Node(curr_node)

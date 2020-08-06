@@ -5,6 +5,7 @@ from shapely.geometry.point import Point
 import osmnx as ox
 from map_structure import Map
 
+
 FLAGS = flags.FLAGS
 flags.DEFINE_string("place", None, "map area - Manhattan or Pittsburgh.")
 
