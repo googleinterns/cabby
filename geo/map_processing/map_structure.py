@@ -19,6 +19,13 @@ import folium
 import webbrowser
 
 
+'''
+TODO: 
+1. add streets to graph -done
+2. add multiple cell levels
+'''
+
+
 class Map:
 
     def __init__(self, map_name):
@@ -195,12 +202,6 @@ class Map:
         # Add street to graph
         self.streets[['cellids', 'osmid']].apply(
             self.add_street_to_graph, axis=1)
-
-        '''
-        TODO: 
-        1. add streets to graph -done
-        2. add multiple cell levels
-        '''
 
 
 if __name__ == "__main__":
