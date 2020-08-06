@@ -29,24 +29,23 @@ class MapTest(unittest.TestCase):
         self.pittsburgh_map = Map("Pittsburgh")
 
     def testSingleOutput(self):
-        # Check a known POI is there.
-        self.assertEqual(self.pittsburgh_map.poi[self.pittsburgh_map.poi[
-            'name'] == 'Frick Building'].shape[0], 1)
+        # Get a known POI is there.
+        specific_poi_found = self.pittsburgh_map.poi[self.pittsburgh_map.poi[
+            'name'] == 'Frick Building']
+        # Check that the number of Frick Building POI found is exactly 1
+        self.assertEqual(specific_poi_found.shape[0], 1)
 
         # Check the cellid.
         list_cells = self.pittsburgh_map.poi[self.pittsburgh_map.poi[
             'name'] == 'Frick Building']['cellids'].tolist()[0]
-        self.assertEqual(list_cells[0].id(), 9814734816715735040)
-        self.assertEqual(list_cells[1].id(), 9814734845337665536)
-        self.assertEqual(list_cells[2].id(), 9814734856679063552)
-        self.assertEqual(list_cells[3].id(), 9814734856712617984)
-        self.assertEqual(list_cells[4].id(), 9814734856746172416)
-        self.assertEqual(list_cells[5].id(), 9814734856779726848)
-        self.assertEqual(list_cells[6].id(), 9814734856813281280)
-        self.assertEqual(list_cells[7].id(), 9814734856846835712)
+        expected_ids = [9814734816715735040, 9814734845337665536, 9814734856679063552, 9814734856712617984,
+                        9814734856746172416, 9814734856779726848, 9814734856813281280, 9814734856846835712]
+        found_ids = [list_cells[i].id() for i in range(8)]
+        for expected, found in zip(expected_ids, found_ids):
+            self.assertEqual(expected, found)
 
         # Check that the POI was added correctly to the graph.
-        cell_to_search = list_cells[0]
+        cell_to_search = list_cells[0] 
         poi = self.pittsburgh_map.graph.search(cell_to_search)
         self.assertTrue(203322568 in poi)
 

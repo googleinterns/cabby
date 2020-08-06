@@ -1,8 +1,23 @@
+# coding=utf-8
+# Copyright 2020 Google LLC
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 from s2geometry import pywraps2 as s2
 import networkx as nx
 
 
-NUM_FACES = 6
+# S2cells constants
+NUM_FACES = 6 
 MAX_LEVEL = 30
 POS_BITS = 2 * MAX_LEVEL + 1
 START_BIT = POS_BITS - 2
@@ -14,7 +29,7 @@ TODO
 '''
 
 
-class Node:
+class MapNode:
     def __init__(self, parent):
         self.parent = parent
         self.neighbors = [None, None, None, None, None, None, None, None]
@@ -28,7 +43,7 @@ class Node:
 
 class Graph:
     def __init__(self):
-        self.faces = tuple([Node(None) for x in range(0, NUM_FACES)])
+        self.faces = tuple([MapNode(None) for x in range(0, NUM_FACES)])
 
     def get_cell_neighbors(self, cell):
         four_neighbors = cell.GetEdgeNeighbors()
@@ -49,7 +64,7 @@ class Graph:
                 lvlVal = (cellid >> i) & 3  # bits shift
 
                 if not curr_node.children[lvlVal]:
-                    curr_node.children[lvlVal] = Node(curr_node)
+                    curr_node.children[lvlVal] = MapNode(curr_node)
 
                 curr_node = curr_node.children[lvlVal]
 
@@ -68,7 +83,7 @@ class Graph:
                 lvlVal = (cellid >> i) & 3
 
                 if not curr_node.children[lvlVal]:
-                    curr_node.children[lvlVal] = Node(curr_node)
+                    curr_node.children[lvlVal] = MapNode(curr_node)
 
                 curr_node = curr_node.children[lvlVal]
 
