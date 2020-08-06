@@ -14,6 +14,9 @@ from graph import Graph
 import cartopy.crs as ccrs
 import cartopy.io.img_tiles as cimgt
 import matplotlib.pyplot as plt
+import matplotlib
+import folium
+import webbrowser
 
 
 class Map:
@@ -43,7 +46,7 @@ class Map:
         osm_poi_no_streets = osm_poi[osm_poi['highway'].isnull()]
         osm_poi_streets = osm_poi[osm_poi['highway'].notnull()]
 
-        return osm_poi, osm_poi_streets
+        return osm_poi_no_streets, osm_poi_streets
 
     def cellid_from_s2shape(self, s2shape, level):
         # OpenStreetMaps Ways type to cellids
@@ -91,11 +94,11 @@ class Map:
         return latlng
 
     def s2polygon_from_shapely_polygon(self, shapely_polygon):
-        if not hasattr(shapely_polygon.buffer(0.0001), 'exterior'):
+        if not hasattr(shapely_polygon.buffer(0.00005), 'exterior'):
             return
         else:
             list_coords = list(shapely_polygon.buffer(
-                0.0001).exterior.coords)
+                0.00005).exterior.coords)
 
         s2point_list = list(map(self.s2point_from_coord_xy, list_coords))
         s2point_list = s2point_list[::-1]  # Counterclockwise
@@ -125,27 +128,31 @@ class Map:
         return self.cellid_from_s2shape(s2_polygon, level)
 
     def plot_cells(self, cells):
-        proj = cimgt.MapQuestOSM()
-        plt.figure(figsize=(20, 20), dpi=200)
-        ax = plt.axes(projection=proj.crs)
+        # create a map
+        map_osm = folium.Map(
+            location=[40.7434, -73.9847], zoom_start=12, tiles='Stamen Toner')
+
+        def style_function(x): return {'weight': 1, 'fillColor': '#eea500'}
+
         geoms = []
         for cellid in cells:
-            new_cell = s2.S2Cell(cellid[0])
+            cellid = cellid[0]
+            cell = s2.S2Cell(cellid)
             vertices = []
             for i in range(0, 4):
-                vertex = new_cell.GetVertex(i)
+                vertex = cell.GetVertex(i)
+
                 latlng = s2.S2LatLng(vertex)
                 vertices.append((latlng.lat().degrees(),
                                  latlng.lng().degrees()))
-            geo = Polygon(vertices)
-            geoms.append(geo)
-        print("Total Geometries: {}".format(len(geoms)))
+            gj = folium.GeoJson({"type": "Polygon", "coordinates": [
+                                vertices]}, style_function=style_function)
+            gj.add_children(folium.Popup(cellid.ToToken()))
+            gj.add_to(map_osm)
 
-        ax.add_geometries(geoms, ccrs.PlateCarree(), facecolor='coral',
-                          edgecolor='black', alpha=0.4)
-        plt.show()
-        plt.savefig('check.png')
-
+        filepath = 'visualization.html'
+        map_osm.save(filepath)
+        webbrowser.open(filepath, new=2)
 
     def cellid_from_geometry_streets(self, geo, level):
         assert isinstance(geo, Point) or isinstance(geo, Polygon), type(geo)
@@ -172,7 +179,7 @@ class Map:
         self.poi['cellids'] = self.poi['geometry'].apply(
             self.cellid_from_geometry, args=[level])
         self.poi = self.poi[self.poi['cellids'].notnull()]
-        self.plot_cells(self.poi['cellids'].tolist())
+        # self.plot_cells(self.poi['cellids'].tolist())
 
         # Get cellids for streets
         self.streets['cellids'] = self.streets['geometry'].apply(

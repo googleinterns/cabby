@@ -1,4 +1,6 @@
 from s2geometry import pywraps2 as s2
+import networkx as nx
+
 
 NUM_FACES = 6
 MAX_LEVEL = 30
@@ -9,7 +11,7 @@ START_BIT = POS_BITS - 2
 class Node:
     def __init__(self, parent):
         self.parent = parent
-        self.neighbors = [None, None, None, None, None, None]
+        self.neighbors = [None, None, None, None, None, None, None, None]
         self.children = [None, None, None, None]
         self.poi = []
         self.streets = []
@@ -21,6 +23,7 @@ class Node:
 class Graph:
     def __init__(self):
         self.faces = tuple([Node(None) for x in range(0, NUM_FACES)])
+
 
     def get_cell_neighbors(self, cell):
         curr_node = self.faces[cell.face()]
@@ -37,7 +40,7 @@ class Graph:
             cellid = cell.id()
 
             for i in range(START_BIT, last_bit-1, -2):
-                lvlVal = (cellid >> i) & 3
+                lvlVal = (cellid >> i) & 3 #bits shift
 
                 if not curr_node.children[lvlVal]:
                     curr_node.children[lvlVal] = Node(curr_node)
