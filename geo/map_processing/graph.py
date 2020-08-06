@@ -9,7 +9,7 @@ START_BIT = POS_BITS - 2
 
 '''
 TODO 
-1. add adjacent cells connections
+1. add adjacent cells connections -done
 2. change graph to networkx
 '''
 
@@ -31,10 +31,11 @@ class Graph:
         self.faces = tuple([Node(None) for x in range(0, NUM_FACES)])
 
     def get_cell_neighbors(self, cell):
-        curr_node = self.faces[cell.face()]
-        last_bit = POS_BITS - 2 * cell.level()
-        cellid = cell.id()
-        adjacent = cell.next()
+        four_neighbors = cell.GetEdgeNeighbors()
+        eight_neighbors = four_neighbors + \
+            [four_neighbors[0].next(), four_neighbors[3].next(),
+             four_neighbors[1].prev(), four_neighbors[3].prev()]
+        return eight_neighbors
 
     def add_street(self, cells, street):
         if isinstance(cells, s2.S2CellId):
@@ -53,6 +54,7 @@ class Graph:
                 curr_node = curr_node.children[lvlVal]
 
             curr_node.streets.append(street)
+            curr_node.neighbors = self.get_cell_neighbors(cell)
 
     def add_poi(self, cells, poi):
         if isinstance(cells, s2.S2CellId):
@@ -71,6 +73,7 @@ class Graph:
                 curr_node = curr_node.children[lvlVal]
 
             curr_node.poi.append(poi)
+            curr_node.neighbors = self.get_cell_neighbors(cell)
 
     def search(self, cell):
         curr_node = self.faces[cell.face()]
