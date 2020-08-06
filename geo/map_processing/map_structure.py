@@ -26,7 +26,7 @@ TODO:
 
 class Map:
 
-    def __init__(self, map_name):
+    def __init__(self, map_name: str):
         assert map_name == "Manhattan" or map_name == "Pittsburgh"
         self.graph = None
 
@@ -42,7 +42,7 @@ class Map:
         self.poi, self.streets = self.__get_poi()
         self.__create_graph()
 
-    def __get_poi(self):
+    def __get_poi(self) -> list :
         osm_items = []
         tags = {'name': True}
 
