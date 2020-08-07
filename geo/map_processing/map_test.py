@@ -46,8 +46,8 @@ class MapTest(unittest.TestCase):
 
         # Check that the POI was added correctly to the graph.
         cell_to_search = list_cells[0]
-        poi = self.pittsburgh_map.graph.search(cell_to_search)
-        self.assertTrue(203322568 in poi)
+        node = self.pittsburgh_map.graph.search(cell_to_search)
+        self.assertTrue(203322568 in node.poi)
 
 
 if __name__ == "__main__":
