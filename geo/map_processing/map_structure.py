@@ -31,11 +31,12 @@ import matplotlib
 import folium
 from typing import Tuple
 from pandas import Series
+from typing import Dict, Tuple, Sequence
 
 
 class Map:
 
-    def __init__(self, map_name: str):
+    def __init__(self, map_name: str, level: int):
         assert map_name == "Manhattan" or map_name == "Pittsburgh"
         self.graph = None
 
@@ -48,13 +49,11 @@ class Map:
             self.place_polygon = shapely.geometry.box(
                 miny=40.425, minx=-80.035, maxy=40.460, maxx=-79.930, ccw=True)
 
-        self.poi, self.streets = self.__get_poi()
-        self.__create_graph()
+        self.poi, self.streets = self.get_poi()
+        self.create_graph(level)
 
-    def __get_poi(self) -> list:
-        '''
-        Helper funcion  for extracting POI for the defined place.
-        '''
+    def get_poi(self) -> Sequence:
+        '''Helper funcion  for extracting POI for the defined place.'''
 
         osm_items = []
         tags = {'name': True}
@@ -67,12 +66,12 @@ class Map:
         return osm_poi_no_streets, osm_poi_streets
 
     def get_s2cover_for_s2polygon(self, s2polygon: S2Polygon,
-                                  level: int) -> list:
+                                  level: int) -> Sequence:
         '''Returns the cellids that cover the shape (point\polygon\polyline). 
         Arguments:
         s2polygon(S2Polygon): an s2polygon.
         Returns:
-        A list of S2Cell.
+        A sequence of S2Cell.
 
         '''
         if s2polygon is None:
@@ -90,10 +89,11 @@ class Map:
     def s2polygon_from_shapely_point(self, shapely_point: Point) -> S2Polygon:
         '''Converts a shapely Point to an s2Polygon.
         Arguments:
-        point(Shapely Point): a Shapely type Point.
+            point(Shapely Point): a Shapely type Point.
         Returns:
-        The S2Polygon.
+            The S2Polygon.
         '''
+
         y, x = shapely_point.y, shapely_point.x
         latlng = s2.S2LatLng.FromDegrees(y, x)
         return s2.S2Polygon(s2.S2Cell(s2.S2CellId(latlng)))
@@ -101,9 +101,9 @@ class Map:
     def s2point_from_coord_xy(self, coord: Tuple) -> S2Point:
         '''Converts coordinates (longtitude and latitude) to the s2point.
         Arguments:
-        coord(S2Polygon): longtitude and latitude.
+            coord(S2Polygon): longtitude and latitude.
         Returns:
-        An s2Point.
+            An s2Point.
 
         '''
         # Convert coordinates (lon,lat) to s2LatLng.
@@ -115,9 +115,9 @@ class Map:
                                        shapely_polygon: Polygon) -> S2Polygon:
         '''Convert a shapely polygon to s2polygon. 
         Arguments:
-        shapely_polygon(Polygon): a shapely polygon.
+            shapely_polygon(Polygon): a shapely polygon.
         Returns:
-        An s2Polygon.
+            An s2Polygon.
 
         '''
         # Filter where shape has no exterior attributes (e.g. lines).
@@ -136,9 +136,9 @@ class Map:
                                         shapely_polyine: Polygon) -> S2Polygon:
         '''Convert a shapely polyline to s2polygon. 
         Arguments:
-        shapely_polyine(Polygon): a shapely polygon.
+            shapely_polyine(Polygon): a shapely polygon.
         Returns:
-        An s2Polygon.
+            An s2Polygon.
 
         '''
 
@@ -154,9 +154,8 @@ class Map:
         return line
 
     def plot_cells(self, cells: S2Cell):
-        '''
-        plot the s2cell covering.
-        '''
+        '''Plot the S2Cell covering.'''
+
         # create a map.
         map_osm = folium.Map(
             location=[40.7434, -73.9847], zoom_start=12, tiles='Stamen Toner')
@@ -188,44 +187,40 @@ class Map:
         map_osm.save(filepath)
         webbrowser.open(filepath, new=2)
 
-    def cellid_from_point(self, point: Point, level: int) -> list:
+    def cellid_from_point(self, point: Point, level: int) -> Sequence:
         '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
         Arguments:
-        point(Point): a shapely point.
+            point(Point): a shapely point.
         Returns:
-        A list of s2Cells.
+            A sequence of s2Cells.
 
         '''
         s2polygon = self.s2polygon_from_shapely_point(point)
         return self.get_s2cover_for_s2polygon(s2polygon, level)
 
-    def cellid_from_polygon(self, polygon: Polygon, level: int) -> list:
+    def cellid_from_polygon(self, polygon: Polygon, level: int) -> Sequence:
         '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
         Arguments:
-        polygon(Polygon): a shapely Polygon.
+            polygon(Polygon): a shapely Polygon.
         Returns:
-        A list of s2Cells.
+            A sequence of s2Cells.
 
         '''
         s2polygon = self.s2polygon_from_shapely_polygon(polygon)
         return self.get_s2cover_for_s2polygon(s2polygon, level)
 
-    def cellid_from_polyline(self, polyline: Polygon, level: int) -> list:
+    def cellid_from_polyline(self, polyline: Polygon, level: int) -> Sequence:
         '''Get s2cell covering from shapely polygon that are lines (OpenStreetMaps Ways of streets). 
         Arguments:
-        polyline(Polygon): a shapely Polygon of a street.
+            polyline(Polygon): a shapely Polygon of a street.
         Returns:
-        A list of s2Cells.
+            A sequence of s2Cells.
         '''
         s2polygon = self.s2polygon_from_shapely_polyline(polyline)
         return self.get_s2cover_for_s2polygon(s2polygon, level)
 
-    def __create_graph(self):
-        '''
-        Helper funcion for creating graph.
-        '''
-
-        level = 18
+    def create_graph(self, level: int):
+        '''Helper funcion for creating graph.'''
 
         # Get cellids for POI.
         self.poi['cellids'] = self.poi['geometry'].apply(lambda x: self.cellid_from_point(
