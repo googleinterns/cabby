@@ -13,14 +13,14 @@
 # limitations under the License.
 
 from s2geometry import pywraps2 as s2
-from s2geometry.pywraps2 import S2Cell
 import networkx as nx
+from typing import Dict, Tuple, Sequence
 
 # S2 geometry constants.
-NUM_FACES = 6
-MAX_LEVEL = 30
-POS_BITS = 2 * MAX_LEVEL + 1
-START_BIT = POS_BITS - 2
+NUM_FACES = 6 # The top level of the hierarchy includes six faces 
+MAX_LEVEL = 30  
+POS_BITS = 2 * MAX_LEVEL + 1 
+START_BIT = POS_BITS - 2 
 
 
 class MapNode:
@@ -41,12 +41,12 @@ class Graph:
     def __init__(self):
         self.faces = tuple([MapNode(None) for x in range(0, NUM_FACES)])
 
-    def get_cell_neighbors(self, cell: S2Cell) -> list:
+    def get_cell_neighbors(self, cell: s2.S2Cell) -> Sequence:
         '''Get eight s2cell neighbors for a given cell. 
         Arguments:
-        cell(S2Cell): an S2Cell.
+            cell(S2Cell): an S2Cell.
         Returns:
-        A list of eight S2Cell2.
+            A sequence of eight S2Cell2.
         '''
         four_neighbors = cell.GetEdgeNeighbors()
         eight_neighbors = four_neighbors + [
@@ -55,11 +55,11 @@ class Graph:
         ]
         return eight_neighbors
 
-    def add_street(self, cells: list, street: int):
+    def add_street(self, cells: Sequence, street: int):
         '''Add a street POI to multiple cells. 
         Arguments:
-        cells(list): a list of s2cells.
-        street(int): an osmid of the street.
+            cells(sequence): a sequence of s2cells.
+            street(int): an osmid of the street.
         '''
         if isinstance(cells, s2.S2CellId):
             cells = [cells]
@@ -79,11 +79,11 @@ class Graph:
             curr_node.streets.append(street)
             curr_node.neighbors = self.get_cell_neighbors(cell)
 
-    def add_poi(self, cells: list, poi: int):
+    def add_poi(self, cells: Sequence, poi: int):
         '''Add a POI to multiple cells. 
         Arguments:
-        cells(list): a list of s2cells.
-        poi(int): an osmid of the POI.
+            cells(sequence): a sequence of s2cells.
+            poi(int): an osmid of the POI.
         '''
         if isinstance(cells, s2.S2CellId):
             cells = [cells]
@@ -103,12 +103,12 @@ class Graph:
             curr_node.poi.append(poi)
             curr_node.neighbors = self.get_cell_neighbors(cell)
 
-    def search(self, cell: S2Cell) -> list:
+    def search(self, cell: s2.S2Cell) -> Sequence:
         '''Get all POI for a specific cell. 
         Arguments:
-        cell(S2Cell): an s2cell.
+            cell(S2Cell): an s2cell.
         Returns:
-        A list of POI.
+            A sequence of POI.
 
         '''
         curr_node = self.faces[cell.face()]

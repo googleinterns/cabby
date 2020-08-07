@@ -21,7 +21,7 @@ from map_structure import Map
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string("place", None, "map area - Manhattan or Pittsburgh.")
-flags.DEFINE_string("path", None, "path to save the map file.")
+flags.DEFINE_integer("level", None, "min level of map")
 
 # Required flags.
 flags.mark_flag_as_required("place")
@@ -29,6 +29,8 @@ flags.mark_flag_as_required("place")
 
 def main(argv):
     del argv  # Unused.
+    pittsburgh_map = Map(FLAGS.place, level)
+
 
 
 if __name__ == '__main__':

@@ -26,10 +26,10 @@ class MapTest(unittest.TestCase):
     def setUp(self):
 
         # Process the map for an area in Pittsburgh.
-        self.pittsburgh_map = Map("Pittsburgh")
+        self.pittsburgh_map = Map("Pittsburgh", 18)
 
     def testSingleOutput(self):
-        # Get a known POI is there.
+        # Verify that a known POI is present.
         specific_poi_found = self.pittsburgh_map.poi[self.pittsburgh_map.poi[
             'name'] == 'Frick Building']
         # Check that the number of Frick Building POI found is exactly 1.
