@@ -14,8 +14,6 @@
 
 from s2geometry import pywraps2 as s2
 from s2geometry.pywraps2 import S2Point, S2Polygon, S2Polyline, S2Cell
-
-
 import networkx as nx
 import osmnx as ox
 from geopandas import GeoDataFrame
@@ -28,8 +26,6 @@ import shapely.wkt
 import time
 from collections import Counter
 from graph import Graph
-import cartopy.crs as ccrs
-import cartopy.io.img_tiles as cimgt
 import matplotlib.pyplot as plt
 import matplotlib
 import folium
@@ -70,7 +66,8 @@ class Map:
 
         return osm_poi_no_streets, osm_poi_streets
 
-    def get_s2cover_for_s2polygon(self, s2polygon: S2Polygon, level: int) -> list:
+    def get_s2cover_for_s2polygon(self, s2polygon: S2Polygon,
+                                  level: int) -> list:
         '''Returns the cellids that cover the shape (point\polygon\polyline). 
         Arguments:
         s2polygon(S2Polygon): an s2polygon.
@@ -110,11 +107,12 @@ class Map:
 
         '''
         # Flip coordinates lon,lat -> lat,lon and create s2LatLng
-        latlng = s2.S2LatLng.FromDegrees(coord[1], coord[0]) 
+        latlng = s2.S2LatLng.FromDegrees(coord[1], coord[0])
 
-        return latlng.ToPoint() #S2Point
+        return latlng.ToPoint()  # S2Point
 
-    def s2polygon_from_shapely_polygon(self, shapely_polygon: Polygon) -> S2Polygon:
+    def s2polygon_from_shapely_polygon(self,
+                                       shapely_polygon: Polygon) -> S2Polygon:
         '''Convert a shapely polygon to s2polygon. 
         Arguments:
         shapely_polygon(Polygon): a shapely polygon.
@@ -134,7 +132,8 @@ class Map:
         s2point_list = s2point_list[::-1]  # Counterclockwise.
         return s2.S2Polygon(s2.S2Loop(s2point_list))
 
-    def s2polygon_from_shapely_polyline(self, shapely_polyine: Polygon) -> S2Polygon:
+    def s2polygon_from_shapely_polyline(self,
+                                        shapely_polyine: Polygon) -> S2Polygon:
         '''Convert a shapely polyline to s2polygon. 
         Arguments:
         shapely_polyine(Polygon): a shapely polygon.
@@ -217,7 +216,6 @@ class Map:
         '''
         s2polygon = self.s2polygon_from_shapely_polyline(polyline)
         return self.get_s2cover_for_s2polygon(s2polygon, level)
-
 
     def add_poi_to_graph(self, row: Series):
         cells = row.cellids
