@@ -196,7 +196,8 @@ class Map:
 
         '''
         s2polygon = self.s2polygon_from_shapely_point(point)
-        return self.get_s2cover_for_s2polygon(s2polygon, level)
+        cellid=self.get_s2cover_for_s2polygon(s2polygon, level)[0]
+        return [cellid] 
 
     def cellid_from_polygon(self, polygon: Polygon, level: int) -> Sequence:
         '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
