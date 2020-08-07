@@ -13,23 +13,18 @@
 # limitations under the License.
 
 from s2geometry import pywraps2 as s2
+from s2geometry.pywraps2 import S2Cell
 import networkx as nx
 
-
-# S2cells constants
-NUM_FACES = 6 
+# S2 geometry constants.
+NUM_FACES = 6
 MAX_LEVEL = 30
 POS_BITS = 2 * MAX_LEVEL + 1
 START_BIT = POS_BITS - 2
 
-'''
-TODO 
-1. add adjacent cells connections -done
-2. change graph to networkx
-'''
-
 
 class MapNode:
+
     def __init__(self, parent):
         self.parent = parent
         self.neighbors = [None, None, None, None, None, None, None, None]
@@ -38,21 +33,34 @@ class MapNode:
         self.streets = []
         self.level = 0
         if self.parent:
-            self.level = self.parent.level+1
+            self.level = self.parent.level + 1
 
 
 class Graph:
+
     def __init__(self):
         self.faces = tuple([MapNode(None) for x in range(0, NUM_FACES)])
 
-    def get_cell_neighbors(self, cell):
+    def get_cell_neighbors(self, cell: S2Cell) -> list:
+        '''Get eight s2cell neighbors for a given cell. 
+        Arguments:
+        cell(S2Cell): an S2Cell.
+        Returns:
+        A list of eight S2Cell2.
+        '''
         four_neighbors = cell.GetEdgeNeighbors()
-        eight_neighbors = four_neighbors + \
-            [four_neighbors[0].next(), four_neighbors[3].next(),
-             four_neighbors[1].prev(), four_neighbors[3].prev()]
+        eight_neighbors = four_neighbors + [
+            four_neighbors[0].next(), four_neighbors[3].next(),
+            four_neighbors[1].prev(), four_neighbors[3].prev()
+        ]
         return eight_neighbors
 
-    def add_street(self, cells, street):
+    def add_street(self, cells: list, street: int):
+        '''Add a street POI to multiple cells. 
+        Arguments:
+        cells(list): a list of s2cells.
+        street(int): an osmid of the street.
+        '''
         if isinstance(cells, s2.S2CellId):
             cells = [cells]
         for cell in cells:
@@ -60,8 +68,8 @@ class Graph:
             last_bit = POS_BITS - 2 * cell.level()
             cellid = cell.id()
 
-            for i in range(START_BIT, last_bit-1, -2):
-                lvlVal = (cellid >> i) & 3  # bits shift
+            for i in range(START_BIT, last_bit - 1, -2):
+                lvlVal = (cellid >> i) & 3
 
                 if not curr_node.children[lvlVal]:
                     curr_node.children[lvlVal] = MapNode(curr_node)
@@ -71,7 +79,12 @@ class Graph:
             curr_node.streets.append(street)
             curr_node.neighbors = self.get_cell_neighbors(cell)
 
-    def add_poi(self, cells, poi):
+    def add_poi(self, cells: list, poi: int):
+        '''Add a POI to multiple cells. 
+        Arguments:
+        cells(list): a list of s2cells.
+        poi(int): an osmid of the POI.
+        '''
         if isinstance(cells, s2.S2CellId):
             cells = [cells]
         for cell in cells:
@@ -79,7 +92,7 @@ class Graph:
             last_bit = POS_BITS - 2 * cell.level()
             cellid = cell.id()
 
-            for i in range(START_BIT, last_bit-1, -2):
+            for i in range(START_BIT, last_bit - 1, -2):
                 lvlVal = (cellid >> i) & 3
 
                 if not curr_node.children[lvlVal]:
@@ -90,13 +103,20 @@ class Graph:
             curr_node.poi.append(poi)
             curr_node.neighbors = self.get_cell_neighbors(cell)
 
-    def search(self, cell):
+    def search(self, cell: S2Cell) -> list:
+        '''Get all POI for a specific cell. 
+        Arguments:
+        cell(S2Cell): an s2cell.
+        Returns:
+        A list of POI.
+
+        '''
         curr_node = self.faces[cell.face()]
         last_bit = POS_BITS - 2 * cell.level()
         accum_poi = []
         cellid = cell.id()
 
-        for i in range(START_BIT, last_bit-1, -2):
+        for i in range(START_BIT, last_bit - 1, -2):
             lvlVal = (cellid >> i) & 3
 
             curr_node = curr_node.children[lvlVal]

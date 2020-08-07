@@ -53,7 +53,7 @@ class Map:
 
     def __get_poi(self) -> list:
         '''
-        Helper funcion  for extracting POI for the defined place
+        Helper funcion  for extracting POI for the defined place.
         '''
 
         osm_items = []
@@ -106,7 +106,7 @@ class Map:
         An s2Point.
 
         '''
-        # Flip coordinates lon,lat -> lat,lon and create s2LatLng
+        # Convert coordinates (lon,lat) to s2LatLng.
         latlng = s2.S2LatLng.FromDegrees(coord[1], coord[0])
 
         return latlng.ToPoint()  # S2Point
@@ -154,7 +154,10 @@ class Map:
         return line
 
     def plot_cells(self, cells: S2Cell):
-        # create a map
+        '''
+        plot the s2cell covering.
+        '''
+        # create a map.
         map_osm = folium.Map(
             location=[40.7434, -73.9847], zoom_start=12, tiles='Stamen Toner')
 
@@ -217,19 +220,9 @@ class Map:
         s2polygon = self.s2polygon_from_shapely_polyline(polyline)
         return self.get_s2cover_for_s2polygon(s2polygon, level)
 
-    def add_poi_to_graph(self, row: Series):
-        cells = row.cellids
-        poi = row.osmid
-        self.graph.add_poi(cells, poi)
-
-    def add_street_to_graph(self, row: Series):
-        cells = row.cellids
-        street = row.osmid
-        self.graph.add_street(cells, street)
-
     def __create_graph(self):
         '''
-        Helper funcion for creating graph
+        Helper funcion for creating graph.
         '''
 
         level = 18
@@ -238,20 +231,22 @@ class Map:
         self.poi['cellids'] = self.poi['geometry'].apply(lambda x: self.cellid_from_point(
             x, level) if isinstance(x, Point) else self.cellid_from_polygon(x, level))
 
-        self.poi = self.poi[self.poi['cellids'].notnull()]
-
-        # Get cellids for streets
+        # Get cellids for streets.
         self.streets['cellids'] = self.poi['geometry'].apply(lambda x: self.cellid_from_point(
             x, level) if isinstance(x, Point) else self.cellid_from_polyline(x, level))
 
+        # Filter out entities that we didn't mange to get cellids covering.
+        self.poi = self.poi[self.poi['cellids'].notnull()]
         self.streets = self.streets[self.streets['cellids'].notnull()]
 
         # Create graph.
         self.graph = Graph()
 
-        # Add POI to graph
-        self.poi[['cellids', 'osmid']].apply(self.add_poi_to_graph, axis=1)
+        # Add POI to graph.
+        self.poi[['cellids', 'osmid']].apply(
+            lambda x: self.graph.add_poi(x.cellids, x.osmid), axis=1)
 
-        # Add street to graph
+        # Add street to graph.
         self.streets[['cellids', 'osmid']].apply(
-            self.add_street_to_graph, axis=1)
+            lambda x: self.graph.add_street_to_graph(x.cellids, x.osmid),
+            axis=1)
