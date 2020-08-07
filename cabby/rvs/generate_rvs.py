@@ -12,19 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Tests for speak.py'''
+'''Example command line method to output simple RVS instructions.'''
 
-from rvs import speak
+from absl import app
+from absl import flags
 
-import unittest
+from cabby.rvs import speak
 
-class SpeakTest(unittest.TestCase):
+FLAGS = flags.FLAGS
+flags.DEFINE_string("ref_poi", None, "The reference POI.")
+flags.DEFINE_string("goal_poi", None, "The goal POI.")
 
-  def testSingleOutput(self):
-    expected = 'go to the pharmacy near the Empire State Building.'
-    output = speak.describe_route('Empire State Building', 'pharmacy')
-    self.assertEqual(output, expected)
+# Required flags.
+flags.mark_flag_as_required("ref_poi")
+flags.mark_flag_as_required("goal_poi")
 
-if __name__ == "__main__":
-    unittest.main()
+def main(argv):
+  del argv  # Unused.
+  print(speak.describe_route(FLAGS.ref_poi, FLAGS.goal_poi))
 
+if __name__ == '__main__':
+  app.run(main)
