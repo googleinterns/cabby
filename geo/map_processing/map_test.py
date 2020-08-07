@@ -32,7 +32,7 @@ class MapTest(unittest.TestCase):
         # Get a known POI is there.
         specific_poi_found = self.pittsburgh_map.poi[self.pittsburgh_map.poi[
             'name'] == 'Frick Building']
-        # Check that the number of Frick Building POI found is exactly 1
+        # Check that the number of Frick Building POI found is exactly 1.
         self.assertEqual(specific_poi_found.shape[0], 1)
 
         # Check the cellid.
