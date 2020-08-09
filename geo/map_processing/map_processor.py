@@ -18,8 +18,8 @@ import osmnx as ox
 from map_structure import Map
 
 FLAGS = flags.FLAGS
-flags.DEFINE_string("place", None, "map area - Manhattan or Pittsburgh.")
-flags.DEFINE_integer("level", None, "min level of map")
+flags.DEFINE_enum("place", None, ['Pittsburgh', 'Manhattan'], "Map areas: Manhattan or Pittsburgh.")
+flags.DEFINE_integer("level", None, "Minumum S2 level of the map.")
 
 # Required flags.
 flags.mark_flag_as_required("place")
@@ -27,7 +27,8 @@ flags.mark_flag_as_required("place")
 
 def main(argv):
     del argv  # Unused.
-    pittsburgh_map = Map(FLAGS.place, level)
+    map = Map(FLAGS.place, FLAGS.level)
+    print (map.poi)
 
 
 if __name__ == '__main__':
