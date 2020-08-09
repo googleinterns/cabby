@@ -20,8 +20,9 @@ from typing import Dict, Tuple, Sequence
 NUM_FACES = 6  # The top level of the hierarchy includes six faces.
 MAX_LEVEL = 30
 
-# There are 60 bits reserved for the position along the Hilbert curve and there is one termination bit.
-# The calculation: each level requires two bits (4 children) + one is the termination bit.
+# There are 60 bits reserved for the position along the Hilbert curve and there
+# is one termination bit. The calculation: each level requires two bits (4
+# children) + one is the termination bit.
 NUM_POS_BITS = 2 * MAX_LEVEL + 1
 
 # The begining of the position bits minus the two unique cell bits of first level.
