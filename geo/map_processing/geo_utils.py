@@ -18,10 +18,15 @@ from s2geometry.pywraps2 import S2Point, S2Polygon, S2Polyline, S2Cell
 from typing import Tuple, Sequence
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
+import folium
+import webbrowser
+from typing import Optional
+
+
 
 
 def get_s2cover_for_s2polygon(s2polygon: S2Polygon,
-                              level: int) -> Sequence:
+                              level: int) -> Optional[Sequence]:
     '''Returns the cellids that cover the shape (point\polygon\polyline). 
     Arguments:
     s2polygon(S2Polygon): an s2polygon.
