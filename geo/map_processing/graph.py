@@ -63,11 +63,11 @@ class Graph:
         eight_neighbors_nodes = [self.search(cell) for cell in eight_neighbors]
         return eight_neighbors_nodes
 
-    def add_street(self, cells: Sequence, street: int):
+    def add_street(self, cells: Sequence, osmid_of_street: int):
         '''Add a street POI to multiple cells. 
         Arguments:
             cells(sequence): a sequence of s2cells.
-            street(int): an osmid of the street.
+            osmid_of_street(int): an osmid of the street.
         '''
 
         for cell in cells:
@@ -94,7 +94,7 @@ class Graph:
                 curr_node = curr_node.children[value_unique_bites]
 
             # Connect the cell to the street.
-            curr_node.streets.append(street)
+            curr_node.streets.append(osmid_of_street)
 
     def add_poi(self, cells: Sequence, poi: int):
         '''Add a POI to multiple cells. 
