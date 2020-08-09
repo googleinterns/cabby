@@ -25,7 +25,8 @@ MAX_LEVEL = 30
 # children) + one is the termination bit.
 NUM_POS_BITS = 2 * MAX_LEVEL + 1
 
-# The begining of the position bits minus the two unique cell bits of first level.
+# The begining of the position bits minus the two unique cell bits of first
+# level.
 START_BITS = NUM_POS_BITS - 2
 
 
@@ -90,7 +91,8 @@ class Graph:
                     # Connect the cell to its neighbors.
                     curr_node.neighbors = self.get_cell_neighbors(cell)
 
-                # Descend one level by changing th current node to be the child node.
+                # Descend one level by changing th current node to be the child
+                # node.
                 curr_node = curr_node.children[value_unique_bites]
 
             # Connect the cell to the street.
@@ -123,7 +125,8 @@ class Graph:
                     # Connect the cell to its neighbors.
                     curr_node.neighbors = self.get_cell_neighbors(cell)
 
-                # Descend one level by changing th current node to be the child node.
+                # Descend one level by changing th current node to be the child
+                # node.
                 curr_node = curr_node.children[value_unique_bites]
 
             # Connect the cell to the POI.
@@ -139,8 +142,8 @@ class Graph:
         '''
         curr_node = self.faces[cell.face()]
 
-        # Calculate the last position bit for the current level.
-        # For each level 2 unique bits (=4 children) are reserved.
+        # Calculate the last position bit for the current level. For each level
+        # 2 unique bits (=4 children) are reserved.
         last_bit = NUM_POS_BITS - 2 * cell.level()
 
         cellid = cell.id()

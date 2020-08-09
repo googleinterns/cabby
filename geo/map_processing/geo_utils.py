@@ -172,11 +172,10 @@ def cellid_from_polygon(polygon: Polygon, level: int) -> Sequence:
 
 
 def cellid_from_polyline(polyline: Polygon, level: int) -> Sequence:
-    '''Get s2cell covering from shapely polygon that are lines (OpenStreetMaps Ways of streets). 
-    Arguments:
-        polyline(Polygon): a shapely Polygon of a street.
-    Returns:
-        A sequence of s2Cells.
+    '''Get s2cell covering from shapely polygon that are lines (OpenStreetMaps
+    Ways of streets).  
+    Arguments: polyline(Polygon): a shapely Polygon of a street. Returns: A
+        sequence of s2Cells.
     '''
     s2polygon = s2polygon_from_shapely_polyline(polyline)
     return get_s2cover_for_s2polygon(s2polygon, level)
