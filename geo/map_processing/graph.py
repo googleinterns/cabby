@@ -59,10 +59,7 @@ class Graph:
             four_neighbors[1].prev(), four_neighbors[3].prev()
         ]
 
-        eight_neighbors_nodes = []
-        for cell in eight_neighbors:
-            eight_neighbors_nodes.append(self.search(cell))
-
+        eight_neighbors_nodes = [self.search(cell) for cell in eight_neighbors]
         return eight_neighbors_nodes
 
     def add_street(self, cells: Sequence, street: int):

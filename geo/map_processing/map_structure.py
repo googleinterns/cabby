@@ -45,7 +45,7 @@ class Map:
                 'POLYGON ((-73.9455846946375 40.7711351085905,-73.9841893202025 40.7873649535321,-73.9976322499213 40.7733311258037,-74.0035177432988 40.7642404854275,-74.0097394992375 40.7563218869601,-74.01237903206 40.741427380319,-74.0159612551762 40.7237048027967,-74.0199205544099 40.7110727528606,-74.0203570671504 40.7073623945662,-74.0188292725586 40.7010329598287,-74.0087894795267 40.7003781907179,-73.9976584046436 40.707144138196,-73.9767057930988 40.7104179837498,-73.9695033328803 40.730061057073,-73.9736502039152 40.7366087481808,-73.968412051029 40.7433746956588,-73.968412051029 40.7433746956588,-73.9455846946375 40.7711351085905))'
             )
 
-        else:
+        else:  # Pittsburgh.
             self.place_polygon = shapely.geometry.box(
                 miny=40.425, minx=-80.035, maxy=40.460, maxx=-79.930, ccw=True)
 
@@ -196,8 +196,8 @@ class Map:
 
         '''
         s2polygon = self.s2polygon_from_shapely_point(point)
-        cellid=self.get_s2cover_for_s2polygon(s2polygon, level)[0]
-        return [cellid] 
+        cellid = self.get_s2cover_for_s2polygon(s2polygon, level)[0]
+        return [cellid]
 
     def cellid_from_polygon(self, polygon: Polygon, level: int) -> Sequence:
         '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
