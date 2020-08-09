@@ -15,6 +15,7 @@
 from s2geometry import pywraps2 as s2
 import networkx as nx
 from typing import Dict, Tuple, Sequence
+from typing import Optional
 
 # S2 geometry constants.
 NUM_FACES = 6  # The top level of the hierarchy includes six faces.
@@ -132,12 +133,12 @@ class Graph:
             # Connect the cell to the POI.
             curr_node.poi.append(poi)
 
-    def search(self, cell: s2.S2Cell) -> Sequence:
+    def search(self, cell: s2.S2Cell) -> Optional[MapNode]:
         '''Get all POI for a specific cell. 
         Arguments:
             cell(S2Cell): an s2cell.
         Returns:
-            A sequence of POI.
+            The Node in the graph.
 
         '''
         curr_node = self.faces[cell.face()]

@@ -13,7 +13,6 @@
 # limitations under the License.
 '''Tests for map_structure.py'''
 
-import map_structure
 import osmnx as ox
 import unittest
 from shapely.geometry.point import Point

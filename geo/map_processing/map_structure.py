@@ -18,6 +18,7 @@ import networkx as nx
 import osmnx as ox
 from geopandas import GeoDataFrame
 from networkx import MultiDiGraph
+import shapely
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 import numpy as np
@@ -28,11 +29,11 @@ from collections import Counter
 from graph import Graph
 import matplotlib.pyplot as plt
 import matplotlib
-import folium
 from typing import Tuple
 from pandas import Series
 from typing import Dict, Tuple, Sequence
 from geo_utils import cellid_from_polyline, cellid_from_point, cellid_from_polygon
+from shapely.geometry import box
 
 
 class Map:
@@ -47,7 +48,7 @@ class Map:
             )
 
         else:  # Pittsburgh.
-            self.place_polygon = shapely.geometry.box(
+            self.place_polygon = box(
                 miny=40.425, minx=-80.035, maxy=40.460, maxx=-79.930, ccw=True)
 
         self.poi, self.streets = self.get_poi()
