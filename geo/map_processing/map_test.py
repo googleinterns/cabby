@@ -16,7 +16,7 @@
 import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
-from map_structure import Map
+import map_structure 
 from s2geometry import pywraps2 as s2
 
 
@@ -25,7 +25,7 @@ class MapTest(unittest.TestCase):
     def setUp(self):
 
         # Process the map for an area in Pittsburgh.
-        self.pittsburgh_map = Map("Pittsburgh", 18)
+        self.pittsburgh_map = map_structure.Map("Pittsburgh", 18)
 
     def testSingleOutput(self):
         # Verify that a known POI is present.
