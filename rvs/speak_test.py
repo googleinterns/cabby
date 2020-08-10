@@ -14,7 +14,7 @@
 
 '''Tests for speak.py'''
 
-from rvs import speak
+import speak
 
 import unittest
 

@@ -3,7 +3,7 @@
 from absl import app
 from absl import flags
 
-from .walk import compute_route
+from walk import compute_route
 from shapely.geometry.point import Point
 import osmnx as ox
 
