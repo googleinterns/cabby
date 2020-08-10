@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Library to support producing synthetic RVS instructions.'''
+'''Tests for speak.py'''
 
-from typing import Text
+from cabby.rvs import speak
+import unittest
 
 
-def describe_route(pivot_poi: Text, goal_poi: Text) -> Text:
-    '''Preliminary example template for generating an RVS instruction.
+class SpeakTest(unittest.TestCase):
 
-    Arguments:
-      pivot_poi: The POI used to orient with respect to the goal.
-      goal_poi: The POI that is the intended meeting location.
-    Returns:
-      A string describing the goal location with respect to the reference.
+    def testSingleOutput(self):
+        expected = 'go to the pharmacy near the Empire State Building.'
+        output = speak.describe_route('Empire State Building', 'pharmacy')
+        self.assertEqual(output, expected)
 
-    '''
-    return f'go to the {goal_poi} near the {pivot_poi}.'
+
+if __name__ == "__main__":
+    unittest.main()
