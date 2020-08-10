@@ -41,7 +41,7 @@ flags.mark_flag_as_required("orig_lon")
 flags.mark_flag_as_required("dest_lat")
 flags.mark_flag_as_required("dest_lon")
 
-
+# TODO(tzufgoogle): Add logger to this main method.
 def main(argv):
     del argv  # Unused.
 
