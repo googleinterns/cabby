@@ -17,10 +17,10 @@ from typing import Dict, Tuple, Sequence, Text
 
 from geopandas import GeoSeries
 import osmnx as ox
+from shapely.geometry import box
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely import wkt
-from shapely.geometry import box
 
 from cabby.geo.map_processing import graph
 from cabby.geo.map_processing import geo_utils

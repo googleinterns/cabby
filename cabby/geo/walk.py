@@ -24,7 +24,6 @@ import osmnx as ox
 from shapely.geometry.point import Point
 
 
-
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
                   nodes: GeoDataFrame) -> Sequence:
     '''Returns the shortest path between a starting and end point.
@@ -43,8 +42,7 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
     dest = ox.get_nearest_node(graph, tuple_from_point(end_point))
 
     # Get shortest route.
-    route = nx.shortest_path(
-        graph, orig, dest, weight='length')
+    route = nx.shortest_path(graph, orig, dest, 'length')
     route_nodes = nodes[nodes['osmid'].isin(route)]
     route_points = route_nodes['geometry']
     return route_points.tolist()

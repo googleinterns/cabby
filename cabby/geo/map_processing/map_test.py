@@ -40,8 +40,11 @@ class MapTest(unittest.TestCase):
         # Check the cellid.
         list_cells = self.pittsburgh_map.poi[self.pittsburgh_map.poi[
             'name'] == 'Frick Building']['cellids'].tolist()[0]
-        expected_ids = [9814734816715735040, 9814734845337665536, 9814734856679063552, 9814734856712617984,
-                        9814734856746172416, 9814734856779726848, 9814734856813281280, 9814734856846835712]
+        expected_ids = [
+          9814734816715735040, 9814734845337665536, 9814734856679063552, 
+          9814734856712617984, 9814734856746172416, 9814734856779726848, 
+          9814734856813281280, 9814734856846835712
+        ]
         found_ids = [list_cells[i].id() for i in range(8)]
         for expected, found in zip(expected_ids, found_ids):
             self.assertEqual(expected, found)
