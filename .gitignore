@@ -1,4 +1,4 @@
 /bazel-*
 */__pycache__
 */*/__pycache__/
-geo/wikiset/
+.pytype

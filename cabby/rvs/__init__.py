@@ -11,21 +11,3 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-'''Tests for speak.py'''
-
-from rvs import speak 
-
-import unittest
-
-
-class SpeakTest(unittest.TestCase):
-
-    def testSingleOutput(self):
-        expected = 'go to the pharmacy near the Empire State Building.'
-        output = speak.describe_route('Empire State Building', 'pharmacy')
-        self.assertEqual(output, expected)
-
-
-if __name__ == "__main__":
-    unittest.main()
