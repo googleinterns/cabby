@@ -13,15 +13,17 @@
 # limitations under the License.
 
 
+from typing import Dict, Tuple, Sequence, Text
+
+from geopandas import GeoSeries
 import osmnx as ox
+from shapely.geometry import box
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely import wkt
-from shapely.geometry import box
-from typing import Dict, Tuple, Sequence, Text
-from geo.map_processing import graph
-from geo.map_processing import geo_utils
-from geopandas import GeoSeries
+
+from cabby.geo.map_processing import graph
+from cabby.geo.map_processing import geo_utils
 
 
 class Map:
@@ -42,19 +44,20 @@ class Map:
         self.poi, self.streets = self.get_poi()
         self.create_graph(level)
 
+
     def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
-        '''Helper funcion  for extracting POI for the defined place.'''
+        '''Helper funcion for extracting POI for the defined place.'''
 
         tags = {'name': True}
 
         osm_poi = ox.pois.pois_from_polygon(self.place_polygon, tags=tags)
-        osm_poi_named_entitis = osm_poi[osm_poi['name'].notnull()]
-        osm_poi_no_streets = osm_poi_named_entitis[osm_poi_named_entitis['highway'].isnull(
-        )]
-        osm_poi_streets = osm_poi_named_entitis[osm_poi_named_entitis['highway'].notnull(
-        )]
+        osm_poi_named_entities = osm_poi[osm_poi['name'].notnull()]
+        osm_highway = osm_poi_named_entities['highway']
+        osm_poi_no_streets = osm_poi_named_entities[osm_highway.isnull()]
+        osm_poi_streets = osm_poi_named_entities[osm_highway.notnull()]
 
         return osm_poi_no_streets, osm_poi_streets
+
 
     def create_graph(self, level: int):
         '''Helper funcion for creating graph.'''
@@ -80,5 +83,4 @@ class Map:
 
         # Add street to graph.
         self.streets[['cellids', 'osmid']].apply(
-            lambda x: self.map_graph.add_street(x.cellids, x.osmid),
-            axis=1)
+            lambda x: self.map_graph.add_street(x.cellids, x.osmid), axis=1)

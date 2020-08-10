@@ -13,24 +13,25 @@
 # limitations under the License.
 '''Library to support map geographical computations.'''
 
+from typing import Optional, Tuple, Sequence
+
 from s2geometry import pywraps2 as s2
-from s2geometry.pywraps2 import S2Point, S2Polygon, S2Polyline, S2Cell
-from typing import Tuple, Sequence
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 import folium
 import webbrowser
-from typing import Optional
 
 
-def get_s2cover_for_s2polygon(s2polygon: S2Polygon,
+def get_s2cover_for_s2polygon(s2polygon: s2.S2Polygon,
                               level: int) -> Optional[Sequence]:
-    '''Returns the cellids that cover the shape (point\polygon\polyline). 
+    '''Returns the cellids that cover the shape (point/polygon/polyline). 
+
     Arguments:
-    s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be 
-    performed.
+      s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be 
+        performed.
+
     Returns:
-    A sequence of S2Cells that completely cover the provided S2Polygon.
+      A sequence of S2Cells that completely cover the provided S2Polygon.
     '''
 
     if s2polygon is None:
@@ -46,7 +47,7 @@ def get_s2cover_for_s2polygon(s2polygon: S2Polygon,
     return covering
 
 
-def s2polygon_from_shapely_point(shapely_point: Point) -> S2Polygon:
+def s2polygon_from_shapely_point(shapely_point: Point) -> s2.S2Polygon:
     '''Converts a Shapely Point to an S2Polygon.
     Arguments:
         point(Shapely Point): The Shapely Point to be converted to
@@ -60,7 +61,7 @@ def s2polygon_from_shapely_point(shapely_point: Point) -> S2Polygon:
     return s2.S2Polygon(s2.S2Cell(s2.S2CellId(latlng)))
 
 
-def s2point_from_coord_xy(coord: Tuple) -> S2Point:
+def s2point_from_coord_xy(coord: Tuple) -> s2.S2Point:
     '''Converts coordinates (longtitude and latitude) to the S2Point.
     Arguments:
         coord(S2Polygon): The coordinates given as longtitude and
@@ -75,7 +76,7 @@ def s2point_from_coord_xy(coord: Tuple) -> S2Point:
     return latlng.ToPoint()  # S2Point
 
 
-def s2polygon_from_shapely_polygon(shapely_polygon: Polygon) -> S2Polygon:
+def s2polygon_from_shapely_polygon(shapely_polygon: Polygon) -> s2.S2Polygon:
     '''Convert a Shapely Polygon to S2Polygon. 
     Arguments:
         shapely_polygon(Polygon): The Shapely Polygon to be
@@ -97,7 +98,7 @@ def s2polygon_from_shapely_polygon(shapely_polygon: Polygon) -> S2Polygon:
     return s2.S2Polygon(s2.S2Loop(s2point_list))
 
 
-def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> S2Polygon:
+def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> s2.S2Polygon:
     '''Convert a shapely polyline to s2polygon. 
     Arguments:
         shapely_polyine(Polygon): The Shapely Polygon which
@@ -118,17 +119,17 @@ def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> S2Polygon:
     return line
 
 
-def plot_cells(cells: S2Cell):
+def plot_cells(cells: s2.S2Cell):
     '''Plot the S2Cell covering.'''
 
-    # create a map.
+    # Create a map.
+    # TODO(tzufgoogle): Remove hard-coded location reference.
     map_osm = folium.Map(
         location=[40.7434, -73.9847], zoom_start=12, tiles='Stamen Toner')
 
     def style_function(x):
         return {'weight': 1, 'fillColor': '#eea500'}
 
-    geoms = []
     for cellid in cells:
         cellid = cellid[0]
         cell = s2.S2Cell(cellid)
