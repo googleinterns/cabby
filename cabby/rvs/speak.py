@@ -14,7 +14,9 @@
 
 '''Library to support producing synthetic RVS instructions.'''
 
-def describe_route(pivot_poi: str, goal_poi: str) -> str:
+from typing import Text
+
+def describe_route(pivot_poi: Text, goal_poi: Text) -> Text:
   '''Preliminary example template for generating an RVS instruction.
   
   Arguments:
