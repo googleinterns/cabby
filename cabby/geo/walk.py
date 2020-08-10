@@ -14,22 +14,24 @@
 
 '''Library to support geographical computations.'''
 
-import networkx as nx
-import osmnx as ox
-from geopandas import GeoDataFrame
-from networkx import MultiDiGraph
-from shapely.geometry.point import Point
 from typing import Tuple, Sequence
 
+from geopandas import GeoDataFrame
+import networkx as nx
 
-def compute_route(start_point: Point, end_point: Point, graph: MultiDiGraph,
+import osmnx as ox
+
+from shapely.geometry.point import Point
+
+
+def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
                   nodes: GeoDataFrame) -> Sequence:
     '''Returns the shortest path between a starting and end point.
 
     Arguments:
       start_point(Point): The lat-lng point of the origin point.
       end_point(Point): The lat-lng point of the destination point.
-      graph(MultiDiGraph): The directed graph class that can store multiedges.
+      graph(nx.MultiDiGraph): The directed graph class that stores multiedges.
       nodes(GeoDataFrame): The GeoDataFrame of graph nodes.
     Returns:
       A sequence of Points which construct the geometry of the path.
@@ -40,8 +42,7 @@ def compute_route(start_point: Point, end_point: Point, graph: MultiDiGraph,
     dest = ox.get_nearest_node(graph, tuple_from_point(end_point))
 
     # Get shortest route.
-    route = nx.shortest_path(
-        graph, orig, dest, weight='length')
+    route = nx.shortest_path(graph, orig, dest, 'length')
     route_nodes = nodes[nodes['osmid'].isin(route)]
     route_points = route_nodes['geometry']
     return route_points.tolist()
