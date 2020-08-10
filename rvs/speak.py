@@ -18,13 +18,13 @@ from typing import Text
 
 
 def describe_route(pivot_poi: Text, goal_poi: Text) -> Text:
-  '''Preliminary example template for generating an RVS instruction.
-  
-  Arguments:
-    pivot_poi: The POI used to orient with respect to the goal.
-    goal_poi: The POI that is the intended meeting location.
-  Returns:
-    A string describing the goal location with respect to the reference.
-  
-  '''
-  return f'go to the {goal_poi} near the {pivot_poi}.'
+    '''Preliminary example template for generating an RVS instruction.
+
+    Arguments:
+      pivot_poi: The POI used to orient with respect to the goal.
+      goal_poi: The POI that is the intended meeting location.
+    Returns:
+      A string describing the goal location with respect to the reference.
+
+    '''
+    return f'go to the {goal_poi} near the {pivot_poi}.'

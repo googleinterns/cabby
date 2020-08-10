@@ -54,7 +54,6 @@ class Map:
 
         return osm_poi_no_streets, osm_poi_streets
 
-
     def create_graph(self, level: int):
         '''Helper funcion for creating graph.'''
 

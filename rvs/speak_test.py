@@ -18,13 +18,14 @@ import speak
 
 import unittest
 
+
 class SpeakTest(unittest.TestCase):
 
-  def testSingleOutput(self):
-    expected = 'go to the pharmacy near the Empire State Building.'
-    output = speak.describe_route('Empire State Building', 'pharmacy')
-    self.assertEqual(output, expected)
+    def testSingleOutput(self):
+        expected = 'go to the pharmacy near the Empire State Building.'
+        output = speak.describe_route('Empire State Building', 'pharmacy')
+        self.assertEqual(output, expected)
+
 
 if __name__ == "__main__":
     unittest.main()
-
