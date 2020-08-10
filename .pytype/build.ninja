@@ -1,0 +1,18 @@
+rule infer
+  command = /opt/conda/envs/cabby2/bin/python -m pytype.single --imports_info $imports --module-name $module -V 3.7 -o $out --no-report-errors --nofail --quick $in
+  description = infer $module
+rule check
+  command = /opt/conda/envs/cabby2/bin/python -m pytype.single --imports_info $imports --module-name $module -V 3.7 -o $out --analyze-annotated --nofail --quick $in
+  description = check $module
+build /home/tzuf_google_com/dev/cabby/.pytype/pyi/rvs/speak.pyi: check /home/tzuf_google_com/dev/cabby/rvs/speak.py
+  imports = /home/tzuf_google_com/dev/cabby/.pytype/imports/rvs.speak.imports
+  module = rvs.speak
+build /home/tzuf_google_com/dev/cabby/.pytype/pyi/rvs/generate_rvs.pyi: check /home/tzuf_google_com/dev/cabby/rvs/generate_rvs.py | /home/tzuf_google_com/dev/cabby/.pytype/pyi/rvs/speak.pyi
+  imports = /home/tzuf_google_com/dev/cabby/.pytype/imports/rvs.generate_rvs.imports
+  module = rvs.generate_rvs
+build /home/tzuf_google_com/dev/cabby/.pytype/pyi/rvs/speak_test.pyi: check /home/tzuf_google_com/dev/cabby/rvs/speak_test.py | /home/tzuf_google_com/dev/cabby/.pytype/pyi/rvs/speak.pyi
+  imports = /home/tzuf_google_com/dev/cabby/.pytype/imports/rvs.speak_test.imports
+  module = rvs.speak_test
+build /home/tzuf_google_com/dev/cabby/.pytype/pyi/rvs/__init__.pyi: check /home/tzuf_google_com/dev/cabby/rvs/__init__.py
+  imports = /home/tzuf_google_com/dev/cabby/.pytype/imports/rvs.__init__.imports
+  module = rvs.__init__
