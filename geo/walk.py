@@ -58,4 +58,3 @@ def tuple_from_point(point: Point) -> Tuple[float, float]:
     '''
 
     return (point.y, point.x)
-

@@ -13,9 +13,11 @@ flags.DEFINE_string("goal_poi", None, "The goal POI.")
 flags.mark_flag_as_required("ref_poi")
 flags.mark_flag_as_required("goal_poi")
 
+
 def main(argv):
-  del argv  # Unused.
-  print(describe_route(FLAGS.ref_poi, FLAGS.goal_poi))
+    del argv  # Unused.
+    print(describe_route(FLAGS.ref_poi, FLAGS.goal_poi))
+
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

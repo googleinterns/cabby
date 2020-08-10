@@ -23,8 +23,6 @@ import webbrowser
 from typing import Optional
 
 
-
-
 def get_s2cover_for_s2polygon(s2polygon: S2Polygon,
                               level: int) -> Optional[Sequence]:
     '''Returns the cellids that cover the shape (point\polygon\polyline). 
