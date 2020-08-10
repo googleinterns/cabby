@@ -1,3 +1,0 @@
-# (generated with --quick)
-
-def describe_route(pivot_poi: str, goal_poi: str) -> str: ...
