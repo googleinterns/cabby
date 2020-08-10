@@ -30,8 +30,8 @@ def get_s2cover_for_s2polygon(s2polygon: S2Polygon,
     s2polygon(S2Polygon): an s2polygon.
     Returns:
     A sequence of S2Cells that completely cover the provided S2Polygon.
-
     '''
+    
     if s2polygon is None:
         return None
     coverer = s2.S2RegionCoverer()
@@ -64,8 +64,8 @@ def s2point_from_coord_xy(coord: Tuple) -> S2Point:
         coord(S2Polygon): longtitude and latitude.
     Returns:
         An s2Point.
-
     '''
+
     # Convert coordinates (lon,lat) to s2LatLng.
     latlng = s2.S2LatLng.FromDegrees(coord[1], coord[0])
 
@@ -78,8 +78,8 @@ def s2polygon_from_shapely_polygon(shapely_polygon: Polygon) -> S2Polygon:
         shapely_polygon(Polygon): a shapely polygon.
     Returns:
         An s2Polygon.
-
     '''
+
     # Filter where shape has no exterior attributes (e.g. lines).
     if not hasattr(shapely_polygon.buffer(0.00005), 'exterior'):
         return
@@ -99,7 +99,6 @@ def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> S2Polygon:
         shapely_polyine(Polygon): a shapely polygon.
     Returns:
         An s2Polygon.
-
     '''
 
     list_coords = list(shapely_polyine.exterior.coords)
@@ -155,8 +154,8 @@ def cellid_from_point(point: Point, level: int) -> Sequence:
         point(Point): a shapely point.
     Returns:
         A sequence of s2Cells.
-
     '''
+
     s2polygon = s2polygon_from_shapely_point(point)
     cellid = get_s2cover_for_s2polygon(s2polygon, level)[0]
     return [cellid]
@@ -168,8 +167,8 @@ def cellid_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
         polygon(Polygon): a shapely Polygon.
     Returns:
         A sequence of s2Cells.
-
     '''
+
     s2polygon = s2polygon_from_shapely_polygon(polygon)
     return get_s2cover_for_s2polygon(s2polygon, level)
 
@@ -180,5 +179,6 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
     Arguments: polyline(Polygon): a shapely Polygon of a street. Returns: A
         sequence of s2Cells.
     '''
+    
     s2polygon = s2polygon_from_shapely_polyline(polyline)
     return get_s2cover_for_s2polygon(s2polygon, level)

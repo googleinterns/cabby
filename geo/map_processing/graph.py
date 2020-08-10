@@ -56,6 +56,7 @@ class Graph:
         Returns:
             A sequence of eight S2Cell2.
         '''
+        
         four_neighbors = cell.GetEdgeNeighbors()
         eight_neighbors = four_neighbors + [
             four_neighbors[0].next(), four_neighbors[3].next(),
@@ -139,8 +140,8 @@ class Graph:
             cell(S2Cell): an s2cell.
         Returns:
             The Node in the graph.
-
         '''
+
         curr_node = self.faces[cell.face()]
 
         # Calculate the last position bit for the current level. For each level

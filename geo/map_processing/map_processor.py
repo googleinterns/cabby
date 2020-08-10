@@ -15,7 +15,7 @@ from absl import flags
 
 from shapely.geometry.point import Point
 import osmnx as ox
-from map_structure import Map
+from geo.map_processing import map_structure 
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum("place", None, [
@@ -28,7 +28,7 @@ flags.mark_flag_as_required("place")
 
 def main(argv):
     del argv  # Unused.
-    map = Map(FLAGS.place, FLAGS.level)
+    map = map_structure.Map(FLAGS.place, FLAGS.level)
     print(map.poi)
 
 

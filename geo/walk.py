@@ -32,7 +32,6 @@ def compute_route(start_point: Point, end_point: Point, graph: MultiDiGraph,
       nodes(GeoDataFrame): The GeoDataFrame of graph nodes.
     Returns:
       A sequence of Points which construct the geometry of the path.
-
     '''
 
     # Get closest nodes to points.
@@ -54,7 +53,6 @@ def tuple_from_point(point: Point) -> Tuple[float, float]:
       point(Point): A lat-lng point.
     Returns:
       A lat-lng Tuple[float, float].
-
     '''
 
     return (point.y, point.x)
