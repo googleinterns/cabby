@@ -164,7 +164,7 @@ def cellid_from_point(point: Point, level: int) -> Sequence:
     return [cellid]
 
 
-def cellid_from_polygon(polygon: Polygon, level: int) -> Sequence:
+def cellid_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
     '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
     Arguments:
         polygon(Polygon): a shapely Polygon.
@@ -176,7 +176,7 @@ def cellid_from_polygon(polygon: Polygon, level: int) -> Sequence:
     return get_s2cover_for_s2polygon(s2polygon, level)
 
 
-def cellid_from_polyline(polyline: Polygon, level: int) -> Sequence:
+def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
     '''Get s2cell covering from shapely polygon that are lines (OpenStreetMaps
     Ways of streets).  
     Arguments: polyline(Polygon): a shapely Polygon of a street. Returns: A
