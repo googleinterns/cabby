@@ -15,9 +15,11 @@
 
 import osmnx as ox
 import unittest
-from shapely.geometry.point import Point
+
 from s2geometry import pywraps2 as s2
-from geo.map_processing import map_structure
+from shapely.geometry.point import Point
+
+from cabby.geo.map_processing import map_structure
 
 
 class MapTest(unittest.TestCase):
@@ -29,6 +31,7 @@ class MapTest(unittest.TestCase):
 
     def testSingleOutput(self):
         # Verify that a known POI is present.
+
         specific_poi_found = self.pittsburgh_map.poi[self.pittsburgh_map.poi[
             'name'] == 'Frick Building']
         # Check that the number of Frick Building POI found is exactly 1.
