@@ -27,11 +27,12 @@ def get_s2cover_for_s2polygon(s2polygon: S2Polygon,
                               level: int) -> Optional[Sequence]:
     '''Returns the cellids that cover the shape (point\polygon\polyline). 
     Arguments:
-    s2polygon(S2Polygon): an s2polygon.
+    s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be 
+    performed.
     Returns:
     A sequence of S2Cells that completely cover the provided S2Polygon.
     '''
-    
+
     if s2polygon is None:
         return None
     coverer = s2.S2RegionCoverer()
@@ -46,11 +47,12 @@ def get_s2cover_for_s2polygon(s2polygon: S2Polygon,
 
 
 def s2polygon_from_shapely_point(shapely_point: Point) -> S2Polygon:
-    '''Converts a shapely Point to an s2Polygon.
+    '''Converts a Shapely Point to an S2Polygon.
     Arguments:
-        point(Shapely Point): a Shapely type Point.
+        point(Shapely Point): The Shapely Point to be converted to
+        S2Polygon.
     Returns:
-        The S2Polygon.
+        The S2Polygon equivelent to the input Shapely Point.
     '''
 
     y, x = shapely_point.y, shapely_point.x
@@ -59,11 +61,12 @@ def s2polygon_from_shapely_point(shapely_point: Point) -> S2Polygon:
 
 
 def s2point_from_coord_xy(coord: Tuple) -> S2Point:
-    '''Converts coordinates (longtitude and latitude) to the s2point.
+    '''Converts coordinates (longtitude and latitude) to the S2Point.
     Arguments:
-        coord(S2Polygon): longtitude and latitude.
+        coord(S2Polygon): The coordinates given as longtitude and
+        latitude to be converted to S2Point.
     Returns:
-        An s2Point.
+        The S2Point equivelent to the input coordinates .
     '''
 
     # Convert coordinates (lon,lat) to s2LatLng.
@@ -73,11 +76,12 @@ def s2point_from_coord_xy(coord: Tuple) -> S2Point:
 
 
 def s2polygon_from_shapely_polygon(shapely_polygon: Polygon) -> S2Polygon:
-    '''Convert a shapely polygon to s2polygon. 
+    '''Convert a Shapely Polygon to S2Polygon. 
     Arguments:
-        shapely_polygon(Polygon): a shapely polygon.
+        shapely_polygon(Polygon): The Shapely Polygon to be
+        converted to S2Polygon.
     Returns:
-        An s2Polygon.
+        The S2Polygon equivelent to the input Shapely Polygon.
     '''
 
     # Filter where shape has no exterior attributes (e.g. lines).
@@ -96,9 +100,10 @@ def s2polygon_from_shapely_polygon(shapely_polygon: Polygon) -> S2Polygon:
 def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> S2Polygon:
     '''Convert a shapely polyline to s2polygon. 
     Arguments:
-        shapely_polyine(Polygon): a shapely polygon.
+        shapely_polyine(Polygon): The Shapely Polygon which
+        is a line to be converted to S2Polygon.
     Returns:
-        An s2Polygon.
+        The S2Polygon equivelent to the input Shapely Polygon.
     '''
 
     list_coords = list(shapely_polyine.exterior.coords)
@@ -151,9 +156,10 @@ def plot_cells(cells: S2Cell):
 def cellid_from_point(point: Point, level: int) -> Sequence:
     '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
     Arguments:
-        point(Point): a shapely point.
+        point(Point): a Shapely Point to which S2Cells
+        covering will be performed.
     Returns:
-        A sequence of s2Cells.
+        A sequence of S2Cells that cover the provided Shapely Point.
     '''
 
     s2polygon = s2polygon_from_shapely_point(point)
@@ -164,9 +170,10 @@ def cellid_from_point(point: Point, level: int) -> Sequence:
 def cellid_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
     '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
     Arguments:
-        polygon(Polygon): a shapely Polygon.
+        polygon(Polygon): a Shapely Polygon to which S2Cells
+        covering will be performed..
     Returns:
-        A sequence of s2Cells.
+        A sequence of S2Cells that cover the provided Shapely Polygon.
     '''
 
     s2polygon = s2polygon_from_shapely_polygon(polygon)
@@ -176,9 +183,12 @@ def cellid_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
 def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
     '''Get s2cell covering from shapely polygon that are lines (OpenStreetMaps
     Ways of streets).  
-    Arguments: polyline(Polygon): a shapely Polygon of a street. Returns: A
-        sequence of s2Cells.
+    Arguments: 
+        polyline(Polygon): The Shapely Polygon of a line to which S2Cells
+        covering will be performed. 
+    Returns: 
+        A sequence of s2Cells that cover the provided Shapely Polygon.
     '''
-    
+
     s2polygon = s2polygon_from_shapely_polyline(polyline)
     return get_s2cover_for_s2polygon(s2polygon, level)

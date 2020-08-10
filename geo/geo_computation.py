@@ -17,9 +17,10 @@
 from absl import app
 from absl import flags
 
-from walk import compute_route
 from shapely.geometry.point import Point
 import osmnx as ox
+from geo import walk
+
 
 FLAGS = flags.FLAGS
 flags.DEFINE_float("orig_lat", None, "origin latitude.")
@@ -44,7 +45,7 @@ def main(argv):
     nodes, _ = ox.graph_to_gdfs(graph)
 
     print(
-        compute_route(
+        walk.compute_route(
             Point(FLAGS.orig_lon, FLAGS.orig_lat),
             Point(FLAGS.dest_lon, FLAGS.dest_lat), graph, nodes))
 

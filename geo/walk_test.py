@@ -13,10 +13,10 @@
 # limitations under the License.
 '''Tests for walk.py'''
 
-import walk
 import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
+from geo import walk
 
 
 class WalkTest(unittest.TestCase):

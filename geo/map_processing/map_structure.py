@@ -18,16 +18,17 @@ from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely import wkt
 from shapely.geometry import box
-from graph import Graph
 from typing import Dict, Tuple, Sequence, Text
-from geo_utils import cellid_from_polyline, cellid_from_point, cellid_from_polygon
+from geo.map_processing import graph
+from geo.map_processing import geo_utils
+from geopandas import GeoSeries
 
 
 class Map:
 
     def __init__(self, map_name: Text, level: int):
         assert map_name == "Manhattan" or map_name == "Pittsburgh"
-        self.graph = None
+        self.map_graph = None
 
         if map_name == "Manhattan":
             self.place_polygon = wkt.loads(
@@ -41,16 +42,17 @@ class Map:
         self.poi, self.streets = self.get_poi()
         self.create_graph(level)
 
-    def get_poi(self) -> Sequence:
+    def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
         '''Helper funcion  for extracting POI for the defined place.'''
 
-        osm_items = []
         tags = {'name': True}
 
         osm_poi = ox.pois.pois_from_polygon(self.place_polygon, tags=tags)
-        osm_poi = osm_poi[osm_poi['name'].notnull()]
-        osm_poi_no_streets = osm_poi[osm_poi['highway'].isnull()]
-        osm_poi_streets = osm_poi[osm_poi['highway'].notnull()]
+        osm_poi_named_entitis = osm_poi[osm_poi['name'].notnull()]
+        osm_poi_no_streets = osm_poi_named_entitis[osm_poi_named_entitis['highway'].isnull(
+        )]
+        osm_poi_streets = osm_poi_named_entitis[osm_poi_named_entitis['highway'].notnull(
+        )]
 
         return osm_poi_no_streets, osm_poi_streets
 
@@ -58,25 +60,25 @@ class Map:
         '''Helper funcion for creating graph.'''
 
         # Get cellids for POI.
-        self.poi['cellids'] = self.poi['geometry'].apply(lambda x: cellid_from_point(
-            x, level) if isinstance(x, Point) else cellid_from_polygon(x, level))
+        self.poi['cellids'] = self.poi['geometry'].apply(lambda x: geo_utils.cellid_from_point(
+            x, level) if isinstance(x, Point) else geo_utils.cellid_from_polygon(x, level))
 
         # Get cellids for streets.
-        self.streets['cellids'] = self.poi['geometry'].apply(lambda x: cellid_from_point(
-            x, level) if isinstance(x, Point) else cellid_from_polyline(x, level))
+        self.streets['cellids'] = self.poi['geometry'].apply(lambda x: geo_utils.cellid_from_point(
+            x, level) if isinstance(x, Point) else geo_utils.cellid_from_polyline(x, level))
 
         # Filter out entities that we didn't mange to get cellids covering.
         self.poi = self.poi[self.poi['cellids'].notnull()]
         self.streets = self.streets[self.streets['cellids'].notnull()]
 
         # Create graph.
-        self.graph = Graph()
+        self.map_graph = graph.MapGraph()
 
         # Add POI to graph.
         self.poi[['cellids', 'osmid']].apply(
-            lambda x: self.graph.add_poi(x.cellids, x.osmid), axis=1)
+            lambda x: self.map_graph.add_poi(x.cellids, x.osmid), axis=1)
 
         # Add street to graph.
         self.streets[['cellids', 'osmid']].apply(
-            lambda x: self.graph.add_street(x.cellids, x.osmid),
+            lambda x: self.map_graph.add_street(x.cellids, x.osmid),
             axis=1)
