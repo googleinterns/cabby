@@ -12,15 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Example command line method to compute the route between two given points.'''
+'''Command line application to compute the route between two given points.
+
+Example:
+$ bazel-bin/cabby/geo/geo_computation \
+  --orig_lat 40.749102 --orig_lon -73.984076 \
+  --dest_lat 40.748432 --dest_lon -73.982473
+
+'''
 
 from absl import app
 from absl import flags
 
 from shapely.geometry.point import Point
 import osmnx as ox
-from geo import walk
 
+from cabby.geo import walk
 
 FLAGS = flags.FLAGS
 flags.DEFINE_float("orig_lat", None, "origin latitude.")
@@ -38,16 +45,21 @@ flags.mark_flag_as_required("dest_lon")
 def main(argv):
     del argv  # Unused.
 
-    # Compute graph over Manhattan.
+    print("Obtaining graph for Manhattan.")
     graph = ox.graph_from_place('Manhattan, New York City, New York, USA')
 
-    # Convert a graph to nodes and edge GeoDataFrames.
+    print("Converting the graph to nodes and edge GeoDataFrames.")
     nodes, _ = ox.graph_to_gdfs(graph)
 
-    print(
-        walk.compute_route(
-            Point(FLAGS.orig_lon, FLAGS.orig_lat),
-            Point(FLAGS.dest_lon, FLAGS.dest_lat), graph, nodes))
+    origin = Point(FLAGS.orig_lon, FLAGS.orig_lat)
+    destination = Point(FLAGS.dest_lon, FLAGS.dest_lat)
+
+    print(f"Computing route between {origin} and {destination}.")
+    route = walk.compute_route(origin, destination, graph, nodes)
+
+    print("Points obtained for the route.")
+    for point in route:
+      print(point)
 
 
 if __name__ == '__main__':

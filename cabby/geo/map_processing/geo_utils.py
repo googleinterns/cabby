@@ -13,24 +13,26 @@
 # limitations under the License.
 '''Library to support map geographical computations.'''
 
+from typing import Optional, Tuple, Sequence
+
 from s2geometry import pywraps2 as s2
 from s2geometry.pywraps2 import S2Point, S2Polygon, S2Polyline, S2Cell
-from typing import Tuple, Sequence
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 import folium
 import webbrowser
-from typing import Optional
 
 
 def get_s2cover_for_s2polygon(s2polygon: S2Polygon,
                               level: int) -> Optional[Sequence]:
-    '''Returns the cellids that cover the shape (point\polygon\polyline). 
+    '''Returns the cellids that cover the shape (point/polygon/polyline). 
+
     Arguments:
-    s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be 
-    performed.
+      s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be 
+        performed.
+
     Returns:
-    A sequence of S2Cells that completely cover the provided S2Polygon.
+      A sequence of S2Cells that completely cover the provided S2Polygon.
     '''
 
     if s2polygon is None:
@@ -128,7 +130,6 @@ def plot_cells(cells: S2Cell):
     def style_function(x):
         return {'weight': 1, 'fillColor': '#eea500'}
 
-    geoms = []
     for cellid in cells:
         cellid = cellid[0]
         cell = s2.S2Cell(cellid)

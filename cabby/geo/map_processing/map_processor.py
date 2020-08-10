@@ -10,27 +10,34 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-'''Example command line method to output all POI in an area of the OSM.'''
+'''Command line application to output all POI in an area of the OSM.
+
+Example:
+
+$ bazel-bin/cabby/geo/map_processing/map_processor --region Manhattan --level 18
+'''
 
 from absl import app
 from absl import flags
 
 from shapely.geometry.point import Point
 import osmnx as ox
-from geo.map_processing import map_structure
+
+from cabby.geo.map_processing import map_structure
 
 FLAGS = flags.FLAGS
-flags.DEFINE_enum("place", None, [
-                  'Pittsburgh', 'Manhattan'], "Map areas: Manhattan or Pittsburgh.")
+flags.DEFINE_enum(
+  "region", None, ['Pittsburgh', 'Manhattan'], 
+  "Map areas: Manhattan or Pittsburgh.")
 flags.DEFINE_integer("level", None, "Minumum S2 level of the map.")
 
 # Required flags.
-flags.mark_flag_as_required("place")
+flags.mark_flag_as_required("region")
 
 
 def main(argv):
     del argv  # Unused.
-    map = map_structure.Map(FLAGS.place, FLAGS.level)
+    map = map_structure.Map(FLAGS.region, FLAGS.level)
     print(map.poi)
 
 

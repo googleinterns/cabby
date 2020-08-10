@@ -13,10 +13,11 @@
 # limitations under the License.
 
 
-from s2geometry import pywraps2 as s2
+from typing import Dict, Optional, Tuple, Sequence
+
 import networkx as nx
-from typing import Dict, Tuple, Sequence
-from typing import Optional
+from s2geometry import pywraps2 as s2
+
 
 # S2 geometry constants.
 NUM_FACES = 6  # The top level of the hierarchy includes six faces.

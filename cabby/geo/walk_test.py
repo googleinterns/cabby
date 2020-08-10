@@ -16,7 +16,7 @@
 import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
-from geo import walk
+from cabby.geo import walk
 
 
 class WalkTest(unittest.TestCase):
