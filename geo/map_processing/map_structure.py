@@ -19,9 +19,9 @@ from shapely.geometry.polygon import Polygon
 from shapely import wkt
 from shapely.geometry import box
 from typing import Dict, Tuple, Sequence, Text
+from geopandas import GeoSeries
 from geo.map_processing import graph
 from geo.map_processing import geo_utils
-from geopandas import GeoSeries
 
 
 class Map:
@@ -64,7 +64,7 @@ class Map:
             x, level) if isinstance(x, Point) else geo_utils.cellid_from_polygon(x, level))
 
         # Get cellids for streets.
-        self.streets['cellids'] = self.poi['geometry'].apply(lambda x: geo_utils.cellid_from_point(
+        self.streets['cellids'] = self.streets['geometry'].apply(lambda x: geo_utils.cellid_from_point(
             x, level) if isinstance(x, Point) else geo_utils.cellid_from_polyline(x, level))
 
         # Filter out entities that we didn't mange to get cellids covering.
