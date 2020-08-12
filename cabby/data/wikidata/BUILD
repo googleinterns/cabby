@@ -3,16 +3,16 @@ package(
 )
 
 py_library(
-    name = 'wikidata',
-    srcs = ['wikidata.py'],
+    name = 'query',
+    srcs = ['query.py'],
 )
 
 py_test(
-    name = "wikidata_test",
-    srcs = ["wikidata_test.py"],
+    name = "query_test",
+    srcs = ["query_test.py"],
     python_version = "PY3",
     deps = [
-        ":wikidata"
+        ":query"
     ],
 )
 
@@ -20,5 +20,5 @@ py_binary(
     name = 'extract_wikidata',
     main = 'extract_wikidata.py',
     srcs = ['extract_wikidata.py'],
-    deps = [':wikidata'],
+    deps = [':query'],
 )
