@@ -6,14 +6,9 @@ py_library(
     name = 'map_structure',
     srcs = ['map_structure.py'],
     deps = [
-        ':geo_utils',
+        '//cabby/geo:util',
         ':graph',
     ],
-)
-
-py_library(
-    name = 'geo_utils',
-    srcs = ['geo_utils.py'],
 )
 
 py_library(
@@ -36,7 +31,6 @@ py_binary(
     srcs = ['map_processor.py'],
     deps = [
         ':map_structure',
-        ':geo_utils',
         ':graph',
         ],
 )

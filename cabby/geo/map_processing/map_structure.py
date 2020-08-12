@@ -22,8 +22,8 @@ from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely import wkt
 
+from cabby import geo
 from cabby.geo.map_processing import graph
-from cabby.geo.map_processing import geo_utils
 
 
 class Map:
@@ -63,12 +63,12 @@ class Map:
         '''Helper funcion for creating graph.'''
 
         # Get cellids for POI.
-        self.poi['cellids'] = self.poi['geometry'].apply(lambda x: geo_utils.cellid_from_point(
-            x, level) if isinstance(x, Point) else geo_utils.cellid_from_polygon(x, level))
+        self.poi['cellids'] = self.poi['geometry'].apply(lambda x: geo.util.cellid_from_point(
+            x, level) if isinstance(x, Point) else geo.util.cellid_from_polygon(x, level))
 
         # Get cellids for streets.
-        self.streets['cellids'] = self.poi['geometry'].apply(lambda x: geo_utils.cellid_from_point(
-            x, level) if isinstance(x, Point) else geo_utils.cellid_from_polyline(x, level))
+        self.streets['cellids'] = self.poi['geometry'].apply(lambda x: geo.util.cellid_from_point(
+            x, level) if isinstance(x, Point) else geo.util.cellid_from_polyline(x, level))
 
         # Filter out entities that we didn't mange to get cellids covering.
         self.poi = self.poi[self.poi['cellids'].notnull()]
