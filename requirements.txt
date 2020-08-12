@@ -131,6 +131,7 @@ ipython @ file:///home/conda/feedstock_root/build_artifacts/ipython_159323546053
 ipython-genutils==0.2.0
 ipython-sql @ file:///home/conda/feedstock_root/build_artifacts/ipython-sql_1588134460796/work
 ipywidgets==7.5.1
+isodate==0.6.0
 isort==4.3.21
 itsdangerous==1.1.0
 jdcal==1.4.1
@@ -271,6 +272,7 @@ pyzmq==19.0.1
 QtAwesome @ file:///home/conda/feedstock_root/build_artifacts/qtawesome_1588715536397/work
 qtconsole @ file:///home/conda/feedstock_root/build_artifacts/qtconsole_1592845750760/work
 QtPy==1.9.0
+rdflib==5.0.0
 regex==2019.8.19
 requests @ file:///home/conda/feedstock_root/build_artifacts/requests_1592425495151/work
 requests-oauthlib==1.2.0
@@ -302,6 +304,7 @@ sortedcollections @ file:///home/conda/feedstock_root/build_artifacts/sortedcoll
 sortedcontainers @ file:///home/conda/feedstock_root/build_artifacts/sortedcontainers_1591999956871/work
 soupsieve @ file:///home/conda/feedstock_root/build_artifacts/soupsieve_1589778966114/work
 spacy==2.1.8
+SPARQLWrapper==1.8.5
 Sphinx @ file:///home/conda/feedstock_root/build_artifacts/sphinx_1593947940626/work
 sphinxcontrib-applehelp==1.0.2
 sphinxcontrib-devhelp==1.0.2
