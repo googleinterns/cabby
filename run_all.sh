@@ -17,7 +17,7 @@ bazel-bin/cabby/geo/map_processing/map_processor --region Pittsburgh --level 18
 
 # Build, test and run the cabby.geo subpackage.
 bazel test cabby/data/wikidata:query_test
-bazel build cabby/data/wikidata/extract_wikidata
-bazel-bin/cabby/data/wikipedia/extract_geofenced_wikidata_items --region Pittsburgh
+bazel build cabby/data/wikidata/extract_geofenced_wikidata_items
+bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items --region Pittsburgh
 
 
