@@ -17,8 +17,8 @@ py_test(
 )
 
 py_binary(
-    name = 'extract_wikidata',
-    main = 'extract_wikidata.py',
-    srcs = ['extract_wikidata.py'],
+    name = 'extract_geofenced_wikidata_items',
+    main = 'extract_geofenced_wikidata_items.py',
+    srcs = ['extract_geofenced_wikidata_items.py'],
     deps = [':query'],
 )

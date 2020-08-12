@@ -18,41 +18,7 @@ import sys
 from SPARQLWrapper import SPARQLWrapper, JSON
 from typing import Dict, Tuple, Sequence, Text
 
-
-def get_wikidata(map_name: Text) -> Dict:
-    '''Get Wikidata items for a specific area. 
-    Arguments:
-        map_name(Text): The area to query the Wikidata items.
-    Returns:
-        The Wikidata items found in the area.
-    '''
-
-    assert map_name == "Manhattan" or map_name == "Pittsburgh"
-    if map_name == "Pittsburgh":
-        query = """SELECT ?place ?placeLabel
-                    (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
-                    WHERE 
-                    {
-                    {
-                        ?place wdt:P31 ?instance.
-                        SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-                        SERVICE wikibase:box {
-                        ?place wdt:P625 ?location .
-                        bd:serviceParam wikibase:cornerWest "Point(-80.035,40.425)"^^geo:wktLiteral .
-                        bd:serviceParam wikibase:cornerEast "Point(-79.930,40.460)"^^geo:wktLiteral .
-                        }
-                    }
-                    FILTER (?instance  not in
-                    (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
-                    wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
-                    wd:Q744913          ) )
-                    }
-                    GROUP BY ?place ?placeLabel
-                """
-
-    else:  # map_name == "Manhattan"
-
-        query = """SELECT ?place ?placeLabel (GROUP_CONCAT(DISTINCT
+_MANHATTAN_QUERY = """SELECT ?place ?placeLabel (GROUP_CONCAT(DISTINCT
             ?location;separator=", ") AS ?point)   Where {{SELECT  ?place
             ?placeLabel ?instance ?instanceLabel ?placeAltLabel
             ?placeDescription ?location WHERE 
@@ -170,16 +136,55 @@ def get_wikidata(map_name: Text) -> Dict:
             }
             GROUP BY ?place ?placeLabel
             """
-    results = query_api(query)
-    return results
+
+_PITTSBURGH_QUERY = """SELECT ?place ?placeLabel
+                    (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
+                    WHERE 
+                    {
+                    {
+                        ?place wdt:P31 ?instance.
+                        SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+                        SERVICE wikibase:box {
+                        ?place wdt:P625 ?location .
+                        bd:serviceParam wikibase:cornerWest "Point(-80.035,40.425)"^^geo:wktLiteral .
+                        bd:serviceParam wikibase:cornerEast "Point(-79.930,40.460)"^^geo:wktLiteral .
+                        }
+                    }
+                    FILTER (?instance  not in
+                    (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
+                    wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
+                    wd:Q744913          ) )
+                    }
+                    GROUP BY ?place ?placeLabel
+                """
 
 
-def query_api(query):
+def get_geofenced_wikidata_items(region: Text) -> Dict:
     '''Get Wikidata items for a specific area. 
     Arguments:
-        map_name(Text): The area to query the Wikidata items.
+        region(Text): The area to query the Wikidata items.
     Returns:
         The Wikidata items found in the area.
+    '''
+
+    assert region == "Manhattan" or region == "Pittsburgh"
+    if region == "Pittsburgh":
+        query = _PITTSBURGH_QUERY
+
+    elif region == "Manhattan":
+        query = _MANHATTAN_QUERY
+    else:
+        raise ValueError(f"{region} is not a supported region.")
+
+    return query_api(query)
+
+
+def query_api(query: Text) -> Dict:
+    '''Get Wikidata query. 
+    Arguments:
+        query(Text): The query to run on the Wikidata api.
+    Returns:
+        The Wikidata items found.
     '''
 
     endpoint_url = "https://query.wikidata.org/sparql"
