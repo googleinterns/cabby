@@ -20,16 +20,17 @@ from absl import flags
 from cabby.data.wikipedia import wikidata
 
 FLAGS = flags.FLAGS
-flags.DEFINE_enum("place", None, [
-                  'Pittsburgh', 'Manhattan'], "Map areas: Manhattan or Pittsburgh.")
+flags.DEFINE_enum(
+    "region", None, ['Pittsburgh', 'Manhattan'],
+    "Map areas: Manhattan or Pittsburgh.")
 
 # Required flags.
-flags.mark_flag_as_required("place")
+flags.mark_flag_as_required("region")
 
 
 def main(argv):
     del argv  # Unused.
-    results = wikidata.get_wikidata(FLAGS.place)
+    results = wikidata.get_wikidata(FLAGS.region)
     for result in results["results"]["bindings"]:
         print(result)
 
