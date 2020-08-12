@@ -21,17 +21,9 @@ from shapely.geometry import box
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely import wkt
-<<<<<<< HEAD:cabby/geo/map_processing/map_structure.py
-from shapely.geometry import box
-from typing import Dict, Tuple, Sequence, Text
-from geopandas import GeoSeries
-from geo.map_processing import graph
-from geo.map_processing import geo_utils
-=======
 
 from cabby.geo.map_processing import graph
 from cabby.geo.map_processing import geo_utils
->>>>>>> master:cabby/geo/map_processing/map_structure.py
 
 
 class Map:

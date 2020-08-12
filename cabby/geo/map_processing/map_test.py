@@ -27,6 +27,8 @@ class MapTest(unittest.TestCase):
     def setUp(self):
 
         # Process the map for an area in Pittsburgh.
+        self.pittsburgh_map = map_structure.Map("Manhattan", 18)
+
         self.pittsburgh_map = map_structure.Map("Pittsburgh", 18)
 
     def testSingleOutput(self):
