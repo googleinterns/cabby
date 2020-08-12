@@ -14,14 +14,14 @@
 
 '''Tests for wikidata.py'''
 
-from cabby.data.wikipedia import wikidata
+from cabby.data.wikidata import query 
 import unittest
 
 
 class WikidataTest(unittest.TestCase):
 
     def testSingleOutput(self):
-        output = wikidata.get_wikidata('Manhattan')
+        output = query.get_geofenced_wikidata_items('Manhattan')
         expected = 'New York Stock Exchange Building'
         poi_by_value_expected = [x for x in output['results']
                                  ['bindings'] if x['placeLabel']['value'] == expected]
