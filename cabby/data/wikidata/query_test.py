@@ -27,6 +27,12 @@ class WikidataTest(unittest.TestCase):
                         ['bindings']]
         self.assertIn(expected, poi_by_value)
 
+        not_expected = 'Rabin Square'
+
+        self.assertNotIn(not_expected, poi_by_value)
+        self.assertNotIn('', poi_by_value)
+
+
 
 if __name__ == "__main__":
     unittest.main()
