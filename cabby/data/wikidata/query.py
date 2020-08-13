@@ -224,7 +224,7 @@ def get_geofenced_wikidata_items(region: Text) -> Dict:
 
 
 def query_api(queries: Sequence[Text]) -> Dict[Sequence, Dict]:
-    '''Get Wikidata query from . 
+    '''Query the Wikidata API. 
     Arguments:
         queries(Text): The list of queries to run on the Wikidata API.
     Returns:
