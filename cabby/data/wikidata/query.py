@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Library to support Wikidata areal queries.'''
+'''Library to support Wikidata geographic queries from https://query.wikidata.org/sparql.'''
 
 import sys
 from SPARQLWrapper import SPARQLWrapper, JSON
@@ -167,7 +167,6 @@ def get_geofenced_wikidata_items(region: Text) -> Dict:
         The Wikidata items found in the area.
     '''
 
-    assert region == "Manhattan" or region == "Pittsburgh"
     if region == "Pittsburgh":
         query = _PITTSBURGH_QUERY
 
@@ -180,9 +179,9 @@ def get_geofenced_wikidata_items(region: Text) -> Dict:
 
 
 def query_api(query: Text) -> Dict[Sequence, Dict]:
-    '''Get Wikidata query. 
+    '''Get Wikidata query from . 
     Arguments:
-        query(Text): The query to run on the Wikidata api.
+        query(Text): The query to run on the Wikidata API.
     Returns:
         The Wikidata items found.
     '''
