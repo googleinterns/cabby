@@ -20,4 +20,17 @@ bazel test cabby/data/wikidata:query_test
 bazel build cabby/data/wikidata/extract_geofenced_wikidata_items
 bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items --region Pittsburgh
 
+# Build, test and run the cabby.data.wikidata subpackage.
+
+bazel test cabby/data/wikidata:query_test
+bazel build cabby/data/wikidata/extract_geofenced_wikidata_items
+bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items --region Pittsburgh
+
+# Build, test and run the cabby.data.wikipedia subpackage.
+
+bazel test cabby/data/wikipedia:query_test
+bazel build cabby/data/wikipedia/extract_wikipedia_items
+bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles=New_York_Stock_Exchange,Empire_State_Building
+
+
 
