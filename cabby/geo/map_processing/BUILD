@@ -3,15 +3,6 @@ package(
 )
 
 py_library(
-    name = 'map_structure',
-    srcs = ['map_structure.py'],
-    deps = [
-        '//cabby/geo:util',
-        ':graph',
-    ],
-)
-
-py_library(
     name = 'graph',
     srcs = ['graph.py'],
 )
