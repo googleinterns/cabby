@@ -20,5 +20,9 @@ py_binary(
     name = 'generate_rvs',
     main = 'generate_rvs.py',
     srcs = ['generate_rvs.py'],
-    deps = [':speak'],
+    deps = [
+        ':speak',
+        "//cabby/data/wikidata:query",
+        "//cabby/geo:directions",
+    ],
 )
