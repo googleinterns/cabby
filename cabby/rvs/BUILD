@@ -7,6 +7,19 @@ py_library(
     srcs = ['observe.py'],
 )
 
+
+py_test(
+    name = "observe_test",
+    srcs = ["observe_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":observe",
+        "//cabby/data/wikidata:item",
+        "//cabby/data/wikidata:query",
+        '//cabby/geo:directions',
+    ],
+)
+
 py_library(
     name = 'speak',
     srcs = ['speak.py'],
