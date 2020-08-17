@@ -10,6 +10,9 @@ py_library(
 py_library(
     name = 'speak',
     srcs = ['speak.py'],
+    deps = [
+        '//cabby/geo:directions',
+    ]
 )
 
 py_test(
@@ -17,7 +20,8 @@ py_test(
     srcs = ["speak_test.py"],
     python_version = "PY3",
     deps = [
-        ":speak"
+        ":speak",
+        '//cabby/geo:directions',
     ],
 )
 
