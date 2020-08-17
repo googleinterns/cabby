@@ -16,6 +16,11 @@
 
 from typing import Text
 
+from cabby.geo import directions
+
+Direction = directions.Direction
+
+
 def describe_route(pivot_poi: Text, goal_poi: Text) -> Text:
   '''Preliminary example template for generating an RVS instruction.
   
@@ -27,3 +32,20 @@ def describe_route(pivot_poi: Text, goal_poi: Text) -> Text:
   
   '''
   return f'go to the {goal_poi} near the {pivot_poi}.'
+
+
+def speak_egocentric_direction(direction: int, distance: float) -> Text:
+  if direction == Direction.AHEAD:
+    return f'{distance} km past'
+  elif direction == Direction.SLIGHT_RIGHT:
+    return f'{distance} km up and to the right of'
+  elif direction == Direction.RIGHT:
+    return f'{distance} km to the right of'
+  elif direction == Direction.SLIGHT_LEFT:
+    return f'{distance} km up and to the left of'
+  elif direction == Direction.LEFT:
+    return f'{distance} km to the left of'
+  elif direction == Direction.BEHIND:
+    return f'{distance} km before you get to'
+  else:
+    raise ValueError(f'Invalid direction type: {direction}')
