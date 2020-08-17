@@ -13,36 +13,63 @@
 # limitations under the License.
 '''Functions to support observation and selection of POIs on paths.'''
 
-from typing import Sequence, Text
+from typing import Dict, Sequence, Text
 
 from shapely.geometry.point import Point
 
 from cabby.data.wikidata import item
 from cabby.geo import util
 
-def get_all_distances(point: Point, entities: Sequence[item.Entity]):
+def get_all_distances(
+  focus: Point, entities: Sequence[item.Entity]) -> Dict[Text, float]:
+  """Get the distance from each entity to the provided focus point.
+  
+  Args:
+    focus: The point to compute distances to.
+    entities: The geolocated entities to compute distances from.
+  Returns:
+    A dictionary with the QIDs of the entities as keys and the distances from
+    the corresponding entity to the focus point.
+
+  """
   distances = {}
   for entity in entities:
-    distances[entity.qid] = util.get_distance_km(
-      point, entity.location)
+    distances[entity.qid] = util.get_distance_km(focus, entity.location)
   return distances
 
 
 def get_pivot_poi(
-  origin: Point, destination: Point, entities: Sequence[item.Entity]) -> Text:
-  pdist = util.get_distance_km(origin, destination)
+  start: Point, goal: Point, entities: Sequence[item.Entity]) -> Text:
+  """Select a POI that can act as a useful reference between start and goal.
+
+  Args:
+    start: The starting point of a route.
+    goal: The goal point of a route.
+    entities: The accessible entities to consider.
+  Returns:
+    The QID of the highest ranked POI linking the start and goal points. 
+    Currently this is determined simply by ranking all entities by whether they
+    are between the start and goal, and preferring entities that are about 
+    three-quarters of the way to the goal from the start. This can be improved
+    considerably in future.
+  """
+  pdist = util.get_distance_km(start, goal)
   candidate_scores = {}
   for entity in entities:
-    odist = util.get_distance_km(origin, entity.location)
-    ddist = util.get_distance_km(destination, entity.location)
+    odist = util.get_distance_km(start, entity.location)
+    ddist = util.get_distance_km(goal, entity.location)
     if odist < pdist and ddist < pdist and odist+ddist < pdist*1.05:
       candidate_scores[entity.qid] = abs(.75 - (odist/(odist+ddist)))
 
   if candidate_scores:
     ranked_pois = list(candidate_scores.items())
   else:
-    distances = get_all_distances(destination, entities)
+    # No entities are farther from both start and goal than start and goal are
+    # from each other. In this case, we rank entities by how close they are to
+    # the goal.
+    distances = get_all_distances(goal, entities)
     ranked_pois = list(distances.items())
 
+  # Lower scores are better. Sort the POIs, then return the first.
   ranked_pois.sort(key=lambda x: x[1])
   return ranked_pois[0][0]
