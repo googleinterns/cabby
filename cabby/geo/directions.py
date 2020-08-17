@@ -15,6 +15,8 @@
 
 import enum
 
+from cabby.geo import util
+
 class Direction(enum.IntEnum):
   AHEAD = 0
   SLIGHT_LEFT = 1
@@ -24,14 +26,8 @@ class Direction(enum.IntEnum):
   BEHIND = 5
 
 
-def angle_in_360(angle: float) -> float:
-  if angle < 0:
-    return angle + 360
-  return angle
-
-
 def get_egocentric_direction(angle: float) -> int:
-  angle = angle_in_360(angle)
+  angle = util.angle_in_360(angle)
   if angle < 30 or angle > 330:
     return Direction.AHEAD
   elif angle < 60:

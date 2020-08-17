@@ -15,10 +15,12 @@
 
 from typing import Optional, Tuple, Sequence
 
+import folium
+import geographiclib
+from geopy.distance import geodesic
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
-import folium
 import webbrowser
 
 
@@ -193,3 +195,20 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
 
     s2polygon = s2polygon_from_shapely_polyline(polyline)
     return get_s2cover_for_s2polygon(s2polygon, level)
+
+
+def angle_in_360(angle: float) -> float:
+  if angle < 0:
+    return angle + 360
+  return angle
+
+def get_bearing(start: Point, goal: Point) -> float:
+  # Get the bearing (heading) from the start lat-lon to the goal lat-lon.
+  # The bearing angle given by azi1 (azimuth) is clockwise relative to north, so
+  # a bearing of 90 degrees is due east, 180 is south, and 270 is west.
+  solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
+      start.y, start.x, goal.y, goal.x)
+  return angle_in_360(solution['azi1'])
+
+def get_distance_km(start: Point, goal: Point) -> float:
+  return geodesic(start.coords, goal.coords).km
