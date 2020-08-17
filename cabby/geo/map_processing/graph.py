@@ -86,7 +86,7 @@ class MapGraph:
 
             for i in range(START_BIT, last_bit - 1, -2):
                 # Get value of unique bits in the current level.
-                value_unique_bits = (cell.id >> i) & 3
+                value_unique_bits = (cell.id() >> i) & 3
 
                 # Check if the child node exists and if not add a child node.
                 if not curr_node.children[value_unique_bits]:
