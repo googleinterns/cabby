@@ -3,6 +3,11 @@ package(
 )
 
 py_library(
+    name = 'observe',
+    srcs = ['observe.py'],
+)
+
+py_library(
     name = 'speak',
     srcs = ['speak.py'],
 )
@@ -21,7 +26,9 @@ py_binary(
     main = 'generate_rvs.py',
     srcs = ['generate_rvs.py'],
     deps = [
+        ':observe',
         ':speak',
+        "//cabby/data/wikidata:item",
         "//cabby/data/wikidata:query",
         "//cabby/geo:directions",
     ],
