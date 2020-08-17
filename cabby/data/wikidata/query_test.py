@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Tests for wikidata.py'''
+'''Tests for query.py'''
 
 from cabby.data.wikidata import query
 import unittest
@@ -23,15 +23,13 @@ class WikidataTest(unittest.TestCase):
     def testSingleOutput(self):
         output = query.get_geofenced_wikidata_items('Manhattan')
         expected = 'New York Stock Exchange Building'
-        poi_by_value = [x['placeLabel']['value'] for x in output['results']
-                        ['bindings']]
+        poi_by_value = [x['placeLabel']['value'] for x in output]
         self.assertIn(expected, poi_by_value)
 
         not_expected = 'Rabin Square'
 
         self.assertNotIn(not_expected, poi_by_value)
         self.assertNotIn('', poi_by_value)
-
 
 
 if __name__ == "__main__":
