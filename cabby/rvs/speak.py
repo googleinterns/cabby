@@ -18,34 +18,52 @@ from typing import Text
 
 from cabby.geo import directions
 
+# Use alias for Direction to keep code cleaner.
 Direction = directions.Direction
 
-
-def describe_route(pivot_poi: Text, goal_poi: Text) -> Text:
+def describe_meeting_point(
+  pivot: Text, goal: Text,
+  bearing_pivot_goal: float, distance_pivot_goal: float) -> Text:
   '''Preliminary example template for generating an RVS instruction.
   
   Arguments:
-    pivot_poi: The POI used to orient with respect to the goal.
-    goal_poi: The POI that is the intended meeting location.
+    pivot: The POI used to orient with respect to the goal.
+    goal: The POI that is the intended meeting location.
   Returns:
     A string describing the goal location with respect to the reference.
   
   '''
-  return f'go to the {goal_poi} near the {pivot_poi}.'
+  print(distance_pivot_goal)
+  direction_description = describe_egocentric_direction(
+      directions.get_egocentric_direction(bearing_pivot_goal), 
+      distance_pivot_goal)
+
+  return f'go to {goal}, which is {direction_description} {pivot}'
+
+def describe_distance(distance_in_km: float) -> Text:
+  # Round to 100 meters.
+  rdist = round(distance_in_km, 1)
+  if rdist < 0.1:
+    return 'not even 100 meters'
+  if rdist < 1.0:
+    return f'{int(rdist*1000)} meters'
+  else:
+    return f'{rdist}km'
 
 
-def speak_egocentric_direction(direction: int, distance: float) -> Text:
+def describe_egocentric_direction(direction: int, distance: float) -> Text:
+  dist_descr = describe_distance(distance)
   if direction == Direction.AHEAD:
-    return f'{distance} km past'
+    return f'{dist_descr} past'
   elif direction == Direction.SLIGHT_RIGHT:
-    return f'{distance} km up and to the right of'
+    return f'{dist_descr} up and to the right of'
   elif direction == Direction.RIGHT:
-    return f'{distance} km to the right of'
+    return f'{dist_descr} to the right of'
   elif direction == Direction.SLIGHT_LEFT:
-    return f'{distance} km up and to the left of'
+    return f'{dist_descr} up and to the left of'
   elif direction == Direction.LEFT:
-    return f'{distance} km to the left of'
+    return f'{dist_descr} to the left of'
   elif direction == Direction.BEHIND:
-    return f'{distance} km before you get to'
+    return f'{dist_descr} before you get to'
   else:
     raise ValueError(f'Invalid direction type: {direction}')
