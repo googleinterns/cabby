@@ -7,6 +7,12 @@ py_library(
     srcs = ['graph.py'],
 )
 
+py_library(
+    name = 'map_structure',
+    srcs = ['map_structure.py'],
+)
+
+
 py_test(
     name = 'map_test',
     srcs = ['map_test.py'],
