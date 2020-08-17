@@ -10,6 +10,10 @@ py_library(
 py_library(
     name = 'map_structure',
     srcs = ['map_structure.py'],
+    deps = [
+        ':graph',
+        '//cabby/geo:util',
+    ]
 )
 
 

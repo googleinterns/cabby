@@ -67,7 +67,7 @@ class Map:
             x, level) if isinstance(x, Point) else util.cellid_from_polygon(x, level))
 
         # Get cellids for streets.
-        self.streets['cellids'] = self.poi['geometry'].apply(lambda x: util.cellid_from_point(
+        self.streets['cellids'] = self.streets['geometry'].apply(lambda x: util.cellid_from_point(
             x, level) if isinstance(x, Point) else util.cellid_from_polyline(x, level))
 
         # Filter out entities that we didn't mange to get cellids covering.

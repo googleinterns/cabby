@@ -29,11 +29,13 @@ def describe_meeting_point(
   Arguments:
     pivot: The POI used to orient with respect to the goal.
     goal: The POI that is the intended meeting location.
+    bearing_pivot_goal: The relative bearing of the goal when heading to the
+      pivot from the start point.
+    distance_pivot_goal: The distance from the pivot to the goal.
   Returns:
     A string describing the goal location with respect to the reference.
   
   '''
-  print(distance_pivot_goal)
   direction_description = describe_egocentric_direction(
       directions.get_egocentric_direction(bearing_pivot_goal), 
       distance_pivot_goal)

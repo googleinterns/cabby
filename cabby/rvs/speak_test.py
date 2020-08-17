@@ -28,7 +28,7 @@ class SpeakTest(unittest.TestCase):
         output = speak.describe_meeting_point(
             'Graduate Center, CUNY',
             'Church of the Incarnation, Episcopal',
-            directions.Direction.LEFT,
+            -75.84734584372487,
             0.09300668715292916
         )
         self.assertEqual(output, expected)
