@@ -27,7 +27,7 @@ class Direction(enum.IntEnum):
 
 
 def get_egocentric_direction(angle: float) -> int:
-  angle = util.angle_in_360(angle)
+  angle = angle % 360
   if angle < 30 or angle > 330:
     return Direction.AHEAD
   elif angle < 60:
