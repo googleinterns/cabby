@@ -228,7 +228,13 @@ def query_api(queries: Sequence[Text]) -> Dict[Sequence, Dict]:
     Arguments:
         queries(Text): The list of queries to run on the Wikidata API.
     Returns:
-        The Wikidata items found.
+        The Wikidata items found as a Dictionary of:
+        (1) head lables - {'vars': ['place', 'placeLabel', 'wikipediaUrl', 'point']}
+        (2) results- e.g., {'place': {'type': 'uri', 'value':
+        'http://www.wikidata....y/Q3272426'}, 'placeLabel': {'type': 'literal',
+        'value': 'Equitable Life Building', 'xml:lang': 'en'}, 'point': {'type':
+        'literal', 'value': 'Point(-74.010555555 ...708333333)'}, 'wikipediaUrl':
+        {'type': 'uri', 'value': 'https://en.wikipedia...Manhattan)'}}
     '''
 
     endpoint_url = "https://query.wikidata.org/sparql"
