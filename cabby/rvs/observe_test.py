@@ -1,0 +1,60 @@
+# coding=utf-8
+# Copyright 2020 Google LLC
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+'''Tests for speak.py'''
+
+import unittest
+
+from shapely.geometry.point import Point
+
+from cabby.data.wikidata import item
+from cabby.data.wikidata import query
+from cabby.rvs import observe
+
+
+class ObserveTest(unittest.TestCase):
+
+  def testSingleOutput(self):
+
+    # Get Pittsburgh items. Also tests cabby.geo.util.item and 
+    # cabby.data.wikidata.query.
+    pittsburgh_items = [
+      item.Entity.from_sparql_result(result) 
+      for result in query.get_geofenced_wikidata_items('Pittsburgh')
+    ]
+    pittsburgh_index = {e.qid: e for e in pittsburgh_items}
+
+    # Select five POIs in Pittsburgh.
+    market_square = pittsburgh_index['Q6770726']
+    warhol_museum = pittsburgh_index['Q751172']
+    carnegie_library = pittsburgh_index['Q5043895']
+    reserve_bank = pittsburgh_index['Q5440376']
+    heinz_hall = pittsburgh_index['Q12059806']
+
+    # Check computed distances from Warhol Museum to the others.
+    goal = market_square.location
+    pois = [warhol_museum, carnegie_library, reserve_bank, heinz_hall]
+    obtained_distances = observe.get_all_distances(goal, pois)
+    expected_distances = {
+      'Q751172': 0.1497106143476055, 'Q5043895': 0.39191208288190965,
+      'Q5440376': 0.8607457546797966, 'Q12059806': 0.09590394273539078
+    }
+    self.assertEqual(obtained_distances, expected_distances)
+
+    start = Point(-79.992383, 40.446844) # Near Senator Heinz Center
+    obtained_pivot = observe.get_pivot_poi(start, goal, pois)
+    self.assertEqual(obtained_pivot, 'Q12059806') # Should be Heinz Hall.
+
+if __name__ == "__main__":
+    unittest.main()

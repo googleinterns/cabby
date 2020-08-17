@@ -13,31 +13,35 @@
 # limitations under the License.
 '''Functions to support observation and selection of POIs on paths.'''
 
-from typing import Text
+from typing import Sequence, Text
 
-from geopy.distance import geodesic
 from shapely.geometry.point import Point
 
-def get_all_distances(point: Point, entities):
+from cabby.data.wikidata import item
+from cabby.geo import util
+
+def get_all_distances(point: Point, entities: Sequence[item.Entity]):
   distances = {}
   for entity in entities:
-    distances[entity.qid] = geodesic(point.coords, entity.location.coords)
+    distances[entity.qid] = util.get_distance_km(
+      point, entity.location)
   return distances
 
 
-def get_pivot_poi(origin: Point, destination: Point, entities) -> Text:
-  pdist = geodesic(origin.coords, destination.coords)
+def get_pivot_poi(
+  origin: Point, destination: Point, entities: Sequence[item.Entity]) -> Text:
+  pdist = util.get_distance_km(origin, destination)
   candidate_scores = {}
   for entity in entities:
-    odist = geodesic(origin.coords, entity.location.coords)
-    ddist = geodesic(destination.coords, entity.location.coords)
+    odist = util.get_distance_km(origin, entity.location)
+    ddist = util.get_distance_km(destination, entity.location)
     if odist < pdist and ddist < pdist and odist+ddist < pdist*1.05:
       candidate_scores[entity.qid] = abs(.75 - (odist/(odist+ddist)))
 
   if candidate_scores:
     ranked_pois = list(candidate_scores.items())
   else:
-    distances = get_all_distances(destination.coords, entities)
+    distances = get_all_distances(destination, entities)
     ranked_pois = list(distances.items())
 
   ranked_pois.sort(key=lambda x: x[1])
