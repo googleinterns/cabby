@@ -4,7 +4,7 @@ pytype cabby
 # RVS
 bazel build cabby/rvs:*
 bazel query cabby/rvs:* | xargs bazel test
-bazel-bin/cabby/rvs/generate_rvs --ref_poi "Empire State Building" --goal_poi "pharmacy"
+bazel-bin/cabby/rvs/generate_rvs --start_lat 40.753628 --start_lon -73.985085 --goal_lat 40.748432 --goal_lon -73.98247
 
 # Geo
 bazel-bin/cabby/geo/geo_computation --orig_lat 40.749102 --orig_lon -73.984076 -dest_lat 40.748432 --dest_lon -73.982473
