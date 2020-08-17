@@ -3,6 +3,11 @@ package(
 )
 
 py_library(
+    name = 'item',
+    srcs = ['item.py'],
+)
+
+py_library(
     name = 'query',
     srcs = ['query.py'],
 )
