@@ -198,12 +198,20 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
 
 
 def get_bearing(start: Point, goal: Point) -> float:
-  # Get the bearing (heading) from the start lat-lon to the goal lat-lon.
-  # The bearing angle given by azi1 (azimuth) is clockwise relative to north, so
-  # a bearing of 90 degrees is due east, 180 is south, and 270 is west.
+  """Get the bearing (heading) from the start lat-lon to the goal lat-lon.
+  
+  Args:
+    start: The starting point.
+    goal: The goal point.
+  Returns:
+    The geospatial bearing when heading from the start to the goal. The bearing 
+    angle given by azi1 (azimuth) is clockwise relative to north, so a bearing 
+    of 90 degrees is due east, 180 is south, and 270 is west.
+  """
   solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
       start.y, start.x, goal.y, goal.x)
   return solution['azi1'] % 360
 
 def get_distance_km(start: Point, goal: Point) -> float:
+  """Returns the geodesic distance (in kilometers) between start and goal."""
   return geodesic(start.coords, goal.coords).km

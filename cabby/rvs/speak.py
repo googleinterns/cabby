@@ -43,8 +43,11 @@ def describe_meeting_point(
   return f'go to {goal}, which is {direction_description} {pivot}'
 
 def describe_distance(distance_in_km: float) -> Text:
+  """Convert a raw distance into a short verbal description."""
+  
   # Round to 100 meters.
   rdist = round(distance_in_km, 1)
+
   if rdist < 0.1:
     return 'not even 100 meters'
   if rdist < 1.0:
@@ -53,7 +56,12 @@ def describe_distance(distance_in_km: float) -> Text:
     return f'{rdist}km'
 
 
-def describe_egocentric_direction(direction: int, distance: float) -> Text:
+def describe_egocentric_direction(
+  direction: Direction, distance: float) -> Text:
+  """Convert a Direction and distance into a verbal description.
+  
+  This is very rough cut, to be improved considerably.
+  """
   dist_descr = describe_distance(distance)
   if direction == Direction.AHEAD:
     return f'{dist_descr} past'

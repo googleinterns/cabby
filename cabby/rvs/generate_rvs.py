@@ -68,7 +68,7 @@ def main(argv):
 
   # Find the closest POI in the Wikidata items so that we have something to
   # describe. This isn't needed once we use OSM sampled start-goal pairs.
-  distances = observe.get_all_distances(supplied_goal, entities.values())
+  distances = observe.get_all_distances(supplied_goal, list(entities.values()))
   ranked_pois = list(distances.items())
   ranked_pois.sort(key=lambda x: x[1])
   target_qid, target_distance = ranked_pois[0]
@@ -83,7 +83,7 @@ def main(argv):
 
   # Get the pivot POI.
   pivot_qid = observe.get_pivot_poi(
-    start, target.location, entities.values())
+    start, target.location, list(entities.values()))
   pivot = entities[pivot_qid]
 
   start_pivot_bearing = util.get_bearing(start, pivot.location)

@@ -18,6 +18,7 @@ import enum
 from cabby.geo import util
 
 class Direction(enum.IntEnum):
+  """An enum to label several egocentric direction relations."""
   AHEAD = 0
   SLIGHT_LEFT = 1
   LEFT = 2
@@ -26,7 +27,8 @@ class Direction(enum.IntEnum):
   BEHIND = 5
 
 
-def get_egocentric_direction(angle: float) -> int:
+def get_egocentric_direction(angle: float) -> Direction:
+  """Collapse angles into direction buckets. Subject to change."""
   angle = angle % 360
   if angle < 30 or angle > 330:
     return Direction.AHEAD
