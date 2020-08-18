@@ -213,5 +213,9 @@ def get_bearing(start: Point, goal: Point) -> float:
   return solution['azi1'] % 360
 
 def get_distance_km(start: Point, goal: Point) -> float:
-  """Returns the geodesic distance (in kilometers) between start and goal."""
+  """Returns the geodesic distance (in kilometers) between start and goal.
+  
+  This distance is direct (as the bird flies), rather than based on a route
+  going over roads and around buildings.
+  """
   return geodesic(start.coords, goal.coords).km
