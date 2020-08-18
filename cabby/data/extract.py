@@ -35,7 +35,7 @@ def get_data_by_region(region: Text) -> Sequence[Dict]:
 
     # Get Wikipedia titles.
     titles = [x['wikipediaUrl']['value'].split(
-        "/")[-1] for x in wikidata_items]
+        "wiki/")[-1] for x in wikidata_items]
 
     # Get Wikipedia pages.
     wikipedia_pages = wpq.get_wikipedia_items(titles)
