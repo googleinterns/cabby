@@ -14,24 +14,19 @@
 
 '''Tests for wikidata.py'''
 
-from cabby.data.wikidata import query
+# from cabby.data
+import extract
 import unittest
 
 
-class WikidataTest(unittest.TestCase):
+class GeoSetTest(unittest.TestCase):
 
-    def testSingleOutput(self):
-        output = query.get_geofenced_wikidata_items('Manhattan')
-        expected = 'New York Stock Exchange'
-        poi_by_value = [x['placeLabel']['value'] for x in output['results']
-                        ['bindings']]
-        self.assertIn(expected, poi_by_value)
-
-        not_expected = 'Rabin Square'
-
-        self.assertNotIn(not_expected, poi_by_value)
-        self.assertNotIn('', poi_by_value)
-
+    def testQueryItems(self):
+        # Test plain Wikipedia query for items
+        output = extract.get_data_by_region('Pittsburgh')
+        expected = 25969190
+        page_ids = [x['pageid'] for x in output]
+        self.assertIn(expected, page_ids)
 
 
 if __name__ == "__main__":
