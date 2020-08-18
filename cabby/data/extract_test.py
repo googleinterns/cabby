@@ -14,8 +14,7 @@
 
 '''Tests for wikidata.py'''
 
-# from cabby.data
-import extract
+from cabby.data import extract
 import unittest
 
 

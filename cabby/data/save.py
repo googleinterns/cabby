@@ -14,7 +14,7 @@
 
 '''Example command line method to extract Wikipedia and Wikidata items and save to file.
 Example:
-$ bazel-bin/cabby/data/save --region Pittsburgh --path geodata.pickle
+$ bazel-bin/cabby/data/save --region Pittsburgh --path geodata.txt
 '''
 
 from absl import app
