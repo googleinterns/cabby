@@ -28,7 +28,7 @@ class Direction(enum.IntEnum):
 
 
 def get_egocentric_direction(angle: float) -> Direction:
-  """Collapse angles into direction buckets. Subject to change."""
+  """Collapse an angle in degrees into a direction bucket. Subject to change."""
   angle = angle % 360
   if angle < 30 or angle > 330:
     return Direction.AHEAD

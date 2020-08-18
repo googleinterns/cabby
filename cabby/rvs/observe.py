@@ -20,6 +20,15 @@ from shapely.geometry.point import Point
 from cabby.data.wikidata import item
 from cabby.geo import util
 
+# A constant defining how far along we prefer the pivot POI to be between the
+# start and the goal.
+_IDEAL_PIVOT_DISTANCE_PERCENTAGE = .75
+
+# How much to stretch a path when computing whether the journey from the start
+# to a pivot plus from the pivot to the goal is greater than the journey that
+# is direct from start to goal.
+_PATH_DISTANCE_BUFFER_FACTOR = 1.05
+
 def get_all_distances(
   focus: Point, entities: Sequence[item.Entity]) -> Dict[Text, float]:
   """Get the distance from each entity to the provided focus point.
@@ -58,8 +67,13 @@ def get_pivot_poi(
   for entity in entities:
     odist = util.get_distance_km(start, entity.location)
     ddist = util.get_distance_km(goal, entity.location)
-    if odist < pdist and ddist < pdist and odist+ddist < pdist*1.05:
-      candidate_scores[entity.qid] = abs(.75 - (odist/(odist+ddist)))
+    
+    if (odist < pdist and
+        ddist < pdist and 
+        odist+ddist < pdist * _PATH_DISTANCE_BUFFER_FACTOR):
+      distance_percentage = odist / (odist + ddist)
+      candidate_scores[entity.qid] = abs(
+        _IDEAL_PIVOT_DISTANCE_PERCENTAGE - distance_percentage)
 
   if candidate_scores:
     ranked_pois = list(candidate_scores.items())
