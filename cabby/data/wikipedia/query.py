@@ -95,7 +95,7 @@ def get_wikipedia_items_title_in_text(backlink_id: Text, orig_title: Text) -> Op
     return
 
 
-def get_baklinks_ids_from_wikipedia_title(title: Text) -> Sequence[Text]:
+def get_backlinks_ids_from_wikipedia_title(title: Text) -> Sequence[Text]:
     '''Query the Wikipedia API for backlinks titles. 
     Arguments:
         title(Text): The Wikipedia title for which the backlinks
@@ -126,7 +126,7 @@ def get_backlinks_items_from_wikipedia_title(title: Text) -> Sequence[Sequence]:
         The backlinks pages.
     '''
     # Get the backlinks titles.
-    backlinks_pageids = get_baklinks_ids_from_wikipedia_title(title)
+    backlinks_pageids = get_backlinks_ids_from_wikipedia_title(title)
 
     # Title as it will appear in th text.
     title = title.replace('_', ' ')
