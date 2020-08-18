@@ -73,7 +73,7 @@ def main(argv):
   ranked_pois.sort(key=lambda x: x[1])
   target_qid, target_distance = ranked_pois[0]
   target = entities[target_qid]
-  print(f'\nChoosing entity {target.label} with QID {target_qid} '
+  print(f'\nChoosing entity {target.title} with QID {target_qid} '
     f'as the goal, which is {target_distance} from the supplied goal '
     f'coordinates {supplied_goal}.\n')
 
@@ -96,7 +96,7 @@ def main(argv):
   target_bearing_relative_to_pivot = pivot_dest_bearing - start_pivot_bearing
 
   instruction = speak.describe_meeting_point(
-    pivot.label, target.label, target_bearing_relative_to_pivot,
+    pivot.title, target.title, target_bearing_relative_to_pivot,
     util.get_distance_km(pivot.location, target.location))
 
   print(f'Rendezvous instruction:\n\n  {instruction}\n')

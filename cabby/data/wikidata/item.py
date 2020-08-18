@@ -30,13 +30,13 @@ class Entity:
   """Simplifed representation of a Wikidata entity.
 
   `url` is the URL of the entity.
-  `label` is the name of the entity.
+  `title` is the name of the entity.
   `location` is a Point representing the geo-location of the entity.
   `qid` is the Wikidata id assigned to this entity (which can be recovered from
     the URL, but is pulled out for convenience).
   """
   url: Text = attr.ib()
-  label: Text = attr.ib()
+  title: Text = attr.ib()
   location: Point = attr.ib()
   qid: Text = attr.ib(init=False)
 
