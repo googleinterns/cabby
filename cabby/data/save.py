@@ -12,34 +12,39 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Example command line method to extract Wikipedia items.
+'''Example command line method to extract Wikipedia and Wikidata items and save to file.
 Example:
-$ bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles=New_York_Stock_Exchange, Empire_State_Building
+$ bazel-bin/cabby/data/save --region Pittsburgh --path geodata.pickle
 '''
 
 from absl import app
 from absl import flags
+import json
 
-from cabby.data.wikipedia import query
+
+from cabby.data import extract
 
 FLAGS = flags.FLAGS
-flags.DEFINE_list(
-    "titles", None,
-    "List of Wikipedia titles to extract.")
+FLAGS = flags.FLAGS
+flags.DEFINE_enum(
+    "region", None, ['Pittsburgh', 'Manhattan'],
+    "Map areas: Manhattan or Pittsburgh.")
+flags.DEFINE_string("path", None, "The path where the data will be saved.")
+
 
 # Required flags.
-flags.mark_flag_as_required("titles")
+flags.mark_flag_as_required("region")
+flags.mark_flag_as_required("path")
+
 
 
 def main(argv):
     del argv  # Unused.
-    results = query.get_wikipedia_items(FLAGS.titles)
-    for result in results:
-        print(result)
-
-    print('The number of Wikipedia items found is: {}'.format(
+    results = extract.get_data_by_region(FLAGS.region)
+    print('The number of results items found is: {}'.format(
         len(results)))
-
+    with open(FLAGS.path, 'w') as f:
+      json.dump(results, f)
 
 if __name__ == '__main__':
     app.run(main)
