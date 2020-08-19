@@ -15,11 +15,8 @@
 '''Library to support data extraction from Wikipedia and Wikidata.'''
 
 from typing import Dict, Tuple, Sequence, Text
-# from cabby.data.
-from wikidata import query as wdq
-# from cabby.data.
-from wikipedia import query as wpq
-import json
+from cabby.data.wikidata import query as wdq
+from cabby.data.wikipedia import query as wpq
 
 
 def get_data_by_region(region: Text) -> Dict:
