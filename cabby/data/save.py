@@ -43,11 +43,11 @@ def main(argv):
     print('The number of results items found is: {}'.format(
         len(results)))
     with open(FLAGS.path, 'a') as outfile:
-    for item in results:
-        json.dump(item, outfile, default=lambda o: o.__dict__)
-        outfile.write('\n')
-        outfile.flush()
-        os.fsync(outfile)
+        for item in results:
+            json.dump(item, outfile, default=lambda o: o.__dict__)
+            outfile.write('\n')
+            outfile.flush()
+            os.fsync(outfile)
 
 
 if __name__ == '__main__':
