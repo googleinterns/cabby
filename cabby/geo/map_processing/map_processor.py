@@ -39,6 +39,8 @@ def main(argv):
     del argv  # Unused.
     map = map_structure.Map(FLAGS.region, FLAGS.level)
     print(map.poi)
+    map.poi.to_csv(FLAGS.region+'_poi.csv') 
+    map.streets.to_csv(FLAGS.region+'_streets.csv')
 
 
 if __name__ == '__main__':
