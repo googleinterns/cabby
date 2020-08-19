@@ -28,8 +28,7 @@ def get_data_by_region(region: Text) -> Sequence:
     '''
 
     # Get Wikidata items by region.
-    wikidata_items = wdq.get_geofenced_wikidata_items(region)[
-        'results']['bindings']
+    wikidata_items = wdq.get_geofenced_wikidata_items(region)
 
     points_qids = [(x['point'], x['place']['value'].split('/')[-1])
                    for x in wikidata_items]
