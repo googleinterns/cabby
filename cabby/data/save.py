@@ -43,8 +43,8 @@ def main(argv):
     results = extract.get_data_by_region(FLAGS.region)
     print('The number of results items found is: {}'.format(
         len(results)))
-    with open(FLAGS.path, 'w') as f:
-      json.dump(results, f)
+    with open(FLAGS.path, 'w') as file:
+        json.dump(results, file, sort_keys=True, indent=4)
 
 if __name__ == '__main__':
     app.run(main)

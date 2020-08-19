@@ -15,11 +15,14 @@
 '''Library to support data extraction from Wikipedia and Wikidata.'''
 
 from typing import Dict, Tuple, Sequence, Text
-from cabby.data.wikidata import query as wdq
-from cabby.data.wikipedia import query as wpq
+# from cabby.data.
+from wikidata import query as wdq
+# from cabby.data.
+from wikipedia import query as wpq
+import json
 
 
-def get_data_by_region(region: Text) -> Sequence[Dict]:
+def get_data_by_region(region: Text) -> Dict:
     '''Get data from Wikipedia and Wikidata by region" 
     Arguments:
         region(Text): The region to extract items from.
@@ -31,7 +34,8 @@ def get_data_by_region(region: Text) -> Sequence[Dict]:
     wikidata_items = wdq.get_geofenced_wikidata_items(region)[
         'results']['bindings']
 
-    points = [x['point'] for x in wikidata_items]
+    points_qids = [(x['point'], x['place']['value'].split('/')[-1])
+                   for x in wikidata_items]
 
     # Get Wikipedia titles.
     titles = [x['wikipediaUrl']['value'].split(
@@ -41,24 +45,19 @@ def get_data_by_region(region: Text) -> Sequence[Dict]:
     wikipedia_pages = wpq.get_wikipedia_items(titles)
 
     # Change to Geodata dataset foramt.
-    geo_data = []
+    geo_data = {}
     for x in wikipedia_pages:
-        for (k, v), p in zip(x.items(), points):
-            geo_data.append(
-                {'extract': v['extract'], 'pageid': v['pageid'], 'title': v['title'], 'point': p['value']})
+        for (k, v), (p, q) in zip(x.items(), points_qids):
+            key=v['pageid']
+            geo_data[key] = {'text': v['extract'], 'qid': q, 'title': v['title'], 'point': p['value']}
 
     # Get backlinks for Wikipedia pages.
     back_links_pages = wpq.get_backlinks_items_from_wikipedia_titles(
         titles)
 
     # Change backlinks pages to Geodata dataset format.
-    geo_data_backlinks = []
-    for x, p, w in zip(back_links_pages, points, geo_data):
-        geo_data_backlinks.append(
-            {'extract': x['extract'], 'pageid': w['pageid'], 'title': w['title'], 'point': p['value']})
-
-    # Get add the backlinks to Wikipedia pages and get unique list.
-    geo_data = geo_data + geo_data_backlinks
-    geo_data = list({v['pageid']: v for v in geo_data}.values())
+    for x, (p,q), t in zip(back_links_pages, points_qids, titles):
+        key=x['pageid']
+        geo_data[key] = {'text': x['extract'], 'qid': q, 'title': t, 'point': p['value']}
 
     return geo_data
