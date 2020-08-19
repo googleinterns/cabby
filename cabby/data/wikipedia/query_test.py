@@ -34,7 +34,7 @@ class WikipediaTest(unittest.TestCase):
 
         expected = 'New York Stock Exchange'
         for entity in entities:
-            self.assertIn(expected, str(entity['extract']))
+            self.assertIn(expected, entity['extract'])
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
 
 
-def get_data_by_region(region: Text) -> Dict:
+def get_data_by_region(region: Text) -> Sequence:
     '''Get data from Wikipedia and Wikidata by region" 
     Arguments:
         region(Text): The region to extract items from.
@@ -38,23 +38,26 @@ def get_data_by_region(region: Text) -> Dict:
     titles = [x['wikipediaUrl']['value'].split(
         "wiki/")[-1] for x in wikidata_items]
 
+    # Get clean titles.
+    clean_titles = [t.replace("_", " ") for t in titles]
+
     # Get Wikipedia pages.
     wikipedia_pages = wpq.get_wikipedia_items(titles)
 
     # Change to Geodata dataset foramt.
-    geo_data = {}
+    geo_data = []
     for x in wikipedia_pages:
         for (k, v), (p, q) in zip(x.items(), points_qids):
-            key=v['pageid']
-            geo_data[key] = {'text': v['extract'], 'qid': q, 'title': v['title'], 'point': p['value']}
+            geo_data.append({'pageid': v['pageid'], 'text': v['extract'],
+                             'qid': q, 'title': v['title'], 'point': p['value']})
 
     # Get backlinks for Wikipedia pages.
     back_links_pages = wpq.get_backlinks_items_from_wikipedia_titles(
         titles)
 
     # Change backlinks pages to Geodata dataset format.
-    for x, (p,q), t in zip(back_links_pages, points_qids, titles):
-        key=x['pageid']
-        geo_data[key] = {'text': x['extract'], 'qid': q, 'title': t, 'point': p['value']}
+    for x, (p, q), t in zip(back_links_pages, points_qids, clean_titles):
+        geo_data.append(
+            {'pageid': x['pageid'], 'text': x['extract'], 'qid': q, 'title': t, 'point': p['value']})
 
     return geo_data
