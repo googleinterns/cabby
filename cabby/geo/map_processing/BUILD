@@ -3,23 +3,19 @@ package(
 )
 
 py_library(
-    name = 'map_structure',
-    srcs = ['map_structure.py'],
-    deps = [
-        ':geo_utils',
-        ':graph',
-    ],
-)
-
-py_library(
-    name = 'geo_utils',
-    srcs = ['geo_utils.py'],
-)
-
-py_library(
     name = 'graph',
     srcs = ['graph.py'],
 )
+
+py_library(
+    name = 'map_structure',
+    srcs = ['map_structure.py'],
+    deps = [
+        ':graph',
+        '//cabby/geo:util',
+    ]
+)
+
 
 py_test(
     name = 'map_test',
@@ -36,7 +32,6 @@ py_binary(
     srcs = ['map_processor.py'],
     deps = [
         ':map_structure',
-        ':geo_utils',
         ':graph',
         ],
 )

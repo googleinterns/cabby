@@ -7,6 +7,11 @@ py_library(
     srcs = ['walk.py'],
 )
 
+py_library(
+    name = 'util',
+    srcs = ['util.py'],
+)
+
 py_test(
     name = "walk_test",
     srcs = ["walk_test.py"],
@@ -15,6 +20,13 @@ py_test(
         ":walk"
     ],
 )
+
+py_library(
+    name = 'directions',
+    srcs = ['directions.py'],
+    deps = [':util'],
+)
+
 
 py_binary(
     name = 'geo_computation',

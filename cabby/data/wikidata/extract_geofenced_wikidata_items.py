@@ -14,7 +14,8 @@
 
 '''Example command line method to extract wikidata items.
 Example:
-$ bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items --region Pittsburgh
+$ bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items \
+  --region Pittsburgh
 '''
 
 from absl import app
@@ -30,15 +31,13 @@ flags.DEFINE_enum(
 # Required flags.
 flags.mark_flag_as_required("region")
 
-
 def main(argv):
     del argv  # Unused.
     results = query.get_geofenced_wikidata_items(FLAGS.region)
-    for result in results["results"]["bindings"]:
+    for result in results:
         print(result)
 
-    print('The number of Wikidata items found is: {}'.format(
-        len(results["results"]["bindings"])))
+    print('The number of Wikidata items found is: {}'.format(len(results)))
 
 
 if __name__ == '__main__':
