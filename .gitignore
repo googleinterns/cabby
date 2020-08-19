@@ -2,6 +2,5 @@
 __pycache__
 .pytype
 extract.log
-Manhattan_data.txt
-Pittsburgh_data.txt
 geodata.log
+pittsburgh.json

@@ -37,14 +37,14 @@ flags.mark_flag_as_required("region")
 flags.mark_flag_as_required("path")
 
 
-
 def main(argv):
     del argv  # Unused.
     results = extract.get_data_by_region(FLAGS.region)
     print('The number of results items found is: {}'.format(
         len(results)))
     with open(FLAGS.path, 'w') as file:
-        json.dump(results, file, sort_keys=True, indent=4)
+        file.write("\n".join(map(str, results)))
+
 
 if __name__ == '__main__':
     app.run(main)

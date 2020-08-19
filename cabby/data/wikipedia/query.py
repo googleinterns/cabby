@@ -19,6 +19,7 @@ from typing import Dict, Tuple, Sequence, Text, Optional
 import requests
 import spacy
 import multiprocessing
+import copy
 
 
 def get_wikipedia_item(title: Text) -> Dict:
@@ -52,7 +53,7 @@ def get_wikipedia_items(titles: Sequence[Text]) -> Sequence:
     return entities
 
 
-def get_wikipedia_items_title_in_text(backlink_id: Text, orig_title: Text) -> Optional[Sequence[Dict]]:
+def get_wikipedia_items_title_in_text(backlink_id: Text, orig_title: Text) -> Sequence:
     '''Query the Wikipedia API. 
     Arguments:
         backlinks_titles(Sequence[Text]): The Wikipedia backlinks titles to
@@ -81,18 +82,21 @@ def get_wikipedia_items_title_in_text(backlink_id: Text, orig_title: Text) -> Op
 
     doc = nlp(entity['extract'])
 
+    entities = []
+
     if orig_title not in doc.text:
-        return
+        return entities
 
     sentences = list(doc.sents)
 
-    entity['sentences'] = [x.text for x in sentences if orig_title in x.text]
+    for sen in sentences:
+        if orig_title not in sen.text:
+            continue
+        sub_entity = copy.deepcopy(entity)
+        sub_entity['extract'] = sen.text
+        entities.append(sub_entity)
 
-    if len(entity['sentences']) > 0:
-
-        return entity
-
-    return
+    return entities
 
 
 def get_backlinks_ids_from_wikipedia_title(title: Text) -> Sequence[Text]:
@@ -117,7 +121,7 @@ def get_backlinks_ids_from_wikipedia_title(title: Text) -> Sequence[Text]:
     return backlinks_ids
 
 
-def get_backlinks_items_from_wikipedia_title(title: Text) -> Sequence[Sequence]:
+def get_backlinks_items_from_wikipedia_title(title: Text) -> Sequence:
     '''Query the Wikipedia API for backlinks pages. 
     Arguments:
         title(Text): The Wikipedia title for which the backlinks
@@ -135,14 +139,12 @@ def get_backlinks_items_from_wikipedia_title(title: Text) -> Sequence[Sequence]:
     backlinks_pages = []
 
     for id in backlinks_pageids:
-        backlinks_page = get_wikipedia_items_title_in_text(id, title)
-        if backlinks_page is not None:
-            backlinks_pages.append(backlinks_page)
+        backlinks_pages += get_wikipedia_items_title_in_text(id, title)
 
     return backlinks_pages
 
 
-def get_backlinks_items_from_wikipedia_titles(titles: Sequence[Text]) -> Sequence[Dict]:
+def get_backlinks_items_from_wikipedia_titles(titles: Sequence[Text]) -> Sequence[Sequence]:
     '''Query the Wikipedia API for backlinks pages multiple titles. 
     Arguments:
         titles(Sequence): The Wikipedia titles for which the

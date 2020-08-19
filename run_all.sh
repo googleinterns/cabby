@@ -32,5 +32,8 @@ bazel test cabby/data/wikipedia:query_test
 bazel build cabby/data/wikipedia/extract_wikipedia_items
 bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles=New_York_Stock_Exchange,Empire_State_Building
 
+# Build, test and run the cabby.data subpackage.
 
-
+bazel test cabby/data:extract_test
+bazel build cabby/data/save
+bazel-bin/cabby/data/save --region Pittsburgh --path geodata.txt
