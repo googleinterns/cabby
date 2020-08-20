@@ -76,6 +76,11 @@ def get_wikipedia_items_title_in_text(backlink_id: Text, orig_title: Text) -> Se
         f'&pageids={backlink_id}'
         '&format=json'
     )
+
+    orig_title = orig_title.split(',')[0]
+    orig_title = orig_title.split('(')[0]
+
+
     json_response = requests.get(url).json()
     entities = json_response['query']['pages']
     entity = next(iter(entities.values()))
@@ -157,4 +162,4 @@ def get_backlinks_items_from_wikipedia_titles(titles: Sequence[Text]) -> Sequenc
         backlinks_pages = pool.map(get_backlinks_items_from_wikipedia_title,
                                    titles)
 
-    return backlinks_pages[0]
+    return [y for x in backlinks_pages for y in x ]
