@@ -42,21 +42,26 @@ def get_data_by_region(region: Text) -> Sequence:
 
     # Get Wikipedia pages.
     wikipedia_pages = wpq.get_wikipedia_items(titles)
+    print ("number of pages: ", len(wikipedia_pages))
 
     # Change to Geodata dataset foramt.
     geo_data = []
-    for x in wikipedia_pages:
-        for (k, v), (p, q) in zip(x.items(), points_qids):
+    for x, (p,q)  in zip(wikipedia_pages, points_qids):
+        for k, v in x.items():
             geo_data.append({'pageid': v['pageid'], 'text': v['extract'],
-                             'qid': q, 'title': v['title'], 'point': p['value']})
+                             'ref_qid': q, 'ref_title': v['title'], 'ref_point': p['value']})
 
     # Get backlinks for Wikipedia pages.
     back_links_pages = wpq.get_backlinks_items_from_wikipedia_titles(
         titles)
+    print ("number of backlinks: ", len(back_links_pages))
+
 
     # Change backlinks pages to Geodata dataset format.
     for x, (p, q), t in zip(back_links_pages, points_qids, clean_titles):
         geo_data.append(
-            {'pageid': x['pageid'], 'text': x['extract'], 'qid': q, 'title': t, 'point': p['value']})
+            {'pageid': x['pageid'], 'text': x['extract'], 'ref_qid': q, 'ref_title': t, 'ref_point': p['value']})
 
+    print ("total number: ", len(geo_data))
     return geo_data
+
