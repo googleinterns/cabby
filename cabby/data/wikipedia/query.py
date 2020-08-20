@@ -33,6 +33,7 @@ def get_wikipedia_item(title: Text) -> Dict:
         '&explaintext'
         f'&titles={title}'
         '&format=json'
+        '&redirects'
     )
     json_response = requests.get(url).json()
     return json_response['query']['pages']
@@ -162,4 +163,4 @@ def get_backlinks_items_from_wikipedia_titles(titles: Sequence[Text]) -> Sequenc
         backlinks_pages = pool.map(get_backlinks_items_from_wikipedia_title,
                                    titles)
 
-    return [y for x in backlinks_pages for y in x ]
+    return backlinks_pages
