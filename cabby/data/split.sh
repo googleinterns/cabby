@@ -1,5 +1,6 @@
 # Filter entities that do not have text.
-jq -c 'select(.text != "")'  Pittsburgh.json
+jq -c 'select(.text != "")'  /mnt/hackney/data/cabby/wikigeo/wikigeo_pittsburgh_raw.json > /mnt/hackney/data/cabby/wikigeo/wikigeo_pittsburgh.json
+jq -c 'select(.text != "")'  /mnt/hackney/data/cabby/wikigeo/wikigeo_manhattan_raw.json > /mnt/hackney/data/cabby/wikigeo/wikigeo_manhattan.json
 
 
 # Split the file into a train(%80), dev(10%) and test(%10) sets. 
