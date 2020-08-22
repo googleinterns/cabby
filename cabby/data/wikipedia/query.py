@@ -20,6 +20,8 @@ import requests
 import spacy
 import multiprocessing
 import copy
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
 
 
 def get_wikipedia_item(title: Text) -> Dict:
@@ -36,6 +38,7 @@ def get_wikipedia_item(title: Text) -> Dict:
         '&redirects'
     )
     json_response = requests.get(url).json()
+
     return json_response['query']['pages']
 
 
@@ -81,25 +84,28 @@ def get_wikipedia_items_title_in_text(backlink_id: Text, orig_title: Text) -> Se
     orig_title = orig_title.split(',')[0]
     orig_title = orig_title.split('(')[0]
 
-
     json_response = requests.get(url).json()
-    entities = json_response['query']['pages']
-    entity = next(iter(entities.values()))
-
+    entity = list(json_response['query']['pages'].values())[0]
     doc = nlp(entity['extract'])
 
     entities = []
 
-    if orig_title not in doc.text:
+    fuzzy_score = fuzz.token_set_ratio(doc.text, orig_title)
+
+    if orig_title not in doc.text and fuzzy_score < 90:
         return entities
 
     sentences = list(doc.sents)
 
     for sen in sentences:
-        if orig_title not in sen.text:
+        if sen.text[-1] == '=' and len(sen.text) < 8:
             continue
+        fuzzy_score = fuzz.token_set_ratio(sen.text, orig_title)
+        if orig_title not in sen.text and fuzzy_score < 90:
+            continue
+
         sub_entity = copy.deepcopy(entity)
-        sub_entity['extract'] = sen.text
+        sub_entity['extract'] = sen.text.replace("\n", "")
         entities.append(sub_entity)
 
     return entities
@@ -117,14 +123,21 @@ def get_backlinks_ids_from_wikipedia_title(title: Text) -> Sequence[Text]:
     url = (
         'https://en.wikipedia.org/w/api.php'
         '?action=query'
-        '&list=backlinks'
-        f'&bltitle={title}'
+        '&prop=linkshere'
+        f'&titles={title}'
         '&format=json'
     )
-    json_response = requests.get(url).json()
 
-    backlinks_ids = [x['pageid'] for x in json_response['query']['backlinks']]
-    return backlinks_ids
+    try:
+        json_response = requests.get(url).json()
+
+        backlinks_ids = [y['pageid'] for k, x in json_response['query']
+                         ['pages'].items() for y in x['linkshere']]
+
+        return backlinks_ids
+    except:
+        print("An exception occurred when runing query: {0}".format(url))
+        return []
 
 
 def get_backlinks_items_from_wikipedia_title(title: Text) -> Sequence:
@@ -138,15 +151,11 @@ def get_backlinks_items_from_wikipedia_title(title: Text) -> Sequence:
     # Get the backlinks titles.
     backlinks_pageids = get_backlinks_ids_from_wikipedia_title(title)
 
-    # Title as it will appear in th text.
-    title = title.replace('_', ' ')
-
     # Get the backlinks pages.
     backlinks_pages = []
 
     for id in backlinks_pageids:
         backlinks_pages += get_wikipedia_items_title_in_text(id, title)
-
     return backlinks_pages
 
 

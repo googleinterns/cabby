@@ -31,6 +31,8 @@ class Entity:
 
   `url` is the URL of the entity.
   `title` is the name of the entity.
+  'wikipedia_url' is the URL of the corresponding Wikipedia entity.
+  'wikipedia_title' is the name of the corresponding Wikipedia entity.
   `location` is a Point representing the geo-location of the entity.
   `qid` is the Wikidata id assigned to this entity (which can be recovered from
     the URL, but is pulled out for convenience).
@@ -38,11 +40,17 @@ class Entity:
   url: Text = attr.ib()
   title: Text = attr.ib()
   location: Point = attr.ib()
+  wikipedia_url: Text = attr.ib()
+  wikipedia_title: Text = attr.ib(init=False)
   qid: Text = attr.ib(init=False)
 
   def __attrs_post_init__(self):
     # The QID is the part of the URL that comes after the last / character.
     self.qid = self.url[self.url.rindex('/')+1:]
+
+    # The Wikipedia title is part of the URL.
+    self.wikipedia_title = self.wikipedia_url.split("wiki/")[-1]
+  
 
   @classmethod
   def from_sparql_result(cls, result):
@@ -51,5 +59,7 @@ class Entity:
     return Entity(
         result['place']['value'],
         result['placeLabel']['value'],
-        Point(float(point_match.group(1)), float(point_match.group(2)))
+        Point(float(point_match.group(1)), float(point_match.group(2))),
+        result['wikipediaUrl']['value'],
+        
     )

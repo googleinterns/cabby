@@ -14,9 +14,15 @@
 
 '''Library to support data extraction from Wikipedia and Wikidata.'''
 
+import json
+import os
 from typing import Dict, Tuple, Sequence, Text
+
 from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
+from cabby.data.wikidata import item as wdi
+from cabby.data.wikipedia import item as wpi
+from cabby.data import wikigeo 
 
 
 def get_data_by_region(region: Text) -> Sequence:
@@ -28,41 +34,38 @@ def get_data_by_region(region: Text) -> Sequence:
     '''
 
     # Get Wikidata items by region.
-    wikidata_items = wdq.get_geofenced_wikidata_items(region)
-
-    points_qids = [(x['point'], x['place']['value'].split('/')[-1])
-                   for x in wikidata_items]
+    wikidata_results = wdq.get_geofenced_wikidata_items(region)
+    wikidata_items = [wdi.Entity.from_sparql_result(result)
+                      for result in wikidata_results]
 
     # Get Wikipedia titles.
-    titles = [x['wikipediaUrl']['value'].split(
-        "wiki/")[-1] for x in wikidata_items]
-
-    # Get clean titles.
-    clean_titles = [t.replace("_", " ") for t in titles]
+    titles = [entity.wikipedia_title for entity in wikidata_items]
 
     # Get Wikipedia pages.
     wikipedia_pages = wpq.get_wikipedia_items(titles)
+    wikipedia_items = [wpi.Entity.from_api_result(result) for result in wikipedia_pages]
 
-    # Change to Geodata dataset foramt.
+    # # Get Wikipedia titles.
+    wikipedia_titles = [entity.title for entity in wikipedia_items]
+
+    # # Change to Geodata dataset foramt.
     geo_data = []
-    for x, (p,q)  in zip(wikipedia_pages, points_qids):
-        for k, v in x.items():
-            geo_data.append({'pageid': v['pageid'], 'text': v['extract'],
-                             'ref_qid': q, 'ref_title': v['title'], 'ref_point': p['value']})
+    for wikipedia, wikidata in zip(wikipedia_items, wikidata_items):
+        geo_data.append(wikigeo.Entity.from_wiki_items(wikipedia,wikipedia,wikidata))
 
-    # Get backlinks for Wikipedia pages.
-    back_links_pages = wpq.get_backlinks_items_from_wikipedia_titles(
-        titles)
+    # # Get backlinks for Wikipedia pages.
+    backlinks_pages = wpq.get_backlinks_items_from_wikipedia_titles(
+        wikipedia_titles)
+    backlinks_items = [] 
+    for list_backlinks in backlinks_pages: 
+        backlinks_items.append([wpi.Entity.from_backlinks_api_result(result) for result in list_backlinks])
 
 
     # Change backlinks pages to Geodata dataset format.
-    for y, (p, q), t in zip(back_links_pages, points_qids, clean_titles):
-        for x in y:
-            geo_data.append(
-                {'pageid': x['pageid'], 'text': x['extract'], 'ref_qid': q, 'ref_title': t, 'ref_point': p['value']})
+    for list_backlinks, original_wikipedia, original_wikidata in zip(backlinks_items,  wikipedia_items, wikidata_items):
+        for backlink in list_backlinks:
+            geo_data.append(wikigeo.Entity.from_wiki_items(backlink,original_wikipedia,original_wikidata))
 
     return geo_data
-
-
-
+ 
 

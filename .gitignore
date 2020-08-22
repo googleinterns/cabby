@@ -1,10 +1,5 @@
 /bazel-*
-<<<<<<< HEAD
-__pycache__
-=======
 **__pycache__**
->>>>>>> master
 .pytype
-extract.log
-geodata.log
-pittsburgh.json
+*.log
+*.json

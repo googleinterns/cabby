@@ -21,14 +21,14 @@ import unittest
 class WikipediaTest(unittest.TestCase):
 
     def testQueryItems(self):
-        # Test plain Wikipedia query for items
+        # Test plain Wikipedia query for items.
         output = query.get_wikipedia_items(
             ['New_York_Stock_Exchange', 'Empire_State_Building'])
         expected = 'The New York Stock Exchange (NYSE, nicknamed "The Big Board") is an American stock exchange located at 11 Wall Street, Lower Manhattan, New York City'
         self.assertIn(expected, output[0]['21560']['extract'])
 
     def testBacklinksItems(self):
-        # Test backlinks Wikipedia query for items
+        # Test backlinks Wikipedia query for items.
         title = 'New_York_Stock_Exchange'
         entities = query.get_backlinks_items_from_wikipedia_title(title)
 
