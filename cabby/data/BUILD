@@ -17,8 +17,8 @@ py_test(
 )
 
 py_binary(
-    name = 'save',
-    main = 'save.py',
-    srcs = ['save.py'],
+    name = 'extract_wikigeo_contexts',
+    main = 'extract_wikigeo_contexts.py',
+    srcs = ['extract_wikigeo_contexts.py'],
     deps = [':extract'],
 )
