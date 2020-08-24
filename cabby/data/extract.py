@@ -17,12 +17,11 @@
 import json
 import os
 from typing import Dict, Tuple, Sequence, Text
-
 from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
-from cabby.data.wikidata import item as wdi
-from cabby.data.wikipedia import item as wpi
-from cabby.data import wikigeo 
+from wikidata import item as wdi
+from wikipedia import item as wpi
+import wikigeo
 
 
 def get_data_by_region(region: Text) -> Sequence:
@@ -43,7 +42,10 @@ def get_data_by_region(region: Text) -> Sequence:
 
     # Get Wikipedia pages.
     wikipedia_pages = wpq.get_wikipedia_items(titles)
-    wikipedia_items = [wpi.Entity.from_api_result(result) for result in wikipedia_pages]
+    wikipedia_items = [wpi.Entity.from_api_result(
+        result) for result in wikipedia_pages]
+
+    print("number of pages: ", len(wikipedia_items))
 
     # # Get Wikipedia titles.
     wikipedia_titles = [entity.title for entity in wikipedia_items]
@@ -51,21 +53,27 @@ def get_data_by_region(region: Text) -> Sequence:
     # # Change to Geodata dataset foramt.
     geo_data = []
     for wikipedia, wikidata in zip(wikipedia_items, wikidata_items):
-        geo_data.append(wikigeo.Entity.from_wiki_items(wikipedia,wikipedia,wikidata))
+        geo_data.append(wikigeo.Entity.from_wiki_items(
+            wikipedia, wikipedia, wikidata).sample)
 
     # # Get backlinks for Wikipedia pages.
     backlinks_pages = wpq.get_backlinks_items_from_wikipedia_titles(
         wikipedia_titles)
-    backlinks_items = [] 
-    for list_backlinks in backlinks_pages: 
-        backlinks_items.append([wpi.Entity.from_backlinks_api_result(result) for result in list_backlinks])
+    backlinks_items = []
+    for list_backlinks in backlinks_pages:
+        backlinks_items.append(
+            [wpi.Entity.from_backlinks_api_result(result) for result in list_backlinks])
 
+    print("number of backlinks: ", len(
+        [y for x in backlinks_items for y in x]))
 
     # Change backlinks pages to Geodata dataset format.
-    for list_backlinks, original_wikipedia, original_wikidata in zip(backlinks_items,  wikipedia_items, wikidata_items):
+    for list_backlinks, original_wikipedia, original_wikidata in zip(backlinks_items, wikipedia_items, wikidata_items):
         for backlink in list_backlinks:
-            geo_data.append(wikigeo.Entity.from_wiki_items(backlink,original_wikipedia,original_wikidata))
+            geo_data.append(wikigeo.Entity.from_wiki_items(
+                backlink, original_wikipedia, original_wikidata).sample)
 
+    print("total number: ", len(geo_data))
     return geo_data
- 
+
 

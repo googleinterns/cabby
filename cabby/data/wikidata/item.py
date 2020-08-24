@@ -40,6 +40,7 @@ class Entity:
   url: Text = attr.ib()
   title: Text = attr.ib()
   location: Point = attr.ib()
+  instance: Text = attr.ib()
   wikipedia_url: Text = attr.ib()
   wikipedia_title: Text = attr.ib(init=False)
   qid: Text = attr.ib(init=False)
@@ -60,6 +61,7 @@ class Entity:
         result['place']['value'],
         result['placeLabel']['value'],
         Point(float(point_match.group(1)), float(point_match.group(2))),
+        result['instance']['value'],
         result['wikipediaUrl']['value'],
         
     )
