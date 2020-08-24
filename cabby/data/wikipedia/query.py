@@ -37,7 +37,11 @@ def get_wikipedia_item(title: Text) -> Dict:
         '&format=json'
         '&redirects'
     )
-    json_response = requests.get(url).json()
+    try:
+        json_response = requests.get(url).json()
+    except:
+        print("An exception occurred when runing query: {0}".format(url))
+        return []
 
     return json_response['query']['pages']
 
@@ -70,7 +74,7 @@ def get_wikipedia_items_title_in_text(backlink_id: Text, orig_title: Text) -> Se
 
     # Process text with spacy.
     nlp = spacy.load("en_core_web_sm")
-    nlp.max_length = 2000000
+    nlp.max_length = 5000000
 
     url = (
         'https://en.wikipedia.org/w/api.php'
@@ -84,8 +88,14 @@ def get_wikipedia_items_title_in_text(backlink_id: Text, orig_title: Text) -> Se
     orig_title = orig_title.split(',')[0]
     orig_title = orig_title.split('(')[0]
 
-    json_response = requests.get(url).json()
-    entity = list(json_response['query']['pages'].values())[0]
+    try:
+        json_response = requests.get(url).json()
+        entity = list(json_response['query']['pages'].values())[0]
+
+    except:
+        print("An exception occurred when runing query: {0}".format(url))
+        return []
+
     doc = nlp(entity['extract'])
 
     entities = []
@@ -126,6 +136,8 @@ def get_backlinks_ids_from_wikipedia_title(title: Text) -> Sequence[Text]:
         '&prop=linkshere'
         f'&titles={title}'
         '&format=json'
+        '&lhlimit=500'
+        '&lhnamespace=0'
     )
 
     try:
@@ -133,11 +145,12 @@ def get_backlinks_ids_from_wikipedia_title(title: Text) -> Sequence[Text]:
 
         backlinks_ids = [y['pageid'] for k, x in json_response['query']
                          ['pages'].items() for y in x['linkshere']]
-
-        return backlinks_ids
+        
     except:
         print("An exception occurred when runing query: {0}".format(url))
         return []
+
+    return backlinks_ids
 
 
 def get_backlinks_items_from_wikipedia_title(title: Text) -> Sequence:
