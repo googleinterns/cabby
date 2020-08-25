@@ -75,5 +75,3 @@ def get_data_by_region(region: Text) -> Sequence:
 
     print("total number: ", len(geo_data))
     return geo_data
-
-
