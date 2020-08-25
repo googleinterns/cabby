@@ -204,7 +204,7 @@ _PITTSBURGH_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
                 """]
 
 
-def get_geofenced_wikidata_items(region: Text) -> Dict:
+def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
     '''Get Wikidata items for a specific area. 
     Arguments:
         region(Text): The area to query the Wikidata items.
@@ -223,7 +223,7 @@ def get_geofenced_wikidata_items(region: Text) -> Dict:
     return query_api(query)
 
 
-def query_api(queries: Sequence[Text]) -> Dict[Sequence, Dict]:
+def query_api(queries: Sequence[Text]) -> Dict[Text, Dict]:
     '''Query the Wikidata API. 
     Arguments:
         queries(Text): The list of queries to run on the Wikidata API.
@@ -251,4 +251,4 @@ def query_api(queries: Sequence[Text]) -> Dict[Sequence, Dict]:
         query_results = sparql.query().convert()
         all_results['results']['bindings'] += query_results['results']['bindings']
 
-    return all_results
+    return all_results["results"]["bindings"]

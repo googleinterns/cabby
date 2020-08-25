@@ -15,10 +15,12 @@
 
 from typing import Optional, Tuple, Sequence
 
+import folium
+import geographiclib
+from geopy.distance import geodesic
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
-import folium
 import webbrowser
 
 
@@ -193,3 +195,27 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
 
     s2polygon = s2polygon_from_shapely_polyline(polyline)
     return get_s2cover_for_s2polygon(s2polygon, level)
+
+
+def get_bearing(start: Point, goal: Point) -> float:
+  """Get the bearing (heading) from the start lat-lon to the goal lat-lon.
+  
+  Args:
+    start: The starting point.
+    goal: The goal point.
+  Returns:
+    The geospatial bearing when heading from the start to the goal. The bearing 
+    angle given by azi1 (azimuth) is clockwise relative to north, so a bearing 
+    of 90 degrees is due east, 180 is south, and 270 is west.
+  """
+  solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
+      start.y, start.x, goal.y, goal.x)
+  return solution['azi1'] % 360
+
+def get_distance_km(start: Point, goal: Point) -> float:
+  """Returns the geodesic distance (in kilometers) between start and goal.
+  
+  This distance is direct (as the bird flies), rather than based on a route
+  going over roads and around buildings.
+  """
+  return geodesic(start.coords, goal.coords).km

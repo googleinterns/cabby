@@ -18,7 +18,6 @@ Example:
 $ bazel-bin/cabby/geo/geo_computation \
   --orig_lat 40.749102 --orig_lon -73.984076 \
   --dest_lat 40.748432 --dest_lon -73.982473
-
 '''
 
 from absl import app
