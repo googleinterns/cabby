@@ -19,9 +19,9 @@ import os
 from typing import Dict, Tuple, Sequence, Text
 from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
-from wikidata import item as wdi
-from wikipedia import item as wpi
-import wikigeo
+from cabby.data.wikidata import item as wdi
+from cabby.data.wikipedia import item as wpi
+from cabby.data import wikigeo
 
 
 def get_data_by_region(region: Text) -> Sequence:

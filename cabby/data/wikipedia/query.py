@@ -29,7 +29,7 @@ nlp = spacy.load("en_core_web_sm")
 nlp.max_length = 5000000
 
 
-def get_wikipedia_item(title: Text) -> Dict:
+def get_wikipedia_item(title: Text) -> Optional[Sequence]:
 
     url = (
         'https://en.wikipedia.org/w/api.php'
@@ -91,7 +91,7 @@ def clean_text(text: Text) -> Text:
     return clean_text
 
 
-def get_wikipedia_items_title_in_text(backlink_id: Text, orig_title: Text) -> Sequence:
+def get_wikipedia_items_title_in_text(backlink_id: int, orig_title: Text) -> Sequence:
     '''Query the Wikipedia API. 
     Arguments:
       backlinks_titles(Sequence[Text]): The Wikipedia backlinks titles to
