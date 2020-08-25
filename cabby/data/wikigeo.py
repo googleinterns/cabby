@@ -27,7 +27,8 @@ class Entity:
     `pageid` is the Wikipedia page id.
     `text` is the Wikipedia content.
     `title` is the Wikipedia title.
-    `ref_qid` is the Wikidata id assigned to this entity (which can be recovered from the URL, but is pulled out for convenience).
+    `ref_qid` is the Wikidata id assigned to this entity.
+    `ref_pageid` is the Wikipedia page id assigned to this entity.
     `ref_title` is the refrenced Wikipedia page title.    
     `ref_point` is the refrenced Wikidata location.    
     `ref_instance` is the refrenced Wikidata instance property.    
@@ -36,6 +37,7 @@ class Entity:
     text: Text = attr.ib()
     title: Text = attr.ib()
     ref_qid: Text = attr.ib()
+    ref_pageid: Text = attr.ib()
     ref_title: Text = attr.ib()
     ref_point: Point = attr.ib()
     ref_instance: Point = attr.ib()
@@ -43,7 +45,8 @@ class Entity:
 
     def __attrs_post_init__(self):
         # The QID is the part of the URL that comes after the last / character.
-        self.sample = {'pageid': self.pageid, 'text': self.text, 'title': self.title, 'ref_qid': self.ref_qid, 'ref_title': self.ref_title, 'ref_point': text_from_point(self.ref_point), 'ref_instance': self.ref_instance}
+        self.sample = {'pageid': self.pageid, 'text': self.text, 'title': self.title, 'ref_qid': self.ref_qid, 'ref_pageid': self.ref_pageid,
+                       'ref_title': self.ref_title, 'ref_point': text_from_point(self.ref_point), 'ref_instance': self.ref_instance}
 
     @classmethod
     def from_wiki_items(cls, wikipedia, wikipedia_ref, wikidata_ref):
@@ -53,6 +56,7 @@ class Entity:
             wikipedia.text,
             wikipedia.title,
             wikidata_ref.qid,
+            wikipedia_ref.pageid,
             wikipedia_ref.title,
             wikidata_ref.location,
             wikidata_ref.instance)
