@@ -13,7 +13,6 @@
 # limitations under the License.
 
 '''Example command line method to output simple RVS instructions.
-
 Example (starting near SW corner of Bryant park and heading SE):
 $ bazel-bin/cabby/rvs/generate_rvs \
   --start_lat 40.753628 --start_lon -73.985085 \
@@ -33,7 +32,6 @@ from cabby.geo import directions
 from cabby.geo import util
 from cabby.rvs import observe
 from cabby.rvs import speak
-from cabby.geo.map_processing import map_structure
 
 FLAGS = flags.FLAGS
 flags.DEFINE_float('start_lat', None, 'The latitude of the start.')
@@ -62,12 +60,14 @@ def main(argv):
   
   # Get all Wikidata entities in Manhattan region and create dictionary from
   # each entity's QID to the entity representation.
-  pittsburgh_map = map_structure.Map("Pittsburgh")
-
+  entities = {}
+  for result in query.get_geofenced_wikidata_items('Manhattan'):
+    entity = item.WikidataEntity.from_sparql_result(result)
+    entities[entity.qid] = entity
 
   # Find the closest POI in the Wikidata items so that we have something to
   # describe. This isn't needed once we use OSM sampled start-goal pairs.
-  distances = observe.get_all_distances(supplied_goal, list(pittsburgh_map.poi))
+  distances = observe.get_all_distances(supplied_goal, list(entities.values()))
   ranked_pois = list(distances.items())
   ranked_pois.sort(key=lambda x: x[1])
   target_qid, target_distance = ranked_pois[0]

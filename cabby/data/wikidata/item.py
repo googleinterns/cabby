@@ -26,14 +26,15 @@ _POINT_RE = re.compile(r'^Point\(([-\.0-9]+)\s([-\.0-9]+)\).*$')
 
 
 @attr.s
-class Entity:
+class WikidataEntity:
   """Simplifed representation of a Wikidata entity.
 
   `url` is the URL of the entity.
   `title` is the name of the entity.
+  `location` is a Point representing the geo-location of the entity.
+  `instance` is the Wikidata instance property.    
   'wikipedia_url' is the URL of the corresponding Wikipedia entity.
   'wikipedia_title' is the name of the corresponding Wikipedia entity.
-  `location` is a Point representing the geo-location of the entity.
   `qid` is the Wikidata id assigned to this entity (which can be recovered from
     the URL, but is pulled out for convenience).
   """
@@ -57,7 +58,7 @@ class Entity:
   def from_sparql_result(cls, result):
     """Construct an Entity from the results of a SPARQL query."""
     point_match = _POINT_RE.match(result['point']['value'])
-    return Entity(
+    return WikidataEntity(
         result['place']['value'],
         result['placeLabel']['value'],
         Point(float(point_match.group(1)), float(point_match.group(2))),

@@ -20,7 +20,7 @@ import attr
 
 
 @attr.s
-class Entity:
+class WikipediaEntity:
   """Simplifed representation of a Wikipedia entity.
 
   `pageid` is the Wikipedia page id.
@@ -34,19 +34,19 @@ class Entity:
   @classmethod
   def from_api_result(cls, result):
     """Construct an Entity from the results of the Wikimedia API query."""
-    return Entity(
-      int(list(result.keys())[0]),
-      list(result.values())[0]['title'],
-      list(result.values())[0]['extract']
+    return WikipediaEntity(
+        int(list(result.keys())[0]),
+        list(result.values())[0]['title'],
+        list(result.values())[0]['extract']
         
     )
 
   @classmethod
   def from_backlinks_api_result(cls, result):
     """Construct an Entity from the results of the Wikimedia API query."""
-    return Entity(
-      result['pageid'],
-      result['title'],
-      result['extract']
-        
+    return WikipediaEntity(
+        result['pageid'],
+        result['title'],
+        result['extract']
+          
     )

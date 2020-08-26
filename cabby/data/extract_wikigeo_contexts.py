@@ -14,7 +14,7 @@
 
 '''Example command line method to extract Wikipedia and Wikidata items and save to file.
 Example:
-$ bazel-bin/cabby/data/save --region Pittsburgh --path geodata.txt
+$ bazel-bin/cabby/data/extract_wikigeo_contexts --region Pittsburgh --path geodata.txt
 '''
 
 from absl import app
@@ -47,7 +47,6 @@ def main(argv):
             json.dump(item, outfile, default=lambda o: o.__dict__)
             outfile.write('\n')
             outfile.flush()
-            os.fsync(outfile)
 
 
 if __name__ == '__main__':

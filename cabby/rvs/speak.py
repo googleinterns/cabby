@@ -37,8 +37,8 @@ def describe_meeting_point(
   
   '''
   direction_description = describe_egocentric_direction(
-      directions.(bearing_pivot_goal), 
-      distance_pivot_goal)
+      directions.get_egocentric_direction(bearing_pivot_goal), 
+      distance_pivot_goal) 
 
   return f'go to {goal}, which is {direction_description} {pivot}'
 

@@ -60,9 +60,7 @@ def get_wikipedia_items(titles: Sequence[Text]) -> Sequence:
     '''
 
     with multiprocessing.Pool(processes=4) as pool:
-        entities = pool.map(get_wikipedia_item,
-                            titles)
-
+        entities = pool.map(get_wikipedia_item, titles)
     return entities
 
 
