@@ -21,7 +21,7 @@ import attr
 
 
 @attr.s
-class Entity:
+class WikigeoEntity:
     """Construct a Wikigeo sample.
 
     `pageid` is the Wikipedia page id.
@@ -45,13 +45,15 @@ class Entity:
 
     def __attrs_post_init__(self):
         # The QID is the part of the URL that comes after the last / character.
-        self.sample = {'pageid': self.pageid, 'text': self.text, 'title': self.title, 'ref_qid': self.ref_qid, 'ref_pageid': self.ref_pageid,
-                       'ref_title': self.ref_title, 'ref_point': text_from_point(self.ref_point), 'ref_instance': self.ref_instance}
+        self.sample = {
+            'pageid': self.pageid, 'text': self.text, 'title': 
+            self.title, 'ref_qid': self.ref_qid, 'ref_pageid': self.ref_pageid, 'ref_title': self.ref_title, 'ref_point': text_from_point(self.ref_point), 'ref_instance': self.ref_instance
+        }
 
     @classmethod
     def from_wiki_items(cls, wikipedia, wikipedia_ref, wikidata_ref):
         """Construct an Entity from the Wikipedia and Wikidata entities."""
-        return Entity(
+        return WikigeoEntity(
             wikipedia.pageid,
             wikipedia.text,
             wikipedia.title,

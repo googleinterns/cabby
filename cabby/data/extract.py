@@ -34,7 +34,7 @@ def get_data_by_region(region: Text) -> Sequence:
 
     # Get Wikidata items by region.
     wikidata_results = wdq.get_geofenced_wikidata_items(region)
-    wikidata_items = [wdi.Entity.from_sparql_result(result)
+    wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
                       for result in wikidata_results]
 
     # Get Wikipedia titles.
@@ -42,7 +42,7 @@ def get_data_by_region(region: Text) -> Sequence:
 
     # Get Wikipedia pages.
     wikipedia_pages = wpq.get_wikipedia_items(titles)
-    wikipedia_items = [wpi.Entity.from_api_result(
+    wikipedia_items = [wpi.WikipediaEntity.from_api_result(
         result) for result in wikipedia_pages]
 
     print("number of pages: ", len(wikipedia_items))
@@ -53,7 +53,7 @@ def get_data_by_region(region: Text) -> Sequence:
     # # Change to Geodata dataset foramt.
     geo_data = []
     for wikipedia, wikidata in zip(wikipedia_items, wikidata_items):
-        geo_data.append(wikigeo.Entity.from_wiki_items(
+        geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
             wikipedia, wikipedia, wikidata).sample)
 
     # # Get backlinks for Wikipedia pages.
@@ -62,7 +62,7 @@ def get_data_by_region(region: Text) -> Sequence:
     backlinks_items = []
     for list_backlinks in backlinks_pages:
         backlinks_items.append(
-            [wpi.Entity.from_backlinks_api_result(result) for result in list_backlinks])
+            [wpi.WikipediaEntity.from_backlinks_api_result(result) for result in list_backlinks])
 
     print("number of backlinks: ", len(
         [y for x in backlinks_items for y in x]))
@@ -70,7 +70,7 @@ def get_data_by_region(region: Text) -> Sequence:
     # Change backlinks pages to Geodata dataset format.
     for list_backlinks, original_wikipedia, original_wikidata in zip(backlinks_items, wikipedia_items, wikidata_items):
         for backlink in list_backlinks:
-            geo_data.append(wikigeo.Entity.from_wiki_items(
+            geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
                 backlink, original_wikipedia, original_wikidata).sample)
 
     print("total number: ", len(geo_data))
