@@ -30,7 +30,7 @@ _IDEAL_PIVOT_DISTANCE_PERCENTAGE = .75
 _PATH_DISTANCE_BUFFER_FACTOR = 1.05
 
 def get_all_distances(
-  focus: Point, entities: Sequence[item.Entity]) -> Dict[Text, float]:
+  focus: Point, entities: Sequence[item.WikidataEntity]) -> Dict[Text, float]:
   """Get the distance from each entity to the provided focus point.
   
   Args:
@@ -48,7 +48,7 @@ def get_all_distances(
 
 
 def get_pivot_poi(
-  start: Point, goal: Point, entities: Sequence[item.Entity]) -> Text:
+  start: Point, goal: Point, entities: Sequence[item.WikidataEntity]) -> Text:
   """Select a POI that can act as a useful reference between start and goal.
 
   Args:

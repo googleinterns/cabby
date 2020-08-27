@@ -31,7 +31,7 @@ class ObserveTest(unittest.TestCase):
     # Get Pittsburgh items. Also tests cabby.geo.util.item and 
     # cabby.data.wikidata.query.
     pittsburgh_items = [
-      item.Entity.from_sparql_result(result) 
+      item.WikidataEntity.from_sparql_result(result) 
       for result in query.get_geofenced_wikidata_items('Pittsburgh')
     ]
     pittsburgh_index = {e.qid: e for e in pittsburgh_items}

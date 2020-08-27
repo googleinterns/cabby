@@ -13,7 +13,6 @@
 # limitations under the License.
 
 '''Example command line method to output simple RVS instructions.
-
 Example (starting near SW corner of Bryant park and heading SE):
 $ bazel-bin/cabby/rvs/generate_rvs \
   --start_lat 40.753628 --start_lon -73.985085 \
@@ -63,7 +62,7 @@ def main(argv):
   # each entity's QID to the entity representation.
   entities = {}
   for result in query.get_geofenced_wikidata_items('Manhattan'):
-    entity = item.Entity.from_sparql_result(result)
+    entity = item.WikidataEntity.from_sparql_result(result)
     entities[entity.qid] = entity
 
   # Find the closest POI in the Wikidata items so that we have something to
