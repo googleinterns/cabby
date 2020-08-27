@@ -85,6 +85,7 @@ def clean_text(text: Text) -> Text:
     # Remove titles.
     clean_text = text.split('== See also ==')[0]
     clean_text = clean_text.split('== Notes ==')[0]
+    clean_text = clean_text.split('== References ==')[0]
     clean_text = re.sub(r'=.*=', r'.', clean_text)
     return clean_text
 
@@ -136,6 +137,9 @@ def get_wikipedia_items_title_in_text(backlink_id: int, orig_title: Text) -> Seq
     for span in list(doc.sents):
         sub_sentences = span.text.split('\n')
         for sentence in sub_sentences:
+            # Filter short sentences
+            if len(sentence.split(" "))<5:
+              continue
             fuzzy_score = fuzz.token_set_ratio(sentence, orig_title)
             if orig_title not in sentence and fuzzy_score < 90:
                 continue

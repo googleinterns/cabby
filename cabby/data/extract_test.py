@@ -22,7 +22,7 @@ class GeoSetTest(unittest.TestCase):
 
     def testQueryItems(self):
         # Test plain Wikipedia query for items
-        output = extract.get_data_by_region('Pittsburgh')
+        output = extract.get_data_by_qid('Q7859146')
         expected = 12717774 #  Two PNC Plaza.
         two_pnc_plazza = [x for x in output if x['pageid']==expected][0]
         self.assertEqual(two_pnc_plazza['pageid'], expected)
