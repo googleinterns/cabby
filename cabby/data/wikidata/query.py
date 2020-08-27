@@ -110,7 +110,7 @@ _MANHATTAN_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
             }
             GROUP BY ?place ?placeLabel ?wikipediaUrl ?instanceLabel
                 """,
-                
+
                     """SELECT ?place ?placeLabel ?wikipediaUrl 
             ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
             (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)   Where
@@ -234,6 +234,33 @@ _PITTSBURGH_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
                     GROUP BY ?place ?placeLabel ?wikipediaUrl 
                 """]
 
+_BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
+                     ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
+                    (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
+                    WHERE 
+                    {
+                    {
+                        VALUES ?place {wd:%s}
+                        ?place wdt:P31 ?instance.
+                        ?wikipediaUrl schema:about ?place. 
+                        ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
+                        SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+                                                ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
+
+                        SERVICE wikibase:box {
+                        ?place wdt:P625 ?location .
+                        bd:serviceParam wikibase:cornerWest "Point(-80.035,40.425)"^^geo:wktLiteral .
+                        bd:serviceParam wikibase:cornerEast "Point(-72.963,41.752)"^^geo:wktLiteral .
+                        }
+                    }
+                    FILTER (?instance  not in
+                    (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
+                    wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
+                    wd:Q744913, wd:Q186117, wd:Q3298291) )
+                    }
+                    GROUP BY ?place ?placeLabel ?wikipediaUrl 
+                """
+
 
 def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
     '''Get Wikidata items for a specific area. 
@@ -252,6 +279,18 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
         raise ValueError(f"{region} is not a supported region.")
 
     return query_api(query)
+
+
+def get_geofenced_wikidata_items_by_qid(qid: Text) -> Sequence[Dict]:
+    '''Get Wikidata items for a specific area. 
+    Arguments:
+        qid(Text): The qid to query the Wikidata items.
+    Returns:
+        The Wikidata items found in the area.
+    '''
+    query = _BY_QID_QUERY % qid
+
+    return query_api([query])
 
 
 def query_api(queries: Sequence[Text]) -> Dict[Text, Dict]:
