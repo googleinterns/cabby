@@ -1,4 +1,5 @@
 /bazel-*
-*/__pycache__
-*/*/__pycache__/
+**__pycache__**
 .pytype
+*.log
+.vscode/

@@ -3,11 +3,6 @@ package(
 )
 
 py_library(
-    name = 'item',
-    srcs = ['item.py'],
-)
-
-py_library(
     name = 'query',
     srcs = ['query.py'],
 )
@@ -22,8 +17,8 @@ py_test(
 )
 
 py_binary(
-    name = 'extract_geofenced_wikidata_items',
-    main = 'extract_geofenced_wikidata_items.py',
-    srcs = ['extract_geofenced_wikidata_items.py'],
+    name = 'extract_wikipedia_items',
+    main = 'extract_wikipedia_items.py',
+    srcs = ['extract_wikipedia_items.py'],
     deps = [':query'],
 )
