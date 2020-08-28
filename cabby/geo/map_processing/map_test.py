@@ -51,7 +51,7 @@ class MapTest(unittest.TestCase):
 
         # Check that the POI was added correctly to the graph.
         cell_to_search = list_cells[0]
-        node = self.pittsburgh_map.map_graph.search(cell_to_search)
+        node = self.pittsburgh_map.s2_graph.search(cell_to_search)
         self.assertTrue(hasattr(node, 'poi') and 203322568 in node.poi)
 
 
