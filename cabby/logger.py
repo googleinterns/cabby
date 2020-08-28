@@ -18,12 +18,13 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 
-def create_logger(save_path,loggername):
+def create_logger(save_path, loggername):
     logger = logging.getLogger(loggername)
 
     logger.setLevel(logging.DEBUG)
 
-    formatter = logging.Formatter('%(asctime)s :: %(levelname)s :: %(message)s')
+    formatter = logging.Formatter(
+        '%(asctime)s :: %(levelname)s :: %(message)s')
     file_handler = RotatingFileHandler(save_path, 'a', 1000000, 1)
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
