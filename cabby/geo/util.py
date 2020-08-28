@@ -14,7 +14,6 @@
 '''Library to support map geographical computations.'''
 
 from typing import Optional, Tuple, Sequence
-
 import folium
 import geographiclib
 from geopy.distance import geodesic
@@ -24,14 +23,33 @@ from shapely.geometry.polygon import Polygon
 import webbrowser
 
 
+def s2ids_from_s2cells(list_s2cells: Sequence[s2.S2Cell]) -> Sequence[int]:
+    '''Converts a sequence of S2Cells to a sequence of ids of the S2Cells. 
+    Arguments:
+      list_s2cells(S2Cells): The list of S2Cells to be converted to ids.
+    Returns:
+      A sequence of ids corresponding to the S2Cells.
+    '''
+    
+    return [cell.id() for cell in list_s2cells]
+
+
+def s2cells_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2Cell]:
+    '''Converts a sequence of ids of S2Cells to a sequence of S2Cells. 
+    Arguments:
+      list_ids(list): The list of S2Cells ids to be converted to S2Cells.
+    Returns:
+      A sequence of S2Cells corresponding to the ids.
+    '''
+    return [s2.S2Cell(s2.S2CellId(cellid)) for cellid in list_ids]
+
+
 def get_s2cover_for_s2polygon(s2polygon: s2.S2Polygon,
                               level: int) -> Optional[Sequence]:
     '''Returns the cellids that cover the shape (point/polygon/polyline). 
-
     Arguments:
       s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be 
         performed.
-
     Returns:
       A sequence of S2Cells that completely cover the provided S2Polygon.
     '''
