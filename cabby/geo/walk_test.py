@@ -17,6 +17,7 @@ import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
 from cabby.geo import walk
+from cabby.geo.map_processing import map_structure
 
 
 class WalkTest(unittest.TestCase):
@@ -24,12 +25,12 @@ class WalkTest(unittest.TestCase):
     def setUp(self):
         
         # Load map from disk.
-        self.map = map_structure.Map("Manhattan", 18, "/mnt/hackney/data/cabby/poi/")
+        self.map = map_structure.Map("Manhattan", 18, "/mnt/hackney/data/cabby/poi/v1/")
 
     def testSingleOutput(self):
         start_point = Point(-73.982473, 40.748432)
         end_point = Point(-73.98403, 40.74907)
-        list_points = walk.compute_route(start_point, end_point, self.map.poi_graph, self.map.nodes)
+        list_points = walk.compute_route(start_point, end_point, self.map.nx_graph, self.map.nodes)
 
         # Check that two points have arrived.
         self.assertEqual(len(list_points), 2)

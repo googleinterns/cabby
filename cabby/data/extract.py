@@ -61,7 +61,7 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) ->Sequence:
         for backlink in list_backlinks:
             wikigeo_sample  = wikigeo.WikigeoEntity.from_wiki_items(
                 backlink, original_wikipedia, original_wikidata).sample
-            if wikigeo_sample in geo_data:
+            if any(dict['text'] == wikigeo_sample['text'] for dict in geo_data):
                 continue
             geo_data.append(wikigeo_sample)
 

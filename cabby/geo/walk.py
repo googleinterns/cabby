@@ -84,7 +84,7 @@ def get_start_end_point():
   start_point = get_start_poi(poi, end_point)
 
   # Compute route between start and end points.
-  route = compute_route()
+  # route = compute_route()
 
   # Select pivot.
 
