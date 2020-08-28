@@ -1,5 +1,3 @@
 /bazel-*
 **__pycache__**
 .pytype
-Manhattan_data.txt
-Pittsburgh_data.txt
