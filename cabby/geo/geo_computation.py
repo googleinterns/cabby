@@ -27,6 +27,7 @@ from shapely.geometry.point import Point
 import osmnx as ox
 
 from cabby.geo import walk
+from cabby import logger
 
 FLAGS = flags.FLAGS
 flags.DEFINE_float("orig_lat", None, "origin latitude.")
@@ -39,27 +40,27 @@ flags.mark_flag_as_required("orig_lat")
 flags.mark_flag_as_required("orig_lon")
 flags.mark_flag_as_required("dest_lat")
 flags.mark_flag_as_required("dest_lon")
-
-# TODO(tzufgoogle): Add logger to this main method.
 def main(argv):
     del argv  # Unused.
 
-    print("Obtaining graph for Manhattan.")
+    # Create logger
+    logger = logger.create_logger("geo_computation.log", 'geo_computation')
+
+    logger.info('Obtaining graph for Manhattan.')
     graph = ox.graph_from_place('Manhattan, New York City, New York, USA')
 
-    print("Converting the graph to nodes and edge GeoDataFrames.")
+    logger.info('Converting the graph to nodes and edge GeoDataFrames.')
     nodes, _ = ox.graph_to_gdfs(graph)
 
     origin = Point(FLAGS.orig_lon, FLAGS.orig_lat)
     destination = Point(FLAGS.dest_lon, FLAGS.dest_lat)
 
-    print(f"Computing route between {origin} and {destination}.")
+    logger.info(f"Computing route between {origin} and {destination}.")
     route = walk.compute_route(origin, destination, graph, nodes)
 
-    print("Points obtained for the route.")
+    logger.info("Points obtained for the route.")
     for point in route:
-      print(point)
-
+      logger.info(point)
 
 if __name__ == '__main__':
     app.run(main)
