@@ -14,22 +14,42 @@
 '''Library to support map geographical computations.'''
 
 from typing import Optional, Tuple, Sequence
-
+import folium
+import geographiclib
+from geopy.distance import geodesic
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
-import folium
 import webbrowser
+
+
+def s2ids_from_s2cells(list_s2cells: Sequence[s2.S2Cell]) -> Sequence[int]:
+    '''Converts a sequence of S2Cells to a sequence of ids of the S2Cells. 
+    Arguments:
+      list_s2cells(S2Cells): The list of S2Cells to be converted to ids.
+    Returns:
+      A sequence of ids corresponding to the S2Cells.
+    '''
+    
+    return [cell.id() for cell in list_s2cells]
+
+
+def s2cells_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2Cell]:
+    '''Converts a sequence of ids of S2Cells to a sequence of S2Cells. 
+    Arguments:
+      list_ids(list): The list of S2Cells ids to be converted to S2Cells.
+    Returns:
+      A sequence of S2Cells corresponding to the ids.
+    '''
+    return [s2.S2Cell(s2.S2CellId(cellid)) for cellid in list_ids]
 
 
 def get_s2cover_for_s2polygon(s2polygon: s2.S2Polygon,
                               level: int) -> Optional[Sequence]:
     '''Returns the cellids that cover the shape (point/polygon/polyline). 
-
     Arguments:
       s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be 
         performed.
-
     Returns:
       A sequence of S2Cells that completely cover the provided S2Polygon.
     '''
@@ -193,3 +213,27 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
 
     s2polygon = s2polygon_from_shapely_polyline(polyline)
     return get_s2cover_for_s2polygon(s2polygon, level)
+
+
+def get_bearing(start: Point, goal: Point) -> float:
+  """Get the bearing (heading) from the start lat-lon to the goal lat-lon.
+  
+  Args:
+    start: The starting point.
+    goal: The goal point.
+  Returns:
+    The geospatial bearing when heading from the start to the goal. The bearing 
+    angle given by azi1 (azimuth) is clockwise relative to north, so a bearing 
+    of 90 degrees is due east, 180 is south, and 270 is west.
+  """
+  solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
+      start.y, start.x, goal.y, goal.x)
+  return solution['azi1'] % 360
+
+def get_distance_km(start: Point, goal: Point) -> float:
+  """Returns the geodesic distance (in kilometers) between start and goal.
+  
+  This distance is direct (as the bird flies), rather than based on a route
+  going over roads and around buildings.
+  """
+  return geodesic(start.coords, goal.coords).km

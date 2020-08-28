@@ -22,19 +22,14 @@ from cabby.geo import walk
 class WalkTest(unittest.TestCase):
 
     def setUp(self):
-
-        # Compute graph over Manhattan.
-        self.graph = ox.graph_from_place(
-            'Manhattan, New York City, New York, USA')
-
-        # Convert a graph to nodes and edge GeoDataFrames.
-        self.nodes, _ = ox.graph_to_gdfs(self.graph)
+        
+        # Load map from disk.
+        self.map = map_structure.Map("Manhattan", 18, "/mnt/hackney/data/cabby/poi/")
 
     def testSingleOutput(self):
         start_point = Point(-73.982473, 40.748432)
         end_point = Point(-73.98403, 40.74907)
-        list_points = walk.compute_route(start_point, end_point, self.graph,
-                                         self.nodes)
+        list_points = walk.compute_route(start_point, end_point, self.map.poi_graph, self.map.nodes)
 
         # Check that two points have arrived.
         self.assertEqual(len(list_points), 2)
