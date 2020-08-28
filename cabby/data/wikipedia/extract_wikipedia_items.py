@@ -12,32 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Example command line method to extract wikidata items.
+'''Example command line method to extract Wikipedia items.
 Example:
-$ bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items \
-  --region Pittsburgh
+$ bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles="New_York_Stock_Exchange, Empire_State_Building"
 '''
 
 from absl import app
 from absl import flags
 
-from cabby.data.wikidata import query
+from cabby.data.wikipedia import query
 
 FLAGS = flags.FLAGS
-flags.DEFINE_enum(
-    "region", None, ['Pittsburgh', 'Manhattan'],
-    "Map areas: Manhattan or Pittsburgh.")
+flags.DEFINE_list(
+    "titles", None,
+    "List of Wikipedia titles to extract.")
 
 # Required flags.
-flags.mark_flag_as_required("region")
+flags.mark_flag_as_required("titles")
+
 
 def main(argv):
     del argv  # Unused.
-    results = query.get_geofenced_wikidata_items(FLAGS.region)
+    results = query.get_wikipedia_items(FLAGS.titles)
     for result in results:
         print(result)
 
-    print('The number of Wikidata items found is: {}'.format(len(results)))
+    print('The number of Wikipedia items found is: {}'.format(
+        len(results)))
 
 
 if __name__ == '__main__':

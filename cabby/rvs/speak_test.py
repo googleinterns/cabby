@@ -14,16 +14,24 @@
 
 '''Tests for speak.py'''
 
-from cabby.rvs import speak
 import unittest
+
+from cabby.geo import directions
+from cabby.rvs import speak
 
 
 class SpeakTest(unittest.TestCase):
 
-    def testSingleOutput(self):
-        expected = 'go to the pharmacy near the Empire State Building.'
-        output = speak.describe_route('Empire State Building', 'pharmacy')
-        self.assertEqual(output, expected)
+  def testSingleOutput(self):
+      expected = ('go to Church of the Incarnation, Episcopal, which is 100 '
+                  'meters to the left of Graduate Center, CUNY')
+      output = speak.describe_meeting_point(
+          'Graduate Center, CUNY',
+          'Church of the Incarnation, Episcopal',
+          -75.84734584372487,
+          0.09300668715292916
+      )
+      self.assertEqual(output, expected)
 
 
 if __name__ == "__main__":

@@ -21,6 +21,13 @@ py_test(
     ],
 )
 
+py_library(
+    name = 'directions',
+    srcs = ['directions.py'],
+    deps = [':util'],
+)
+
+
 py_binary(
     name = 'geo_computation',
     main = 'geo_computation.py',
