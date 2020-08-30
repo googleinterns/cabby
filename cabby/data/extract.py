@@ -23,7 +23,6 @@ from cabby.data.wikidata import item as wdi
 from cabby.data.wikipedia import item as wpi
 from cabby.data import wikigeo
 
-
 def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) ->Sequence:
     '''Get data from Wikipedia based on Wikidata items" 
     Arguments:
@@ -61,7 +60,7 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) ->Sequence:
         for backlink in list_backlinks:
             wikigeo_sample  = wikigeo.WikigeoEntity.from_wiki_items(
                 backlink, original_wikipedia, original_wikidata).sample
-            if wikigeo_sample in geo_data:
+            if any(dict['text'] == wikigeo_sample['text'] for dict in geo_data):
                 continue
             geo_data.append(wikigeo_sample)
 
@@ -101,3 +100,31 @@ def get_data_by_region(region: Text) -> Sequence:
 
     return get_wikigeo_data(wikidata_items)
 
+def split_dataset(dataset, precentage_train:float, precentage_dev:float):
+    '''Splits the dataset into train-set, dev-set, test-set according to the ref_qid" 
+    Arguments:
+        precentage_train(float in [0,1]): precentage of the train-set.
+        precentage_dev(float in [0,1]): precentage of the dev-set.
+    Returns:
+        The train-set, dev-set and test-set splits.
+    '''
+    assert precentage_train>=0 and precentage_train<=1, "precentage_train is not in rang 0-1."
+
+    assert precentage_dev>=0 and precentage_dev<=1, "precentage_dev is not in rang 0-1."
+
+    assert precentage_dev+precentage_train<=1, "precentage_dev+precentage_train is more than 1."
+    
+    # Sort the dataset by ref_qid.
+    sorted_dataset = sorted(dataset, key = lambda i: i['ref_qid'])
+
+    # Get size of splits.
+    size_dataset = len(dataset)
+    size_train = round(precentage_train*size_dataset)
+    size_dev = round(precentage_dev*size_dataset)
+
+    # Split the dataset.
+    train_set = sorted_dataset[0:size_train]
+    dev_set = sorted_dataset[size_train:size_train+size_dev]
+    test_set = sorted_dataset[size_train+size_dev:]
+
+    return train_set, dev_set, test_set

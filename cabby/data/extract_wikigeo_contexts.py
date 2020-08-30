@@ -48,6 +48,15 @@ def main(argv):
             outfile.write('\n')
             outfile.flush()
 
+    train_set, dev_set, test_set = extract.split_dataset(results, 0.8, 0.1)
+
+    print('The size of the train-set is: {}'.format(
+        len(train_set)))
+    print('The size of the dev-set is: {}'.format(
+        len(dev_set)))    
+    print('The size of the test-set is: {}'.format(
+        len(test_set)))
+
 
 if __name__ == '__main__':
     app.run(main)

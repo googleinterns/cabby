@@ -44,23 +44,23 @@ def main(argv):
     del argv  # Unused.
 
     # Create logger
-    logger = logger.create_logger("geo_computation.log", 'geo_computation')
+    geo_logger = logger.create_logger("geo_computation.log", 'geo_computation')
 
-    logger.info('Obtaining graph for Manhattan.')
+    geo_logger.info('Obtaining graph for Manhattan.')
     graph = ox.graph_from_place('Manhattan, New York City, New York, USA')
 
-    logger.info('Converting the graph to nodes and edge GeoDataFrames.')
+    geo_logger.info('Converting the graph to nodes and edge GeoDataFrames.')
     nodes, _ = ox.graph_to_gdfs(graph)
 
     origin = Point(FLAGS.orig_lon, FLAGS.orig_lat)
     destination = Point(FLAGS.dest_lon, FLAGS.dest_lat)
 
-    logger.info(f"Computing route between {origin} and {destination}.")
+    geo_logger.info(f"Computing route between {origin} and {destination}.")
     route = walk.compute_route(origin, destination, graph, nodes)
 
-    logger.info("Points obtained for the route.")
+    geo_logger.info("Points obtained for the route.")
     for point in route:
-      logger.info(point)
+      geo_logger.info(point)
 
 if __name__ == '__main__':
     app.run(main)
