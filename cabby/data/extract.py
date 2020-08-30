@@ -101,3 +101,31 @@ def get_data_by_region(region: Text) -> Sequence:
 
     return get_wikigeo_data(wikidata_items)
 
+
+def split_dataset(dataset, percentage_train:float, percentage_dev:float):
+    '''Splits the dataset into train-set, dev-set, test-set according to the ref_qid" 
+    Arguments: 
+      percentage_train(float in [0,1]): percentage of the train-set. percentage_dev(float in [0,1]): percentage of the dev-set. 
+    Returns: 
+      The train-set, dev-set and test-set splits.
+    '''
+
+    assert percentage_train>=0 and percentage_train<=1, "percentage_train is not in rang 0-1."
+    assert percentage_dev>=0 and percentage_dev<=1, "percentage_dev is not in rang 0-1."
+    assert percentage_dev+percentage_train<=1, "percentage_dev+percentage_train is more than 1."
+
+    # Sort the dataset by ref_qid. 
+    sorted_dataset = sorted(dataset, key = lambda i: i['ref_qid'])
+
+    # Get size of splits.
+    size_dataset = len(dataset)
+    size_train = round(percentage_train*size_dataset)
+    size_dev = round(percentage_dev*size_dataset)
+
+    # Split the dataset.
+    train_set = sorted_dataset[0:size_train]
+    dev_set = sorted_dataset[size_train:size_train+size_dev]
+    test_set = sorted_dataset[size_train+size_dev:]
+
+    return train_set, dev_set, test_set
+
