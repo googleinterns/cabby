@@ -47,7 +47,7 @@ def main(argv):
     # Load from disk.
     map_new = map_structure.Map(FLAGS.region, FLAGS.level, FLAGS.directory)
 
-    print(map_new.poi)
+    print('Number of POI found: {0}'.format(map_new.poi.shape[0]))
 
 
 if __name__ == '__main__':
