@@ -27,7 +27,7 @@ class WalkTest(unittest.TestCase):
         # Load map from disk.
         self.map = map_structure.Map("Manhattan", 18, "/mnt/hackney/data/cabby/poi/v1/")
 
-    def testSingleOutput(self):
+    def testRouteCalculation(self):
         start_point = Point(-73.982473, 40.748432)
         end_point = Point(-73.98403, 40.74907)
         list_points = walk.compute_route(start_point, end_point, self.map.nx_graph, self.map.nodes)
@@ -49,6 +49,15 @@ class WalkTest(unittest.TestCase):
             self.assertLessEqual(point.y, end_point.y + eps)
             self.assertGreaterEqual(point.y, start_point.y - eps)
 
+
+
+    def testPointsSelection(self):
+        result = walk.get_points_and_route(self.map)
+        if result is None:
+            return
+        end_point, start_point, route, pivot = result
+        
+        self.assertGreaterEqual(route.shape[0],1)
 
 if __name__ == "__main__":
     unittest.main()
