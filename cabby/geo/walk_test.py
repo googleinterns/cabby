@@ -18,9 +18,6 @@ import unittest
 from shapely.geometry.point import Point
 from cabby.geo import walk
 from cabby.geo.map_processing import map_structure
-# import walk
-# from map_processing import map_structure
-
 
 class WalkTest(unittest.TestCase):
 
