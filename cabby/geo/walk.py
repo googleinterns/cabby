@@ -25,7 +25,6 @@ import util
 from shapely.geometry.point import Point
 
 from cabby.geo.map_processing import map_structure
-# from map_processing import map_structure
 
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
@@ -93,11 +92,11 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[D
         lambda x: util.get_distance_km(end_point['centroid'], x))
 
     # Get POI within a distance range.
-    within_distance = map.poi[(dist > 0.2) & (dist < 3)] # TODO change to path distance.
-
+    # TODO change to path distance.
+    within_distance = map.poi[(dist > 0.2) & (dist < 3)]
 
     # Filter large POI.
-    small_poi = within_distance[within_distance['cellids'].str.len() <= 4] 
+    small_poi = within_distance[within_distance['cellids'].str.len() <= 4]
 
     # Pick random POI.
     start_point = small_poi.sample(1).to_dict('records')[0]
@@ -142,6 +141,12 @@ def landmark_pick(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
 
 
 def get_pivot(route: GeoDataFrame, map: map_structure.Map) -> Optional[Dict]:
+    '''Return a picked landmark on a given route.
+    Arguments:
+      route: Along the route a landmark will be chosen.
+    Returns:
+      A single landmark.
+    '''
 
     points_route = map.nodes[map.nodes['osmid'].isin(
         route['osmid'])]['geometry']
@@ -159,6 +164,12 @@ def get_pivot(route: GeoDataFrame, map: map_structure.Map) -> Optional[Dict]:
 
 
 def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict, Dict, GeoDataFrame, Dict]]:
+    '''Sample start and end point, a pivot landmark and route.
+    Arguments:
+      map: The map of a specific region.
+    Returns:
+      A start and end point, a pivot landmark and route.
+    '''
 
     # Select end point.
     end_point = get_end_poi(map)
@@ -182,6 +193,3 @@ def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict, Dict, G
         return
 
     return end_point, start_point, route, pivot
-
-
-
