@@ -17,9 +17,13 @@ py_test(
     srcs = ["walk_test.py"],
     python_version = "PY3",
     deps = [
-        ":walk"
+        "//cabby/geo:walk",
+        "//cabby/geo/map_processing:map_structure",
+
     ],
 )
+
+
 
 py_library(
     name = 'directions',
@@ -32,5 +36,12 @@ py_binary(
     name = 'geo_computation',
     main = 'geo_computation.py',
     srcs = ['geo_computation.py'],
+    deps = [':walk'],
+)
+
+py_binary(
+    name = 'sample_poi',
+    main = 'sample_poi.py',
+    srcs = ['sample_poi.py'],
     deps = [':walk'],
 )

@@ -18,46 +18,50 @@ import unittest
 from shapely.geometry.point import Point
 from cabby.geo import walk
 from cabby.geo.map_processing import map_structure
+# import walk
+# from map_processing import map_structure
 
 
 class WalkTest(unittest.TestCase):
 
     def setUp(self):
-        
+
         # Load map from disk.
-        self.map = map_structure.Map("Manhattan", 18, "/mnt/hackney/data/cabby/poi/v1/")
+        self.map = map_structure.Map(
+            "Manhattan", 18, "/mnt/hackney/data/cabby/poi/v1/")
 
     def testRouteCalculation(self):
         start_point = Point(-73.982473, 40.748432)
         end_point = Point(-73.98403, 40.74907)
-        list_points = walk.compute_route(start_point, end_point, self.map.nx_graph, self.map.nodes)
+        route = walk.compute_route(
+            start_point, end_point, self.map.nx_graph, self.map.nodes)
 
         # Check that two points have arrived.
-        self.assertEqual(len(list_points), 2)
+        self.assertEqual(len(route), 2)
 
         # Check that the correct points have arrived.
-        first_point = walk.tuple_from_point(list_points[0])
-        second_point = walk.tuple_from_point(list_points[1])
+        first_point = walk.tuple_from_point(route['geometry'].iloc[0])
+        second_point = walk.tuple_from_point(route['geometry'].iloc[1])
         self.assertEqual(first_point, (40.749102, -73.984076))
         self.assertEqual(second_point, (40.748432, -73.982473))
 
         # Check that all points are in a bounding box.
         eps = 0.0005
-        for point in list_points:
+        for point in route['geometry'].tolist():
             self.assertLessEqual(point.x, start_point.x + eps)
             self.assertGreaterEqual(point.x, end_point.x - eps)
             self.assertLessEqual(point.y, end_point.y + eps)
             self.assertGreaterEqual(point.y, start_point.y - eps)
-
-
 
     def testPointsSelection(self):
         result = walk.get_points_and_route(self.map)
         if result is None:
             return
         end_point, start_point, route, pivot = result
-        
-        self.assertGreaterEqual(route.shape[0],1)
+
+        self.assertGreaterEqual(route.shape[0], 1)
+        self.assertIsNotNone(end_point['name'])
+
 
 if __name__ == "__main__":
     unittest.main()
