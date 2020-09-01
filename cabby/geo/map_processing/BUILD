@@ -22,9 +22,15 @@ py_test(
     srcs = ['map_test.py'],
     python_version = 'PY3',
     deps = [
-        ':map_structure'
+        "//cabby/geo/map_processing:map_structure",
+        "//cabby/geo/map_processing:graph",
+        "//cabby/geo:util"
     ],
 )
+
+
+        
+
 
 py_binary(
     name = 'map_processor',

@@ -27,11 +27,12 @@ import os
 import copy
 import networkx as nx
 
-# from cabby.geo 
-import util
-# from cabby.geo.
-from map_processing import graph
+from cabby.geo import util
+from cabby.geo.map_processing import graph
 
+# import util
+# # from map_processing 
+# import graph
 
 class Map:
 
@@ -117,8 +118,9 @@ class Map:
         path = os.path.join(dir_name, base_filename + ".pkl")
         if not os.path.exists(path):
             pd_poi.to_pickle(path)
-        else: 
-            print ("path {0} already exists".format(path)) #TODO change to logger once it is merged
+        else:
+            # TODO change to logger once it is merged
+            print("path {0} already exists".format(path))
 
         # Write streets.
         pd_streets = copy.deepcopy(self.streets)
@@ -129,24 +131,24 @@ class Map:
         path = os.path.join(dir_name, base_filename + ".pkl")
         if not os.path.exists(path):
             pd_streets.to_pickle(path)
-        else: 
-            print ("path {0} already exists".format(path))
+        else:
+            print("path {0} already exists".format(path))
 
         # Write graph.
         base_filename = self.map_name.lower() + "_graph"
         path = os.path.join(dir_name, base_filename + ".gpickle")
         if not os.path.exists(path):
             nx.write_gpickle(self.nx_graph, path)
-        else: 
-            print ("path {0} already exists".format(path))
+        else:
+            print("path {0} already exists".format(path))
 
         # Write nodes.
         base_filename = self.map_name.lower() + "_nodes"
         path = os.path.join(dir_name, base_filename + ".geojson")
         if not os.path.exists(path):
             self.nodes.to_file(path, driver='GeoJSON')
-        else: 
-            print ("path {0} already exists".format(path))
+        else:
+            print("path {0} already exists".format(path))
 
     def load_map(self, dir_name: Text):
         '''Load POI from disk.'''
@@ -154,7 +156,8 @@ class Map:
         # Load POI.
         base_filename = self.map_name.lower()+"_poi"
         path = os.path.join(dir_name, base_filename + ".pkl")
-        assert os.path.exists(path), "path {0} already doesn't exists".format(path)
+        assert os.path.exists(
+            path), "path {0} doesn't exists".format(path)
         poi_pandas = pd.read_pickle(path)
         poi_pandas['cellids'] = poi_pandas['cellids'].apply(
             lambda x: util.s2cells_from_cellids(x))
@@ -163,7 +166,8 @@ class Map:
         # Load streets.
         base_filename = self.map_name.lower() + "_streets"
         path = os.path.join(dir_name, base_filename + ".pkl")
-        assert os.path.exists(path), "path {0} already doesn't exists".format(path)
+        assert os.path.exists(
+            path), "path {0} doesn't exists".format(path)
         streets_pandas = pd.read_pickle(path)
         streets_pandas['cellids'] = streets_pandas['cellids'].apply(
             lambda x: util.s2cells_from_cellids(x))
@@ -172,11 +176,13 @@ class Map:
         # Load graph.
         base_filename = self.map_name.lower() + "_graph"
         path = os.path.join(dir_name, base_filename + ".gpickle")
-        assert os.path.exists(path), "path {0} already doesn't exists".format(path)
+        assert os.path.exists(
+            path), "path {0} doesn't exists".format(path)
         self.nx_graph = nx.read_gpickle(path)
 
         # Load nodes.
         base_filename = self.map_name.lower() + "_nodes"
         path = os.path.join(dir_name, base_filename + ".geojson")
-        assert os.path.exists(path), "path {0} already doesn't exists".format(path)
+        assert os.path.exists(
+            path), "path {0} doesn't exists".format(path)
         self.nodes = gpd.read_file(path, driver='GeoJSON')

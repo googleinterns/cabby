@@ -24,8 +24,8 @@ import osmnx as ox
 import util
 from shapely.geometry.point import Point
 
-# from cabby.geo.map_processing
-from map_processing import map_structure
+from cabby.geo.map_processing import map_structure
+# from map_processing import map_structure
 
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
@@ -93,10 +93,11 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[D
         lambda x: util.get_distance_km(end_point['centroid'], x))
 
     # Get POI within a distance range.
-    within_distance = map.poi[(dist > 0.2) & (dist < 3)]
+    within_distance = map.poi[(dist > 0.2) & (dist < 3)] # TODO change to path distance.
+
 
     # Filter large POI.
-    small_poi = within_distance[within_distance['cellids'].str.len() <= 4]
+    small_poi = within_distance[within_distance['cellids'].str.len() <= 4] 
 
     # Pick random POI.
     start_point = small_poi.sample(1).to_dict('records')[0]
@@ -140,7 +141,7 @@ def landmark_pick(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
         return None
 
 
-def get_pivot(route:GeoDataFrame, map: map_structure.Map) -> Optional[Dict]:
+def get_pivot(route: GeoDataFrame, map: map_structure.Map) -> Optional[Dict]:
 
     points_route = map.nodes[map.nodes['osmid'].isin(
         route['osmid'])]['geometry']
@@ -157,28 +158,28 @@ def get_pivot(route:GeoDataFrame, map: map_structure.Map) -> Optional[Dict]:
     return pivot.to_dict('records')[0]
 
 
-def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict,Dict,GeoDataFrame,Dict]]:
+def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict, Dict, GeoDataFrame, Dict]]:
 
     # Select end point.
     end_point = get_end_poi(map)
     if end_point is None:
-      return
+        return
 
     # Select start point.
     start_point = get_start_poi(map, end_point)
     if start_point is None:
-      return
+        return
 
     # Compute route between start and end points.
     route = compute_route(
         start_point['centroid'], end_point['centroid'], map.nx_graph, map.nodes)
     if route is None:
-      return
+        return
 
     # Select pivot.
     pivot = get_pivot(route, map)
     if pivot is None:
-      return
+        return
 
     return end_point, start_point, route, pivot
 
