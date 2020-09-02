@@ -5,6 +5,11 @@ package(
 py_library(
     name = 'walk',
     srcs = ['walk.py'],
+    deps = [
+        ":util",
+        "//cabby/geo/map_processing:map_structure",
+
+    ]
 )
 
 py_library(
@@ -36,12 +41,21 @@ py_binary(
     name = 'geo_computation',
     main = 'geo_computation.py',
     srcs = ['geo_computation.py'],
-    deps = [':walk'],
+    deps = [
+        ':walk',
+        ':util',
+        '//cabby:logger',
+
+
+        ]
+    
 )
 
 py_binary(
     name = 'sample_poi',
     main = 'sample_poi.py',
     srcs = ['sample_poi.py'],
-    deps = [':walk'],
-)
+    deps = [
+        ':walk',
+        ':util',
+        ])

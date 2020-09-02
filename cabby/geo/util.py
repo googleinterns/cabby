@@ -30,7 +30,7 @@ def s2ids_from_s2cells(list_s2cells: Sequence[s2.S2Cell]) -> Sequence[int]:
     Returns:
       A sequence of ids corresponding to the S2Cells.
     '''
-    
+
     return [cell.id() for cell in list_s2cells]
 
 
@@ -139,13 +139,12 @@ def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> s2.S2Polygon:
     return line
 
 
-def plot_cells(cells: s2.S2Cell):
+def plot_cells(cells: s2.S2Cell, location: list):
     '''Plot the S2Cell covering.'''
 
     # Create a map.
-    # TODO(tzufgoogle): Remove hard-coded location reference.
     map_osm = folium.Map(
-        location=[40.7434, -73.9847], zoom_start=12, tiles='Stamen Toner')
+        location=location, zoom_start=12, tiles='Stamen Toner')
 
     def style_function(x):
         return {'weight': 1, 'fillColor': '#eea500'}
@@ -216,24 +215,25 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
 
 
 def get_bearing(start: Point, goal: Point) -> float:
-  """Get the bearing (heading) from the start lat-lon to the goal lat-lon.
-  
-  Args:
-    start: The starting point.
-    goal: The goal point.
-  Returns:
-    The geospatial bearing when heading from the start to the goal. The bearing 
-    angle given by azi1 (azimuth) is clockwise relative to north, so a bearing 
-    of 90 degrees is due east, 180 is south, and 270 is west.
-  """
-  solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
-      start.y, start.x, goal.y, goal.x)
-  return solution['azi1'] % 360
+    """Get the bearing (heading) from the start lat-lon to the goal lat-lon.
+
+    Args:
+      start: The starting point.
+      goal: The goal point.
+    Returns:
+      The geospatial bearing when heading from the start to the goal. The bearing 
+      angle given by azi1 (azimuth) is clockwise relative to north, so a bearing 
+      of 90 degrees is due east, 180 is south, and 270 is west.
+    """
+    solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
+        start.y, start.x, goal.y, goal.x)
+    return solution['azi1'] % 360
+
 
 def get_distance_km(start: Point, goal: Point) -> float:
-  """Returns the geodesic distance (in kilometers) between start and goal.
-  
-  This distance is direct (as the bird flies), rather than based on a route
-  going over roads and around buildings.
-  """
-  return geodesic(start.coords, goal.coords).km
+    """Returns the geodesic distance (in kilometers) between start and goal.
+
+    This distance is direct (as the bird flies), rather than based on a route
+    going over roads and around buildings.
+    """
+    return geodesic(start.coords, goal.coords).km
