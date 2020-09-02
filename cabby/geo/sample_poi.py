@@ -47,13 +47,12 @@ flags.mark_flag_as_required("level")
 def main(argv):
     del argv  # Unused.
     map = map_structure.Map(FLAGS.region, FLAGS.level, FLAGS.directory)
-    result = walk.get_points_and_route(self.map)
+    result = walk.get_points_and_route(map)
     while result is None:
-        result = walk.get_points_and_route(self.map)
+        result = walk.get_points_and_route(map)
 
-    end_point, start_point, route, pivot = result
-    print("Starting at {0} walk past {1} and your goal is {2}.".format(
-        start_point, pivot, end_point))
+    end_point, start_point, route, main_pivot, near_pivot = result
+    print("Starting at {0} walk past {1} and your goal is {2}, near {3}.".format(start_point['name'], main_pivot['main_tag'], end_point['name'], near_pivot['main_tag']))
 
 
 if __name__ == '__main__':

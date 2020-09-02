@@ -21,14 +21,17 @@ from geopandas import GeoDataFrame
 import networkx as nx
 
 import osmnx as ox
-import util
 from shapely.geometry.point import Point
+from shapely.geometry.polygon import Polygon, LinearRing
 
+from shapely import geometry
+
+from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
-                  nodes: GeoDataFrame) -> Sequence:
+                  nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''Returns the shortest path between a starting and end point.
 
     Arguments:
@@ -45,7 +48,11 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
     dest = ox.get_nearest_node(graph, tuple_from_point(end_point))
 
     # Get shortest route.
-    route = nx.shortest_path(graph, orig, dest, 'length')
+    try:
+        route = nx.shortest_path(graph, orig, dest, 'length')
+    except:
+        print("no route found for the start and end points.")
+        return
     route_nodes = nodes[nodes['osmid'].isin(route)]
     return route_nodes
 
@@ -104,7 +111,7 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[D
     return start_point
 
 
-def landmark_pick(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
+def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''Select a landmark from a set of landmarks by priority.
     Arguments:
       df_pivots: The set of landmarks.
@@ -116,54 +123,99 @@ def landmark_pick(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
     if 'wikipedia' in coulmns:
         pivots = df_pivots[df_pivots['wikipedia'].notnull()]
         if pivots.shape[0] > 0:
+            pivots['main_tag'] = pivots['name']
             return pivots.sample(1)
     if 'wikidata' in coulmns:
         pivots = df_pivots[df_pivots['wikidata'].notnull()]
         if pivots.shape[0] > 0:
+            pivots['main_tag'] = pivots['name']
             return pivots.sample(1)
     if 'brand' in coulmns:
         pivots = df_pivots[(df_pivots['brand'].notnull()) &
                            (df_pivots['name'].notnull())]
         if pivots.shape[0] > 0:
+            pivots['main_tag'] = pivots['brand']
             return pivots.sample(1)
     if 'tourism' in coulmns:
         pivots = df_pivots[(df_pivots['tourism'].notnull())
                            & (df_pivots['name'].notnull())]
         if pivots.shape[0] > 0:
-            return pivots.sample(1)
+            picked = pivots.sample(1)
+            if picked['name'] is not None:
+                picked['main_tag'] = picked['name']
+            else:
+                picked['main_tag'] = picked['tourism']
+            return picked
     if 'amenity' in coulmns:
         pivots = df_pivots[(df_pivots['amenity'].notnull())
                            & (df_pivots['name'].notnull())]
         if pivots.shape[0] > 0:
-            return pivots.sample(1)
+            picked = pivots.sample(1)
+            if picked['name'] is not None:
+                picked['main_tag'] = picked['name']
+            else:
+                picked['main_tag'] = picked['amenity']
+            return picked
     else:
         return None
 
 
-def get_pivot(route: GeoDataFrame, map: map_structure.Map) -> Optional[Dict]:
+def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[Dict]:
+    '''Return a picked landmark near the end_point.
+    Arguments:
+      map: The map of a specific region.
+      end_point: The goal location.
+    Returns:
+      A single landmark near the goal location.
+    '''
+    tags = {'name': True, 'amenity': True, 'shop': True, 'tourism': True}
+    poi = ox.pois.pois_from_point(tuple_from_point(
+        end_point['centroid']), tags=tags, dist=20)
+
+    nearby_poi = poi[poi['osmid'] != end_point['osmid']]
+
+    prominent_poi = pick_prominent_pivot(nearby_poi)
+
+    if prominent_poi is None:
+        return
+
+    return prominent_poi.to_dict('records')[0]
+
+
+def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFrame) -> Optional[Tuple[Dict, Dict]]:
     '''Return a picked landmark on a given route.
     Arguments:
       route: Along the route a landmark will be chosen.
+      map: The map of a specific region.
+      end_point: The goal location.
     Returns:
       A single landmark.
     '''
 
+    # Get POI along the route.
     points_route = map.nodes[map.nodes['osmid'].isin(
         route['osmid'])]['geometry']
 
-    df_pivots = pd.DataFrame()
+    coords = [(p.x, p.y) for p in points_route.tolist()]
+    r = LinearRing(coords)
+    s = Polygon(r)
+    poly = Polygon(s.buffer(0.1).exterior, [r])
 
-    for point in points_route:
-        pivot_found = ox.footprints_from_point(
-            (point.y, point.x), dist=20, footprint_type='building', retain_invalid=False)
-        df_pivots = df_pivots.append(pivot_found, ignore_index=True)
+    df_pivots = ox.footprints_from_polygon(
+        poly, footprint_type='building', retain_invalid=False)
 
-    pivot = landmark_pick(df_pivots)
+    main_pivot = pick_prominent_pivot(df_pivots)
+    main_pivot = main_pivot.to_dict('records')[0]
 
-    return pivot.to_dict('records')[0]
+    # Get pivot near the goal location.
+    near_pivot = get_pivot_near_goal(map, end_point)
+    if main_pivot is None or near_pivot is None:
+        return
+
+    return main_pivot, near_pivot
 
 
-def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict, Dict, GeoDataFrame, Dict]]:
+def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict, Dict, GeoDataFrame, Dict, Dict]]:
     '''Sample start and end point, a pivot landmark and route.
     Arguments:
       map: The map of a specific region.
@@ -187,9 +239,10 @@ def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict, Dict, G
     if route is None:
         return
 
-    # Select pivot.
-    pivot = get_pivot(route, map)
-    if pivot is None:
+    # Select pivots.
+    result = get_pivots(route, map, end_point)
+    if result is None:
         return
+    main_pivot, near_pivot = result
 
-    return end_point, start_point, route, pivot
+    return end_point, start_point, route, main_pivot, near_pivot

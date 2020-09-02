@@ -19,6 +19,7 @@ from shapely.geometry.point import Point
 from cabby.geo import walk
 from cabby.geo.map_processing import map_structure
 
+
 class WalkTest(unittest.TestCase):
 
     def setUp(self):
@@ -36,9 +37,9 @@ class WalkTest(unittest.TestCase):
         # Check that two points have arrived.
         self.assertEqual(len(route), 2)
 
-        # Check that the correct points have arrived.
-        first_point = walk.tuple_from_point(route['geometry'].iloc[0])
-        second_point = walk.tuple_from_point(route['geometry'].iloc[1])
+        # Check that the correct points 
+        first_point = walk.tuple_from_point(route.iloc[0]['geometry'])
+        second_point = walk.tuple_from_point(route.iloc[1]['geometry'])
         self.assertEqual(first_point, (40.749102, -73.984076))
         self.assertEqual(second_point, (40.748432, -73.982473))
 
@@ -54,10 +55,14 @@ class WalkTest(unittest.TestCase):
         result = walk.get_points_and_route(self.map)
         if result is None:
             return
-        end_point, start_point, route, pivot = result
+        print (type(result))
+        end_point, start_point, route, main_pivot, near_pivot = result
 
         self.assertGreaterEqual(route.shape[0], 1)
         self.assertIsNotNone(end_point['name'])
+        self.assertIsNotNone(start_point['name'])
+        self.assertIsNotNone(main_pivot['main_tag'])
+        self.assertIsNotNone(near_pivot['main_tag'])
 
 
 if __name__ == "__main__":
