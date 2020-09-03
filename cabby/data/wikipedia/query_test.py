@@ -29,12 +29,12 @@ class WikipediaTest(unittest.TestCase):
 
     def testBacklinksItems(self):
         # Test backlinks Wikipedia query for items.
-        title = 'New_York_Stock_Exchange'
+        title = 'Two PNC Plaza'
         entities = query.get_backlinks_items_from_wikipedia_title(title)
-
-        expected = 'New York Stock Exchange'
         for entity in entities:
-            self.assertIn(expected, entity['extract'])
+            self.assertIn(title, entity['extract'])
+
+
 
 
 if __name__ == "__main__":

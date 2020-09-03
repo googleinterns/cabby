@@ -27,7 +27,7 @@ from cabby.data import extract
 FLAGS = flags.FLAGS
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-    "region", None, ['Pittsburgh', 'Manhattan'],
+    "region", None, ['Pittsburgh', 'Manhattan', 'Bologna'],
     "Map areas: Manhattan or Pittsburgh.")
 flags.DEFINE_string("path", None, "The path where the data will be saved.")
 

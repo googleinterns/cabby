@@ -7,6 +7,12 @@ py_library(
     srcs = ['query.py'],
 )
 
+py_library(
+    name = 'item',
+    srcs = ['item.py'],
+)
+
+
 py_test(
     name = "query_test",
     srcs = ["query_test.py"],
