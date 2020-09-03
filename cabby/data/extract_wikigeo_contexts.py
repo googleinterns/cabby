@@ -14,7 +14,7 @@
 
 '''Example command line method to extract Wikipedia and Wikidata items and save to file.
 Example:
-$ bazel-bin/cabby/data/extract_wikigeo_contexts --region Pittsburgh --path geodata.txt
+$ bazel-bin/cabby/data/extract_wikigeo_contexts --region Pittsburgh --path pittsburgh.json
 '''
 
 from absl import app

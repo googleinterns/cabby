@@ -29,8 +29,6 @@ import networkx as nx
 
 from cabby.geo import util
 from cabby.geo.map_processing import graph
-# import util
-# from map_processing import graph
 
 
 class Map:
