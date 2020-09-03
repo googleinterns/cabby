@@ -42,12 +42,13 @@ def main(argv):
     map = map_structure.Map(FLAGS.region, FLAGS.level)
 
     # Write to disk.
-    map.write_map(FLAGS.directory)
+    if FLAGS.directory is not None:
+      map.write_map(FLAGS.directory)
 
-    # Load from disk.
-    map_new = map_structure.Map(FLAGS.region, FLAGS.level, FLAGS.directory)
-
-    print(map_new.poi)
+      # Load from disk.
+      map = map_structure.Map(FLAGS.region, FLAGS.level, FLAGS.directory)
+  
+    print(map.poi)
 
 
 if __name__ == '__main__':
