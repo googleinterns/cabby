@@ -44,10 +44,8 @@ py_binary(
     deps = [
         ':walk',
         ':util',
-        '//cabby:logger',
-
-
-        ]
+        "//cabby:logger"
+        ],
     
 )
 
@@ -58,4 +56,6 @@ py_binary(
     deps = [
         ':walk',
         ':util',
-        ])
+        "//cabby:logger"
+        ],
+)
