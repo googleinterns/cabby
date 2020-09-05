@@ -16,7 +16,7 @@
 
 Example:
 $ bazel-bin/cabby/geo/sample_poi 
---region Manhattan --level 18 --directory "/mnt/hackney/data/cabby/poi/v1/" --path /mnt/hackney/data/cabby/poi/geo_paths.json --n_samples 2
+--region Manhattan --level 18 --directory "/mnt/hackney/data/cabby/poi/v1/" --path "/mnt/hackney/data/cabby/poi/geo_paths.json" --n_samples 2
 '''
 
 from absl import app
@@ -25,7 +25,6 @@ from absl import flags
 from shapely.geometry.point import Point
 import osmnx as ox
 from geopandas import GeoDataFrame
-# import  multiprocessing 
 import threading
 
 from cabby.geo import walk
@@ -61,8 +60,6 @@ def main(argv):
         threads.append(thread)
         thread.start()
 
-    for index, thread in enumerate(threads):
-        thread.join()
 
 
 
