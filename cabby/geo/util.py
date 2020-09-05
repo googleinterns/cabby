@@ -237,3 +237,14 @@ def get_distance_km(start: Point, goal: Point) -> float:
     going over roads and around buildings.
     """
     return geodesic(start.coords, goal.coords).km
+
+def tuple_from_point(point: Point) -> Tuple[float, float]:
+  '''Convert a Point into a tuple, with latitude as first element, and longitude as second.
+
+  Arguments:
+    point(Point): A lat-lng point.
+  Returns:
+    A lat-lng Tuple[float, float].
+  '''
+
+  return (point.y, point.x)

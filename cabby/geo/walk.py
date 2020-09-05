@@ -21,7 +21,9 @@ from geopandas import GeoDataFrame
 import networkx as nx
 import json
 from shapely.geometry import box
-
+import os
+import geopandas as gpd
+import time
 
 import osmnx as ox
 from shapely.geometry.point import Point
@@ -30,7 +32,9 @@ from shapely.geometry.polygon import Polygon, LinearRing
 from shapely import geometry
 
 from cabby.geo import util
+
 from cabby.geo.map_processing import map_structure
+
 
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
@@ -47,8 +51,8 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
   '''
 
   # Get closest nodes to points.
-  orig = ox.get_nearest_node(graph, tuple_from_point(start_point))
-  dest = ox.get_nearest_node(graph, tuple_from_point(end_point))
+  orig = ox.get_nearest_node(graph, util.tuple_from_point(start_point))
+  dest = ox.get_nearest_node(graph, util.tuple_from_point(end_point))
 
   # Get shortest route.
   try:
@@ -58,18 +62,6 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
       return
   route_nodes = nodes[nodes['osmid'].isin(route)]
   return route_nodes
-
-
-def tuple_from_point(point: Point) -> Tuple[float, float]:
-  '''Convert a Point into a tuple, with latitude as first element, and longitude as second.
-
-  Arguments:
-    point(Point): A lat-lng point.
-  Returns:
-    A lat-lng Tuple[float, float].
-  '''
-
-  return (point.y, point.x)
 
 
 def get_end_poi(map: map_structure.Map) -> Optional[Dict]:
@@ -128,11 +120,11 @@ def check_if_tag_exists_set_main_tag(gdf: GeoDataFrame, tag: Text, main_tag: Tex
     if pivots.shape[0] > 0:
       pivots = gdf[gdf[main_tag].notnull()]
       if main_tag in coulmns and pivots.shape[0] > 0:
-        pivots['main_tag'] = pivots[main_tag]
+        pivots = pivots.assign(main_tag=pivots[main_tag])
         return pivots.sample(1)
       pivots = gdf[gdf[alt_main_tag].notnull()]
       if alt_main_tag in coulmns and pivots.shape[0] > 0:
-        pivots['main_tag'] = pivots[alt_main_tag]
+        pivots = pivots.assign(main_tag=pivots[alt_main_tag])
         return pivots.sample(1)
   return None
 
@@ -166,6 +158,11 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
   pivot = check_if_tag_exists_set_main_tag(df_pivots, 'amenity', 'name', 'amenity')
   if pivot is not None:
     return pivot
+  
+
+  pivot = check_if_tag_exists_set_main_tag(df_pivots, 'shop', 'name', 'shop')
+  if pivot is not None:
+    return pivot
 
   return None
 
@@ -179,8 +176,9 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> Opti
     A single landmark near the goal location.
   '''
   tags = {'name': True, 'amenity': True, 'shop': True, 'tourism': True}
-  poi = ox.pois.pois_from_point(tuple_from_point(
+  poi = ox.pois.pois_from_point(util.tuple_from_point(
       end_point['centroid']), tags=tags, dist=20)
+
 
   nearby_poi = poi[poi['osmid'] != end_point['osmid']]
 
@@ -206,17 +204,18 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFr
   points_route = map.nodes[map.nodes['osmid'].isin(
       route['osmid'])]['geometry']
 
-  coords = [(p.x, p.y) for p in points_route.tolist()]
-  r = LinearRing(coords)
-  s = Polygon(r)
-  poly = Polygon(s.buffer(0.1).exterior, [r])
-
   try: 
+    start_time = time.time()
+    poly = Polygon(points_route.tolist()).buffer(0.01)
+    bounds = poly.bounds
+    bounding_box = box(bounds[0],bounds[1],bounds[2],bounds[3])
     df_pivots = ox.footprints_from_polygon(
-        poly, footprint_type='building', retain_invalid=False)
-  except:
-    print ("Didn't mange to get poi. Number of coords: {0}".format(len(coords)))
+        bounding_box, footprint_type = 'building', retain_invalid = False)
+  
+  except Exception as e:
+    print(e)
     return
+
 
   main_pivot = pick_prominent_pivot(df_pivots)
   main_pivot = main_pivot.to_dict('records')[0]
@@ -261,7 +260,6 @@ def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict, Dict, G
 
   return end_point, start_point, route, main_pivot, near_pivot
 
-
 def get_sample(path: Text, map: map_structure.Map):
   '''Sample start and end point, a pivot landmark and route and save to file.
   Arguments:
@@ -276,7 +274,11 @@ def get_sample(path: Text, map: map_structure.Map):
   end_point, start_point, route, main_pivot, near_pivot = result
   instruction = "Starting at {0} walk past {1} and your goal is {2}, near {3}.".format(
       start_point['name'], main_pivot['main_tag'], end_point['name'], near_pivot['main_tag'])
-  sample = {'instruction': instruction, 'start': (start_point['centroid'].y, start_point['centroid'].x) , 'end': (end_point['centroid'].y, end_point['centroid'].x) }
+
+
+  main_pivot['centroid'] = main_pivot['geometry'] if isinstance(main_pivot['geometry'], Point)  else  main_pivot['geometry'].centroid
+
+  sample = {'instruction': instruction, 'start': (start_point['centroid'].y, start_point['centroid'].x) , 'end': (end_point['centroid'].y, end_point['centroid'].x), 'main_tag': (main_pivot['centroid'].y, main_pivot['centroid'].x) }
   with open(path, 'a') as outfile:
     json.dump(sample, outfile, default=lambda o: o.__dict__)
     outfile.write('\n')
