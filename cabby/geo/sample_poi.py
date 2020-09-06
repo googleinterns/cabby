@@ -56,11 +56,10 @@ def main(argv):
 
     threads = list()
     for index in range(FLAGS.n_samples):
-        thread = threading.Thread(target=walk.get_sample, args=(FLAGS.path, map_region))
+        thread = threading.Thread(
+            target=walk.get_sample, args=(FLAGS.path, map_region))
         threads.append(thread)
         thread.start()
-
-
 
 
 if __name__ == '__main__':

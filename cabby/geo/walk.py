@@ -32,8 +32,10 @@ from shapely.geometry.polygon import Polygon, LinearRing
 from shapely import geometry
 
 from cabby.geo import util
+# import util
 
 from cabby.geo.map_processing import map_structure
+# from map_processing import map_structure
 
 
 
@@ -206,7 +208,7 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFr
 
   try: 
     start_time = time.time()
-    poly = Polygon(points_route.tolist()).buffer(0.01)
+    poly = Polygon(points_route.tolist()).buffer(0.001)
     bounds = poly.bounds
     bounding_box = box(bounds[0],bounds[1],bounds[2],bounds[3])
     df_pivots = ox.footprints_from_polygon(
@@ -278,8 +280,16 @@ def get_sample(path: Text, map: map_structure.Map):
 
   main_pivot['centroid'] = main_pivot['geometry'] if isinstance(main_pivot['geometry'], Point)  else  main_pivot['geometry'].centroid
 
-  sample = {'instruction': instruction, 'start': (start_point['centroid'].y, start_point['centroid'].x) , 'end': (end_point['centroid'].y, end_point['centroid'].x), 'main_tag': (main_pivot['centroid'].y, main_pivot['centroid'].x) }
+  near_pivot['centroid'] = near_pivot['geometry'] if isinstance(near_pivot['geometry'], Point)  else  mainnear_pivot_pivot['geometry'].centroid
+
+  sample = {'instruction': instruction, 'start': (start_point['centroid'].y, start_point['centroid'].x) , 'end': (end_point['centroid'].y, end_point['centroid'].x), 'main_pivot': (main_pivot['centroid'].y, main_pivot['centroid'].x), 'near_pivot': (near_pivot['centroid'].y, near_pivot['centroid'].x) }
   with open(path, 'a') as outfile:
     json.dump(sample, outfile, default=lambda o: o.__dict__)
     outfile.write('\n')
     outfile.flush()
+
+
+# map_region = map_structure.Map("Manhattan", 18, "/mnt/hackney/data/cabby/poi/v1")
+
+# get_sample("/mnt/hackney/data/cabby/poi/geo_paths.json", map_region)
+
