@@ -74,11 +74,11 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
     main_pivot = util.list_yx_from_point(gdf.main_pivot_point)
     near_pivot = util.list_yx_from_point(gdf.near_pivot_point)
 
-    folium.Marker(start_point, popup='start: '+gdf.start).add_to(map_osm)
+    folium.Marker(start_point, popup='start: ' + gdf.start).add_to(map_osm)
     folium.Marker(end_point, popup='end: ' + gdf.end).add_to(map_osm)
-    folium.Marker(main_pivot, popup='main pivot', icon=folium.Icon(
+    folium.Marker(main_pivot, popup='main pivot: ' + gdf.main_pivot, icon=folium.Icon(
         color='red', icon='info-sign')).add_to(map_osm)
-    folium.Marker(near_pivot, popup='near pivot', icon=folium.Icon(
+    folium.Marker(near_pivot, popup='near pivot: '+gdf.near_pivot, icon=folium.Icon(
         color='red', icon='info-sign')).add_to(map_osm)
 
     place_lng, place_lat = gdf.route.exterior.xy
@@ -90,7 +90,6 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
     for index, lat in enumerate(place_lat):
         folium.Marker([lat,
                        place_lng[index]],
-                      popup=('patient{} \n 74contacts'.format(index)),
                       icon=folium.Icon(color='green', icon='plus')).add_to(map_osm)
 
     return map_osm
@@ -109,5 +108,3 @@ def get_maps_and_instructions(path: Text) -> Tuple[Sequence[folium.Map], Sequenc
 
     return map_osms_instructions
 
-
-get_maps_and_instructions("/mnt/hackney/data/cabby/poi/geo_paths.gpkg")
