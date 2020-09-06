@@ -16,7 +16,7 @@
 
 Example:
 $ bazel-bin/cabby/geo/sample_poi 
---region Manhattan --level 18 --directory "/mnt/hackney/data/cabby/poi/v1/" --path "/mnt/hackney/data/cabby/poi/geo_paths.json" --n_samples 2
+--region Manhattan --level 18 --directory "/mnt/hackney/data/cabby/poi/v1/" --path "/mnt/hackney/data/cabby/poi/geo_paths.gpkg" --n_samples 2
 '''
 
 from absl import app
@@ -25,7 +25,6 @@ from absl import flags
 from shapely.geometry.point import Point
 import osmnx as ox
 from geopandas import GeoDataFrame
-import threading
 
 from cabby.geo import walk
 
@@ -54,12 +53,11 @@ def main(argv):
     del argv  # Unused.
     map_region = map_structure.Map(FLAGS.region, FLAGS.level, FLAGS.directory)
 
-    threads = list()
-    for index in range(FLAGS.n_samples):
-        thread = threading.Thread(
-            target=walk.get_sample, args=(FLAGS.path, map_region))
-        threads.append(thread)
-        thread.start()
+    # Create a file with multile layers of data.
+    walk.get_samples(FLAGS.path, map_region, FLAGS.n_samples)
+
+    # Read and print instruction.
+    walk.print_instructions(FLAGS.path)
 
 
 if __name__ == '__main__':

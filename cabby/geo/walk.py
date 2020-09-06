@@ -32,9 +32,9 @@ from shapely.geometry.polygon import Polygon, LinearRing
 from shapely import geometry
 
 from cabby.geo import util
-# import util
-
 from cabby.geo.map_processing import map_structure
+
+# import util
 # from map_processing import map_structure
 
 
@@ -97,7 +97,7 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[D
 
   # Get POI within a distance range.
   # TODO change to path distance.
-  within_distance = map.poi[(dist > 0.2) & (dist < 3)]
+  within_distance = map.poi[(dist > 0.2) & (dist < 2)]
 
   # Filter large POI.
   small_poi = within_distance[within_distance['cellids'].str.len() <= 4]
@@ -177,9 +177,13 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> Opti
   Returns:
     A single landmark near the goal location.
   '''
-  tags = {'name': True, 'amenity': True, 'shop': True, 'tourism': True}
-  poi = ox.pois.pois_from_point(util.tuple_from_point(
-      end_point['centroid']), tags=tags, dist=20)
+  try: 
+    tags = {'name': True, 'amenity': True, 'shop': True, 'tourism': True}
+    poi = ox.pois.pois_from_point(util.tuple_from_point(
+        end_point['centroid']), tags=tags, dist=20)
+  except Exception as e:
+    print (e)
+    return None
 
 
   nearby_poi = poi[poi['osmid'] != end_point['osmid']]
@@ -262,10 +266,9 @@ def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict, Dict, G
 
   return end_point, start_point, route, main_pivot, near_pivot
 
-def get_sample(path: Text, map: map_structure.Map):
+def get_single_sample(map: map_structure.Map):
   '''Sample start and end point, a pivot landmark and route and save to file.
   Arguments:
-    path: The path to which the data will be appended.
     map: The map of a specific region.
   Returns:
     A start and end point, a pivot landmark and route.
@@ -280,16 +283,55 @@ def get_sample(path: Text, map: map_structure.Map):
 
   main_pivot['centroid'] = main_pivot['geometry'] if isinstance(main_pivot['geometry'], Point)  else  main_pivot['geometry'].centroid
 
-  near_pivot['centroid'] = near_pivot['geometry'] if isinstance(near_pivot['geometry'], Point)  else  mainnear_pivot_pivot['geometry'].centroid
+  near_pivot['centroid'] = near_pivot['geometry'] if isinstance(near_pivot['geometry'], Point)  else  near_pivot['geometry'].centroid
 
-  sample = {'instruction': instruction, 'start': (start_point['centroid'].y, start_point['centroid'].x) , 'end': (end_point['centroid'].y, end_point['centroid'].x), 'main_pivot': (main_pivot['centroid'].y, main_pivot['centroid'].x), 'near_pivot': (near_pivot['centroid'].y, near_pivot['centroid'].x) }
-  with open(path, 'a') as outfile:
-    json.dump(sample, outfile, default=lambda o: o.__dict__)
-    outfile.write('\n')
-    outfile.flush()
+  gdf = gpd.GeoDataFrame({'end': end_point['name'], 'start': start_point['name'], 'main_pivot': main_pivot['main_tag'], 'near_pivot': near_pivot['main_tag'], 'instruction': instruction}, index=[0])
+
+  gdf['geometry'] = start_point['centroid'] 
+  gdf_end = gpd.GeoDataFrame(geometry = [end_point['centroid']]) 
+  gdf_main_pivot = gpd.GeoDataFrame(geometry = [main_pivot['centroid']]) 
+  gdf_near_pivot = gpd.GeoDataFrame(geometry = [near_pivot['centroid']]) 
+  gdf_route = gpd.GeoDataFrame(geometry = [Polygon(route['geometry'].tolist())])  
+  return gdf, gdf_end, gdf_main_pivot, gdf_near_pivot, gdf_route
+
+def get_samples(path: Text, map: map_structure.Map, n_samples: int):
+  '''Sample start and end point, a pivot landmark and route and save to file.
+  Arguments:
+    path: The path to which the data will be appended.
+    map: The map of a specific region.
+    n_samples: the max number of samples to generate.
+  '''
+  gdf_start_list = gpd.GeoDataFrame(columns = ["start", "end", "main_pivot", "near_pivot", "instruction","geometry"])
+  
+  gdf_end_list = gpd.GeoDataFrame(columns = ["geometry"])
+  gdf_route_list = gpd.GeoDataFrame(columns = ["geometry"])
+  gdf_main_list = gpd.GeoDataFrame(columns = ["geometry"])
+  gdf_near_list = gpd.GeoDataFrame(columns = ["geometry"])
+  
+  for i in range(n_samples):
+    result = get_single_sample(map)
+    if result is None:
+      continue
+    gdf_start, gdf_end, gdf_main_pivot, gdf_near_pivot, gdf_route = result
+    gdf_start_list = gdf_start_list.append(gdf_start, ignore_index=True)
+    gdf_end_list = gdf_end_list.append(gdf_end, ignore_index=True)
+    gdf_route_list = gdf_route_list.append(gdf_route, ignore_index=True)
+    gdf_main_list = gdf_main_list.append(gdf_main_pivot, ignore_index=True)
+    gdf_near_list = gdf_near_list.append(gdf_near_pivot, ignore_index=True)
+
+  
+  gdf_start_list.to_file(path, layer='start', driver="GPKG")
+  gdf_end_list.to_file(path, layer='end', driver="GPKG")
+  gdf_route_list.to_file(path, layer='route', driver="GPKG")
+  gdf_main_list.to_file(path, layer='main', driver="GPKG")
+  gdf_near_list.to_file(path, layer='near', driver="GPKG")
+
+def print_instructions(path: Text):
+  '''Read a geodata file and print instruction.'''
+  if not os.path.exists(path):
+    return
+  start = gpd.read_file(path, layer='start')
+  print ('\n'.join(start['instruction'].values))
 
 
-# map_region = map_structure.Map("Manhattan", 18, "/mnt/hackney/data/cabby/poi/v1")
-
-# get_sample("/mnt/hackney/data/cabby/poi/geo_paths.json", map_region)
 
