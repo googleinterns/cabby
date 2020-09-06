@@ -74,10 +74,10 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
     main_pivot = util.list_yx_from_point(gdf.main_pivot_point)
     near_pivot = util.list_yx_from_point(gdf.near_pivot_point)
 
-    folium.Marker(start_point, popup='start: ' + gdf.start).add_to(map_osm)
-    folium.Marker(end_point, popup='end: ' + gdf.end).add_to(map_osm)
+    folium.Marker(start_point, popup='start: ' + gdf.start, icon=folium.Icon(color='pink')).add_to(map_osm)
+    folium.Marker(end_point, popup='end: ' + gdf.end, icon=folium.Icon(color='black')).add_to(map_osm)
     folium.Marker(main_pivot, popup='main pivot: ' + gdf.main_pivot, icon=folium.Icon(
-        color='red', icon='info-sign')).add_to(map_osm)
+        color='orange', icon='info-sign')).add_to(map_osm)
     folium.Marker(near_pivot, popup='near pivot: '+gdf.near_pivot, icon=folium.Icon(
         color='red', icon='info-sign')).add_to(map_osm)
 
@@ -88,9 +88,12 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
         points.append([place_lat[i], place_lng[i]])
 
     for index, lat in enumerate(place_lat):
-        folium.Marker([lat,
+        folium.Circle(location = [lat,
                        place_lng[index]],
-                      icon=folium.Icon(color='green', icon='plus')).add_to(map_osm)
+                       radius = 5,
+                      color='crimson',
+
+                      ).add_to(map_osm)
 
     return map_osm
 
