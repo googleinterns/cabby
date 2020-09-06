@@ -95,7 +95,7 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[D
 
     # Get POI within a distance range.
     # TODO change to path distance.
-    within_distance = map.poi[(dist > 0.2) & (dist < 1)]
+    within_distance = map.poi[(dist > 0.2) & (dist < 0.8)]
 
     # Filter large POI.
     small_poi = within_distance[within_distance['cellids'].str.len() <= 4]
