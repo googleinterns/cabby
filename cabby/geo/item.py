@@ -28,12 +28,14 @@ class GeoEntity:
 
     `start_point` is the starting point.
     `end_point` is the end point.
-    `pivot` is the pivot point.
-    `instruction` is the template instruction that includes the landmarks.
+    `main_pivot` is the pivot point along the route.
+    `near_pivot` is the pivot point near the goal.
+    `instruction` is the template instruction that includes the pivots.
     """
     start_point: Point = attr.ib()
     end_point: Point = attr.ib()
-    pivot: Point = attr.ib()
+    main_pivot: Point = attr.ib()
+    near_pivot: Point = attr.ib()
     instruction: Text = attr.ib()
 
     @classmethod
@@ -42,7 +44,8 @@ class GeoEntity:
         return GeoEntity(
             points_from_coord(result['start']),
             points_from_coord(result['end']),
-            points_from_coord(result['main_tag']),
+            points_from_coord(result['main_pivot']),
+            points_from_coord(result['near_pivot']),
             result['instruction']
         )
 
