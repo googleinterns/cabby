@@ -34,6 +34,8 @@ from shapely import geometry
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 
+import util
+from map_processing import map_structure
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
                   nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
@@ -93,7 +95,7 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[D
 
     # Get POI within a distance range.
     # TODO change to path distance.
-    within_distance = map.poi[(dist > 0.2) & (dist < 2)]
+    within_distance = map.poi[(dist > 0.2) & (dist < 1)]
 
     # Filter large POI.
     small_poi = within_distance[within_distance['cellids'].str.len() <= 4]
@@ -210,11 +212,12 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFr
 
     try:
         start_time = time.time()
-        poly = Polygon(points_route.tolist()).buffer(0.001)
+        poly = Polygon(points_route.tolist()).buffer(0.0005)
         bounds = poly.bounds
         bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
-        df_pivots = ox.footprints_from_polygon(
-            bounding_box, footprint_type='building', retain_invalid=False)
+        tags = {'wikipedia': True, 'wikidata': True, 'brand': True, 'tourism': True, 'amenity': True, 'shop': True, 'name': True}
+        df_pivots = ox.pois.pois_from_polygon(
+            bounding_box, tags = tags)
 
     except Exception as e:
         print(e)
@@ -222,6 +225,9 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFr
 
     # Polygon along the route.
     df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
+    
+    # Remove streets. 
+    df_pivots = df_pivots[(df_pivots['highway'].isnull())&(df_pivots['railway'].isnull())]
 
     main_pivot = pick_prominent_pivot(df_pivots)
     main_pivot = main_pivot.to_dict('records')[0]
@@ -338,3 +344,5 @@ def print_instructions(path: Text):
         return
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
+
+
