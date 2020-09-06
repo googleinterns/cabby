@@ -46,8 +46,11 @@ def get_osm_map(entity):
     # draw the points
     start_point= util.list_yx_from_point(entity.start_point)
     end_point= util.list_yx_from_point(entity.end_point)
+    pivot= util.list_yx_from_point(entity.pivot)
+    
     folium.Marker(start_point, popup='start point').add_to(map_osm)
     folium.Marker(end_point, popup='end point').add_to(map_osm)
+    folium.Marker(pivot, popup='pivot', icon=folium.Icon(color='red', icon='info-sign')).add_to(map_osm)
 
     return map_osm
 
