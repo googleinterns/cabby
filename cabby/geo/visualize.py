@@ -19,49 +19,95 @@ from json import JSONDecoder, JSONDecodeError
 import json
 import pandas as pd
 import folium
+import geopandas as gpd
+import shapely.geometry as geom
+from shapely.geometry import Polygon, Point, LineString
+
 
 import util
 import item
 
 
-def read_file(path: Text):
-    json_file = open(path)
-    entities = []
-    for line in json_file:
-        json_line = json.loads(line)
-        entity = item.GeoEntity.from_api_result(json_line)
-        entities.append(entity)
-    return entities
+def read_file(path: Text) -> gpd.GeoDataFrame:
+    '''Read file.
+    Arguments:
+      path: path to file.
+    Returns:
+      The GeoDataFrame theat includes the start and end points, pivots and route.
+    '''
+
+    start = gpd.read_file(path, layer='start')
+    end = gpd.read_file(path, layer='end')
+    route = gpd.read_file(path, layer='route')
+    main = gpd.read_file(path, layer='main')
+    near = gpd.read_file(path, layer='near')
+
+    start = start.rename(columns={'geometry': 'start_point'})
+    start['end_point'] = end['geometry']
+    start['route'] = route['geometry']
+    start['main_pivot_point'] = main['geometry']
+    start['near_pivot_point'] = near['geometry']
+
+    return start
 
 
-def get_osm_map(entity):
+def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
+    '''Create the OSM maps.
+    Arguments:
+      gdf: the GeoDataFrame from which to create the OSM map.
+    Returns:
+      OSM maps from the GeoDataFrame.
+    '''
 
-    mid_point = util.midpoint(entity.end_point,entity.start_point)
-    zoom_location= util.list_yx_from_point(mid_point)
+    mid_point = util.midpoint(gdf.end_point, gdf.start_point)
+    zoom_location = util.list_yx_from_point(mid_point)
 
     # create a map
-    map_osm = folium.Map(location=zoom_location, zoom_start=15, tiles='OpenStreetMap') 
-    style_function = lambda x: {'weight': 1, 'fillColor':'#eea500'}
-        
+    map_osm = folium.Map(location=zoom_location,
+                         zoom_start=15, tiles='OpenStreetMap')
+
+    def style_function(x): return {'weight': 1, 'fillColor': '#eea500'}
+
     # draw the points
-    start_point= util.list_yx_from_point(entity.start_point)
-    end_point= util.list_yx_from_point(entity.end_point)
-    main_pivot= util.list_yx_from_point(entity.main_pivot)
-    near_pivot= util.list_yx_from_point(entity.near_pivot)
+    start_point = util.list_yx_from_point(gdf.start_point)
+    end_point = util.list_yx_from_point(gdf.end_point)
+    main_pivot = util.list_yx_from_point(gdf.main_pivot_point)
+    near_pivot = util.list_yx_from_point(gdf.near_pivot_point)
 
+    folium.Marker(start_point, popup='start: '+gdf.start).add_to(map_osm)
+    folium.Marker(end_point, popup='end: ' + gdf.end).add_to(map_osm)
+    folium.Marker(main_pivot, popup='main pivot', icon=folium.Icon(
+        color='red', icon='info-sign')).add_to(map_osm)
+    folium.Marker(near_pivot, popup='near pivot', icon=folium.Icon(
+        color='red', icon='info-sign')).add_to(map_osm)
 
-    folium.Marker(start_point, popup='start point').add_to(map_osm)
-    folium.Marker(end_point, popup='end point').add_to(map_osm)
-    folium.Marker(main_pivot, popup='main pivot', icon=folium.Icon(color='red', icon='info-sign')).add_to(map_osm)
-    folium.Marker(near_pivot, popup='near pivot', icon=folium.Icon(color='red', icon='info-sign')).add_to(map_osm)
+    place_lng, place_lat = gdf.route.exterior.xy
+
+    points = []
+    for i in range(len(place_lat)):
+        points.append([place_lat[i], place_lng[i]])
+
+    for index, lat in enumerate(place_lat):
+        folium.Marker([lat,
+                       place_lng[index]],
+                      popup=('patient{} \n 74contacts'.format(index)),
+                      icon=folium.Icon(color='green', icon='plus')).add_to(map_osm)
 
     return map_osm
 
-def get_maps_and_instructions(path: Text):
-    entities = read_file(path)
-    osm_maps=[]
-    for entity in entities:
-      osm_maps.append((get_osm_map(entity),entity.instruction))
-    return osm_maps
+
+def get_maps_and_instructions(path: Text) -> Tuple[Sequence[folium.Map], Sequence[Text]]:
+    '''Create the OSM maps and instructions.
+    Arguments:
+      path: the path to the .
+    Returns:
+      OSM maps from the GeoDataFrame.
+    '''
+
+    gdf = read_file(path)
+    map_osms_instructions = gdf.apply(lambda x: (get_osm_map(x),x.instruction), axis=1)
+
+    return map_osms_instructions
 
 
+get_maps_and_instructions("/mnt/hackney/data/cabby/poi/geo_paths.gpkg")
