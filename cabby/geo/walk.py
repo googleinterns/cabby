@@ -185,7 +185,7 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> Opti
         poi = ox.pois.pois_from_point(util.tuple_from_point(
             end_point['centroid']), tags=tags, dist=40)
 
-        # Remove streets.
+        # Remove streets and roads.
         poi = poi[poi['highway'].isnull()]
 
     except Exception as e:
