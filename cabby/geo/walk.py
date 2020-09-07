@@ -34,8 +34,8 @@ from shapely import geometry
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 
-import util
-from map_processing import map_structure
+# import util
+# from map_processing import map_structure
 
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
@@ -246,6 +246,12 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFr
     if main_pivot is None or near_pivot is None:
         return
 
+    main_pivot['centroid'] = main_pivot['geometry'] if isinstance(
+    main_pivot['geometry'], Point) else main_pivot['geometry'].centroid
+
+    near_pivot['centroid'] = near_pivot['geometry'] if isinstance(
+        near_pivot['geometry'], Point) else near_pivot['geometry'].centroid
+
     return main_pivot, near_pivot
 
 
@@ -296,11 +302,7 @@ def get_single_sample(map: map_structure.Map):
     instruction = "Starting at {0} walk past {1} and your goal is {2}, near {3}.".format(
         start_point['name'], main_pivot['main_tag'], end_point['name'], near_pivot['main_tag'])
 
-    main_pivot['centroid'] = main_pivot['geometry'] if isinstance(
-        main_pivot['geometry'], Point) else main_pivot['geometry'].centroid
 
-    near_pivot['centroid'] = near_pivot['geometry'] if isinstance(
-        near_pivot['geometry'], Point) else near_pivot['geometry'].centroid
 
     gdf = gpd.GeoDataFrame({'end': end_point['name'], 'start': start_point['name'], 'main_pivot': main_pivot['main_tag'],
                             'near_pivot': near_pivot['main_tag'], 'instruction': instruction}, index=[0])
