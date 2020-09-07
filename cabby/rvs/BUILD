@@ -48,5 +48,9 @@ py_binary(
         "//cabby/data/wikidata:item",
         "//cabby/data/wikidata:query",
         "//cabby/geo:directions",
+        "//cabby/geo/map_processing:map_structure",
+        "//cabby/geo:walk",
+
+
     ],
 )

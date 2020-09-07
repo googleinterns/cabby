@@ -18,6 +18,7 @@ import unittest
 from shapely.geometry.point import Point
 from cabby.geo import walk
 from cabby.geo.map_processing import map_structure
+from cabby.geo import util
 
 
 class WalkTest(unittest.TestCase):
@@ -38,8 +39,8 @@ class WalkTest(unittest.TestCase):
         self.assertEqual(len(route), 2)
 
         # Check that the correct points 
-        first_point = walk.tuple_from_point(route.iloc[0]['geometry'])
-        second_point = walk.tuple_from_point(route.iloc[1]['geometry'])
+        first_point = util.tuple_from_point(route.iloc[0]['geometry'])
+        second_point = util.tuple_from_point(route.iloc[1]['geometry'])
         self.assertEqual(first_point, (40.749102, -73.984076))
         self.assertEqual(second_point, (40.748432, -73.982473))
 

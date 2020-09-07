@@ -5,11 +5,6 @@ package(
 py_library(
     name = 'walk',
     srcs = ['walk.py'],
-    deps = [
-        ":util",
-        "//cabby/geo/map_processing:map_structure",
-
-    ]
 )
 
 py_library(

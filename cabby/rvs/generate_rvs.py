@@ -30,6 +30,8 @@ from cabby.data.wikidata import item
 from cabby.data.wikidata import query
 from cabby.geo import directions
 from cabby.geo import util
+from cabby.geo import walk
+from cabby.geo.map_processing import map_structure
 from cabby.rvs import observe
 from cabby.rvs import speak
 
@@ -58,36 +60,34 @@ def main(argv):
   bearing = util.get_bearing(start, supplied_goal)
   print(f'Distance {path_distance} km | Bearing {bearing}')
   
-  # Get all Wikidata entities in Manhattan region and create dictionary from
-  # each entity's QID to the entity representation.
-  entities = {}
-  for result in query.get_geofenced_wikidata_items('Manhattan'):
-    entity = item.WikidataEntity.from_sparql_result(result)
-    entities[entity.qid] = entity
+  # Get all OSM in Manhattan region.
+  map = map_structure.Map("Manhattan", 18, "/mnt/hackney/data/cabby/poi/v1/")
+
+  # Get POIS with names
+  pois = map.poi[~map.poi['name'].isnull()]
+
 
   # Find the closest POI in the Wikidata items so that we have something to
   # describe. This isn't needed once we use OSM sampled start-goal pairs.
-  distances = observe.get_all_distances(supplied_goal, list(entities.values()))
-  ranked_pois = list(distances.items())
-  ranked_pois.sort(key=lambda x: x[1])
-  target_qid, target_distance = ranked_pois[0]
-  target = entities[target_qid]
-  print(f'\nChoosing entity {target.title} with QID {target_qid} '
-    f'as the goal, which is {target_distance} from the supplied goal '
-    f'coordinates {supplied_goal}.\n')
+  pois["distance"] = pois.centroid.apply(lambda x: util.get_distance_km(supplied_goal, x))
 
-  # Remove the destination POI from the entities list so we can identify a
-  # pivot POI to use as a reference to get to that destination POI.
-  entities.pop(target_qid)
+  target = pois[pois['distance'].min()==pois['distance']].iloc[0]
 
-  # Get the pivot POI.
-  pivot_qid = observe.get_pivot_poi(
-    start, target.location, list(entities.values()))
-  pivot = entities[pivot_qid]
+  print(f'\nChoosing entity {target["name"]} with OSM id {target["osmid"]} 'f'as the goal, which is {target["distance"]} from the supplied goal 'f'coordinates {supplied_goal}.\n')
 
-  start_pivot_bearing = util.get_bearing(start, pivot.location)
+  # Get route. 
+  route = walk.compute_route(start, supplied_goal, map.nx_graph, map.nodes)
+
+  # Get the pivots.
+  result= walk.get_pivots(route, map, target)
+  if result is None:
+    print ("No pivots found.")
+    return
+  main_pivot, near_pivot = result
+
+  start_pivot_bearing = util.get_bearing(start, near_pivot["centroid"])
   pivot_dest_bearing = util.get_bearing(
-    pivot.location, target.location)
+    near_pivot["centroid"], target["centroid"])
 
   # Computes the bearing of the target by using the bearing from start to
   # pivot as zero. E.g. so instead of 270 meaning west (as usual with bearings),
@@ -95,8 +95,8 @@ def main(argv):
   target_bearing_relative_to_pivot = pivot_dest_bearing - start_pivot_bearing
 
   instruction = speak.describe_meeting_point(
-    pivot.title, target.title, target_bearing_relative_to_pivot,
-    util.get_distance_km(pivot.location, target.location))
+    near_pivot["main_tag"], target["name"], target_bearing_relative_to_pivot,
+    util.get_distance_km(near_pivot["centroid"], target["centroid"]))
 
   print(f'Rendezvous instruction:\n\n  {instruction}\n')
 
