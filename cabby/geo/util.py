@@ -139,15 +139,12 @@ def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> s2.S2Polygon:
     return line
 
 
-def plot_cells(cells: s2.S2Cell, location: list):
+def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
     '''Plot the S2Cell covering.'''
 
     # Create a map.
     map_osm = folium.Map(
-        location=location, zoom_start=12, tiles='Stamen Toner')
-
-    def style_function(x):
-        return {'weight': 1, 'fillColor': '#eea500'}
+        location=location, zoom_start=zoom_level, tiles='Stamen Toner')
 
     for cellid in cells:
         cellid = cellid[0]
@@ -164,7 +161,7 @@ def plot_cells(cells: s2.S2Cell, location: list):
                 "type": "Polygon",
                 "coordinates": [vertices]
             },
-            style_function=style_function)
+            style_function={'weight': 1, 'fillColor': '#eea500'})
         gj.add_children(folium.Popup(cellid.ToToken()))
         gj.add_to(map_osm)
 
@@ -221,8 +218,10 @@ def get_bearing(start: Point, goal: Point) -> float:
       start: The starting point.
       goal: The goal point.
     Returns:
-      The geospatial bearing when heading from the start to the goal. The bearing 
-      angle given by azi1 (azimuth) is clockwise relative to north, so a bearing 
+      The geospatial bearing when heading from the start to the goal. The 
+      bearing 
+      angle given by azi1 (azimuth) is clockwise relative to north, so a 
+      bearing 
       of 90 degrees is due east, 180 is south, and 270 is west.
     """
     solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
@@ -238,13 +237,15 @@ def get_distance_km(start: Point, goal: Point) -> float:
     """
     return geodesic(start.coords, goal.coords).km
 
+
 def tuple_from_point(point: Point) -> Tuple[float, float]:
-  '''Convert a Point into a tuple, with latitude as first element, and longitude as second.
+    '''Convert a Point into a tuple, with latitude as first element, and 
+    longitude as second.
 
-  Arguments:
-    point(Point): A lat-lng point.
-  Returns:
-    A lat-lng Tuple[float, float].
-  '''
+    Arguments:
+      point(Point): A lat-lng point.
+    Returns:
+      A lat-lng Tuple[float, float].
+    '''
 
-  return (point.y, point.x)
+    return (point.y, point.x)

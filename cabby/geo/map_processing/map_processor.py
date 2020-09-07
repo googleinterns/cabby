@@ -14,7 +14,7 @@
 
 Example:
 
-$ bazel-bin/cabby/geo/map_processing/map_processor --region Manhattan --level 18 --directory "/mnt/hackney/data/cabby/poi/temp/"
+$ bazel-bin/cabby/geo/map_processing/map_processor --region Manhattan --min_s2_level 18 --directory "/mnt/hackney/data/cabby/poi/temp/"
 '''
 
 from absl import app
@@ -29,23 +29,23 @@ FLAGS = flags.FLAGS
 flags.DEFINE_enum(
   "region", None, ['Pittsburgh', 'Manhattan'], 
   "Map areas: Manhattan or Pittsburgh.")
-flags.DEFINE_integer("level", None, "Minimum S2 level of the map.")
+flags.DEFINE_integer("min_s2_level", None, "Minimum S2 level of the map.")
 flags.DEFINE_string("directory", None, "The directory where the files will be saved to" )
 
 # Required flags.
 flags.mark_flag_as_required("region")
-flags.mark_flag_as_required("level")
+flags.mark_flag_as_required("min_s2_level")
 
 
 def main(argv):
     del argv  # Unused.
-    map = map_structure.Map(FLAGS.region, FLAGS.level)
+    map = map_structure.Map(FLAGS.region, FLAGS.min_s2_level)
 
     # Write to disk.
     map.write_map(FLAGS.directory)
 
     # Load from disk.
-    map_new = map_structure.Map(FLAGS.region, FLAGS.level, FLAGS.directory)
+    map_new = map_structure.Map(FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
 
     print('Number of POI found: {0}'.format(map_new.poi.shape[0]))
 

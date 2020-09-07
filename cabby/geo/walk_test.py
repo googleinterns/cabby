@@ -17,6 +17,7 @@ import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
 from cabby.geo import walk
+from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 
 
@@ -26,43 +27,34 @@ class WalkTest(unittest.TestCase):
 
         # Load map from disk.
         self.map = map_structure.Map(
-            "Manhattan", 18, "/mnt/hackney/data/cabby/poi/v1/")
+            "Bologna", 18)
 
     def testRouteCalculation(self):
-        start_point = Point(-73.982473, 40.748432)
-        end_point = Point(-73.98403, 40.74907)
-        route = walk.compute_route(
-            start_point, end_point, self.map.nx_graph, self.map.nodes)
+        start_point = Point(11.3414, 44.4951)
+        end_point = Point(11.3444, 44.4946)
+        route = walk.compute_route(start_point, end_point, self.map.
+        nx_graph, self.map.nodes)
 
-        # Check that two points have arrived.
-        self.assertEqual(len(route), 2)
+        # Check the size of the route. 
+        self.assertEqual(len(route), 9)
 
-        # Check that the correct points 
-        first_point = walk.tuple_from_point(route.iloc[0]['geometry'])
-        second_point = walk.tuple_from_point(route.iloc[1]['geometry'])
-        self.assertEqual(first_point, (40.749102, -73.984076))
-        self.assertEqual(second_point, (40.748432, -73.982473))
+        # Check that the points in the route.
+        first_point = util.tuple_from_point(route.iloc[0]['geometry'])
+        second_point = util.tuple_from_point(route.iloc[1]['geometry'])
+        self.assertEqual(first_point, (44.4946187, 11.344085))
+        self.assertEqual(second_point, (44.4947274, 11.343436))
 
-        # Check that all points are in a bounding box.
-        eps = 0.0005
-        for point in route['geometry'].tolist():
-            self.assertLessEqual(point.x, start_point.x + eps)
-            self.assertGreaterEqual(point.x, end_point.x - eps)
-            self.assertLessEqual(point.y, end_point.y + eps)
-            self.assertGreaterEqual(point.y, start_point.y - eps)
 
     def testPointsSelection(self):
-        result = walk.get_points_and_route(self.map)
-        if result is None:
+        geo_entity = walk.get_points_and_route(self.map)
+        if geo_entity is None:
             return
-        print (type(result))
-        end_point, start_point, route, main_pivot, near_pivot = result
 
-        self.assertGreaterEqual(route.shape[0], 1)
-        self.assertIsNotNone(end_point['name'])
-        self.assertIsNotNone(start_point['name'])
-        self.assertIsNotNone(main_pivot['main_tag'])
-        self.assertIsNotNone(near_pivot['main_tag'])
+        self.assertGreaterEqual(geo_entity.route.shape[0], 1)
+        self.assertIsNotNone(geo_entity.end_point['name'])
+        self.assertIsNotNone(geo_entity.start_point['name'])
+        self.assertIsNotNone(geo_entity.main_pivot['main_tag'])
+        self.assertIsNotNone(geo_entity.near_pivot['main_tag'])
 
 
 if __name__ == "__main__":
