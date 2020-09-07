@@ -37,6 +37,7 @@ from cabby.geo.map_processing import map_structure
 import util
 from map_processing import map_structure
 
+
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
                   nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''Returns the shortest path between a starting and end point.
@@ -179,13 +180,19 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> Opti
       A single landmark near the goal location.
     '''
     try:
-        tags = {'name': True, 'amenity': True, 'shop': True, 'tourism': True}
+        tags = {'name': True, 'wikidata': True,
+                'amenity': True, 'shop': True, 'tourism': True}
         poi = ox.pois.pois_from_point(util.tuple_from_point(
             end_point['centroid']), tags=tags, dist=40)
+
+        # Remove streets.
+        poi = poi[poi['highway'].isnull()]
+
     except Exception as e:
         print(e)
         return None
 
+    # Remove the endpoint.
     nearby_poi = poi[poi['osmid'] != end_point['osmid']]
 
     prominent_poi = pick_prominent_pivot(nearby_poi)
@@ -215,9 +222,10 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFr
         poly = Polygon(points_route.tolist()).buffer(0.0005)
         bounds = poly.bounds
         bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
-        tags = {'wikipedia': True, 'wikidata': True, 'brand': True, 'tourism': True, 'amenity': True, 'shop': True, 'name': True}
+        tags = {'wikipedia': True, 'wikidata': True, 'brand': True,
+                'tourism': True, 'amenity': True, 'shop': True, 'name': True}
         df_pivots = ox.pois.pois_from_polygon(
-            bounding_box, tags = tags)
+            bounding_box, tags=tags)
 
     except Exception as e:
         print(e)
@@ -225,9 +233,10 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFr
 
     # Polygon along the route.
     df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
-    
-    # Remove streets. 
-    df_pivots = df_pivots[(df_pivots['highway'].isnull())&(df_pivots['railway'].isnull())]
+
+    # Remove streets.
+    df_pivots = df_pivots[(df_pivots['highway'].isnull())
+                          & (df_pivots['railway'].isnull())]
 
     main_pivot = pick_prominent_pivot(df_pivots)
     main_pivot = main_pivot.to_dict('records')[0]
@@ -344,5 +353,3 @@ def print_instructions(path: Text):
         return
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
-
-
