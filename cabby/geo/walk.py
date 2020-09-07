@@ -59,35 +59,6 @@ def tuple_from_point(point: Point) -> Tuple[float, float]:
 
     return (point.y, point.x)
 
-def load_poi():
-  pass
 
-def get_end_poi(poi):
-  pass
-
-def get_start_poi(poi, end_point):
-  pass
-
-def get_pivot(route):
-  pass
-
-
-def get_start_end_point():
-
-  # Read POI.
-  poi = load_poi()
-
-  # Select end point.
-  end_point = get_end_poi(poi)
-
-  # Select start point.
-  start_point = get_start_poi(poi, end_point)
-
-  # Compute route between start and end points.
-  # route = compute_route()
-
-  # Select pivot.
-
-  pass
 
 
