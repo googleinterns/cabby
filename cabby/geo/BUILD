@@ -5,6 +5,10 @@ package(
 py_library(
     name = 'walk',
     srcs = ['walk.py'],
+    deps = [
+    "//cabby/geo/map_processing:map_structure",
+
+    ],
 )
 
 py_library(
@@ -17,15 +21,24 @@ py_test(
     srcs = ["walk_test.py"],
     python_version = "PY3",
     deps = [
-        ":walk"
+        ":walk",
+        "//cabby/geo/map_processing:map_structure",
     ],
 )
 
 py_library(
     name = 'directions',
     srcs = ['directions.py'],
-    deps = [':util'],
+    deps = [
+        ':walk',
+        ':util',
+        "//cabby:logger",
+        "//cabby/geo/map_processing:map_structure",
+
+        ],
 )
+
+
 
 
 py_binary(
