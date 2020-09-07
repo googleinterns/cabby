@@ -103,9 +103,10 @@ def get_data_by_region(region: Text) -> Sequence:
 
 
 def split_dataset(dataset, percentage_train: float, percentage_dev: float):
-    '''Splits the dataset into train-set, dev-set, test-set according to the ref_qid" 
+    '''Splits the dataset into train-set, dev-set, test-set according to the ref_qid. 
     Arguments: 
-      percentage_train(float in [0,1]): percentage of the train-set. percentage_dev(float in [0,1]): percentage of the dev-set. 
+      percentage_train(float in [0,1]): percentage of the train-set.
+      percentage_dev(float in [0,1]): percentage of the dev-set. 
     Returns: 
       The train-set, dev-set and test-set splits.
     '''
