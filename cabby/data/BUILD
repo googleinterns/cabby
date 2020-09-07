@@ -12,8 +12,18 @@ py_test(
     srcs = ["extract_test.py"],
     python_version = "PY3",
     deps = [
-        ":extract"
+        ":extract",
+        ":wikigeo",
+        "//cabby/data/wikidata:item",
+        "//cabby/data/wikidata:query",
+        "//cabby/data/wikipedia:item",
+        "//cabby/data/wikipedia:query"
     ],
+)
+
+py_library(
+    name = 'wikigeo',
+    srcs = ['wikigeo.py'],
 )
 
 py_binary(
