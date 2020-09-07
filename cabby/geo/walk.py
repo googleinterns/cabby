@@ -12,30 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Library to support geographical computations.'''
+'''Library to support sampling points, creating routes between them and pivots 
+along the path and near the goal.'''
 
-from typing import Tuple, Sequence, Optional, Dict, Text
-from random import sample
-import pandas as pd
-from geopandas import GeoDataFrame
-import networkx as nx
-import json
-from shapely.geometry import box
-import os
 import geopandas as gpd
-import time
-
+from geopandas import GeoDataFrame
+import json
+import networkx as nx
+import os
 import osmnx as ox
+import pandas as pd
+from random import sample
+from shapely import geometry
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon, LinearRing
+from shapely.geometry import box
+import time
+from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
-from shapely import geometry
-
+from cabby.geo import item
 from cabby.geo import util
+from cabby.geo import stored_item
 from cabby.geo.map_processing import map_structure
 
-import util
-from map_processing import map_structure
+
+_Geo_DataFrame_Driver = "GPKG"
 
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
@@ -59,13 +60,13 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
     try:
         route = nx.shortest_path(graph, orig, dest, 'length')
     except:
-        print("no route found for the start and end points.")
-        return
+        print("No route found for the start and end points.")
+        return None
     route_nodes = nodes[nodes['osmid'].isin(route)]
     return route_nodes
 
 
-def get_end_poi(map: map_structure.Map) -> Optional[Dict]:
+def get_end_poi(map: map_structure.Map) -> Optional[Dict[Text, Any]]:
     '''Returns the a random POI.
     Arguments:
       map: The map of a specific region.
@@ -76,17 +77,22 @@ def get_end_poi(map: map_structure.Map) -> Optional[Dict]:
     # Filter large POI.
     small_poi = map.poi[map.poi['cellids'].str.len() <= 4]
 
+    if small_poi.shape[0] == 0:
+        return None
+
     # Pick random POI.
     poi = small_poi.sample(1).to_dict('records')[0]
 
     return poi
 
 
-def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[Dict]:
+def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
+Optional[Dict]:
     '''Returns the a random POI within distance of a given POI.
     Arguments:
       map: The map of a specific region.
-      end_point: The POI to which the picked POI should be within distance range.
+      end_point: The POI to which the picked POI should be within distance 
+      range.
     Returns:
       A single POI.
     '''
@@ -95,11 +101,15 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[D
         lambda x: util.get_distance_km(end_point['centroid'], x))
 
     # Get POI within a distance range.
-    # TODO change to path distance.
+    # TODO (https://github.com/googleinterns/cabby/issues/25): Change to path
+    # distance.
     within_distance = map.poi[(dist > 0.2) & (dist < 0.8)]
 
     # Filter large POI.
     small_poi = within_distance[within_distance['cellids'].str.len() <= 4]
+
+    if small_poi.shape[0] == 0:
+        return None
 
     # Pick random POI.
     start_point = small_poi.sample(1).to_dict('records')[0]
@@ -107,7 +117,8 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[D
     return start_point
 
 
-def check_if_tag_exists_set_main_tag(gdf: GeoDataFrame, tag: Text, main_tag: Text, alt_main_tag: Text) -> GeoDataFrame:
+def get_landmark_if_tag_exists(gdf: GeoDataFrame, tag: Text, main_tag:
+                               Text, alt_main_tag: Text) -> GeoDataFrame:
     '''Check if tag exists, set main tag name and choose pivot.
     Arguments:
       gdf: The set of landmarks.
@@ -116,16 +127,16 @@ def check_if_tag_exists_set_main_tag(gdf: GeoDataFrame, tag: Text, main_tag: Tex
     Returns:
       A single landmark.
     '''
-    coulmns = gdf.columns
-    if tag in coulmns:
+    candidate_landmarks = gdf.columns
+    if tag in candidate_landmarks:
         pivots = gdf[gdf[tag].notnull()]
-        if pivots.shape[0] > 0:
+        if pivots.shape[0]:
             pivots = gdf[gdf[main_tag].notnull()]
-            if main_tag in coulmns and pivots.shape[0] > 0:
+            if main_tag in candidate_landmarks and pivots.shape[0]:
                 pivots = pivots.assign(main_tag=pivots[main_tag])
                 return pivots.sample(1)
             pivots = gdf[gdf[alt_main_tag].notnull()]
-            if alt_main_tag in coulmns and pivots.shape[0] > 0:
+            if alt_main_tag in candidate_landmarks and pivots.shape[0]:
                 pivots = pivots.assign(main_tag=pivots[alt_main_tag])
                 return pivots.sample(1)
     return None
@@ -139,39 +150,23 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
       A single landmark.
     '''
 
-    pivot = check_if_tag_exists_set_main_tag(
-        df_pivots, 'wikipedia', 'name', 'amenity')
-    if pivot is not None:
-        return pivot
+    tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'), \
+    ('brand','brand'), ('tourism', 'tourism'), ('tourism', 'tourism'), \
+    ('amenity','amenity'), ('shop', 'shop')]
 
-    pivot = check_if_tag_exists_set_main_tag(
-        df_pivots, 'wikidata', 'name', 'amenity')
-    if pivot is not None:
-        return pivot
+    pivot = None
 
-    pivot = check_if_tag_exists_set_main_tag(
-        df_pivots, 'brand', 'name', 'brand')
-    if pivot is not None:
-        return pivot
+    for main_tag, named_tag in tag_pairs:
+        pivot = get_landmark_if_tag_exists(df_pivots, main_tag, 'name', \
+            named_tag)
+        if pivot is not None:
+            return pivot
 
-    pivot = check_if_tag_exists_set_main_tag(
-        df_pivots, 'tourism', 'name', 'tourism')
-    if pivot is not None:
-        return pivot
-
-    pivot = check_if_tag_exists_set_main_tag(
-        df_pivots, 'amenity', 'name', 'amenity')
-    if pivot is not None:
-        return pivot
-
-    pivot = check_if_tag_exists_set_main_tag(df_pivots, 'shop', 'name', 'shop')
-    if pivot is not None:
-        return pivot
-
-    return None
+    return pivot
 
 
-def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> Optional[Dict]:
+def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> \
+Optional[Dict]:
     '''Return a picked landmark near the end_point.
     Arguments:
       map: The map of a specific region.
@@ -198,15 +193,16 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> Opti
     prominent_poi = pick_prominent_pivot(nearby_poi)
 
     if prominent_poi is None:
-        return
+        return None
 
     return prominent_poi.to_dict('records')[0]
 
 
-def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFrame) -> Optional[Tuple[Dict, Dict]]:
+def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
+               GeoDataFrame) -> Optional[Tuple[Dict, Dict]]:
     '''Return a picked landmark on a given route.
     Arguments:
-      route: Along the route a landmark will be chosen.
+      route: The route along which a landmark will be chosen.
       map: The map of a specific region.
       end_point: The goal location.
     Returns:
@@ -229,7 +225,7 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFr
 
     except Exception as e:
         print(e)
-        return
+        return None
 
     # Polygon along the route.
     df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
@@ -244,12 +240,12 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point: GeoDataFr
     # Get pivot near the goal location.
     near_pivot = get_pivot_near_goal(map, end_point)
     if main_pivot is None or near_pivot is None:
-        return
+        return None
 
     return main_pivot, near_pivot
 
 
-def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict, Dict, GeoDataFrame, Dict, Dict]]:
+def get_points_and_route(map: map_structure.Map) -> Optional[item.GeoEntity]:
     '''Sample start and end point, a pivot landmark and route.
     Arguments:
       map: The map of a specific region.
@@ -260,61 +256,69 @@ def get_points_and_route(map: map_structure.Map) -> Optional[Tuple[Dict, Dict, G
     # Select end point.
     end_point = get_end_poi(map)
     if end_point is None:
-        return
+        return None
 
     # Select start point.
     start_point = get_start_poi(map, end_point)
     if start_point is None:
-        return
+        return None
 
     # Compute route between start and end points.
     route = compute_route(
         start_point['centroid'], end_point['centroid'], map.nx_graph, map.nodes)
     if route is None:
-        return
+        return None
 
     # Select pivots.
     result = get_pivots(route, map, end_point)
     if result is None:
-        return
+        return None
     main_pivot, near_pivot = result
 
-    return end_point, start_point, route, main_pivot, near_pivot
+    geo_entity = item.GeoEntity.from_points_route_pivots(start_point,
+                                                         end_point, route, main_pivot, near_pivot)
+
+    return geo_entity
 
 
-def get_single_sample(map: map_structure.Map):
+def get_single_sample(map: map_structure.Map) -> Optional[stored_item.
+                                                          StoreGeoEntity]:
     '''Sample start and end point, a pivot landmark and route and save to file.
     Arguments:
       map: The map of a specific region.
     Returns:
       A start and end point, a pivot landmark and route.
     '''
-    result = get_points_and_route(map)
-    if result is None:
-        return
-    end_point, start_point, route, main_pivot, near_pivot = result
-    instruction = "Starting at {0} walk past {1} and your goal is {2}, near {3}.".format(
-        start_point['name'], main_pivot['main_tag'], end_point['name'], near_pivot['main_tag'])
+    geo_entity = get_points_and_route(map)
+    if geo_entity is None:
+        return None
 
-    main_pivot['centroid'] = main_pivot['geometry'] if isinstance(
-        main_pivot['geometry'], Point) else main_pivot['geometry'].centroid
+    gdf_tags_start = gpd.GeoDataFrame({'end': geo_entity.end_point['name'],
+                                       'start': geo_entity.start_point['name'], 'main_pivot': geo_entity.main_pivot
+                                       ['main_tag'], 'near_pivot': geo_entity.near_pivot['main_tag'], 'instruction':
+                                       geo_entity.instruction}, index=[0])
 
-    near_pivot['centroid'] = near_pivot['geometry'] if isinstance(
-        near_pivot['geometry'], Point) else near_pivot['geometry'].centroid
+    gdf_tags_start['geometry'] = geo_entity.start_point['centroid']
 
-    gdf = gpd.GeoDataFrame({'end': end_point['name'], 'start': start_point['name'], 'main_pivot': main_pivot['main_tag'],
-                            'near_pivot': near_pivot['main_tag'], 'instruction': instruction}, index=[0])
+    gdf_end = gpd.GeoDataFrame(geometry=[geo_entity.end_point['centroid']])
 
-    gdf['geometry'] = start_point['centroid']
-    gdf_end = gpd.GeoDataFrame(geometry=[end_point['centroid']])
-    gdf_main_pivot = gpd.GeoDataFrame(geometry=[main_pivot['centroid']])
-    gdf_near_pivot = gpd.GeoDataFrame(geometry=[near_pivot['centroid']])
+    gdf_main_pivot = gpd.GeoDataFrame(geometry=[geo_entity.main_pivot
+                                                ['centroid']])
+
+    gdf_near_pivot = gpd.GeoDataFrame(geometry=[geo_entity.near_pivot
+                                                ['centroid']])
+
     gdf_route = gpd.GeoDataFrame(
-        geometry=[Polygon(route['geometry'].tolist())])
-    return gdf, gdf_end, gdf_main_pivot, gdf_near_pivot, gdf_route
+        geometry=[Polygon(geo_entity.route['geometry'].tolist())])
+
+    stored_geo_entity = stored_item.StoreGeoEntity.from_points_route_pivots(
+        gdf_tags_start, gdf_end, gdf_main_pivot, gdf_near_pivot, gdf_route)
+
+    return stored_geo_entity
 
 
-def get_samples(path: Text, map: map_structure.Map, n_samples: int):
+def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
+                                 int):
     '''Sample start and end point, a pivot landmark and route and save to file.
     Arguments:
       path: The path to which the data will be appended.
@@ -322,7 +326,8 @@ def get_samples(path: Text, map: map_structure.Map, n_samples: int):
       n_samples: the max number of samples to generate.
     '''
     gdf_start_list = gpd.GeoDataFrame(
-        columns=["start", "end", "main_pivot", "near_pivot", "instruction", "geometry"])
+        columns=["start", "end", "main_pivot", "near_pivot", "instruction",
+                 "geometry"])
 
     gdf_end_list = gpd.GeoDataFrame(columns=["geometry"])
     gdf_route_list = gpd.GeoDataFrame(columns=["geometry"])
@@ -330,26 +335,30 @@ def get_samples(path: Text, map: map_structure.Map, n_samples: int):
     gdf_near_list = gpd.GeoDataFrame(columns=["geometry"])
 
     for i in range(n_samples):
-        result = get_single_sample(map)
-        if result is None:
+        entity = get_single_sample(map)
+        if entity is None:
             continue
-        gdf_start, gdf_end, gdf_main_pivot, gdf_near_pivot, gdf_route = result
-        gdf_start_list = gdf_start_list.append(gdf_start, ignore_index=True)
-        gdf_end_list = gdf_end_list.append(gdf_end, ignore_index=True)
-        gdf_route_list = gdf_route_list.append(gdf_route, ignore_index=True)
-        gdf_main_list = gdf_main_list.append(gdf_main_pivot, ignore_index=True)
-        gdf_near_list = gdf_near_list.append(gdf_near_pivot, ignore_index=True)
+        gdf_start_list = gdf_start_list.append(entity.tags_start,
+                                               ignore_index=True)
+        gdf_end_list = gdf_end_list.append(entity.end, ignore_index=True)
+        gdf_route_list = gdf_route_list.append(entity.route,
+                                               ignore_index=True)
+        gdf_main_list = gdf_main_list.append(entity.main_pivot,
+                                             ignore_index=True)
+        gdf_near_list = gdf_near_list.append(entity.near_pivot,
+                                             ignore_index=True)
 
-    gdf_start_list.to_file(path, layer='start', driver="GPKG")
-    gdf_end_list.to_file(path, layer='end', driver="GPKG")
-    gdf_route_list.to_file(path, layer='route', driver="GPKG")
-    gdf_main_list.to_file(path, layer='main', driver="GPKG")
-    gdf_near_list.to_file(path, layer='near', driver="GPKG")
+    gdf_start_list.to_file(path, layer = 'start', driver =_Geo_DataFrame_Driver)
+    gdf_end_list.to_file(path, layer = 'end', driver = _Geo_DataFrame_Driver)
+    gdf_route_list.to_file(path, layer = 'route', driver = 
+    _Geo_DataFrame_Driver)
+    gdf_main_list.to_file(path, layer = 'main', driver = _Geo_DataFrame_Driver)
+    gdf_near_list.to_file(path, layer = 'near', driver = _Geo_DataFrame_Driver)
 
 
 def print_instructions(path: Text):
     '''Read a geodata file and print instruction.'''
     if not os.path.exists(path):
-        return
+        return None
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
