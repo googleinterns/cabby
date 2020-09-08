@@ -14,14 +14,15 @@
 
 '''Library to support geographical visualization.'''
 
-from typing import Tuple, Sequence, Optional, Dict, Text
+import folium
+import geopandas as gpd
 from json import JSONDecoder, JSONDecodeError
 import json
 import pandas as pd
-import folium
-import geopandas as gpd
 import shapely.geometry as geom
 from shapely.geometry import Polygon, Point, LineString
+from typing import Tuple, Sequence, Optional, Dict, Text
+
 
 
 from cabby.geo import util
@@ -99,8 +100,8 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
     return map_osm
 
 
-def get_maps_and_instructions(path: Text) -> Tuple[Sequence[folium.Map], \
-  Sequence[Text]]:
+def get_maps_and_instructions(
+  path: Text) -> Tuple[Sequence[folium.Map], Sequence[Text]]:
     '''Create the OSM maps and instructions.
     Arguments:
       path: the path to the .
