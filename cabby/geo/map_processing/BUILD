@@ -43,5 +43,6 @@ py_binary(
     deps = [
         ':map_structure',
         ':graph',
+        '//cabby:logger',
         ],
 )
