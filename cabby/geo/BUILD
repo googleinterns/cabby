@@ -45,5 +45,10 @@ py_binary(
     name = 'geo_computation',
     main = 'geo_computation.py',
     srcs = ['geo_computation.py'],
-    deps = [':walk'],
+    deps = [
+        ':walk',
+        ':util',
+        "//cabby:logger",
+
+    ],
 )
