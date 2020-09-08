@@ -27,8 +27,8 @@ from cabby.geo.map_processing import map_structure
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-  "region", None, ['Pittsburgh', 'Manhattan'], 
-  "Map areas: Manhattan or Pittsburgh.")
+  "region", None, ['Pittsburgh', 'Manhattan','Bologna'], 
+  "Map areas: Manhattan, Pittsburgh or Bologna.")
 flags.DEFINE_integer("min_s2_level", None, "Minimum S2 level of the map.")
 flags.DEFINE_string("directory", None, "The directory where the files will be saved to" )
 

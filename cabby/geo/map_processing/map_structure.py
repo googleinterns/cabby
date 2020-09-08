@@ -166,7 +166,7 @@ class Map:
         base_filename = self.map_name.lower()+"_poi"
         path = os.path.join(dir_name, base_filename + ".pkl")
         assert os.path.exists(
-            path), map_logger.info("path {0} doesn't exist.".format(path))
+            path), "path {0} doesn't exist.".format(path)
         poi_pandas = pd.read_pickle(path)
         poi_pandas['cellids'] = poi_pandas['cellids'].apply(
             lambda x: util.s2cells_from_cellids(x))
@@ -176,7 +176,7 @@ class Map:
         base_filename = self.map_name.lower() + "_streets"
         path = os.path.join(dir_name, base_filename + ".pkl")
         assert os.path.exists(
-            path), map_logger.info("path {0} doesn't exist.".format(path))
+            path), "path {0} doesn't exist.".format(path)
         streets_pandas = pd.read_pickle(path)
         streets_pandas['cellids'] = streets_pandas['cellids'].apply(
             lambda x: util.s2cells_from_cellids(x))
@@ -186,12 +186,12 @@ class Map:
         base_filename = self.map_name.lower() + "_graph"
         path = os.path.join(dir_name, base_filename + ".gpickle")
         assert os.path.exists(
-            path), map_logger.info("path {0} doesn't exists".format(path))
+            path), "path {0} doesn't exists".format(path)
         self.nx_graph = nx.read_gpickle(path)
 
         # Load nodes.
         base_filename = self.map_name.lower() + "_nodes"
         path = os.path.join(dir_name, base_filename + ".geojson")
         assert os.path.exists(
-            path), map_logger.info("path {0} doesn't exist.".format(path))
+            path), "path {0} doesn't exist.".format(path)
         self.nodes = gpd.read_file(path, driver='GeoJSON')

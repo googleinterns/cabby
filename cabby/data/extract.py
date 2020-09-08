@@ -122,6 +122,9 @@ def split_dataset(dataset, percentage_train: float, percentage_dev: float):
     assert percentage_dev + \
         percentage_train <= 1, "percentage_dev+percentage_train is more than 1."
 
+    #TODO (https://github.com/googleinterns/cabby/issues/28#issue-695818890): 
+    # Change split by qid so that it will ensure qid isn't shared between sets  
+
     # Sort the dataset by ref_qid.
     sorted_dataset = sorted(dataset, key=lambda item: item['ref_qid'])
 
