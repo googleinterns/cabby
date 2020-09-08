@@ -35,7 +35,6 @@ from cabby.geo import util
 from cabby.geo import geo_item
 from cabby.geo.map_processing import map_structure
 
-
 _Geo_DataFrame_Driver = "GPKG"
 
 
@@ -87,7 +86,7 @@ def get_end_poi(map: map_structure.Map) -> Optional[Dict[Text, Any]]:
 
 
 def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
-Optional[Dict]:
+        Optional[Dict]:
     '''Returns the a random POI within distance of a given POI.
     Arguments:
       map: The map of a specific region.
@@ -104,7 +103,6 @@ Optional[Dict]:
     # TODO (https://github.com/googleinterns/cabby/issues/25): Change to path
     # distance.
     within_distance = map.poi[(dist > 0.2) & (dist < 0.8)]
-
     # Filter large POI.
     small_poi = within_distance[within_distance['cellids'].str.len() <= 4]
 
@@ -150,15 +148,15 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
       A single landmark.
     '''
 
-    tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'), \
-    ('brand','brand'), ('tourism', 'tourism'), ('tourism', 'tourism'), \
-    ('amenity','amenity'), ('shop', 'shop')]
+    tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'),
+                 ('brand', 'brand'), ('tourism', 'tourism'), ('tourism', 'tourism'),
+                 ('amenity', 'amenity'), ('shop', 'shop')]
 
     pivot = None
 
     for main_tag, named_tag in tag_pairs:
-        pivot = get_landmark_if_tag_exists(df_pivots, main_tag, 'name', \
-            named_tag)
+        pivot = get_landmark_if_tag_exists(df_pivots, main_tag, 'name',
+                                           named_tag)
         if pivot is not None:
             return pivot
 
@@ -166,7 +164,7 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
 
 
 def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> \
-Optional[Dict]:
+        Optional[Dict]:
     '''Return a picked landmark near the end_point.
     Arguments:
       map: The map of a specific region.
@@ -274,7 +272,7 @@ def get_points_and_route(map: map_structure.Map) -> Optional[item.RVSPath]:
     main_pivot, near_pivot = result
 
     rvs_path_entity = item.RVSPath.from_points_route_pivots(start_point,
-                                                         end_point, route, main_pivot, near_pivot)
+                                                            end_point, route, main_pivot, near_pivot)
 
     return rvs_path_entity
 
@@ -298,7 +296,8 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
 
     gdf_tags_start['geometry'] = rvs_path_entity.start_point['centroid']
 
-    gdf_end = gpd.GeoDataFrame(geometry=[rvs_path_entity.end_point['centroid']])
+    gdf_end = gpd.GeoDataFrame(
+        geometry=[rvs_path_entity.end_point['centroid']])
 
     gdf_main_pivot = gpd.GeoDataFrame(geometry=[rvs_path_entity.main_pivot
                                                 ['centroid']])
@@ -332,10 +331,13 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
     gdf_main_list = gpd.GeoDataFrame(columns=["geometry"])
     gdf_near_list = gpd.GeoDataFrame(columns=["geometry"])
 
-    for i in range(n_samples):
+    counter = 0
+    while counter < n_samples:
         entity = get_single_sample(map)
         if entity is None:
             continue
+        counter+= 1
+        print (counter)
         gdf_start_list = gdf_start_list.append(entity.tags_start,
                                                ignore_index=True)
         gdf_end_list = gdf_end_list.append(entity.end, ignore_index=True)
@@ -346,12 +348,14 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
         gdf_near_list = gdf_near_list.append(entity.near_pivot,
                                              ignore_index=True)
 
-    gdf_start_list.to_file(path, layer = 'start', driver =_Geo_DataFrame_Driver)
-    gdf_end_list.to_file(path, layer = 'end', driver = _Geo_DataFrame_Driver)
-    gdf_route_list.to_file(path, layer = 'route', driver = 
-    _Geo_DataFrame_Driver)
-    gdf_main_list.to_file(path, layer = 'main', driver = _Geo_DataFrame_Driver)
-    gdf_near_list.to_file(path, layer = 'near', driver = _Geo_DataFrame_Driver)
+    if gdf_start_list.shape[0] == 0:
+        return None
+
+    gdf_start_list.to_file(path, layer='start', driver=_Geo_DataFrame_Driver)
+    gdf_end_list.to_file(path, layer='end', driver=_Geo_DataFrame_Driver)
+    gdf_route_list.to_file(path, layer='route', driver=_Geo_DataFrame_Driver)
+    gdf_main_list.to_file(path, layer='main', driver=_Geo_DataFrame_Driver)
+    gdf_near_list.to_file(path, layer='near', driver=_Geo_DataFrame_Driver)
 
 
 def print_instructions(path: Text):
@@ -360,3 +364,5 @@ def print_instructions(path: Text):
         return None
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
+
+
