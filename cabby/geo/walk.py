@@ -27,7 +27,6 @@ from shapely import geometry
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon, LinearRing
 from shapely.geometry import box
-import time
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
 from cabby.geo import item
@@ -212,7 +211,6 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
         route['osmid'])]['geometry']
 
     try:
-        start_time = time.time()
         poly = Polygon(points_route.tolist()).buffer(0.0005)
         bounds = poly.bounds
         bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
@@ -309,7 +307,7 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
         geometry=[Polygon(rvs_path_entity.route['geometry'].tolist())])
 
     geo_entity = geo_item.GeoEntity.from_points_route_pivots(
-        gdf_tags_start, gdf_end, gdf_main_pivot, gdf_near_pivot, gdf_route)
+        gdf_tags_start, gdf_end, gdf_route, gdf_main_pivot, gdf_near_pivot)
 
     return geo_entity
 
