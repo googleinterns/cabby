@@ -23,8 +23,6 @@ import shapely.geometry as geom
 from shapely.geometry import Polygon, Point, LineString
 from typing import Tuple, Sequence, Optional, Dict, Text
 
-
-
 from cabby.geo import util
 
 def read_file(path: Text) -> gpd.GeoDataFrame:
