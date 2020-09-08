@@ -64,8 +64,6 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
     map_osm = folium.Map(location=zoom_location,
                          zoom_start=15, tiles='OpenStreetMap')
 
-    def style_function(x): return {'weight': 1, 'fillColor': '#eea500'}
-
     # draw the points
     start_point = util.list_yx_from_point(gdf.start_point)
     end_point = util.list_yx_from_point(gdf.end_point)
