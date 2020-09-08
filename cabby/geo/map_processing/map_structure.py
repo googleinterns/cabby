@@ -24,7 +24,7 @@ from shapely.geometry import box
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely import wkt
-from typing import Dict, Tuple, Sequence, Text
+from typing import Dict, Tuple, Sequence, Text, Optional
 
 
 from cabby import logger
@@ -53,7 +53,7 @@ class Map:
                 ccw=True)
         else:  # Bologna.
             self.polygon_area = box(
-                miny=44.4902, minx=11.3333, maxy=44.5000, maxx=11.3564, 
+                miny=44.4902, minx=11.356, maxy=44.5000, maxx=11.3564, 
                 ccw=True)
 
         if load_directory is None:
@@ -116,6 +116,28 @@ class Map:
         self.streets[['cellids', 'osmid']].apply(
             lambda x: self.s2_graph.add_street(x.cellids, x.osmid), axis=1)
 
+    def get_valid_path(self, dir_name: Text, name_ending: Text, \
+        file_ending: Text) -> Optional[Text]:
+        '''Creates the file path and checks validity.
+        Arguments:
+          dir_name: The directory of the path.
+          name_ending: the end of the name  of the file(_graph\_node\_poi\_streets).
+          file_ending: the type of the file.
+        Returns:
+          The valid path.
+        '''
+        
+        base_filename = self.map_name.lower() + name_ending
+
+        # Check if directory is valid.
+        assert os.path.exists(dir_name), "Current directory is: {0}. The directory {1} doesn't exist.".format(os.getcwd(), dir_name)
+        
+        # Create path.
+        path = os.path.join(dir_name, base_filename + file_ending)
+
+        return path
+
+
     def write_map(self, dir_name: Text):
         '''Save POI to disk.'''
 
@@ -124,8 +146,7 @@ class Map:
         pd_poi['cellids'] = pd_poi['cellids'].apply(
             lambda x: util.s2ids_from_s2cells(x))
 
-        base_filename = self.map_name.lower()+"_poi"
-        path = os.path.join(dir_name, base_filename + ".pkl")
+        path = self.get_valid_path(dir_name, '_poi', '.pkl')
         if not os.path.exists(path):
             pd_poi.to_pickle(path)
         else:
@@ -136,8 +157,7 @@ class Map:
         pd_streets['cellids'] = pd_streets['cellids'].apply(
             lambda x: util.s2ids_from_s2cells(x))
 
-        base_filename = self.map_name.lower() + "_streets"
-        path = os.path.join(dir_name, base_filename + ".pkl")
+        path = self.get_valid_path(dir_name, '_streets', '.pkl')
         if not os.path.exists(path):
             pd_streets.to_pickle(path)
         else:
@@ -152,8 +172,7 @@ class Map:
             map_logger.info("path {0} already exist.".format(path))
 
         # Write nodes.
-        base_filename = self.map_name.lower() + "_nodes"
-        path = os.path.join(dir_name, base_filename + ".geojson")
+        path = self.get_valid_path(dir_name, '_nodes', '.geojson')
         if not os.path.exists(path):
             self.nodes.to_file(path, driver='GeoJSON')
         else:
@@ -163,8 +182,7 @@ class Map:
         '''Load POI from disk.'''
 
         # Load POI.
-        base_filename = self.map_name.lower()+"_poi"
-        path = os.path.join(dir_name, base_filename + ".pkl")
+        path = self.get_valid_path(dir_name, '_poi', '.pkl')
         assert os.path.exists(
             path), "path {0} doesn't exist.".format(path)
         poi_pandas = pd.read_pickle(path)
@@ -173,8 +191,7 @@ class Map:
         self.poi = poi_pandas
 
         # Load streets.
-        base_filename = self.map_name.lower() + "_streets"
-        path = os.path.join(dir_name, base_filename + ".pkl")
+        path = self.get_valid_path(dir_name, '_streets', '.pkl')
         assert os.path.exists(
             path), "path {0} doesn't exist.".format(path)
         streets_pandas = pd.read_pickle(path)
@@ -183,15 +200,13 @@ class Map:
         self.streets = streets_pandas
 
         # Load graph.
-        base_filename = self.map_name.lower() + "_graph"
-        path = os.path.join(dir_name, base_filename + ".gpickle")
+        path = self.get_valid_path(dir_name, '_graph', '.gpickle')
         assert os.path.exists(
             path), "path {0} doesn't exists".format(path)
         self.nx_graph = nx.read_gpickle(path)
 
         # Load nodes.
-        base_filename = self.map_name.lower() + "_nodes"
-        path = os.path.join(dir_name, base_filename + ".geojson")
+        path = self.get_valid_path(dir_name, '_nodes', '.geojson')
         assert os.path.exists(
             path), "path {0} doesn't exist.".format(path)
         self.nodes = gpd.read_file(path, driver='GeoJSON')
