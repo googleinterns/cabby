@@ -18,7 +18,7 @@ between them and pivots.
 Example:
 $ bazel-bin/cabby/geo/sample_poi --region Pittsburgh --min_s2_level 18 \
     --directory "./cabby/geo/map_processing/poiTestData/" \
-        --path "./cabby/geo/pathData/geo_paths.gpkg" --n_samples 1
+        --path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" --n_samples 1
 '''
 
 from absl import app

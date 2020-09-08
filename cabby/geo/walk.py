@@ -337,7 +337,6 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
         if entity is None:
             continue
         counter+= 1
-        print (counter)
         gdf_start_list = gdf_start_list.append(entity.tags_start,
                                                ignore_index=True)
         gdf_end_list = gdf_end_list.append(entity.end, ignore_index=True)
