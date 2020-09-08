@@ -14,7 +14,8 @@
 
 Example:
 
-$ bazel-bin/cabby/geo/map_processing/map_processor --region Manhattan --min_s2_level 18 --directory "/mnt/hackney/data/cabby/poi/temp/"
+$ bazel-bin/cabby/geo/map_processing/map_processor --region Pittsburgh \ 
+--min_s2_level 18 --directory "./cabby/geo/map_processing/poiTestData/"
 '''
 
 from absl import app
