@@ -14,7 +14,7 @@
 
 '''Example command line method to extract Wikipedia and Wikidata items and save to file.
 Example:
-$ bazel-bin/cabby/data/extract_wikigeo_contexts --region Pittsburgh --path geodata.txt
+$ bazel-bin/cabby/data/extract_wikigeo_contexts --region Bologna --path bologna.json
 '''
 
 from absl import app
@@ -27,8 +27,8 @@ from cabby.data import extract
 FLAGS = flags.FLAGS
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-    "region", None, ['Pittsburgh', 'Manhattan'],
-    "Map areas: Manhattan or Pittsburgh.")
+    "region", None, ['Pittsburgh', 'Manhattan', 'Bologna'],
+    "Map areas: Manhattan, Pittsburgh or Bologna.")
 flags.DEFINE_string("path", None, "The path where the data will be saved.")
 
 
