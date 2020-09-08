@@ -55,7 +55,7 @@ def main(argv):
     map_region = map_structure.Map(FLAGS.region, FLAGS.min_s2_level, FLAGS.
     directory)
 
-    # Create a file with multile layers of data.
+    # Create a file with multiple layers of data.
     walk.generate_and_save_rvs_routes(FLAGS.path, map_region, FLAGS.n_samples)
 
     # Read and print instruction.
