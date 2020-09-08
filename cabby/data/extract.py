@@ -27,9 +27,11 @@ from cabby.data import wikigeo
 def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> Sequence:
     '''Get data from Wikipedia based on Wikidata items" 
     Arguments:
-        wikidata_items: The Wikidata items to which corresponding Wikigeo  items will be extracted.
+        wikidata_items: The Wikidata items to which corresponding Wikigeo  
+        items will be extracted.
     Returns:
-        The Wikigeo items found (composed of Wikipedia (text,title) and Wikidata (location) data).
+        The Wikigeo items found (composed of Wikipedia (text,title) and 
+        Wikidata (location) data).
     '''
     # Get Wikipedia titles.
     titles = [entity.wikipedia_title for entity in wikidata_items]
@@ -54,10 +56,12 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> Sequence:
     backlinks_items = []
     for list_backlinks in backlinks_pages:
         backlinks_items.append(
-            [wpi.WikipediaEntity.from_backlinks_api_result(result) for result in list_backlinks])
+            [wpi.WikipediaEntity.from_backlinks_api_result(result) for \
+                result in list_backlinks])
 
     # Change backlinks pages to Geodata dataset format.
-    for list_backlinks, original_wikipedia, original_wikidata in zip(backlinks_items, wikipedia_items, wikidata_items):
+    for list_backlinks, original_wikipedia, original_wikidata in \
+        zip(backlinks_items, wikipedia_items, wikidata_items):
         for backlink in list_backlinks:
             wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
                 backlink, original_wikipedia, original_wikidata).sample
@@ -101,16 +105,19 @@ def get_data_by_region(region: Text) -> Sequence:
 
 
 def split_dataset(dataset, percentage_train: float, percentage_dev: float):
-    '''Splits the dataset into train-set, dev-set, test-set according to the ref_qid" 
+    '''Splits the dataset into train-set, dev-set, test-set according to the 
+    ref_qid" 
     Arguments:
         percentage_train(float in [0,1]): percentage of the train-set.
         percentage_dev(float in [0,1]): percentage of the dev-set.
     Returns:
         The train-set, dev-set and test-set splits.
     '''
-    assert percentage_train >= 0 and percentage_train <= 1, "percentage_train is not in rang 0-1."
+    assert percentage_train >= 0 and percentage_train <= 1, \
+        "percentage_train is not in rang 0-1."
 
-    assert percentage_dev >= 0 and percentage_dev <= 1, "percentage_dev is not in rang 0-1."
+    assert percentage_dev >= 0 and percentage_dev <= 1, \
+        "percentage_dev is not in rang 0-1."
 
     assert percentage_dev + \
         percentage_train <= 1, "percentage_dev+percentage_train is more than 1."

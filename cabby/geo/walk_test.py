@@ -16,6 +16,7 @@
 import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
+
 from cabby.geo import walk
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
@@ -41,8 +42,8 @@ class WalkTest(unittest.TestCase):
         # Check that the correct points are in the route.
         first_point = util.tuple_from_point(route.iloc[0]['geometry'])
         second_point = util.tuple_from_point(route.iloc[1]['geometry'])
-        self.assertAlmostEqual(first_point, (44.4946187, 11.344085))
-        self.assertAlmostEqual(second_point, (44.4947274, 11.343436))
+        self.assertEqual(first_point, (44.4946187, 11.344085))
+        self.assertEqual(second_point, (44.4947274, 11.343436))
 
 
     def testPointsSelection(self):

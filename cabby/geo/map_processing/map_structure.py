@@ -13,23 +13,23 @@
 # limitations under the License.
 
 
-from typing import Dict, Tuple, Sequence, Text
-
-import pandas as pd
+import copy
 import geopandas as gpd
 from geopandas import GeoSeries
+import networkx as nx
+import os
 import osmnx as ox
+import pandas as pd
 from shapely.geometry import box
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely import wkt
-import os
-import copy
-import networkx as nx
+from typing import Dict, Tuple, Sequence, Text
 
+
+from cabby import logger
 from cabby.geo import util
 from cabby.geo.map_processing import graph
-from cabby import logger
 
 map_logger = logger.create_logger("map.log", 'map')
 
