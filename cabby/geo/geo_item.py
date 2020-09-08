@@ -21,7 +21,7 @@ from typing import Text, Dict
 import attr
 
 @attr.s
-class StoreGeoEntity:
+class GeoEntity:
     """Construct a Wikigeo sample.
 
     `tags_start` includes the tags, instruction and start geolocation.
@@ -41,7 +41,7 @@ class StoreGeoEntity:
      near_pivot):
         """Construct an Entity from the start and end points, route, and pivots.
         """
-        return StoreGeoEntity(
+        return GeoEntity(
             start,
             end,
             route,

@@ -22,7 +22,7 @@ import attr
 
 
 @attr.s
-class GeoEntity:
+class RVSPath:
     """Construct a Wikigeo sample.
 
     `start_point` is the beginning location.
@@ -61,7 +61,7 @@ class GeoEntity:
                                  near_pivot):
         """Construct an Entity from the start and end points, route, and pivots.
         """
-        return GeoEntity(
+        return RVSPath(
             start,
             end,
             route,

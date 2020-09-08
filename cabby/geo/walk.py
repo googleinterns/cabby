@@ -32,7 +32,7 @@ from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
 from cabby.geo import item
 from cabby.geo import util
-from cabby.geo import stored_item
+from cabby.geo import geo_item
 from cabby.geo.map_processing import map_structure
 
 
@@ -245,7 +245,7 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
     return main_pivot, near_pivot
 
 
-def get_points_and_route(map: map_structure.Map) -> Optional[item.GeoEntity]:
+def get_points_and_route(map: map_structure.Map) -> Optional[item.RVSPath]:
     '''Sample start and end point, a pivot landmark and route.
     Arguments:
       map: The map of a specific region.
@@ -275,46 +275,46 @@ def get_points_and_route(map: map_structure.Map) -> Optional[item.GeoEntity]:
         return None
     main_pivot, near_pivot = result
 
-    geo_entity = item.GeoEntity.from_points_route_pivots(start_point,
+    rvs_path_entity = item.RVSPath.from_points_route_pivots(start_point,
                                                          end_point, route, main_pivot, near_pivot)
 
-    return geo_entity
+    return rvs_path_entity
 
 
-def get_single_sample(map: map_structure.Map) -> Optional[stored_item.
-                                                          StoreGeoEntity]:
+def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
+                                                          GeoEntity]:
     '''Sample start and end point, a pivot landmark and route and save to file.
     Arguments:
       map: The map of a specific region.
     Returns:
       A start and end point, a pivot landmark and route.
     '''
-    geo_entity = get_points_and_route(map)
-    if geo_entity is None:
+    rvs_path_entity = get_points_and_route(map)
+    if rvs_path_entity is None:
         return None
 
-    gdf_tags_start = gpd.GeoDataFrame({'end': geo_entity.end_point['name'],
-                                       'start': geo_entity.start_point['name'], 'main_pivot': geo_entity.main_pivot
-                                       ['main_tag'], 'near_pivot': geo_entity.near_pivot['main_tag'], 'instruction':
-                                       geo_entity.instruction}, index=[0])
+    gdf_tags_start = gpd.GeoDataFrame({'end': rvs_path_entity.end_point['name'],
+                                       'start': rvs_path_entity.start_point['name'], 'main_pivot': rvs_path_entity.main_pivot
+                                       ['main_tag'], 'near_pivot': rvs_path_entity.near_pivot['main_tag'], 'instruction':
+                                       rvs_path_entity.instruction}, index=[0])
 
-    gdf_tags_start['geometry'] = geo_entity.start_point['centroid']
+    gdf_tags_start['geometry'] = rvs_path_entity.start_point['centroid']
 
-    gdf_end = gpd.GeoDataFrame(geometry=[geo_entity.end_point['centroid']])
+    gdf_end = gpd.GeoDataFrame(geometry=[rvs_path_entity.end_point['centroid']])
 
-    gdf_main_pivot = gpd.GeoDataFrame(geometry=[geo_entity.main_pivot
+    gdf_main_pivot = gpd.GeoDataFrame(geometry=[rvs_path_entity.main_pivot
                                                 ['centroid']])
 
-    gdf_near_pivot = gpd.GeoDataFrame(geometry=[geo_entity.near_pivot
+    gdf_near_pivot = gpd.GeoDataFrame(geometry=[rvs_path_entity.near_pivot
                                                 ['centroid']])
 
     gdf_route = gpd.GeoDataFrame(
-        geometry=[Polygon(geo_entity.route['geometry'].tolist())])
+        geometry=[Polygon(rvs_path_entity.route['geometry'].tolist())])
 
-    stored_geo_entity = stored_item.StoreGeoEntity.from_points_route_pivots(
+    geo_entity = geo_item.GeoEntity.from_points_route_pivots(
         gdf_tags_start, gdf_end, gdf_main_pivot, gdf_near_pivot, gdf_route)
 
-    return stored_geo_entity
+    return geo_entity
 
 
 def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
