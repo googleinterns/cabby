@@ -49,7 +49,8 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
 
 
 def tuple_from_point(point: Point) -> Tuple[float, float]:
-    '''Convert a Point into a tuple, with latitude as first element, and longitude as second.
+    '''Convert a Point into a tuple, with latitude as first element, and 
+    longitude as second.
 
     Arguments:
       point(Point): A lat-lng point.

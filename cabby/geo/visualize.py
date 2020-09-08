@@ -31,7 +31,8 @@ def read_file(path: Text) -> gpd.GeoDataFrame:
     Arguments:
       path: path to file.
     Returns:
-      The GeoDataFrame theat includes the start and end points, pivots and route.
+      The GeoDataFrame theat includes the start and end points, pivots and 
+      route.
     '''
 
     start = gpd.read_file(path, layer='start')
@@ -70,11 +71,15 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
     main_pivot = util.list_yx_from_point(gdf.main_pivot_point)
     near_pivot = util.list_yx_from_point(gdf.near_pivot_point)
 
-    folium.Marker(start_point, popup='start: ' + gdf.start, icon=folium.Icon(color='pink')).add_to(map_osm)
-    folium.Marker(end_point, popup='end: ' + gdf.end, icon=folium.Icon(color='black')).add_to(map_osm)
-    folium.Marker(main_pivot, popup='main pivot: ' + gdf.main_pivot, icon=folium.Icon(
+    folium.Marker(start_point, popup='start: ' + gdf.start, \
+      icon=folium.Icon(color='pink')).add_to(map_osm)
+    folium.Marker(end_point, popup='end: ' + gdf.end, \
+      icon=folium.Icon(color='black')).add_to(map_osm)
+    folium.Marker(main_pivot, popup='main pivot: ' + \
+      gdf.main_pivot, icon=folium.Icon(
         color='orange', icon='info-sign')).add_to(map_osm)
-    folium.Marker(near_pivot, popup='near pivot: '+gdf.near_pivot, icon=folium.Icon(
+    folium.Marker(near_pivot, popup='near pivot: '+gdf.near_pivot, \
+       icon=folium.Icon(
         color='red', icon='info-sign')).add_to(map_osm)
 
     place_lng, place_lat = gdf.route.exterior.xy
@@ -94,7 +99,8 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
     return map_osm
 
 
-def get_maps_and_instructions(path: Text) -> Tuple[Sequence[folium.Map], Sequence[Text]]:
+def get_maps_and_instructions(path: Text) -> Tuple[Sequence[folium.Map], \
+  Sequence[Text]]:
     '''Create the OSM maps and instructions.
     Arguments:
       path: the path to the .
@@ -103,7 +109,8 @@ def get_maps_and_instructions(path: Text) -> Tuple[Sequence[folium.Map], Sequenc
     '''
 
     gdf = read_file(path)
-    map_osms_instructions = gdf.apply(lambda x: (get_osm_map(x),x.instruction), axis=1)
+    map_osms_instructions = gdf.apply(lambda x: \
+      (get_osm_map(x),x.instruction), axis=1)
 
     return map_osms_instructions
 
