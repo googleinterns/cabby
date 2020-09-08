@@ -13,6 +13,8 @@ py_library(
     deps = [
         ':graph',
         '//cabby/geo:util',
+        '//cabby:logger',
+
     ]
 )
 
@@ -24,7 +26,9 @@ py_test(
     deps = [
         "//cabby/geo/map_processing:map_structure",
         "//cabby/geo/map_processing:graph",
-        "//cabby/geo:util"
+        "//cabby/geo:util",
+        "//cabby:logger",
+
     ],
 )
 
