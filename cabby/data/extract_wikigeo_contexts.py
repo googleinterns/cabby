@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Example command line method to extract Wikipedia and Wikidata items and save to file.
+'''Example command line method to extract Wikipedia and Wikidata items and save 
+to file.
 Example:
-$ bazel-bin/cabby/data/extract_wikigeo_contexts --region Bologna --path bologna.json
+$ bazel-bin/cabby/data/extract_wikigeo_contexts --region Bologna --path bologna.
+json
 '''
 
 from absl import app

@@ -20,8 +20,8 @@ $ bazel-bin/cabby/geo/map_processing/map_processor --region Manhattan --min_s2_l
 from absl import app
 from absl import flags
 
-from shapely.geometry.point import Point
 import osmnx as ox
+from shapely.geometry.point import Point
 
 from cabby.geo.map_processing import map_structure
 

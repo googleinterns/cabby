@@ -223,16 +223,14 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
         df_pivots = ox.pois.pois_from_polygon(
             bounding_box, tags=tags)
 
+        # Polygon along the route.
+        df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
+
+        # Remove streets.
+        df_pivots = df_pivots[(df_pivots['highway'].isnull())]
     except Exception as e:
         print(e)
         return None
-
-    # Polygon along the route.
-    df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
-
-    # Remove streets.
-    df_pivots = df_pivots[(df_pivots['highway'].isnull())
-                          & (df_pivots['railway'].isnull())]
 
     main_pivot = pick_prominent_pivot(df_pivots)
     main_pivot = main_pivot.to_dict('records')[0]

@@ -25,12 +25,11 @@ v1/"
 from absl import app
 from absl import flags
 
-from shapely.geometry.point import Point
-import osmnx as ox
 from geopandas import GeoDataFrame
+import osmnx as ox
+from shapely.geometry.point import Point
 
 from cabby.geo import walk
-
 from cabby.geo.map_processing import map_structure
 
 FLAGS = flags.FLAGS
