@@ -30,7 +30,7 @@ def s2ids_from_s2cells(list_s2cells: Sequence[s2.S2Cell]) -> Sequence[int]:
     Returns:
       A sequence of ids corresponding to the S2Cells.
     '''
-    
+
     return [cell.id() for cell in list_s2cells]
 
 
@@ -216,31 +216,35 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
 
 
 def get_bearing(start: Point, goal: Point) -> float:
-  """Get the bearing (heading) from the start lat-lon to the goal lat-lon.
-  
-  Args:
-    start: The starting point.
-    goal: The goal point.
-  Returns:
-    The geospatial bearing when heading from the start to the goal. The bearing 
-    angle given by azi1 (azimuth) is clockwise relative to north, so a bearing 
-    of 90 degrees is due east, 180 is south, and 270 is west.
-  """
-  solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
-      start.y, start.x, goal.y, goal.x)
-  return solution['azi1'] % 360
+    """Get the bearing (heading) from the start lat-lon to the goal lat-lon.
+
+    Args:
+      start: The starting point.
+      goal: The goal point.
+    Returns:
+      The geospatial bearing when heading from the start to the goal. The 
+      bearing 
+      angle given by azi1 (azimuth) is clockwise relative to north, so a 
+      bearing 
+      of 90 degrees is due east, 180 is south, and 270 is west.
+    """
+    solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
+        start.y, start.x, goal.y, goal.x)
+    return solution['azi1'] % 360
+
 
 def get_distance_km(start: Point, goal: Point) -> float:
-  """Returns the geodesic distance (in kilometers) between start and goal.
-  
-  This distance is direct (as the bird flies), rather than based on a route
-  going over roads and around buildings.
-  """
-  return geodesic(start.coords, goal.coords).km
+    """Returns the geodesic distance (in kilometers) between start and goal.
+
+    This distance is direct (as the bird flies), rather than based on a route
+    going over roads and around buildings.
+    """
+    return geodesic(start.coords, goal.coords).km
 
 
 def tuple_from_point(point: Point) -> Tuple[float, float]:
-    '''Convert a Point into a tuple, with latitude as first element, and longitude as second.
+    '''Convert a Point into a tuple, with latitude as first element, and 
+    longitude as second.
 
     Arguments:
       point(Point): A lat-lng point.
@@ -252,7 +256,8 @@ def tuple_from_point(point: Point) -> Tuple[float, float]:
 
 
 def list_xy_from_point(point: Point) -> Sequence[float]:
-    '''Convert a Point into a sequence, with longitude as first element, and latitude as second.
+    '''Convert a Point into a sequence, with longitude as first element, and 
+    latitude as second.
 
     Arguments:
       point(Point): A lat-lng point.
@@ -261,8 +266,6 @@ def list_xy_from_point(point: Point) -> Sequence[float]:
     '''
 
     return [point.x, point.y]
-
-
 
 
 def list_yx_from_point(point: Point) -> Sequence[float]:
@@ -275,6 +278,7 @@ def list_yx_from_point(point: Point) -> Sequence[float]:
     '''
 
     return [point.y, point.x]
+
 
 def midpoint(p1: Point, p2: Point) -> Point:
     '''Get the midpoint between two points.

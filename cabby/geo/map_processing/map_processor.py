@@ -14,7 +14,8 @@
 
 Example:
 
-$ bazel-bin/cabby/geo/map_processing/map_processor --region Manhattan --level 18 --directory "/mnt/hackney/data/cabby/poi/temp/"
+$ bazel-bin/cabby/geo/map_processing/map_processor --region Manhattan --level 
+18 --directory "/mnt/hackney/data/cabby/poi/temp/"
 '''
 
 from absl import app
@@ -27,10 +28,11 @@ from cabby.geo.map_processing import map_structure
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-  "region", None, ['Pittsburgh', 'Manhattan'], 
-  "Map areas: Manhattan or Pittsburgh.")
+    "region", None, ['Pittsburgh', 'Manhattan'],
+    "Map areas: Manhattan or Pittsburgh.")
 flags.DEFINE_integer("level", None, "Minumum S2 level of the map.")
-flags.DEFINE_string("directory", None, "The directory where the files will be saved to" )
+flags.DEFINE_string("directory", None,
+                    "The directory where the files will be saved to")
 
 # Required flags.
 flags.mark_flag_as_required("region")

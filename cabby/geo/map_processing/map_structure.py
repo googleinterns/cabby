@@ -76,12 +76,14 @@ class Map:
         '''Helper funcion for creating S2Graph.'''
 
         # Get cellids for POI.
-        self.poi['cellids'] = self.poi['geometry'].apply(lambda x: util.cellid_from_point(
-            x, level) if isinstance(x, Point) else util.cellid_from_polygon(x, level))
+        self.poi['cellids'] = self.poi['geometry'].apply(lambda x: \
+            util.cellid_from_point(x, level) if isinstance(x, Point) else \
+                util.cellid_from_polygon(x, level))
 
         # Get cellids for streets.
-        self.streets['cellids'] = self.streets['geometry'].apply(lambda x: util.cellid_from_point(
-            x, level) if isinstance(x, Point) else util.cellid_from_polyline(x, level))
+        self.streets['cellids'] = self.streets['geometry'].apply(lambda x: \
+             util.cellid_from_point(x, level) if isinstance(x, Point) else \
+                  util.cellid_from_polyline(x, level))
 
         # Get centroid for POI.
         self.poi['centroid'] = self.poi['geometry'].apply(
