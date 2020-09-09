@@ -43,3 +43,4 @@ py_binary(
         "//cabby/data:wikigeo"
     ],
 
+)
