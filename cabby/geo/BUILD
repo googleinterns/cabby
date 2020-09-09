@@ -6,9 +6,19 @@ py_library(
     name = 'walk',
     srcs = ['walk.py'],
     deps = [
+<<<<<<< HEAD
     "//cabby/geo/map_processing:map_structure",
 
     ],
+=======
+        ":util",
+        ':item',
+        ':geo_item',
+        "//cabby/geo/map_processing:map_structure",
+
+    ],
+
+>>>>>>> master
 )
 
 py_library(
@@ -21,10 +31,14 @@ py_test(
     srcs = ["walk_test.py"],
     python_version = "PY3",
     deps = [
-        "//cabby/geo:walk",
+        ':item',
+        ':geo_item',
+        ":walk",
         "//cabby/geo/map_processing:map_structure",
 
     ],
+    data = [":testdata"],
+
 )
 
 
@@ -35,6 +49,15 @@ py_library(
     deps = [':util'],
 )
 
+py_library(
+    name = 'item',
+    srcs = ['item.py'],
+)
+
+py_library(
+    name = 'geo_item',
+    srcs = ['geo_item.py'],
+)
 
 py_binary(
     name = 'geo_computation',
@@ -43,11 +66,31 @@ py_binary(
     deps = [
         ':walk',
         ':util',
+<<<<<<< HEAD
         "//cabby:logger",
         "//cabby/geo/map_processing:map_structure",
 
+=======
+        ':item',
+        ':geo_item',
+        "//cabby:logger"
+>>>>>>> master
         ],
     
+)
+
+
+filegroup(
+    name = "testdata",
+    srcs = [
+        "testdata/bologna_streets.pkl",
+        "testdata/bologna_poi.pkl",
+        "testdata/bologna_nodes.geojson",
+        "testdata/bologna_graph.gpickle",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
 )
 
 py_binary(
@@ -57,6 +100,8 @@ py_binary(
     deps = [
         ':walk',
         ':util',
-        "//cabby:logger"
+        ':item',
+        ':geo_item',
+        "//cabby:logger",
         ],
 )

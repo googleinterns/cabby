@@ -13,10 +13,9 @@
 # limitations under the License.
 
 
-from typing import Dict, Optional, Tuple, Sequence
-
 import networkx as nx
 from s2geometry import pywraps2 as s2
+from typing import Dict, Optional, Tuple, Sequence
 
 
 # S2 geometry constants.
@@ -55,9 +54,10 @@ class MapGraph:
     def get_cell_neighbors(self, cell: s2.S2Cell) -> Sequence[MapNode]:
         '''Get eight S2Cell neighbors for a given cell. 
         Arguments:
-            cell(S2Cell): The relative S2Cell to which the S2Cell neighbors will refer to.
+          cell(S2Cell): The relative S2Cell to which the S2Cell neighbors will 
+          refer to.
         Returns:
-            A sequence of eight S2Cell2 neighbors.
+          A sequence of eight S2Cell2 neighbors.
         '''
 
         four_neighbors = cell.GetEdgeNeighbors()
@@ -72,9 +72,9 @@ class MapGraph:
     def add_street(self, cells: Sequence[s2.S2Cell], osmid_of_street: int):
         '''Add a street POI to multiple cells. 
         Arguments:
-            cells(sequence): The S2Cells to which the street is to be added.
-            osmid_of_street(int): The osmid of the street that is to be added to
-            the S2Cells.
+          cells(sequence): The S2Cells to which the street is to be added.
+          osmid_of_street(int): The osmid of the street that is to be added to
+          the S2Cells.
         '''
 
         for cell in cells:
@@ -105,8 +105,8 @@ class MapGraph:
     def add_poi(self, cells: Sequence[s2.S2Cell], poi: int):
         '''Add a POI to multiple cells. 
         Arguments:
-            cells(sequence): The S2Cells to which the POI will be added.
-            poi(int): an osmid of the POI that will be added to the S2Cells.
+          cells(sequence): The S2Cells to which the POI will be added.
+          poi(int): an osmid of the POI that will be added to the S2Cells.
         '''
 
         for cell in cells:
@@ -137,9 +137,9 @@ class MapGraph:
     def search(self, cell: s2.S2Cell) -> Optional[MapNode]:
         '''Get all POI for a specific cell. 
         Arguments:
-            cell(S2Cell): The S2Cell to search for in the graph.
+          cell(S2Cell): The S2Cell to search for in the graph.
         Returns:
-            The Node in the graph that contains the S2Cell.
+          The Node in the graph that contains the S2Cell.
         '''
 
         curr_node = self.faces[cell.face()]

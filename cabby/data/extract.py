@@ -23,14 +23,17 @@ from cabby.data.wikidata import item as wdi
 from cabby.data.wikipedia import item as wpi
 from cabby.data import wikigeo
 
-def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) ->Sequence:
+
+def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> Sequence:
     '''Get data from Wikipedia based on Wikidata items" 
     Arguments:
-        wikidata_items: The Wikidata items to which corresponding Wikigeo  items will be extracted.
+        wikidata_items: The Wikidata items to which corresponding Wikigeo  
+        items will be extracted.
     Returns:
-        The Wikigeo items found (composed of Wikipedia (text,title) and Wikidata (location) data).
+        The Wikigeo items found (composed of Wikipedia (text,title) and 
+        Wikidata (location) data).
     '''
-        # Get Wikipedia titles.
+    # Get Wikipedia titles.
     titles = [entity.wikipedia_title for entity in wikidata_items]
 
     # Get Wikipedia pages.
@@ -53,18 +56,22 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) ->Sequence:
     backlinks_items = []
     for list_backlinks in backlinks_pages:
         backlinks_items.append(
-            [wpi.WikipediaEntity.from_backlinks_api_result(result) for result in list_backlinks])
+            [wpi.WikipediaEntity.from_backlinks_api_result(result) for \
+                result in list_backlinks])
 
     # Change backlinks pages to Geodata dataset format.
-    for list_backlinks, original_wikipedia, original_wikidata in zip(backlinks_items, wikipedia_items, wikidata_items):
+    for list_backlinks, original_wikipedia, original_wikidata in \
+        zip(backlinks_items, wikipedia_items, wikidata_items):
         for backlink in list_backlinks:
-            wikigeo_sample  = wikigeo.WikigeoEntity.from_wiki_items(
+            wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
                 backlink, original_wikipedia, original_wikidata).sample
-            if any(dict['text'] == wikigeo_sample['text'] for dict in geo_data):
+            
+            sample_text = wikigeo_sample['text']
+            if any(dict['text'] == sample_text for dict in geo_data):
                 continue
             geo_data.append(wikigeo_sample)
-
     return geo_data
+
 
 def get_data_by_qid(qid: Text) -> Sequence:
     '''Get data from Wikipedia and Wikidata by region" 
@@ -78,11 +85,8 @@ def get_data_by_qid(qid: Text) -> Sequence:
     wikidata_results = wdq.get_geofenced_wikidata_items_by_qid(qid)
     wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
                       for result in wikidata_results]
-    
+
     return get_wikigeo_data(wikidata_items)
-
-
-
 
 
 def get_data_by_region(region: Text) -> Sequence:
@@ -100,27 +104,37 @@ def get_data_by_region(region: Text) -> Sequence:
 
     return get_wikigeo_data(wikidata_items)
 
-def split_dataset(dataset, precentage_train:float, precentage_dev:float):
-    '''Splits the dataset into train-set, dev-set, test-set according to the ref_qid" 
+
+def split_dataset( 
+    dataset: Sequence, percentage_train: float, percentage_dev: float):
+    '''Splits the dataset into train-set, dev-set, test-set according to the 
+    ref_qid" 
     Arguments:
-        precentage_train(float in [0,1]): precentage of the train-set.
-        precentage_dev(float in [0,1]): precentage of the dev-set.
+        percentage_train(float in [0,1]): percentage of the train-set.
+        percentage_dev(float in [0,1]): percentage of the dev-set.
     Returns:
         The train-set, dev-set and test-set splits.
     '''
-    assert precentage_train>=0 and precentage_train<=1, "precentage_train is not in rang 0-1."
+    assert percentage_train >= 0 and percentage_train <= 1, \
+        "percentage_train is not in range 0-1."
 
-    assert precentage_dev>=0 and precentage_dev<=1, "precentage_dev is not in rang 0-1."
+    assert percentage_dev >= 0 and percentage_dev <= 1, \
+        "percentage_dev is not in range 0-1."
 
-    assert precentage_dev+precentage_train<=1, "precentage_dev+precentage_train is more than 1."
-    
+    assert percentage_dev + \
+        percentage_train <= 1, "percentage_dev+percentage_train is more than 1."
+
+    #TODO (https://github.com/googleinterns/cabby/issues/28#issue-695818890): 
+    # Change split by qid so that it will ensure qid isn't shared between sets  
+
     # Sort the dataset by ref_qid.
-    sorted_dataset = sorted(dataset, key = lambda i: i['ref_qid'])
+    sorted_dataset = sorted(dataset, key=lambda item: item['ref_qid'])
+
 
     # Get size of splits.
     size_dataset = len(dataset)
-    size_train = round(precentage_train*size_dataset)
-    size_dev = round(precentage_dev*size_dataset)
+    size_train = round(percentage_train*size_dataset)
+    size_dev = round(percentage_dev*size_dataset)
 
     # Split the dataset.
     train_set = sorted_dataset[0:size_train]
@@ -128,3 +142,12 @@ def split_dataset(dataset, precentage_train:float, precentage_dev:float):
     test_set = sorted_dataset[size_train+size_dev:]
 
     return train_set, dev_set, test_set
+
+def write_files(path: Text, items: Sequence):
+    '''Write items to disk.'''
+    
+    with open(path, 'a') as outfile:
+        for item in items:
+            json.dump(item, outfile, default=lambda o: o.__dict__)
+            outfile.write('\n')
+            outfile.flush()

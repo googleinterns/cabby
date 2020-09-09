@@ -14,10 +14,9 @@
 '''Tests for map_structure.py'''
 
 import osmnx as ox
-import unittest
-
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
+import unittest
 
 from cabby.geo.map_processing import map_structure
 
@@ -41,9 +40,9 @@ class MapTest(unittest.TestCase):
         list_cells = self.pittsburgh_map.poi[self.pittsburgh_map.poi[
             'name'] == 'Frick Building']['cellids'].tolist()[0]
         expected_ids = [
-          9814734816715735040, 9814734845337665536, 9814734856679063552, 
-          9814734856712617984, 9814734856746172416, 9814734856779726848, 
-          9814734856813281280, 9814734856846835712
+            9814734816715735040, 9814734845337665536, 9814734856679063552,
+            9814734856712617984, 9814734856746172416, 9814734856779726848,
+            9814734856813281280, 9814734856846835712
         ]
         found_ids = [list_cells[i].id() for i in range(8)]
         for expected, found in zip(expected_ids, found_ids):
