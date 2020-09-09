@@ -104,7 +104,8 @@ def get_data_by_region(region: Text) -> Sequence:
     return get_wikigeo_data(wikidata_items)
 
 
-def split_dataset(dataset, percentage_train: float, percentage_dev: float):
+def split_dataset( 
+    dataset: Sequence, percentage_train: float, percentage_dev: float):
     '''Splits the dataset into train-set, dev-set, test-set according to the 
     ref_qid" 
     Arguments:
@@ -139,3 +140,12 @@ def split_dataset(dataset, percentage_train: float, percentage_dev: float):
     test_set = sorted_dataset[size_train+size_dev:]
 
     return train_set, dev_set, test_set
+
+def write_files(path: Text, items: Sequence):
+    '''Write items to disk.'''
+    
+    with open(path, 'a') as outfile:
+        for item in items:
+            json.dump(item, outfile, default=lambda o: o.__dict__)
+            outfile.write('\n')
+            outfile.flush()
