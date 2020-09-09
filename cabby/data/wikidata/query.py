@@ -297,17 +297,10 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
 
     if region == "Pittsburgh":
         query = _PITTSBURGH_QUERY
-
     elif region == "Manhattan":
         query = _MANHATTAN_QUERY
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> master
     elif region == "Bologna":
         query = _BOLOGNA_QUERY
-        
     else:
         raise ValueError(f"{region} is not a supported region.")
 
