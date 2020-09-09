@@ -26,7 +26,6 @@ class WalkTest(unittest.TestCase):
 
     def setUp(self):
 
-        # Load map from disk.
         self.map = map_structure.Map(
             "Bologna", 18)
 
@@ -56,6 +55,7 @@ class WalkTest(unittest.TestCase):
         self.assertIsNotNone(geo_entity.start_point['name'])
         self.assertIsNotNone(geo_entity.main_pivot['main_tag'])
         self.assertIsNotNone(geo_entity.near_pivot['main_tag'])
+
 
 
 if __name__ == "__main__":
