@@ -148,8 +148,8 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''
 
     tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'),
-                 ('brand', 'brand'), ('tourism', 'tourism'), ('tourism', 'tourism'),
-                 ('amenity', 'amenity'), ('shop', 'shop')]
+                 ('brand', 'brand'), ('tourism', 'tourism'), ('tourism', 
+                 'tourism'),('amenity', 'amenity'), ('shop', 'shop')]
 
     pivot = None
 
@@ -270,7 +270,9 @@ def get_points_and_route(map: map_structure.Map) -> Optional[item.RVSPath]:
     main_pivot, near_pivot = result
 
     rvs_path_entity = item.RVSPath.from_points_route_pivots(start_point,
-                                                            end_point, route, main_pivot, near_pivot)
+                                                            end_point, route, 
+                                                            main_pivot, 
+                                                            near_pivot)
 
     return rvs_path_entity
 
@@ -288,8 +290,12 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
         return None
 
     gdf_tags_start = gpd.GeoDataFrame({'end': rvs_path_entity.end_point['name'],
-                                       'start': rvs_path_entity.start_point['name'], 'main_pivot': rvs_path_entity.main_pivot
-                                       ['main_tag'], 'near_pivot': rvs_path_entity.near_pivot['main_tag'], 'instruction':
+                                       'start': rvs_path_entity.start_point
+                                       ['name'], 'main_pivot': rvs_path_entity.
+                                       main_pivot
+                                       ['main_tag'], 'near_pivot': 
+                                       rvs_path_entity.near_pivot['main_tag'], 
+                                       'instruction':
                                        rvs_path_entity.instruction}, index=[0])
 
     gdf_tags_start['geometry'] = rvs_path_entity.start_point['centroid']
