@@ -7,6 +7,8 @@ py_library(
     srcs = ['walk.py'],
     deps = [
         ":util",
+        ':item',
+        ':geo_item',
         "//cabby/geo/map_processing:map_structure",
 
     ],
@@ -23,7 +25,9 @@ py_test(
     srcs = ["walk_test.py"],
     python_version = "PY3",
     deps = [
-        "//cabby/geo:walk",
+        ':item',
+        ':geo_item',
+        ":walk",
         "//cabby/geo/map_processing:map_structure",
 
     ],
@@ -39,6 +43,15 @@ py_library(
     deps = [':util'],
 )
 
+py_library(
+    name = 'item',
+    srcs = ['item.py'],
+)
+
+py_library(
+    name = 'geo_item',
+    srcs = ['geo_item.py'],
+)
 
 py_binary(
     name = 'geo_computation',
@@ -47,6 +60,8 @@ py_binary(
     deps = [
         ':walk',
         ':util',
+        ':item',
+        ':geo_item',
         "//cabby:logger"
         ],
     
@@ -64,4 +79,17 @@ filegroup(
     visibility = [
         "//visibility:public",
     ],
+)
+
+py_binary(
+    name = 'sample_poi',
+    main = 'sample_poi.py',
+    srcs = ['sample_poi.py'],
+    deps = [
+        ':walk',
+        ':util',
+        ':item',
+        ':geo_item',
+        "//cabby:logger",
+        ],
 )

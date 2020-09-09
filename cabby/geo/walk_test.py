@@ -16,38 +16,46 @@
 import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
+
 from cabby.geo import walk
+from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 
 
 class WalkTest(unittest.TestCase):
 
     def setUp(self):
-        
-        # Load map from disk.
-        self.map = map_structure.Map("Bologna", 18)
 
-    def testSingleOutput(self):
+        self.map = map_structure.Map(
+            "Bologna", 18)
+
+    def testRouteCalculation(self):
         start_point = Point(11.3414, 44.4951)
         end_point = Point(11.3444, 44.4946)
-        list_points = walk.compute_route(start_point, end_point, self.map.nx_graph, self.map.nodes)
+        route = walk.compute_route(start_point, end_point, self.map.
+        nx_graph, self.map.nodes)
 
         # Check the size of the route. 
-        self.assertEqual(len(list_points), 9 )
+        self.assertEqual(route['geometry'].shape[0], 9)
 
-        # Check that the points in the route.
-        first_point = walk.tuple_from_point(list_points[0])
-        second_point = walk.tuple_from_point(list_points[1])
+        # Check that the correct points are in the route.
+        first_point = util.tuple_from_point(route.iloc[0]['geometry'])
+        second_point = util.tuple_from_point(route.iloc[1]['geometry'])
         self.assertEqual(first_point, (44.4946187, 11.344085))
         self.assertEqual(second_point, (44.4947274, 11.343436))
 
-        # Check that all points are in a bounding box.
-        eps = 0.01
-        for point in list_points:
-            self.assertLessEqual(point.x, start_point.x + eps)
-            self.assertGreaterEqual(point.x, end_point.x - eps)
-            self.assertLessEqual(point.y, end_point.y + eps)
-            self.assertGreaterEqual(point.y, start_point.y - eps)
+
+    def testPointsSelection(self):
+        geo_entity = walk.get_points_and_route(self.map)
+        if geo_entity is None:
+            return
+
+        self.assertGreaterEqual(geo_entity.route.shape[0], 1)
+        self.assertIsNotNone(geo_entity.end_point['name'])
+        self.assertIsNotNone(geo_entity.start_point['name'])
+        self.assertIsNotNone(geo_entity.main_pivot['main_tag'])
+        self.assertIsNotNone(geo_entity.near_pivot['main_tag'])
+
 
 
 if __name__ == "__main__":

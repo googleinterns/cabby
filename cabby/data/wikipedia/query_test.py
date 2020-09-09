@@ -34,8 +34,5 @@ class WikipediaTest(unittest.TestCase):
         for entity in entities:
             self.assertIn(title, entity['extract'])
 
-
-
-
 if __name__ == "__main__":
     unittest.main()
