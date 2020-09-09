@@ -42,4 +42,4 @@ py_binary(
         "//cabby/data/wikipedia:query",
         "//cabby/data:wikigeo"
     ],
-)
+
