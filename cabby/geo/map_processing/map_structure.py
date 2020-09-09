@@ -60,6 +60,11 @@ class Map:
             self.poi, self.streets = self.get_poi()
             self.nx_graph = ox.graph_from_polygon(self.polygon_area)
             self.nodes, _ = ox.graph_to_gdfs(self.nx_graph)
+            
+            # Find closest nodes to POI.
+            self.poi['node'] = self.poi['centroid'].apply(lambda x: \
+                ox.distance.get_nearest_node(self.nx_graph, \
+                    util.tuple_from_point(x)))
 
         else:
             self.load_map(load_directory)
@@ -75,6 +80,10 @@ class Map:
         osm_highway = osm_poi_named_entities['highway']
         osm_poi_no_streets = osm_poi_named_entities[osm_highway.isnull()]
         osm_poi_streets = osm_poi_named_entities[osm_highway.notnull()]
+
+        # Get centroid for POI.
+        osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
+            lambda x: x if isinstance(x, Point) else x.centroid)
 
         return osm_poi_no_streets, osm_poi_streets
 
@@ -92,14 +101,6 @@ class Map:
         cellid_from_point(
             x, level) if isinstance(x, Point) else util.cellid_from_polyline(x, 
             level))
-
-        # Get centroid for POI.
-        self.poi['centroid'] = self.poi['geometry'].apply(
-            lambda x: x if isinstance(x, Point) else x.centroid)
-
-        # Get centroid for streets.
-        self.streets['centroid'] = self.streets['geometry'].apply(
-            lambda x: x if isinstance(x, Point) else x.centroid)
 
         # Filter out entities that we didn't mange to get cellids covering.
         self.poi = self.poi[self.poi['cellids'].notnull()]
