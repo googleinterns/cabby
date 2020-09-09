@@ -211,7 +211,7 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
         route['osmid'])]['geometry']
 
     try:
-        poly = Polygon(points_route.tolist()).buffer(0.0005)
+        poly = Polygon(points_route.tolist()).buffer(0.0001)
         bounds = poly.bounds
         bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
         tags = {'wikipedia': True, 'wikidata': True, 'brand': True,
@@ -229,13 +229,13 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
         return None
 
     main_pivot = pick_prominent_pivot(df_pivots)
-    main_pivot = main_pivot.to_dict('records')[0]
 
     # Get pivot near the goal location.
     near_pivot = get_pivot_near_goal(map, end_point)
     if main_pivot is None or near_pivot is None:
         return None
 
+    main_pivot = main_pivot.to_dict('records')[0]
     return main_pivot, near_pivot
 
 
