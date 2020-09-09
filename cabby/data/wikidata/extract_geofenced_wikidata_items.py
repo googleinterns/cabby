@@ -34,9 +34,6 @@ flags.mark_flag_as_required("region")
 def main(argv):
     del argv  # Unused.
     results = query.get_geofenced_wikidata_items(FLAGS.region)
-    for result in results:
-        print(result)
-
     print('The number of Wikidata items found is: {}'.format(len(results)))
 
 

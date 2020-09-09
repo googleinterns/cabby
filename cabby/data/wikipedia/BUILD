@@ -18,7 +18,9 @@ py_test(
     srcs = ["query_test.py"],
     python_version = "PY3",
     deps = [
-        ":query"
+        ":query",
+        ':item'
+
     ],
 )
 
@@ -26,5 +28,9 @@ py_binary(
     name = 'extract_wikipedia_items',
     main = 'extract_wikipedia_items.py',
     srcs = ['extract_wikipedia_items.py'],
-    deps = [':query'],
+    deps = [
+        ':query',
+        ':item'
+        ],
 )
+

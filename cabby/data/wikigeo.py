@@ -66,7 +66,6 @@ class WikigeoEntity:
 
 def text_from_point(point: Point) -> Text:
     '''Convert a Point into a tuple, with latitude as first element, and longitude as second.
-
     Arguments:
       point(Point): A lat-lng point.
     Returns:

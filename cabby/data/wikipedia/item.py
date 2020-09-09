@@ -31,6 +31,10 @@ class WikipediaEntity:
   title: Text = attr.ib()
   text: Text = attr.ib()
 
+  def __attrs_post_init__(self):
+    # Remove unwanted chars from text.
+    self.text = self.text.replace("\n", " ").replace("=", "")
+
   @classmethod
   def from_api_result(cls, result):
     """Construct an Entity from the results of the Wikimedia API query."""
