@@ -29,7 +29,8 @@ py_binary(
     main = 'extract_wikipedia_items.py',
     srcs = ['extract_wikipedia_items.py'],
     deps = [
-    ':query',
-    ':item'
-    ],
+        ':query',
+        ':item'
+        ],
 )
+

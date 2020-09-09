@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 '''Example command line method to extract Wikipedia and Wikidata items and save to file.
 Example:
-$ bazel-bin/cabby/data/extract_wikigeo_contexts --region Bologna --path bologna.json
+$ bazel-bin/cabby/data/extract_wikigeo_contexts --region Bologna --path bologna.
+json
 '''
 
 from absl import app
@@ -39,15 +41,14 @@ flags.mark_flag_as_required("path")
 
 def main(argv):
     del argv  # Unused.
+
     results = extract.get_data_by_region(FLAGS.region)
     print('The number of results items found is: {}'.format(
         len(results)))
-    with open(FLAGS.path, 'a') as outfile:
-        for item in results:
-            json.dump(item, outfile, default=lambda o: o.__dict__)
-            outfile.write('\n')
-            outfile.flush()
+    
+    extract.write_files(FLAGS.path, results)
 
+    # Create train, dev, and test sets.
     train_set, dev_set, test_set = extract.split_dataset(results, 0.8, 0.1)
 
     print('The size of the train-set is: {}'.format(
@@ -56,6 +57,20 @@ def main(argv):
         len(dev_set)))    
     print('The size of the test-set is: {}'.format(
         len(test_set)))
+
+    # Create paths for the train, dev, and test sets.
+    split_path = FLAGS.path.split('.')
+    path_without_ending = split_path[0]
+    ending = split_path[-1]
+
+    train_path = path_without_ending + '_train.' + ending
+    dev_path = path_without_ending + '_dev.' + ending
+    test_path = path_without_ending + '_test.' + ending
+
+    # Write the train, dev, and test sets.
+    extract.write_files(train_path, train_set)
+    extract.write_files(dev_path, dev_set)
+    extract.write_files(test_path, test_set)
 
 
 if __name__ == '__main__':

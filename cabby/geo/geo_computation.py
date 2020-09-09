@@ -59,7 +59,8 @@ def main(argv):
     route = walk.compute_route(origin, destination, graph, nodes)
 
     geo_logger.info("Points obtained for the route.")
-    for point in route:
+
+    for point in route['geometry'].values:
       geo_logger.info(point)
 
 if __name__ == '__main__':

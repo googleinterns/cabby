@@ -13,13 +13,13 @@
 # limitations under the License.
 '''Library to support map geographical computations.'''
 
-from typing import Optional, Tuple, Sequence
 import folium
 import geographiclib
 from geopy.distance import geodesic
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
+from typing import Optional, Tuple, Sequence
 import webbrowser
 
 
@@ -139,16 +139,12 @@ def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> s2.S2Polygon:
     return line
 
 
-def plot_cells(cells: s2.S2Cell):
+def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
     '''Plot the S2Cell covering.'''
 
     # Create a map.
-    # TODO(tzufgoogle): Remove hard-coded location reference.
     map_osm = folium.Map(
-        location=[40.7434, -73.9847], zoom_start=12, tiles='Stamen Toner')
-
-    def style_function(x):
-        return {'weight': 1, 'fillColor': '#eea500'}
+        location=location, zoom_start=zoom_level, tiles='Stamen Toner')
 
     for cellid in cells:
         cellid = cellid[0]
@@ -165,7 +161,7 @@ def plot_cells(cells: s2.S2Cell):
                 "type": "Polygon",
                 "coordinates": [vertices]
             },
-            style_function=style_function)
+            style_function={'weight': 1, 'fillColor': '#eea500'})
         gj.add_children(folium.Popup(cellid.ToToken()))
         gj.add_to(map_osm)
 
@@ -177,7 +173,7 @@ def plot_cells(cells: s2.S2Cell):
 def cellid_from_point(point: Point, level: int) -> Sequence:
     '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
     Arguments:
-        point(Point): a Shapely Point to which S2Cells
+        point(Point): a Shapely Point to which S2Cells.
         covering will be performed.
     Returns:
         A sequence of S2Cells that cover the provided Shapely Point.
@@ -191,7 +187,7 @@ def cellid_from_point(point: Point, level: int) -> Sequence:
 def cellid_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
     '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
     Arguments:
-        polygon(Polygon): a Shapely Polygon to which S2Cells
+        polygon(Polygon): a Shapely Polygon to which S2Cells.
         covering will be performed..
     Returns:
         A sequence of S2Cells that cover the provided Shapely Polygon.
@@ -217,16 +213,13 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
 
 def get_bearing(start: Point, goal: Point) -> float:
     """Get the bearing (heading) from the start lat-lon to the goal lat-lon.
-
     Args:
       start: The starting point.
       goal: The goal point.
     Returns:
       The geospatial bearing when heading from the start to the goal. The 
-      bearing 
-      angle given by azi1 (azimuth) is clockwise relative to north, so a 
-      bearing 
-      of 90 degrees is due east, 180 is south, and 270 is west.
+      bearing angle given by azi1 (azimuth) is clockwise relative to north, so 
+      a bearing of 90 degrees is due east, 180 is south, and 270 is west.
     """
     solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
         start.y, start.x, goal.y, goal.x)
@@ -235,7 +228,6 @@ def get_bearing(start: Point, goal: Point) -> float:
 
 def get_distance_km(start: Point, goal: Point) -> float:
     """Returns the geodesic distance (in kilometers) between start and goal.
-
     This distance is direct (as the bird flies), rather than based on a route
     going over roads and around buildings.
     """
@@ -245,7 +237,6 @@ def get_distance_km(start: Point, goal: Point) -> float:
 def tuple_from_point(point: Point) -> Tuple[float, float]:
     '''Convert a Point into a tuple, with latitude as first element, and 
     longitude as second.
-
     Arguments:
       point(Point): A lat-lng point.
     Returns:

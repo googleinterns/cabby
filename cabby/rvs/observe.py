@@ -45,6 +45,7 @@ def get_all_distances(
   for entity in entities:
     distances[entity.qid] = util.get_distance_km(focus, entity.location)
   return distances
+  
 
 
 def get_pivot_poi(

@@ -13,7 +13,7 @@ py_library(
     deps = [
         ':graph',
         '//cabby/geo:util',
-        "//cabby:logger",
+        '//cabby:logger',
 
     ]
 )
@@ -24,11 +24,17 @@ py_test(
     srcs = ['map_test.py'],
     python_version = 'PY3',
     deps = [
-        ':map_structure',
+        "//cabby/geo/map_processing:map_structure",
+        "//cabby/geo/map_processing:graph",
+        "//cabby/geo:util",
         "//cabby:logger",
 
     ],
 )
+
+
+        
+
 
 py_binary(
     name = 'map_processor',
@@ -37,7 +43,6 @@ py_binary(
     deps = [
         ':map_structure',
         ':graph',
-        "//cabby:logger",
-
+        '//cabby:logger',
         ],
 )
