@@ -234,6 +234,31 @@ _PITTSBURGH_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
                     GROUP BY ?place ?placeLabel ?wikipediaUrl 
                 """]
 
+_BOLOGNA_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
+                     ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
+                    (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
+                    WHERE 
+                    {
+                    {
+                        ?place wdt:P31 ?instance.
+                        ?wikipediaUrl schema:about ?place. 
+                        ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
+                        SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+                                                ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
+                        SERVICE wikibase:box {
+                        ?place wdt:P625 ?location .
+                        bd:serviceParam wikibase:cornerWest "Point(11.355,44.4902)"^^geo:wktLiteral .
+                        bd:serviceParam wikibase:cornerEast "Point(11.3564,44.5000)"^^geo:wktLiteral .
+                        }
+                    }
+                    FILTER (?instance  not in
+                    (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
+                    wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
+                    wd:Q744913, wd:Q186117, wd:Q3298291) )
+                    }
+                    GROUP BY ?place ?placeLabel ?wikipediaUrl 
+                """]
+
 _BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
                      ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
                     (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
@@ -275,6 +300,10 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
 
     elif region == "Manhattan":
         query = _MANHATTAN_QUERY
+
+    elif region == "Bologna":
+        query = _BOLOGNA_QUERY
+
     else:
         raise ValueError(f"{region} is not a supported region.")
 

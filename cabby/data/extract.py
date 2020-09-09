@@ -24,14 +24,14 @@ from cabby.data.wikipedia import item as wpi
 from cabby.data import wikigeo
 
 
-def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) ->Sequence:
+def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> Sequence:
     '''Get data from Wikipedia based on Wikidata items" 
     Arguments:
         wikidata_items: The Wikidata items to which corresponding Wikigeo  items will be extracted.
     Returns:
         The Wikigeo items found (composed of Wikipedia (text,title) and Wikidata (location) data).
     '''
-        # Get Wikipedia titles.
+    # Get Wikipedia titles.
     titles = [entity.wikipedia_title for entity in wikidata_items]
 
     # Get Wikipedia pages.
@@ -59,13 +59,16 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) ->Sequence:
     # Change backlinks pages to Geodata dataset format.
     for list_backlinks, original_wikipedia, original_wikidata in zip(backlinks_items, wikipedia_items, wikidata_items):
         for backlink in list_backlinks:
-            wikigeo_sample  = wikigeo.WikigeoEntity.from_wiki_items(
+            wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
                 backlink, original_wikipedia, original_wikidata).sample
-            if wikigeo_sample in geo_data:
+
+            sample_text = wikigeo_sample['text']
+            if any(dict['text'] == sample_text for dict in geo_data):
                 continue
             geo_data.append(wikigeo_sample)
 
     return geo_data
+
 
 def get_data_by_qid(qid: Text) -> Sequence:
     '''Get data from Wikipedia and Wikidata by region" 
@@ -79,11 +82,8 @@ def get_data_by_qid(qid: Text) -> Sequence:
     wikidata_results = wdq.get_geofenced_wikidata_items_by_qid(qid)
     wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
                       for result in wikidata_results]
-    
+
     return get_wikigeo_data(wikidata_items)
-
-
-
 
 
 def get_data_by_region(region: Text) -> Sequence:
@@ -101,3 +101,32 @@ def get_data_by_region(region: Text) -> Sequence:
 
     return get_wikigeo_data(wikidata_items)
 
+
+def split_dataset(dataset, percentage_train: float, percentage_dev: float):
+    '''Splits the dataset into train-set, dev-set, test-set according to the ref_qid. 
+    Arguments: 
+      percentage_train(float in [0,1]): percentage of the train-set.
+      percentage_dev(float in [0,1]): percentage of the dev-set. 
+    Returns: 
+      The train-set, dev-set and test-set splits.
+    '''
+
+    assert percentage_train >= 0 and percentage_train <= 1, "percentage_train is not in range 0-1."
+    assert percentage_dev >= 0 and percentage_dev <= 1, "percentage_dev is not in range 0-1."
+    assert percentage_dev + \
+        percentage_train <= 1, "percentage_dev+percentage_train is more than 1."
+
+    # Sort the dataset by ref_qid.
+    sorted_dataset = sorted(dataset, key=lambda i: i['ref_qid'])
+
+    # Get size of splits.
+    size_dataset = len(dataset)
+    size_train = round(percentage_train*size_dataset)
+    size_dev = round(percentage_dev*size_dataset)
+
+    # Split the dataset.
+    train_set = sorted_dataset[0:size_train]
+    dev_set = sorted_dataset[size_train:size_train+size_dev]
+    test_set = sorted_dataset[size_train+size_dev:]
+
+    return train_set, dev_set, test_set
