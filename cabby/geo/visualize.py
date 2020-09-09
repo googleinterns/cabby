@@ -22,8 +22,11 @@ import pandas as pd
 import shapely.geometry as geom
 from shapely.geometry import Polygon, Point, LineString
 from typing import Tuple, Sequence, Optional, Dict, Text
+import sys
+import os 
 
-import util
+sys.path.append(os.path.dirname(os.path.dirname(os.getcwd() )))
+from cabby.geo import util
 
 def read_file(path: Text) -> gpd.GeoDataFrame:
     '''Read file.
