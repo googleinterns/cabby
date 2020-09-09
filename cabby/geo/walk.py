@@ -348,6 +348,7 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
 
     counter = 0
     while counter < n_samples:
+        print (counter)
         entity = get_single_sample(map)
         if entity is None:
             continue

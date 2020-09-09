@@ -1,0 +1,104 @@
+I0909 11:43:18.288762 139865983993664 utils.py:141] NumExpr defaulting to 4 threads.
+/opt/conda/envs/cabby/lib/python3.7/site-packages/osmnx/pois.py:357: FutureWarning: Assigning CRS to a GeoDataFrame without a geometry column is now deprecated and will not be supported in the future.
+  gdf_nodes.crs = settings.default_crs
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+9
+10
+GeoDataFrame must have a valid CRS and cannot be empty
+10
+10
+11
+12
+12
+12
+13
+14
+15
+16
+16
+17
+18
+19
+Starting at University of Pittsburgh Theatre walk past Quality Rolls and your goal is Dees Cafe, near BeehIve Coffee.
+Starting at Prince of Peace Roman Catholic School walk past Panhandle Bridge and your goal is Hard Rock Cafe, near Crazy Mocha.
+Starting at Subway walk past Love, Pittsburgh and your goal is Prospect Elementary School Library, near Prospect Elementary School.
+Starting at Bluff walk past Downtown Subway and your goal is Steel Plaza, near Mellon Green.
+Starting at Miller Elementary School walk past Forbes Hall and your goal is Sir Speedy Printing, near Rite Aid.
+Starting at Madison Elementary School Library walk past Immaculate Heart of Mary and your goal is Salem Halal Grill, near Salem Halal Market.
+Starting at Carnegie Mellon University Bookstore walk past Citizens Bank and your goal is Luna Bar & Grill, near Bombay Food Market.
+Starting at Easy Street walk past One Oxford Center and your goal is Pittsburgh Guitars, near Dairy Queen.
+Starting at New Pilgrim Baptist Church walk past Downtown Subway and your goal is Urban League of Pittsburgh, near The Chiurazzi Law Group.
+Starting at Allegheny Antiques walk past SMS Group and your goal is Restroom, near Women's Restroom East Entrance.
+Starting at In The Kitchen walk past Dietrich Building and your goal is Mahla Office Furniture, near Liberty Bail Bonds.
+Starting at Philip Pelusi Salons walk past Mallorca and your goal is REI, near bicycle_parking.
+Starting at Thayer Hall walk past Academic Hall and your goal is Terrene, near Buca di Beppo.
+Starting at Polish Hill walk past Chicken Latino and your goal is Cake Nightclub, near Amplify Church Pittsburgh City Campus.
+Starting at 941 Saloon walk past Fort Wayne Line and your goal is Siempre Algo, near Rita's Italian Ice.
+Starting at Emphatics walk past Salvation Army Temple and your goal is Rumshakers, near Pickle Barrel.
+Starting at Vartabedian Field walk past Saint Joseph Gymnasium and your goal is Latino Catholic Community of Pittsburgh, near Saint Hyacinth School.
+Starting at WRCT-FM (Pittsburgh) walk past Forbes Hall and your goal is Hilton Garden Inn Pittsburgh University Place, near Marathon.
+Starting at FlixBus Pittsburgh walk past Downtown Subway and your goal is Uptown Pittsburgh Post Office, near parking.
+Starting at Tequila Cowboy walk past West General Robinson Street Garage and your goal is Jalen's Barbershop, near Happy Nails.
+I0909 12:15:04.363945 140363604399936 utils.py:141] NumExpr defaulting to 4 threads.
+0
+GeoDataFrame must have a valid CRS and cannot be empty
+0
+1
+2
+3
+3
+4
+5
+5
+5
+GeoDataFrame must have a valid CRS and cannot be empty
+5
+6
+7
+8
+9
+9
+10
+11
+12
+13
+13
+13
+14
+15
+16
+17
+18
+19
+'highway'
+19
+19
+Starting at Social House 7 walk past Crystal River Gems and your goal is Allegheny Entrance, near Sterlings 3.
+Starting at Luxx and Locks Salon and Boutique walk past Philip Pelusi Salons and your goal is Subway, near Escobar.
+Starting at Jimmy John's walk past Flamers and your goal is Forbes Room Entrance, near South Stairwell Entrance.
+Starting at First Avenue walk past Bea Taco Town and your goal is Forbes Room, near Rivers East Entrance.
+Starting at Auto's Professional Landscaping walk past Park View Three and your goal is Elks Lodge, near parking.
+Starting at Hilton Garden Inn walk past Eddie Merlot's Prime Aged Beef and Seafood and your goal is Benedum, near Brigade West Entrance.
+Starting at Park House walk past Allegheny Commons East Park and your goal is New Destiny CME Church, near parking.
+Starting at Conney M. Kimbo Art Gallery walk past Soldiers & Sailors Lawn and your goal is Bellefield, near Legume.
+Starting at North Lobby Concourse walk past Conemaugh Line and your goal is East Ohio St opp Union Ave, near Allegheny Center Alliance Church.
+Starting at Sprit House walk past Henne Jewelers and your goal is Trapuzzano Italian Chophouse, near Jitters Cafe & Ice Cream.
+Starting at Denim Express walk past One PNC Plaza and your goal is Katie's Kandy, near Laurie's Hallmark.
+Starting at Pi Lambda Phi, Gamma Sigma chapter walk past Oakland Catholic High School and your goal is Dina Ellen, near Schiller's Pharmacy.
+Starting at Manchester Elementary School Library walk past Conroy Education Center and your goal is Carnegie/Rangos Giant Cinema, near Carnegie Science Center.
+Starting at Badamo's Pizza walk past El Burro and your goal is Clark Bar & Grill, near Clark Building.
+Starting at La Prima Espresso walk past Cabaret Theatre and your goal is Business Center Entrance North, near Coat Room Door.
+Starting at The Pretzel Shop walk past Head Board and your goal is Qdoba, near Subway.
+Starting at Siempre Algo walk past S&S Trophy Inc and your goal is S&S Trophy Inc, near Allegheny City Brewery.
+Starting at St. Matthew Evangelical Church walk past New Hope United Methodist Church and your goal is New Hope United Methodist Church, near parking.
+Starting at Station Square walk past Point Park University and your goal is Lando Building, near Penn Garrison Lofts.
+Starting at Jitters Cafe & Ice Cream walk past Mario's East Side Saloon and your goal is Le Mardis Gras, near Cappy's Cafe.
