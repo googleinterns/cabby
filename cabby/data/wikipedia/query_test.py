@@ -31,10 +31,8 @@ class WikipediaTest(unittest.TestCase):
         # Test backlinks Wikipedia query for items.
         title = 'Two PNC Plaza'
         entities = query.get_backlinks_items_from_wikipedia_title(title)
-
         for entity in entities:
             self.assertIn(title, entity['extract'])
-
 
 if __name__ == "__main__":
     unittest.main()

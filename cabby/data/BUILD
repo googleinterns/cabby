@@ -15,6 +15,12 @@ py_library(
 
 )
 
+py_library(
+    name = 'wikigeo',
+    srcs = ['wikigeo.py'],
+)
+
+
 py_test(
     name = "extract_test",
     srcs = ["extract_test.py"],
@@ -26,17 +32,23 @@ py_test(
         "//cabby/data/wikidata:query",
         "//cabby/data/wikipedia:item",
         "//cabby/data/wikipedia:query"
+
+
     ],
 )
 
-py_library(
-    name = 'wikigeo',
-    srcs = ['wikigeo.py'],
-)
 
 py_binary(
     name = 'extract_wikigeo_contexts',
     main = 'extract_wikigeo_contexts.py',
     srcs = ['extract_wikigeo_contexts.py'],
-    deps = [':extract'],
+    deps = [
+        ':extract',
+        "//cabby/data/wikidata:item",
+        "//cabby/data/wikidata:query",
+        "//cabby/data/wikipedia:item",
+        "//cabby/data/wikipedia:query",
+        "//cabby/data:wikigeo"
+    ],
+
 )
