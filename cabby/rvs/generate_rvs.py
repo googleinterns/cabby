@@ -26,11 +26,10 @@ from absl import flags
 
 from shapely.geometry.point import Point
 
-from cabby.data.wikidata import item
-from cabby.data.wikidata import query
 from cabby.geo import directions
 from cabby.geo import util
 from cabby.geo import walk
+from cabby.geo import item 
 from cabby.geo.map_processing import map_structure
 from cabby.rvs import observe
 from cabby.rvs import speak
@@ -93,6 +92,7 @@ def main(argv):
   # pivot as zero. E.g. so instead of 270 meaning west (as usual with bearings),
   # it would mean to the left of the pivot from the perspective of the start.
   target_bearing_relative_to_pivot = pivot_dest_bearing - start_pivot_bearing
+
 
   instruction = speak.describe_meeting_point(
     near_pivot["main_tag"], target["name"], target_bearing_relative_to_pivot,
