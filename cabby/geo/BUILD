@@ -6,19 +6,13 @@ py_library(
     name = 'walk',
     srcs = ['walk.py'],
     deps = [
-<<<<<<< HEAD
-    "//cabby/geo/map_processing:map_structure",
-
-    ],
-=======
-        ":util",
+        ':util',
         ':item',
         ':geo_item',
-        "//cabby/geo/map_processing:map_structure",
+        '//cabby/geo/map_processing:map_structure',
 
     ],
 
->>>>>>> master
 )
 
 py_library(
@@ -66,15 +60,9 @@ py_binary(
     deps = [
         ':walk',
         ':util',
-<<<<<<< HEAD
-        "//cabby:logger",
-        "//cabby/geo/map_processing:map_structure",
-
-=======
         ':item',
         ':geo_item',
         "//cabby:logger"
->>>>>>> master
         ],
     
 )

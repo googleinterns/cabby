@@ -34,12 +34,7 @@ from cabby.geo import util
 from cabby.geo import geo_item
 from cabby.geo.map_processing import map_structure
 
-<<<<<<< HEAD
-# import util
-# from map_processing import map_structure
-=======
 _Geo_DataFrame_Driver = "GPKG"
->>>>>>> master
 
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
@@ -240,16 +235,7 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
     if main_pivot is None or near_pivot is None:
         return None
 
-<<<<<<< HEAD
-    main_pivot['centroid'] = main_pivot['geometry'] if isinstance(
-    main_pivot['geometry'], Point) else main_pivot['geometry'].centroid
-
-    near_pivot['centroid'] = near_pivot['geometry'] if isinstance(
-        near_pivot['geometry'], Point) else near_pivot['geometry'].centroid
-
-=======
     main_pivot = main_pivot.to_dict('records')[0]
->>>>>>> master
     return main_pivot, near_pivot
 
 
@@ -303,9 +289,6 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
     if rvs_path_entity is None:
         return None
 
-<<<<<<< HEAD
-
-=======
     gdf_tags_start = gpd.GeoDataFrame({'end': rvs_path_entity.end_point['name'],
                                        'start': rvs_path_entity.start_point
                                        ['name'], 'main_pivot': rvs_path_entity.
@@ -316,7 +299,6 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
                                        rvs_path_entity.instruction}, index=[0])
 
     gdf_tags_start['geometry'] = rvs_path_entity.start_point['centroid']
->>>>>>> master
 
     gdf_end = gpd.GeoDataFrame(
         geometry=[rvs_path_entity.end_point['centroid']])

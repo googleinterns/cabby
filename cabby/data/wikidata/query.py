@@ -234,10 +234,7 @@ _PITTSBURGH_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
                     GROUP BY ?place ?placeLabel ?wikipediaUrl 
                 """]
 
-<<<<<<< HEAD
 
-=======
->>>>>>> master
 _BOLOGNA_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
                      ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
                     (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
@@ -249,10 +246,6 @@ _BOLOGNA_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
                         ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
                         SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
                                                 ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-<<<<<<< HEAD
-
-=======
->>>>>>> master
                         SERVICE wikibase:box {
                         ?place wdt:P625 ?location .
                         bd:serviceParam wikibase:cornerWest "Point(11.355,44.4902)"^^geo:wktLiteral .
@@ -311,11 +304,7 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
     
     elif region == "Bologna":
         query = _BOLOGNA_QUERY
-<<<<<<< HEAD
-
-=======
         
->>>>>>> master
     else:
         raise ValueError(f"{region} is not a supported region.")
 
