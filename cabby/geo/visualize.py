@@ -16,8 +16,6 @@
 
 import folium
 import geopandas as gpd
-from json import JSONDecoder, JSONDecodeError
-import json
 import pandas as pd
 import shapely.geometry as geom
 from shapely.geometry import Polygon, Point, LineString
@@ -105,7 +103,7 @@ def get_maps_and_instructions(
   path: Text) -> Tuple[Sequence[folium.Map], Sequence[Text]]:
     '''Create the OSM maps and instructions.
     Arguments:
-      path: the path to the .
+      path: The path from the start point to the goal location.
     Returns:
       OSM maps from the GeoDataFrame.
     '''
