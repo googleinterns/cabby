@@ -113,7 +113,6 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
 
     return start_point
 
-
 def get_landmark_if_tag_exists(gdf: GeoDataFrame, tag: Text, main_tag:
                                Text, alt_main_tag: Text) -> GeoDataFrame:
     '''Check if tag exists, set main tag name and choose pivot.
