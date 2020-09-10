@@ -68,8 +68,8 @@ class Map:
             self.nodes, _ = ox.graph_to_gdfs(self.nx_graph)
             
             # Find closest nodes to POI.
-            self.poi['node'] = self.poi['centroid'].apply(lambda x: \
-                ox.distance.get_nearest_node(self.nx_graph, \
+            self.poi['node'] = self.poi['centroid'].apply(lambda x: 
+                ox.distance.get_nearest_node(self.nx_graph, 
                     util.tuple_from_point(x)))
 
         else:
@@ -123,7 +123,7 @@ class Map:
         self.streets[['cellids', 'osmid']].apply(
             lambda x: self.s2_graph.add_street(x.cellids, x.osmid), axis=1)
 
-    def get_valid_path(self, dir_name: Text, name_ending: Text, \
+    def get_valid_path(self, dir_name: Text, name_ending: Text, 
         file_ending: Text) -> Optional[Text]:
         '''Creates the file path and checks validity.
         Arguments:
