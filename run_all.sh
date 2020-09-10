@@ -19,3 +19,4 @@ bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles=New_York_Stock_E
 
 # Wikigeo
 bazel-bin/cabby/data/extract_wikigeo_contexts --region Bologna --path bologna.json 
+
