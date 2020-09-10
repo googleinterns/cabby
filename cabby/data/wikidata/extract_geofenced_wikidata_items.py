@@ -25,17 +25,17 @@ from cabby.data.wikidata import query
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-    "region", None, ['Pittsburgh', 'Manhattan'],
-    "Map areas: Manhattan or Pittsburgh.")
+  "region", None, ['Pittsburgh', 'Manhattan'],
+  "Map areas: Manhattan or Pittsburgh.")
 
 # Required flags.
 flags.mark_flag_as_required("region")
 
 def main(argv):
-    del argv  # Unused.
-    results = query.get_geofenced_wikidata_items(FLAGS.region)
-    print('The number of Wikidata items found is: {}'.format(len(results)))
+  del argv  # Unused.
+  results = query.get_geofenced_wikidata_items(FLAGS.region)
+  print('The number of Wikidata items found is: {}'.format(len(results)))
 
 
 if __name__ == '__main__':
-    app.run(main)
+  app.run(main)
