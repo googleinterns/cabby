@@ -23,10 +23,6 @@ import attr
 @attr.s
 class GeoEntity:
     """Construct a Wikigeo sample.
-<<<<<<< HEAD
-=======
-
->>>>>>> master
     `tags_start` includes the tags, instruction and start geolocation.
     `end` is the goal geolocation.
     `route` is geometry of the route between the start and end points.
