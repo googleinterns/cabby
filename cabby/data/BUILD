@@ -5,6 +5,14 @@ package(
 py_library(
     name = 'extract',
     srcs = ['extract.py'],
+    deps = [
+        ":wikigeo",
+        "//cabby/data/wikidata:item",
+        "//cabby/data/wikidata:query",
+        "//cabby/data/wikipedia:item",
+        "//cabby/data/wikipedia:query"
+    ],
+
 )
 
 py_library(
