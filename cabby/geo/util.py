@@ -242,5 +242,4 @@ def tuple_from_point(point: Point) -> Tuple[float, float]:
     Returns:
       A lat-lng Tuple[float, float].
     '''
-
     return (point.y, point.x)
