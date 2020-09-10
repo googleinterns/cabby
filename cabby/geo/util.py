@@ -244,3 +244,40 @@ def tuple_from_point(point: Point) -> Tuple[float, float]:
     '''
 
     return (point.y, point.x)
+
+
+def list_xy_from_point(point: Point) -> Sequence[float]:
+    '''Convert a Point into a sequence, with longitude as first element, and 
+    latitude as second.
+
+    Arguments:
+      point(Point): A lat-lng point.
+    Returns:
+      A lng-lat Sequence[float, float].
+    '''
+
+    return [point.x, point.y]
+
+
+def list_yx_from_point(point: Point) -> Sequence[float]:
+    '''Convert a Point into a sequence, with latitude as first element, and longitude as second.
+
+    Arguments:
+      point(Point): A lat-lng point.
+    Returns:
+      A lat-lng Sequence[float, float].
+    '''
+
+    return [point.y, point.x]
+
+
+def midpoint(p1: Point, p2: Point) -> Point:
+    '''Get the midpoint between two points.
+
+    Arguments:
+      p1(Point): A lat-lng point.
+      p2(Point): A lat-lng point.
+    Returns:
+      A lat-lng Point.
+    '''
+    return Point((p1.x+p2.x)/2, (p1.y+p2.y)/2)

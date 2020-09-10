@@ -30,6 +30,9 @@ from typing import Dict, Tuple, Sequence, Text, Optional
 from cabby import logger
 from cabby.geo import util
 from cabby.geo.map_processing import graph
+from cabby import logger
+
+map_logger = logger.create_logger("map.log", 'map')
 
 map_logger = logger.create_logger("map.log", 'map')
 
@@ -98,10 +101,6 @@ class Map:
 
         # Get centroid for POI.
         self.poi['centroid'] = self.poi['geometry'].apply(
-            lambda x: x if isinstance(x, Point) else x.centroid)
-
-        # Get centroid for streets.
-        self.streets['centroid'] = self.streets['geometry'].apply(
             lambda x: x if isinstance(x, Point) else x.centroid)
 
         # Filter out entities that we didn't mange to get cellids covering.
