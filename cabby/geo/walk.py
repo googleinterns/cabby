@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Library to support sampling points, creating routes between them and pivots 
+'''Library to support sampling points, creating routes between them and pivots
 along the path and near the goal.'''
 
 import geopandas as gpd
@@ -89,7 +89,7 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
     '''Returns the a random POI within distance of a given POI.
     Arguments:
       map: The map of a specific region.
-      end_point: The POI to which the picked POI should be within distance 
+      end_point: The POI to which the picked POI should be within distance
       range.
     Returns:
       A single POI.
@@ -97,7 +97,6 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
 
     dist = map.poi['centroid'].apply(
         lambda x: util.get_distance_km(end_point['centroid'], x))
-
 
     # Get closest nodes to points.
     dest = ox.get_nearest_node(
@@ -174,7 +173,7 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
         pivot = get_landmark_if_tag_exists(df_pivots, main_tag, 'name',
                                            named_tag)
         if pivot is not None:
-            return pivot
+            return pivot.to_dict('records')[0]
 
     return pivot
 
@@ -206,10 +205,39 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> \
 
     prominent_poi = pick_prominent_pivot(nearby_poi)
 
-    if prominent_poi is None:
-        return None
+    return prominent_poi
 
-    return prominent_poi.to_dict('records')[0]
+
+def get_pivot_along_route(
+    route: GeoDataFrame, map: map_structure.Map) -> Optional[Dict]: 
+    '''Return a picked landmark on a given route. 
+    Arguments: 
+      route: The route along which a landmark will be chosen. 
+      map: The map of a specific region. 
+    Returns: 
+      A single landmark. ''' 
+      
+    # Get POI along the route. 
+    points_route = map.nodes[map.nodes['osmid'].isin( route['osmid'])]['geometry']
+    
+    try:
+        poly = Polygon(points_route.tolist()).buffer(0.0001) 
+        bounds = poly.bounds
+        bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3]) 
+        tags = {'wikipedia': True, 'wikidata': True, 'brand': True, 'tourism': True, 'amenity': True, 'shop': True, 'name': True} 
+        df_pivots = ox.pois.pois_from_polygon(bounding_box, tags=tags)
+        
+        # Polygon along the route. 
+        df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
+        
+        # Remove streets. 
+        df_pivots = df_pivots[(df_pivots['highway'].isnull())] 
+    except Exception as e: 
+        print(e) 
+        return None
+        
+    main_pivot = pick_prominent_pivot(df_pivots)
+    return main_pivot
 
 
 def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
@@ -223,36 +251,14 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
       A single landmark.
     '''
 
-    # Get POI along the route.
-    points_route = map.nodes[map.nodes['osmid'].isin(
-        route['osmid'])]['geometry']
-
-    try:
-        poly = Polygon(points_route.tolist()).buffer(0.0001)
-        bounds = poly.bounds
-        bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
-        tags = {'wikipedia': True, 'wikidata': True, 'brand': True,
-                'tourism': True, 'amenity': True, 'shop': True, 'name': True}
-        df_pivots = ox.pois.pois_from_polygon(
-            bounding_box, tags=tags)
-
-        # Polygon along the route.
-        df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
-
-        # Remove streets.
-        df_pivots = df_pivots[(df_pivots['highway'].isnull())]
-    except Exception as e:
-        print(e)
-        return None
-
-    main_pivot = pick_prominent_pivot(df_pivots)
+    # Get pivot along the goal location. 
+    main_pivot = get_pivot_along_route(route, map)
 
     # Get pivot near the goal location.
     near_pivot = get_pivot_near_goal(map, end_point)
     if main_pivot is None or near_pivot is None:
         return None
 
-    main_pivot = main_pivot.to_dict('records')[0]
     return main_pivot, near_pivot
 
 
@@ -348,11 +354,11 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
 
     counter = 0
     while counter < n_samples:
-        print (counter)
+        print(counter)
         entity = get_single_sample(map)
         if entity is None:
             continue
-        counter+= 1
+        counter += 1
         gdf_start_list = gdf_start_list.append(entity.tags_start,
                                                ignore_index=True)
         gdf_end_list = gdf_end_list.append(entity.end, ignore_index=True)
@@ -379,5 +385,3 @@ def print_instructions(path: Text):
         return None
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
-
-
