@@ -98,12 +98,29 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
     dist = map.poi['centroid'].apply(
         lambda x: util.get_distance_km(end_point['centroid'], x))
 
-    # Get POI within a distance range.
-    # TODO (https://github.com/googleinterns/cabby/issues/25): Change to path
-    # distance.
-    within_distance = map.poi[(dist > 0.2) & (dist < 0.8)]
+
+    # Get closest nodes to points.
+    dest = ox.get_nearest_node(
+        map.nx_graph, util.tuple_from_point(end_point['centroid']))
+
+    # Find nodes whithin 2000 meter path distance.
+    outer_circle_graph = ox.truncate.truncate_graph_dist(
+        map.nx_graph, dest, max_dist=2000, weight='length')
+
+    # Get graph that is too close (less than 200 meter path distance)
+    inner_circle_graph = ox.truncate.truncate_graph_dist(
+        map.nx_graph, dest, max_dist=200, weight='length')
+
+    outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
+    inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
+
+    osmid_in_range = [
+        osmid for osmid in outer_circle_graph_osmid if osmid not in inner_circle_graph_osmid]
+
+    poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
+
     # Filter large POI.
-    small_poi = within_distance[within_distance['cellids'].str.len() <= 4]
+    small_poi = poi_in_ring[poi_in_ring['cellids'].str.len() <= 4]
 
     if small_poi.shape[0] == 0:
         return None
@@ -336,6 +353,7 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
 
     counter = 0
     while counter < n_samples:
+        print (counter)
         entity = get_single_sample(map)
         if entity is None:
             continue
