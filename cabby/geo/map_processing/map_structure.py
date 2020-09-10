@@ -30,6 +30,9 @@ from typing import Dict, Tuple, Sequence, Text, Optional
 from cabby import logger
 from cabby.geo import util
 from cabby.geo.map_processing import graph
+from cabby import logger
+
+map_logger = logger.create_logger("map.log", 'map')
 
 map_logger = logger.create_logger("map.log", 'map')
 
