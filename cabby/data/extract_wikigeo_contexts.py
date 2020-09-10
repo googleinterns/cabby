@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Example command line method to extract Wikipedia and Wikidata items and save 
-to file.
+
+'''Example command line method to extract Wikipedia and Wikidata items and save to file.
 Example:
 $ bazel-bin/cabby/data/extract_wikigeo_contexts --region Bologna --path bologna.
 json
@@ -60,12 +60,12 @@ def main(argv):
 
     # Create paths for the train, dev, and test sets.
     split_path = FLAGS.path.split('.')
-    path_without_endidng = split_path[0]
+    path_without_ending = split_path[0]
     ending = split_path[-1]
 
-    train_path = path_without_endidng + '_train.' + ending
-    dev_path = path_without_endidng + '_dev.' + ending
-    test_path = path_without_endidng + '_test.' + ending
+    train_path = path_without_ending + '_train.' + ending
+    dev_path = path_without_ending + '_dev.' + ending
+    test_path = path_without_ending + '_test.' + ending
 
     # Write the train, dev, and test sets.
     extract.write_files(train_path, train_set)

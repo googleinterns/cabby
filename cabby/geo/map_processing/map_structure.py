@@ -39,6 +39,7 @@ class Map:
     def __init__(self, map_name: Text, level: int, load_directory: Text = None):
         assert map_name == "Manhattan" or map_name == "Pittsburgh" or \
              map_name == "Bologna"
+
         self.map_name = map_name
         self.s2_graph = None
 
@@ -51,10 +52,12 @@ class Map:
             self.polygon_area = box(
                 miny=40.425, minx=-80.035, maxy=40.460, maxx=-79.930, 
                 ccw=True)
+
         else:  # Bologna.
             self.polygon_area = box(
                 miny=44.4902, minx=11.3333, maxy=44.5000, maxx=11.3564, 
                 ccw=True)
+
 
         if load_directory is None:
             self.poi, self.streets = self.get_poi()
@@ -122,7 +125,8 @@ class Map:
         '''Creates the file path and checks validity.
         Arguments:
           dir_name: The directory of the path.
-          name_ending: the end of the name  of the file(_graph\_node\_poi\_streets).
+          name_ending: the end of the name  of the file
+          (_graph\_node\_poi\_streets).
           file_ending: the type of the file.
         Returns:
           The valid path.
@@ -131,7 +135,8 @@ class Map:
         base_filename = self.map_name.lower() + name_ending
 
         # Check if directory is valid.
-        assert os.path.exists(dir_name), "Current directory is: {0}. The directory {1} doesn't exist.".format(os.getcwd(), dir_name)
+        assert os.path.exists(dir_name), "Current directory is: {0}. \
+            The directory {1} doesn't exist.".format(os.getcwd(), dir_name)
         
         # Create path.
         path = os.path.join(dir_name, base_filename + file_ending)
@@ -211,3 +216,4 @@ class Map:
         assert os.path.exists(
             path), "path {0} doesn't exist.".format(path)
         self.nodes = gpd.read_file(path, driver='GeoJSON')
+
