@@ -39,17 +39,17 @@ flags.mark_flag_as_required("min_s2_level")
 
 
 def main(argv):
-    del argv  # Unused.
-    map = map_structure.Map(FLAGS.region, FLAGS.min_s2_level)
+  del argv  # Unused.
+  map = map_structure.Map(FLAGS.region, FLAGS.min_s2_level)
 
-    # Write to disk.
-    map.write_map(FLAGS.directory)
+  # Write to disk.
+  map.write_map(FLAGS.directory)
 
-    # Load from disk.
-    map_new = map_structure.Map(FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
+  # Load from disk.
+  map_new = map_structure.Map(FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
 
-    print('Number of POI found: {0}'.format(map_new.poi.shape[0]))
+  print('Number of POI found: {0}'.format(map_new.poi.shape[0]))
 
 
 if __name__ == '__main__':
-    app.run(main)
+  app.run(main)

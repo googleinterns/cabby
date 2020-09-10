@@ -22,54 +22,54 @@ import attr
 
 @attr.s
 class WikigeoEntity:
-    """Construct a Wikigeo sample.
+  """Construct a Wikigeo sample.
 
-    `pageid` is the Wikipedia page id.
-    `text` is the Wikipedia content.
-    `title` is the Wikipedia title.
-    `ref_qid` is the Wikidata id assigned to this entity.
-    `ref_pageid` is the Wikipedia page id assigned to this entity.
-    `ref_title` is the refrenced Wikipedia page title.    
-    `ref_point` is the refrenced Wikidata location.    
-    `ref_instance` is the refrenced Wikidata instance property.    
-    """
-    pageid: int = attr.ib()
-    text: Text = attr.ib()
-    title: Text = attr.ib()
-    ref_qid: Text = attr.ib()
-    ref_pageid: Text = attr.ib()
-    ref_title: Text = attr.ib()
-    ref_point: Point = attr.ib()
-    ref_instance: Point = attr.ib()
-    sample: dict = attr.ib(init=False)
+  `pageid` is the Wikipedia page id.
+  `text` is the Wikipedia content.
+  `title` is the Wikipedia title.
+  `ref_qid` is the Wikidata id assigned to this entity.
+  `ref_pageid` is the Wikipedia page id assigned to this entity.
+  `ref_title` is the refrenced Wikipedia page title.    
+  `ref_point` is the refrenced Wikidata location.    
+  `ref_instance` is the refrenced Wikidata instance property.    
+  """
+  pageid: int = attr.ib()
+  text: Text = attr.ib()
+  title: Text = attr.ib()
+  ref_qid: Text = attr.ib()
+  ref_pageid: Text = attr.ib()
+  ref_title: Text = attr.ib()
+  ref_point: Point = attr.ib()
+  ref_instance: Point = attr.ib()
+  sample: dict = attr.ib(init=False)
 
-    def __attrs_post_init__(self):
-        # The QID is the part of the URL that comes after the last / character.
-        self.sample = {
-            'pageid': self.pageid, 'text': self.text, 'title': 
-            self.title, 'ref_qid': self.ref_qid, 'ref_pageid': self.ref_pageid, 'ref_title': self.ref_title, 'ref_point': text_from_point(self.ref_point), 'ref_instance': self.ref_instance
-        }
+  def __attrs_post_init__(self):
+    # The QID is the part of the URL that comes after the last / character.
+    self.sample = {
+      'pageid': self.pageid, 'text': self.text, 'title': 
+      self.title, 'ref_qid': self.ref_qid, 'ref_pageid': self.ref_pageid, 'ref_title': self.ref_title, 'ref_point': text_from_point(self.ref_point), 'ref_instance': self.ref_instance
+    }
 
-    @classmethod
-    def from_wiki_items(cls, wikipedia, wikipedia_ref, wikidata_ref):
-        """Construct an Entity from the Wikipedia and Wikidata entities."""
-        return WikigeoEntity(
-            wikipedia.pageid,
-            wikipedia.text,
-            wikipedia.title,
-            wikidata_ref.qid,
-            wikipedia_ref.pageid,
-            wikipedia_ref.title,
-            wikidata_ref.location,
-            wikidata_ref.instance)
+  @classmethod
+  def from_wiki_items(cls, wikipedia, wikipedia_ref, wikidata_ref):
+    """Construct an Entity from the Wikipedia and Wikidata entities."""
+    return WikigeoEntity(
+      wikipedia.pageid,
+      wikipedia.text,
+      wikipedia.title,
+      wikidata_ref.qid,
+      wikipedia_ref.pageid,
+      wikipedia_ref.title,
+      wikidata_ref.location,
+      wikidata_ref.instance)
 
 
 def text_from_point(point: Point) -> Text:
-    '''Convert a Point into a tuple, with latitude as first element, and longitude as second.
-    Arguments:
-      point(Point): A lat-lng point.
-    Returns:
-      A lat-lng text.
-    '''
+  '''Convert a Point into a tuple, with latitude as first element, and longitude as second.
+  Arguments:
+    point(Point): A lat-lng point.
+  Returns:
+    A lat-lng text.
+  '''
 
-    return "({0}, {1})".format(point.y, point.x)
+  return "({0}, {1})".format(point.y, point.x)

@@ -25,22 +25,22 @@ from cabby.data.wikipedia import query
 
 FLAGS = flags.FLAGS
 flags.DEFINE_list(
-    "titles", None,
-    "List of Wikipedia titles to extract.")
+  "titles", None,
+  "List of Wikipedia titles to extract.")
 
 # Required flags.
 flags.mark_flag_as_required("titles")
 
 
 def main(argv):
-    del argv  # Unused.
-    results = query.get_wikipedia_items(FLAGS.titles)
-    for result in results:
-        print(result)
+  del argv  # Unused.
+  results = query.get_wikipedia_items(FLAGS.titles)
+  for result in results:
+    print(result)
 
-    print('The number of Wikipedia items found is: {}'.format(
-        len(results)))
+  print('The number of Wikipedia items found is: {}'.format(
+    len(results)))
 
 
 if __name__ == '__main__':
-    app.run(main)
+  app.run(main)
