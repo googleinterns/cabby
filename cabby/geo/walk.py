@@ -360,7 +360,6 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
     gdf_main_list.to_file(path, layer='main', driver=_Geo_DataFrame_Driver)
     gdf_near_list.to_file(path, layer='near', driver=_Geo_DataFrame_Driver)
 
-
 def print_instructions(path: Text):
     '''Read a geodata file and print instruction.'''
     if not os.path.exists(path):
