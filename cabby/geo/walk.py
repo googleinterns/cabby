@@ -155,7 +155,7 @@ def get_landmark_if_tag_exists(gdf: GeoDataFrame, tag: Text, main_tag:
     return None
 
 
-def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
+def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[Dict]:
     '''Select a landmark from a set of landmarks by priority.
     Arguments:
       df_pivots: The set of landmarks.
@@ -173,10 +173,11 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
         pivot = get_landmark_if_tag_exists(df_pivots, main_tag, 'name',
                                            named_tag)
         if pivot is not None:
-            return pivot
+            pivot['centroid'] = pivot['geometry'].apply(
+            lambda x: x if isinstance(x, Point) else x.centroid)
+            return pivot.to_dict('records')[0]
 
     return pivot
-
 
 def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> \
         Optional[Dict]:
@@ -208,11 +209,9 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> \
     if prominent_poi is None:
         return None
 
-    return prominent_poi.to_dict('records')[0]
+    return prominent_poi
 
-
-def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
-               GeoDataFrame) -> Optional[Tuple[Dict, Dict]]:
+def get_pivot_along_route(route: GeoDataFrame, map: map_structure.Map) -> Optional[Dict]:
     '''Return a picked landmark on a given route.
     Arguments:
       route: The route along which a landmark will be chosen.
@@ -245,13 +244,28 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
         return None
 
     main_pivot = pick_prominent_pivot(df_pivots)
+    return main_pivot
+
+def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
+               GeoDataFrame) -> Optional[Tuple[Dict, Dict]]:
+    '''Return a landmark along the route and near the goal.
+    Arguments:
+      route: The route along which a landmark will be chosen.
+      map: The map of a specific region.
+      end_point: The goal location.
+    Returns:
+      A landmark along the route and near the goal.
+    '''
+    
+    # Get pivot near the goal location.
+    main_pivot = get_pivot_along_route(route, map)
 
     # Get pivot near the goal location.
     near_pivot = get_pivot_near_goal(map, end_point)
     if main_pivot is None or near_pivot is None:
         return None
 
-    main_pivot = main_pivot.to_dict('records')[0]
+    main_pivot = main_pivot
     return main_pivot, near_pivot
 
 
