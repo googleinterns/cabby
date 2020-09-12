@@ -30,16 +30,18 @@ class GeoEntity:
   `route` is geometry of the route between the start and end points.
   `main_pivot` is pivot along the route geolocation.
   `near_pivot` is the pivot near the goal geolocation. 
+  `beyond_pivot` is the pivot beyond the goal geolocation. 
   """
   tags_start: GeoDataFrame = attr.ib()
   end: GeoDataFrame = attr.ib()
   route: GeoDataFrame = attr.ib()
   main_pivot: GeoDataFrame = attr.ib()
   near_pivot: GeoDataFrame = attr.ib()
+  beyond_pivot: GeoDataFrame = attr.ib()
 
   @classmethod
   def from_points_route_pivots(cls, start, end, route, main_pivot,
-                 near_pivot):
+                 near_pivot, beyond_pivot):
     """Construct an Entity from the start and end points, route, and pivots.
     """
     return GeoEntity(
@@ -47,5 +49,6 @@ class GeoEntity:
       end,
       route,
       main_pivot,
-      near_pivot
+      near_pivot,
+			beyond_pivot
     )
