@@ -42,8 +42,8 @@ class WalkTest(unittest.TestCase):
     # Check that the correct points are in the route.
     first_point = util.tuple_from_point(route.iloc[0]['geometry'])
     second_point = util.tuple_from_point(route.iloc[1]['geometry'])
-    self.assertEqual(first_point, (44.4946187, 11.344085))
-    self.assertEqual(second_point, (44.4947274, 11.343436))
+    self.assertEqual(first_point, (44.4950415, 11.341228))
+    self.assertEqual(second_point, (44.4948365, 11.3424075))
 
 
   def testPointsSelection(self):
