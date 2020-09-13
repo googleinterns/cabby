@@ -49,7 +49,7 @@ class RVSPath:
             avoid_instruction = ""
 
         self.instruction = \
-            "Starting at {0} walk past {1} and your goal is {2}, near {3}." \
+            "Starting at {0} walk past {1} and your goal is {2}, near {3}. " \
             .format(self.start_point['name'], self.main_pivot['main_tag'], self.
                     end_point['name'], self.near_pivot['main_tag']) + avoid_instruction
 

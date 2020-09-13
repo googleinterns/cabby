@@ -15,6 +15,7 @@
 '''Library to support sampling points, creating routes between them and pivots
 along the path and near the goal.'''
 
+
 from geopandas import GeoDataFrame
 import geopandas as gpd
 import json
@@ -30,10 +31,13 @@ from shapely import geometry
 import sys
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
-from cabby.geo.map_processing import map_structure
-from cabby.geo import geo_item
-from cabby.geo import util
+sys.path.append("/home/tzuf_google_com/dev/cabby")
+
 from cabby.geo import item
+from cabby.geo import util
+from cabby.geo import geo_item
+from cabby.geo.map_processing import map_structure
+
 
 _Geo_DataFrame_Driver = "GPKG"
 
@@ -62,6 +66,16 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
         print("No route found for the start and end points.")
         return None
     route_nodes = nodes[nodes['osmid'].isin(route)]
+
+    # Create the dictionary that defines the order for sorting according to route order.
+    sorterIndex = dict(zip(route, range(len(route))))
+
+    # Generate a rank column that will be used to sort
+    # the dataframe numerically
+    route_nodes['sort'] = route_nodes['osmid'].map(sorterIndex)
+
+    route_nodes.sort_values(['sort'], inplace=True)
+
     return route_nodes
 
 
@@ -107,9 +121,9 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
     outer_circle_graph = ox.truncate.truncate_graph_dist(
         map.nx_graph, dest, max_dist=2000, weight='length')
 
-    # Get graph that is too close (less than 200 meter path distance)
+    # Get graph that is too close (less than 400 meter path distance)
     inner_circle_graph = ox.truncate.truncate_graph_dist(
-        map.nx_graph, dest, max_dist=200, weight='length')
+        map.nx_graph, dest, max_dist=400, weight='length')
 
     outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
     inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
@@ -129,6 +143,7 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
     start_point = small_poi.sample(1).to_dict('records')[0]
 
     return start_point
+
 
 def get_landmark_if_tag_exists(gdf: GeoDataFrame, tag: Text, main_tag:
                                Text, alt_main_tag: Text) -> GeoDataFrame:
@@ -164,8 +179,8 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''
 
     tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'),
-                 ('brand', 'brand'), ('tourism', 'tourism'), ('tourism', 
-                 'tourism'),('amenity', 'amenity'), ('shop', 'shop')]
+                 ('brand', 'brand'), ('tourism', 'tourism'), ('tourism',
+                                                              'tourism'), ('amenity', 'amenity'), ('shop', 'shop')]
 
     pivot = None
 
@@ -218,11 +233,10 @@ def get_pivot_along_route(
       A single landmark. '''
 
     # Get POI along the route.
-    points_route = map.nodes[map.nodes['osmid'].isin(
-        route['osmid'])]['geometry']
+    points_route = route['geometry'].tolist()
 
     try:
-        poly = Polygon(points_route.tolist()).buffer(0.001)
+        poly = Polygon(points_route).buffer(0.0001)
         bounds = poly.bounds
         bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
         tags = {'wikipedia': True, 'wikidata': True, 'brand': True,
@@ -252,40 +266,46 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
       A single landmark. '''
 
     if route.shape[0] < 2:
+        # Return Empty.
         return GeoDataFrame(index=[0], columns=map.nodes.columns).iloc[0]
 
-    edge_found = ox.distance.get_nearest_edge(map.nx_graph, util.tuple_from_point(
-        route['geometry'].iloc[0]), return_geom=False, return_dist=False)
+    last_node_in_route = route.iloc[-1]
+    before_last_node_in_route = route.iloc[-2]
 
     nodes, edges = ox.utils_graph.graph_to_gdfs(
         map.nx_graph, nodes=True, edges=True, node_geometry=True, fill_edge_geometry=True)
+
+    # route_nodes = nodes[nodes['osmid'].isin(route['osmid'].tolist())]
+
+    # TODO add to map_processing
     nodes = nodes.set_crs(epsg=4326)
     route = route.set_crs(epsg=4326)
+    edges = edges.set_crs(epsg=4326)
 
-    street_osmid = edges[(edges['u'] == edge_found[0]) & (
-        edges['v'] == edge_found[1])]['osmid'].iloc[0]
-
-    last_line = edges[(edges['osmid'] == street_osmid) & (
-        route.iloc[0]['osmid'] == edges['u']) & (route.iloc[1]['osmid'] != edges['v'])]
-
-    if last_line.shape[0] == 0:
-        return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
-
-    next_node_osmid = last_line[last_line['length'] ==
-                                last_line['length'].max()]['v'].iloc[0]
-
-    next_node = nodes[nodes['osmid'] == next_node_osmid].iloc[0]
-
-    last_node = nodes[nodes['osmid'] == route.iloc[0]['osmid']].iloc[0]
-
-    point_1 = last_node['geometry']
-    point_2 = next_node['geometry']
-    poly = Polygon([point_1, point_2, point_1]).buffer(0.001)
+    street_osmid = edges[(edges['u'] == last_node_in_route['osmid']) & (
+        edges['v'] == before_last_node_in_route['osmid'])]['osmid'].iloc[0]
 
     try:
 
+        last_line = edges[(edges['osmid'] == street_osmid) & (
+            last_node_in_route['osmid'] == edges['u']) & (before_last_node_in_route['osmid'] != edges['v'])]
+
+        if last_line.shape[0] == 0:
+            # Return Empty.
+            return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+
+        next_node_osmid = last_line[last_line['length'] ==
+                                    last_line['length'].max()]['v'].iloc[0]
+
+        next_node = nodes[nodes['osmid'] == next_node_osmid].iloc[0]
+
+        point_1 = last_node_in_route['geometry']
+        point_2 = next_node['geometry']
+        poly = Polygon([point_1, point_2, point_1]).buffer(0.0001)
+        bounds = poly.bounds
+        bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
         df_pivots = ox.pois.pois_from_polygon(
-            poly, tags={"name": True})
+            bounding_box, tags={"name": True})
 
         # Remove streets.
         df_pivots = df_pivots[(df_pivots['highway'].isnull())]
@@ -295,24 +315,31 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
 
         # Remove the route area.
 
-        points_route = map.nodes[map.nodes['osmid'].isin(
-            route['osmid'])]['geometry']
+        points_route = route['geometry'].tolist()
 
-        poly_route = Polygon(points_route.tolist()).buffer(0.0001)
+        poly_route = Polygon(points_route).buffer(0.0001)
 
-        df_pivots = df_pivots[df_pivots.apply(lambda x: not poly_route.contains(x) if isinstance(
-            x, Point) else x['geometry'].difference(poly_route).area != 0, axis=1)]
+        route_to_endpont = Polygon(
+            [last_node_in_route["geometry"], end_point['centroid'], last_node_in_route["geometry"]]).buffer(0.0001)
+
+        poly_route_with_end = poly_route.union(route_to_endpont)
+
+        df_pivots = df_pivots[df_pivots.apply(lambda x: not poly_route_with_end.contains(x) if isinstance(
+            x, Point) else not x['geometry'].intersects(poly_route_with_end), axis=1)]
 
     except Exception as e:
         print(e)
+        # Return Empty.
         return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
     if df_pivots.shape[0] == 0:
+        # Return Empty.
         return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
     beyond_pivot = pick_prominent_pivot(df_pivots)
 
     if beyond_pivot is None:
+        # Return Empty.
         return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
     return beyond_pivot
@@ -440,6 +467,7 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
     gdf_route_list = gpd.GeoDataFrame(columns=["geometry"])
     gdf_main_list = gpd.GeoDataFrame(columns=["geometry"])
     gdf_near_list = gpd.GeoDataFrame(columns=["geometry"])
+    gdf_beyond_list = gpd.GeoDataFrame(columns=["geometry"])
 
     counter = 0
     while counter < n_samples:
@@ -456,8 +484,8 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
                                              ignore_index=True)
         gdf_near_list = gdf_near_list.append(entity.near_pivot,
                                              ignore_index=True)
-        gdf_beyond_list = gdf_near_list.append(entity.beyond_pivot,
-                                               ignore_index=True)
+        gdf_beyond_list = gdf_beyond_list.append(entity.beyond_pivot,
+                                                 ignore_index=True)
 
     if gdf_start_list.shape[0] == 0:
         return None
@@ -476,3 +504,9 @@ def print_instructions(path: Text):
         return None
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
+
+
+# map_region = map_structure.Map("Pittsburgh", 18, "./cabby/geo/map_processing/poiTestData/")
+
+# # Create a file with multile layers of data.
+# generate_and_save_rvs_routes("pittsburgh_geo_paths.gpkg", map_region, 10)

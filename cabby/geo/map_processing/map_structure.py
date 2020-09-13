@@ -61,7 +61,7 @@ class Map:
 
     if load_directory is None:
       self.poi, self.streets = self.get_poi()
-      self.nx_graph = ox.graph_from_polygon(self.polygon_area, network_type = 'all')
+      self.nx_graph = ox.graph_from_polygon(self.polygon_area, network_type = 'walk')
       self.nodes, _ = ox.graph_to_gdfs(self.nx_graph)
       
       # Find closest nodes to POI.
