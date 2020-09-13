@@ -111,16 +111,16 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
     inner_circle_graph = ox.truncate.truncate_graph_dist(
         map.nx_graph, dest, max_dist=200, weight='length')
 
-    outer_circle_graph_osmid = [x for x in outer_circle_graph.nodes.keys()]
-    inner_circle_graph_osmid = [x for x in inner_circle_graph.nodes.keys()]
+    outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
+    inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
     osmid_in_range = [
         osmid for osmid in outer_circle_graph_osmid if osmid not in inner_circle_graph_osmid]
 
-    within_distance = map.poi[map.poi['node'].isin(osmid_in_range)]
+    poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
 
     # Filter large POI.
-    small_poi = within_distance[within_distance['cellids'].str.len() <= 4]
+    small_poi = poi_in_ring[poi_in_ring['cellids'].str.len() <= 4]
 
     if small_poi.shape[0] == 0:
         return None
@@ -129,7 +129,6 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
     start_point = small_poi.sample(1).to_dict('records')[0]
 
     return start_point
-
 
 def get_landmark_if_tag_exists(gdf: GeoDataFrame, tag: Text, main_tag:
                                Text, alt_main_tag: Text) -> GeoDataFrame:
@@ -165,8 +164,8 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''
 
     tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'),
-                 ('brand', 'brand'), ('tourism', 'tourism'), ('tourism', 'tourism'),
-                 ('amenity', 'amenity'), ('shop', 'shop')]
+                 ('brand', 'brand'), ('tourism', 'tourism'), ('tourism', 
+                 'tourism'),('amenity', 'amenity'), ('shop', 'shop')]
 
     pivot = None
 

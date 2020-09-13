@@ -19,7 +19,7 @@ py_test(
     python_version = "PY3",
     deps = [
         ":query",
-        ':item'
+        ":item"
 
     ],
 )

@@ -18,4 +18,5 @@ bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items --region Pittsbur
 bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles=New_York_Stock_Exchange,Empire_State_Building
 
 # Wikigeo
-bazel-bin/cabby/data/extract_wikigeo_contexts --region Bologna --path bologna.json 
+bazel-bin/cabby/data/extract_wikigeo_contexts --region Bologna --path bologna.json
+

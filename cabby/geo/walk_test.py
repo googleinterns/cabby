@@ -58,5 +58,6 @@ class WalkTest(unittest.TestCase):
     self.assertIsNotNone(geo_entity.near_pivot['main_tag'])
 
 
+
 if __name__ == "__main__":
   unittest.main()
