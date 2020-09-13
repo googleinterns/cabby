@@ -65,10 +65,11 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> Sequence:
         for backlink in list_backlinks:
             wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
                 backlink, original_wikipedia, original_wikidata).sample
-            if any(dict['text'] == wikigeo_sample['text'] for dict in geo_data):
+            
+            sample_text = wikigeo_sample['text']
+            if any(dict['text'] == sample_text for dict in geo_data):
                 continue
             geo_data.append(wikigeo_sample)
-
     return geo_data
 
 
@@ -115,10 +116,10 @@ def split_dataset(
         The train-set, dev-set and test-set splits.
     '''
     assert percentage_train >= 0 and percentage_train <= 1, \
-        "percentage_train is not in rang 0-1."
+        "percentage_train is not in range 0-1."
 
     assert percentage_dev >= 0 and percentage_dev <= 1, \
-        "percentage_dev is not in rang 0-1."
+        "percentage_dev is not in range 0-1."
 
     assert percentage_dev + \
         percentage_train <= 1, "percentage_dev+percentage_train is more than 1."
@@ -128,6 +129,7 @@ def split_dataset(
 
     # Sort the dataset by ref_qid.
     sorted_dataset = sorted(dataset, key=lambda item: item['ref_qid'])
+
 
     # Get size of splits.
     size_dataset = len(dataset)

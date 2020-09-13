@@ -10,9 +10,9 @@ py_library(
         ':item',
         ':geo_item',
         "//cabby/geo/map_processing:map_structure",
-        
 
-    ]
+    ],
+
 )
 
 py_library(
@@ -31,6 +31,8 @@ py_test(
         "//cabby/geo/map_processing:map_structure",
 
     ],
+    data = [":testdata"],
+
 )
 
 
@@ -38,7 +40,13 @@ py_test(
 py_library(
     name = 'directions',
     srcs = ['directions.py'],
-    deps = [':util'],
+    deps = [
+        ':walk',
+        ':util',
+        "//cabby:logger",
+        "//cabby/geo/map_processing:map_structure",
+
+        ],
 )
 
 py_library(
@@ -50,6 +58,8 @@ py_library(
     name = 'geo_item',
     srcs = ['geo_item.py'],
 )
+
+
 
 py_binary(
     name = 'geo_computation',
@@ -63,6 +73,20 @@ py_binary(
         "//cabby:logger"
         ],
     
+)
+
+
+filegroup(
+    name = "testdata",
+    srcs = [
+        "testdata/bologna_streets.pkl",
+        "testdata/bologna_poi.pkl",
+        "testdata/bologna_nodes.geojson",
+        "testdata/bologna_graph.gpickle",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
 )
 
 py_binary(
