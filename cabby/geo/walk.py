@@ -31,8 +31,6 @@ from shapely import geometry
 import sys
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 from cabby.geo import item
 from cabby.geo import util
 from cabby.geo import geo_item
@@ -272,34 +270,24 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
     last_node_in_route = route.iloc[-1]
     before_last_node_in_route = route.iloc[-2]
 
-    nodes, edges = ox.utils_graph.graph_to_gdfs(
-        map.nx_graph, nodes=True, edges=True, node_geometry=True, fill_edge_geometry=True)
-
     # route_nodes = nodes[nodes['osmid'].isin(route['osmid'].tolist())]
 
-    # TODO add to map_processing
-
-    street_osmid = edges[(edges['u'] == last_node_in_route['osmid']) & (
-        edges['v'] == before_last_node_in_route['osmid'])]['osmid'].iloc[0]
+    street_osmid = map.edges[(map.edges['u'] == last_node_in_route['osmid']) & (map.edges['v'] == before_last_node_in_route['osmid'])]['osmid'].iloc[0]
 
     try:
 				# Change OSMID to key
-        last_line = edges[(edges['osmid'] == street_osmid) & (
-            last_node_in_route['osmid'] == edges['u']) & (before_last_node_in_route['osmid'] != edges['v'])]
+        last_line = map.edges[(map.edges['osmid'] == street_osmid) & (
+            last_node_in_route['osmid'] == map.edges['u']) & (before_last_node_in_route['osmid'] != map.edges['v'])]
 
         if last_line.shape[0] == 0:
             # Return Empty.
             return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
-        next_node_osmid = last_line[last_line['length'] ==
-                                    last_line['length'].max()]['v'].iloc[0]
+        last_line_max = last_line[last_line['length'] ==
+                                    last_line['length'].max()].iloc[0]
 
-        next_node = nodes[nodes['osmid'] == next_node_osmid].iloc[0]
 
-				# TODO last_line has geometry - use that!
-        point_1 = last_node_in_route['geometry']
-        point_2 = next_node['geometry']
-        poly = Polygon([point_1, point_2, point_1]).buffer(0.0001)
+        poly = last_line_max['geometry'].buffer(0.0001)
         bounds = poly.bounds
         bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
         df_pivots = ox.pois.pois_from_polygon(
@@ -504,7 +492,4 @@ def print_instructions(path: Text):
     print('\n'.join(start['instruction'].values))
 
 
-map_region = map_structure.Map("Pittsburgh", 18, "./cabby/cabby/geo/map_processing/poiTestData/")
 
-# Create a file with multile layers of data.
-generate_and_save_rvs_routes("pittsburgh_geo_paths.gpkg", map_region, 2)
