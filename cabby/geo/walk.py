@@ -65,8 +65,8 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
         return None
     route_nodes = nodes[nodes['osmid'].isin(route)]
 
-    # Create the dictionary that defines the order for sorting according to 
-		#route order.
+    # Create the dictionary that defines the order for sorting according to
+    # route order.
     sorterIndex = dict(zip(route, range(len(route))))
 
     # Generate a rank column that will be used to sort
@@ -128,8 +128,8 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
     inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
     osmid_in_range = [
-        osmid for osmid in outer_circle_graph_osmid if osmid not in 
-				inner_circle_graph_osmid]
+        osmid for osmid in outer_circle_graph_osmid if osmid not in
+        inner_circle_graph_osmid]
 
     poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
 
@@ -179,9 +179,9 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''
 
     tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'),
-                 ('brand', 'brand'), ('tourism', 'tourism'), 
-								 ('tourism','tourism'), ('amenity', 'amenity'), ('shop', 'shop')
-								 ]
+                 ('brand', 'brand'), ('tourism', 'tourism'),
+                 ('tourism', 'tourism'), ('amenity', 'amenity'), ('shop', 'shop')
+                 ]
 
     pivot = None
 
@@ -281,8 +281,8 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
     try:
         # Change OSMID to key
         last_line = map.edges[(map.edges['osmid'] == street_osmid) & (
-            last_node_in_route['osmid'] == map.edges['u']) & 
-						(before_last_node_in_route['osmid'] != map.edges['v'])]
+            last_node_in_route['osmid'] == map.edges['u']) &
+            (before_last_node_in_route['osmid'] != map.edges['v'])]
 
         if last_line.shape[0] == 0:
             # Return Empty.
@@ -310,15 +310,15 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
         poly_route = Polygon(points_route).buffer(0.0001)
 
         route_to_endpont = Polygon(
-            [last_node_in_route["geometry"], end_point['centroid'], 
-						last_node_in_route["geometry"]]).buffer(0.0001)
+            [last_node_in_route["geometry"], end_point['centroid'],
+             last_node_in_route["geometry"]]).buffer(0.0001)
 
         poly_route_with_end = poly_route.union(route_to_endpont)
 
         df_pivots = df_pivots[df_pivots.apply(lambda x: not poly_route_with_end.
-				contains(x) if isinstance(
-            x, Point) else not x['geometry'].intersects(poly_route_with_end), 
-						axis=1)]
+                                              contains(x) if isinstance(
+                                                  x, Point) else not x['geometry'].intersects(poly_route_with_end),
+                                              axis=1)]
 
     except Exception as e:
         print(e)
@@ -364,6 +364,34 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
     return main_pivot, near_pivot, beyond_pivot
 
 
+def get_cardinal_direction(start_point: Point, end_point: Point) -> Text:
+    '''Calculate the cardinal direction between start and and points.
+    Arguments:
+      start_point: The starting point.
+      end_point: The end point.
+    Returns:
+      A cardinal direction.
+    '''
+    azim = util.get_bearing(start_point['centroid'], end_point['centroid'])
+    if azim < 10 or azim > 350:
+        cardinal = 'North'
+    elif azim < 80:
+        cardinal = 'North-East'
+    elif azim > 280:
+        cardinal = 'North-West'
+    elif azim < 100:
+        cardinal = 'West'
+    elif azim < 170:
+        cardinal = 'South-East'
+    elif azim < 190:
+        cardinal = 'South'
+    elif azim < 260:
+        cardinal = 'South-West'
+    else:  # azim < 280:
+        cardinal = 'West'
+    return cardinal
+
+
 def get_points_and_route(map: map_structure.Map) -> Optional[item.RVSPath]:
     '''Sample start and end point, a pivot landmark and route.
     Arguments:
@@ -394,11 +422,15 @@ def get_points_and_route(map: map_structure.Map) -> Optional[item.RVSPath]:
         return None
     main_pivot, near_pivot, beyond_pivot = result
 
+    # Get cardinal direction.
+    cardinal_direction = get_cardinal_direction(start_point, end_point)
+
     rvs_path_entity = item.RVSPath.from_points_route_pivots(start_point,
                                                             end_point, route,
                                                             main_pivot,
                                                             near_pivot,
-                                                            beyond_pivot)
+                                                            beyond_pivot,
+                                                            cardinal_direction)
 
     return rvs_path_entity
 
@@ -417,11 +449,11 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
 
     gdf_tags_start = gpd.GeoDataFrame({'end': rvs_path_entity.end_point['name'],
                                        'start': rvs_path_entity.start_point
-																			 ['name'], 'main_pivot': rvs_path_entity.
-																			 main_pivot['main_tag'], 'near_pivot': 
-																			 rvs_path_entity.near_pivot['main_tag'],
+                                       ['name'], 'main_pivot': rvs_path_entity.
+                                       main_pivot['main_tag'], 'near_pivot':
+                                       rvs_path_entity.near_pivot['main_tag'],
                                        'beyond_pivot': rvs_path_entity.
-																			 beyond_pivot['main_tag'],  'instruction':
+                                       beyond_pivot['main_tag'],  'instruction':
                                        rvs_path_entity.instruction}, index=[0])
 
     gdf_tags_start['geometry'] = rvs_path_entity.start_point['centroid']

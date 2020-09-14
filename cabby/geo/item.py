@@ -37,6 +37,7 @@ class RVSPath:
     main_pivot: Dict = attr.ib()
     near_pivot: Dict = attr.ib()
     beyond_pivot: Dict = attr.ib()
+    cardinal_direction: Text = attr.ib()
     instruction: Text = attr.ib(init=False)
 
     def __attrs_post_init__(self):
@@ -49,9 +50,10 @@ class RVSPath:
             avoid_instruction = ""
 
         self.instruction = \
-            "Starting at {0} walk past {1} and your goal is {2}, near {3}. " \
-            .format(self.start_point['name'], self.main_pivot['main_tag'], self.
-                    end_point['name'], self.near_pivot['main_tag']) + avoid_instruction
+            "Starting at {0} walk {1} past {2} and your goal is {3}, near {4}. " \
+            .format(self.start_point['name'], self.cardinal_direction, self.
+                    main_pivot['main_tag'], self.end_point['name'],
+                    self.near_pivot['main_tag']) + avoid_instruction
 
         # Create centroid point.
         self.main_pivot['centroid'] = self.main_pivot['geometry'] if \
@@ -70,7 +72,7 @@ class RVSPath:
 
     @classmethod
     def from_points_route_pivots(cls, start, end, route, main_pivot,
-                                 near_pivot, beyond_pivot):
+                                 near_pivot, beyond_pivot, cardinal_direction):
         """Construct an Entity from the start and end points, route, and pivots.
         """
         return RVSPath(
@@ -79,5 +81,6 @@ class RVSPath:
             route,
             main_pivot,
             near_pivot,
-            beyond_pivot
+            beyond_pivot,
+            cardinal_direction
         )
