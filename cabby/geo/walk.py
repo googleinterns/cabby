@@ -30,7 +30,8 @@ from shapely.geometry.point import Point
 from shapely import geometry
 import sys
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
-
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 from cabby.geo import item
 from cabby.geo import util
 from cabby.geo import geo_item
@@ -119,13 +120,17 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
     # Find nodes whithin 2000 meter path distance.
     outer_circle_graph = ox.truncate.truncate_graph_dist(
         map.nx_graph, dest, max_dist=2000, weight='length')
-
-    # Get graph that is too close (less than 400 meter path distance)
-    inner_circle_graph = ox.truncate.truncate_graph_dist(
-        map.nx_graph, dest, max_dist=400, weight='length')
-
+    
     outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
-    inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
+
+    try:
+        # Get graph that is too close (less than 400 meter path distance)
+        inner_circle_graph = ox.truncate.truncate_graph_dist(
+            map.nx_graph, dest, max_dist=400, weight='length')
+        inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
+
+    except:
+        inner_circle_graph_osmid = []
 
     osmid_in_range = [
         osmid for osmid in outer_circle_graph_osmid if osmid not in
@@ -355,13 +360,42 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
     # Get pivot near the goal location.
     near_pivot = get_pivot_near_goal(map, end_point)
 
-    # Get pivot located past the goal location and beyond the route.
-    beyond_pivot = get_pivot_beyond_goal(map, end_point, route)
-
     if main_pivot is None or near_pivot is None:
         return None
 
+    # Get pivot located past the goal location and beyond the route.
+    beyond_pivot = get_pivot_beyond_goal(map, end_point, route)
+
     return main_pivot, near_pivot, beyond_pivot
+
+def get_number_interesctions_past(main_pivot: Dict, route: GeoDataFrame, map: map_structure.Map) -> int:
+    '''Return the number of intersections between the main_pivot and goal. If the main_pivot and goal are on different streets return -1.
+    Arguments:
+      main_pivot: The pivot along the route.
+      route: The route along which a landmark will be chosen.
+      map: The map of a specific region.
+    Returns:
+      The number of intersections between the main_pivot and goal. If the main_pivot and goal are on different streets return -1.
+    '''
+    dist = route['geometry'].apply(lambda x: x.distance(main_pivot['geometry']))
+    pivot_idx = dist.idxmin().tolist()
+    pivot_goal_route = route.loc[pivot_idx:]
+
+    if pivot_goal_route.shape[0] <= 1:
+        return -1
+
+    # Check if goal and pivot are on the same street.
+    edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(lambda x: set(map.edges[map.edges['u']==x]['osmid'].tolist()))
+
+    pivot_streets = edges_in_pivot_goal_route.iloc[0]
+    goal_streets = edges_in_pivot_goal_route.iloc[-1]
+    common_streets = pivot_streets & goal_streets
+    if not common_streets:
+        return -1
+    
+    streets_not_main_path = edges_in_pivot_goal_route.apply(lambda x: len(x - common_streets)>0).count()    
+
+    return streets_not_main_path
 
 
 def get_cardinal_direction(start_point: Point, end_point: Point) -> Text:
@@ -422,6 +456,9 @@ def get_points_and_route(map: map_structure.Map) -> Optional[item.RVSPath]:
         return None
     main_pivot, near_pivot, beyond_pivot = result
 
+    # Get number of intersections between main pivot and goal location. 
+    number_intersections = get_number_interesctions_past(main_pivot, route, map)
+
     # Get cardinal direction.
     cardinal_direction = get_cardinal_direction(start_point, end_point)
 
@@ -430,7 +467,8 @@ def get_points_and_route(map: map_structure.Map) -> Optional[item.RVSPath]:
                                                             main_pivot,
                                                             near_pivot,
                                                             beyond_pivot,
-                                                            cardinal_direction)
+                                                            cardinal_direction,
+                                                            number_intersections)
 
     return rvs_path_entity
 
@@ -532,3 +570,4 @@ def print_instructions(path: Text):
         return None
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
+
