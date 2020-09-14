@@ -24,8 +24,10 @@ from shapely.geometry import box
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely import wkt
+import sys
 from typing import Dict, Tuple, Sequence, Text, Optional
 
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from cabby import logger
 from cabby.geo import util
@@ -62,7 +64,7 @@ class Map:
     if load_directory is None:
       self.poi, self.streets = self.get_poi()
       self.nx_graph = ox.graph_from_polygon(self.polygon_area, network_type = 'walk')
-      self.nodes, _ = ox.graph_to_gdfs(self.nx_graph)
+      self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
       
       # Find closest nodes to POI.
       self.poi['node'] = self.poi['centroid'].apply(lambda x: \
@@ -72,6 +74,9 @@ class Map:
     else:
       self.load_map(load_directory)
     self.create_S2Graph(level)
+
+    self.nodes = self.nodes.set_crs(epsg=4326)
+    self.edges = self.edges.set_crs(epsg=4326)
 
   def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
     '''Helper funcion for extracting POI for the defined place.'''
@@ -182,6 +187,17 @@ class Map:
     else:
       map_logger.info("path {0} already exist.".format(path))
 
+
+    # Write edges.
+    path = self.get_valid_path(dir_name, '_edges', '.geojson')
+    if not os.path.exists(path):
+      # Drop columns with list type.
+      self.edges.drop(['highway','service', 'oneway', 'lanes', 'bridge', 'access', 'est_width', 'name', 'maxspeed', 'ref'], axis=1, inplace=True)
+      self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
+      self.edges.to_file(path, driver='GeoJSON')
+    else:
+      map_logger.info("path {0} already exist.".format(path))
+
   def load_map(self, dir_name: Text):
     '''Load POI from disk.'''
 
@@ -214,3 +230,22 @@ class Map:
     assert os.path.exists(
       path), "path {0} doesn't exist.".format(path)
     self.nodes = gpd.read_file(path, driver='GeoJSON')
+
+
+    # Load nodes.
+    path = self.get_valid_path(dir_name, '_edges', '.geojson')
+    assert os.path.exists(
+      path), "path {0} doesn't exist.".format(path)
+    self.edges = gpd.read_file(path, driver='GeoJSON')
+
+
+
+# map = Map("Pittsburgh", 18)
+
+# # Write to disk.
+# map.write_map("./cabby/cabby/geo/map_processing/poiTestData/")
+
+# # Load from disk.
+# map = Map("Pittsburgh", 18, "./cabby/cabby/geo/map_processing/poiTestData/")
+
+

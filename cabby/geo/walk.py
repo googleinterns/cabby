@@ -278,15 +278,12 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
     # route_nodes = nodes[nodes['osmid'].isin(route['osmid'].tolist())]
 
     # TODO add to map_processing
-    nodes = nodes.set_crs(epsg=4326)
-    route = route.set_crs(epsg=4326)
-    edges = edges.set_crs(epsg=4326)
 
     street_osmid = edges[(edges['u'] == last_node_in_route['osmid']) & (
         edges['v'] == before_last_node_in_route['osmid'])]['osmid'].iloc[0]
 
     try:
-
+				# Change OSMID to key
         last_line = edges[(edges['osmid'] == street_osmid) & (
             last_node_in_route['osmid'] == edges['u']) & (before_last_node_in_route['osmid'] != edges['v'])]
 
@@ -299,6 +296,7 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
 
         next_node = nodes[nodes['osmid'] == next_node_osmid].iloc[0]
 
+				# TODO last_line has geometry - use that!
         point_1 = last_node_in_route['geometry']
         point_2 = next_node['geometry']
         poly = Polygon([point_1, point_2, point_1]).buffer(0.0001)
@@ -506,7 +504,7 @@ def print_instructions(path: Text):
     print('\n'.join(start['instruction'].values))
 
 
-# map_region = map_structure.Map("Pittsburgh", 18, "./cabby/geo/map_processing/poiTestData/")
+map_region = map_structure.Map("Pittsburgh", 18, "./cabby/cabby/geo/map_processing/poiTestData/")
 
-# # Create a file with multile layers of data.
-# generate_and_save_rvs_routes("pittsburgh_geo_paths.gpkg", map_region, 10)
+# Create a file with multile layers of data.
+generate_and_save_rvs_routes("pittsburgh_geo_paths.gpkg", map_region, 2)
