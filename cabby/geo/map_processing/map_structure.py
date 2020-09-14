@@ -67,9 +67,9 @@ class Map:
             self.poi['node'] = self.poi['centroid'].apply(lambda x:
                                                           ox.distance.
                                                           get_nearest_node(self.
-                                                          nx_graph, util.
-                                                          tuple_from_point(x)))
-                                                                                
+                                                                           nx_graph, util.
+                                                                           tuple_from_point(x)))
+
         else:
             self.load_map(load_directory)
         self.create_S2Graph(level)
@@ -100,22 +100,21 @@ class Map:
         # Get cellids for POI.
         self.poi['cellids'] = self.poi['geometry'].apply(lambda x: util.
                                                          cellid_from_point(
-                                                             x, level) if 
-                                                             isinstance(x, 
-                                                             Point) else util.
-                                                             cellid_from_polygon
-                                                             (x,level))
+                                                             x, level) if
+                                                         isinstance(x,
+                                                                    Point) else util.
+                                                         cellid_from_polygon
+                                                         (x, level))
 
         # Get cellids for streets.
         self.streets['cellids'] = self.streets['geometry'].apply(lambda x: util.
                                                                  cellid_from_point
-                                                                 (x, level) if 
-                                                                 isinstance(x, 
-                                                                 Point) else 
+                                                                 (x, level) if
+                                                                 isinstance(x,
+                                                                            Point) else
                                                                  util.
                                                                  cellid_from_polyline
                                                                  (x, level))
-
 
         # Filter out entities that we didn't mange to get cellids covering.
         self.poi = self.poi[self.poi['cellids'].notnull()]
@@ -201,12 +200,13 @@ class Map:
         if not os.path.exists(path):
             # Drop columns with list type.
             self.edges.drop(['highway', 'service', 'oneway', 'lanes', 'bridge',
-                             'access', 'est_width', 'name', 'maxspeed', 'ref'], 
-                             axis=1, inplace=True)
+                             'access', 'est_width', 'name', 'maxspeed', 'ref'],
+                            axis=1, inplace=True)
             self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
             self.edges.to_file(path, driver='GeoJSON')
         else:
             map_logger.info("path {0} already exist.".format(path))
+
 
     def load_map(self, dir_name: Text):
         '''Load POI from disk.'''
@@ -241,8 +241,23 @@ class Map:
             path), "path {0} doesn't exist.".format(path)
         self.nodes = gpd.read_file(path, driver='GeoJSON')
 
-        # Load nodes.
+        # Load edges.
         path = self.get_valid_path(dir_name, '_edges', '.geojson')
         assert os.path.exists(
             path), "path {0} doesn't exist.".format(path)
         self.edges = gpd.read_file(path, driver='GeoJSON')
+        self.edges['osmid_list'] = self.edges['osmid'].apply(
+            lambda x: covert_string_to_list(x))
+
+
+def covert_string_to_list(string_list: Text) -> Sequence:
+    '''Splitting a string into integers and creates a new list of the integers. 
+    Arguments: 
+    string_list: A string in the form of a list. E.g "[1,2,3]". 
+    Returns: 
+    A list of integers. 
+    '''
+    string_list = string_list.replace("[", "").replace("]", "")
+    string_list = string_list.split(",")
+    map_object = map(int, string_list)
+    return list(map_object)

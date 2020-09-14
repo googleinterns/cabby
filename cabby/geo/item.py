@@ -29,6 +29,9 @@ class RVSPath:
     `route` is route between the start and end points.
     `main_pivot` is pivot along the route.
     `near_pivot` is the pivot near the goal location.
+    'beyond_pivot' is the pivot beyond the goal location.
+    'cardinal_direction' is the cardinal direction betweeen start and end point.
+    'number_intersections' is the of intersections between the pivot along the route and the goal.
     `instruction` is a basic template that includes the points and pivots.
     """
     start_point: Dict = attr.ib()
@@ -38,6 +41,7 @@ class RVSPath:
     near_pivot: Dict = attr.ib()
     beyond_pivot: Dict = attr.ib()
     cardinal_direction: Text = attr.ib()
+    number_intersections: int = attr.ib()
     instruction: Text = attr.ib(init=False)
 
     def __attrs_post_init__(self):
@@ -49,10 +53,15 @@ class RVSPath:
         else:
             avoid_instruction = ""
 
+        if self.number_intersections>=1:
+            intersection_instruction = "and walk straight for about {0} intersection, ".format(self.number_intersections)
+        else:
+            intersection_instruction = ""
+
         self.instruction = \
-            "Starting at {0} walk {1} past {2} and your goal is {3}, near {4}. " \
+            "Starting at {0} walk {1} past {2} {3}and your goal is {4}, near {5}. " \
             .format(self.start_point['name'], self.cardinal_direction, self.
-                    main_pivot['main_tag'], self.end_point['name'],
+                    main_pivot['main_tag'], intersection_instruction, self.end_point['name'],
                     self.near_pivot['main_tag']) + avoid_instruction
 
         # Create centroid point.
@@ -72,7 +81,7 @@ class RVSPath:
 
     @classmethod
     def from_points_route_pivots(cls, start, end, route, main_pivot,
-                                 near_pivot, beyond_pivot, cardinal_direction):
+                                 near_pivot, beyond_pivot, cardinal_direction, number_intersections):
         """Construct an Entity from the start and end points, route, and pivots.
         """
         return RVSPath(
@@ -82,5 +91,6 @@ class RVSPath:
             main_pivot,
             near_pivot,
             beyond_pivot,
-            cardinal_direction
+            cardinal_direction,
+            number_intersections
         )
