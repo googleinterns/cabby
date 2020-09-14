@@ -65,7 +65,8 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
         return None
     route_nodes = nodes[nodes['osmid'].isin(route)]
 
-    # Create the dictionary that defines the order for sorting according to route order.
+    # Create the dictionary that defines the order for sorting according to 
+		#route order.
     sorterIndex = dict(zip(route, range(len(route))))
 
     # Generate a rank column that will be used to sort
@@ -127,7 +128,8 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
     inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
     osmid_in_range = [
-        osmid for osmid in outer_circle_graph_osmid if osmid not in inner_circle_graph_osmid]
+        osmid for osmid in outer_circle_graph_osmid if osmid not in 
+				inner_circle_graph_osmid]
 
     poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
 
@@ -177,8 +179,9 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''
 
     tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'),
-                 ('brand', 'brand'), ('tourism', 'tourism'), ('tourism',
-                                                              'tourism'), ('amenity', 'amenity'), ('shop', 'shop')]
+                 ('brand', 'brand'), ('tourism', 'tourism'), 
+								 ('tourism','tourism'), ('amenity', 'amenity'), ('shop', 'shop')
+								 ]
 
     pivot = None
 
@@ -272,20 +275,21 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
 
     # route_nodes = nodes[nodes['osmid'].isin(route['osmid'].tolist())]
 
-    street_osmid = map.edges[(map.edges['u'] == last_node_in_route['osmid']) & (map.edges['v'] == before_last_node_in_route['osmid'])]['osmid'].iloc[0]
+    street_osmid = map.edges[(map.edges['u'] == last_node_in_route['osmid']) & (
+        map.edges['v'] == before_last_node_in_route['osmid'])]['osmid'].iloc[0]
 
     try:
-				# Change OSMID to key
+        # Change OSMID to key
         last_line = map.edges[(map.edges['osmid'] == street_osmid) & (
-            last_node_in_route['osmid'] == map.edges['u']) & (before_last_node_in_route['osmid'] != map.edges['v'])]
+            last_node_in_route['osmid'] == map.edges['u']) & 
+						(before_last_node_in_route['osmid'] != map.edges['v'])]
 
         if last_line.shape[0] == 0:
             # Return Empty.
             return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
         last_line_max = last_line[last_line['length'] ==
-                                    last_line['length'].max()].iloc[0]
-
+                                  last_line['length'].max()].iloc[0]
 
         poly = last_line_max['geometry'].buffer(0.0001)
         bounds = poly.bounds
@@ -306,12 +310,15 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
         poly_route = Polygon(points_route).buffer(0.0001)
 
         route_to_endpont = Polygon(
-            [last_node_in_route["geometry"], end_point['centroid'], last_node_in_route["geometry"]]).buffer(0.0001)
+            [last_node_in_route["geometry"], end_point['centroid'], 
+						last_node_in_route["geometry"]]).buffer(0.0001)
 
         poly_route_with_end = poly_route.union(route_to_endpont)
 
-        df_pivots = df_pivots[df_pivots.apply(lambda x: not poly_route_with_end.contains(x) if isinstance(
-            x, Point) else not x['geometry'].intersects(poly_route_with_end), axis=1)]
+        df_pivots = df_pivots[df_pivots.apply(lambda x: not poly_route_with_end.
+				contains(x) if isinstance(
+            x, Point) else not x['geometry'].intersects(poly_route_with_end), 
+						axis=1)]
 
     except Exception as e:
         print(e)
@@ -409,9 +416,12 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
         return None
 
     gdf_tags_start = gpd.GeoDataFrame({'end': rvs_path_entity.end_point['name'],
-                                       'start': rvs_path_entity.start_point['name'], 'main_pivot': rvs_path_entity.main_pivot
-                                       ['main_tag'], 'near_pivot': rvs_path_entity.near_pivot['main_tag'],
-                                       'beyond_pivot': rvs_path_entity.beyond_pivot['main_tag'],  'instruction':
+                                       'start': rvs_path_entity.start_point
+																			 ['name'], 'main_pivot': rvs_path_entity.
+																			 main_pivot['main_tag'], 'near_pivot': 
+																			 rvs_path_entity.near_pivot['main_tag'],
+                                       'beyond_pivot': rvs_path_entity.
+																			 beyond_pivot['main_tag'],  'instruction':
                                        rvs_path_entity.instruction}, index=[0])
 
     gdf_tags_start['geometry'] = rvs_path_entity.start_point['centroid']
@@ -490,6 +500,3 @@ def print_instructions(path: Text):
         return None
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
-
-
-
