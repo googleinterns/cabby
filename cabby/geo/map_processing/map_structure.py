@@ -27,14 +27,10 @@ from shapely import wkt
 import sys
 from typing import Dict, Tuple, Sequence, Text, Optional
 
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 from cabby import logger
 from cabby.geo import util
 from cabby.geo.map_processing import graph
 from cabby import logger
-
-map_logger = logger.create_logger("map.log", 'map')
 
 map_logger = logger.create_logger("map.log", 'map')
 
@@ -239,13 +235,5 @@ class Map:
     self.edges = gpd.read_file(path, driver='GeoJSON')
 
 
-
-# map = Map("Pittsburgh", 18)
-
-# # Write to disk.
-# map.write_map("./cabby/cabby/geo/map_processing/poiTestData/")
-
-# # Load from disk.
-# map = Map("Pittsburgh", 18, "./cabby/cabby/geo/map_processing/poiTestData/")
 
 
