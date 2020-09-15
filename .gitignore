@@ -3,3 +3,4 @@
 .pytype
 *.log
 .vscode/
+.ipynb_checkpoints
