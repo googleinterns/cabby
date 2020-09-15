@@ -54,7 +54,7 @@ class Map:
                 ccw=True)
         else:  # Bologna.
             self.polygon_area = box(
-                miny=44.4902, minx=11.3333, maxy=44.5000, maxx=11.3564,
+                miny=44.4902, minx=11.3333, maxy=44.5000, maxx=11.3564, 
                 ccw=True)
 
         if load_directory is None:
@@ -199,14 +199,11 @@ class Map:
         path = self.get_valid_path(dir_name, '_edges', '.geojson')
         if not os.path.exists(path):
             # Drop columns with list type.
-            self.edges.drop(['highway', 'service', 'oneway', 'lanes', 'bridge',
-                             'access', 'est_width', 'name', 'maxspeed', 'ref'],
-                            axis=1, inplace=True)
+            self.edges.drop(self.edges.columns.difference(['osmid','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
             self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
             self.edges.to_file(path, driver='GeoJSON')
         else:
             map_logger.info("path {0} already exist.".format(path))
-
 
     def load_map(self, dir_name: Text):
         '''Load POI from disk.'''
@@ -261,3 +258,4 @@ def covert_string_to_list(string_list: Text) -> Sequence:
     string_list = string_list.split(",")
     map_object = map(int, string_list)
     return list(map_object)
+

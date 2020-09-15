@@ -30,10 +30,7 @@ py_test(
         "//cabby:logger",
 
     ],
-)
-
-
-        
+)        
 
 
 py_binary(
