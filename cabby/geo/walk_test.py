@@ -24,40 +24,38 @@ from cabby.geo.map_processing import map_structure
 
 class WalkTest(unittest.TestCase):
 
-  def setUp(self):
+    @classmethod
+    def setUpClass(self):
 
-    # Load map from disk.
-    self.map = map_structure.Map(
-      "Bologna", 18)
+        # Load map from disk.
+        self.map = map_structure.Map("Bologna", 18)
 
-  def testRouteCalculation(self):
-    start_point = Point(11.3414, 44.4951)
-    end_point = Point(11.3444, 44.4946)
-    route = walk.compute_route(start_point, end_point, self.map.
-    nx_graph, self.map.nodes)
+    def testRouteCalculation(self):
+        start_point = Point(11.3414, 44.4951)
+        end_point = Point(11.3444, 44.4946)
+        route = walk.compute_route(start_point, end_point, self.map.
+                                   nx_graph, self.map.nodes)
 
-    # Check the size of the route. 
-    self.assertEqual(route['geometry'].shape[0], 9)
+        # Check the size of the route.
+        self.assertEqual(route['geometry'].shape[0], 9)
 
-    # Check that the correct points are in the route.
-    first_point = util.tuple_from_point(route.iloc[0]['geometry'])
-    second_point = util.tuple_from_point(route.iloc[1]['geometry'])
-    self.assertEqual(first_point, (44.4950415, 11.341228))
-    self.assertEqual(second_point, (44.4948365, 11.3424075))
+        # Check that the correct points are in the route.
+        first_point = util.tuple_from_point(route.iloc[0]['geometry'])
+        second_point = util.tuple_from_point(route.iloc[1]['geometry'])
+        self.assertEqual(first_point, (44.4950415, 11.341228))
+        self.assertEqual(second_point, (44.4948365, 11.3424075))
 
+    def testPointsSelection(self):
+        geo_entity = walk.get_points_and_route(self.map)
+        if geo_entity is None:
+            return
 
-  def testPointsSelection(self):
-    geo_entity = walk.get_points_and_route(self.map)
-    if geo_entity is None:
-      return
-
-    self.assertGreaterEqual(geo_entity.route.shape[0], 1)
-    self.assertIsNotNone(geo_entity.end_point['name'])
-    self.assertIsNotNone(geo_entity.start_point['name'])
-    self.assertIsNotNone(geo_entity.main_pivot['main_tag'])
-    self.assertIsNotNone(geo_entity.near_pivot['main_tag'])
-
+        self.assertGreaterEqual(geo_entity.route.shape[0], 1)
+        self.assertIsNotNone(geo_entity.end_point['name'])
+        self.assertIsNotNone(geo_entity.start_point['name'])
+        self.assertIsNotNone(geo_entity.main_pivot['main_tag'])
+        self.assertIsNotNone(geo_entity.near_pivot['main_tag'])
 
 
 if __name__ == "__main__":
-  unittest.main()
+    unittest.main()

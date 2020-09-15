@@ -53,8 +53,10 @@ class RVSPath:
         else:
             avoid_instruction = ""
 
-        if self.number_intersections>=1:
-            intersection_instruction = "and walk straight for about {0} intersection, ".format(self.number_intersections)
+        if self.number_intersections==1:
+            intersection_instruction = "and walk straight to the next intersections, ".format(self.number_intersections)
+        elif self.number_intersections>1:
+            intersection_instruction = "and walk straight for {0} intersections, ".format(self.number_intersections)
         else:
             intersection_instruction = ""
 

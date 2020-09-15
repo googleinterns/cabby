@@ -15,7 +15,6 @@
 '''Library to support sampling points, creating routes between them and pivots
 along the path and near the goal.'''
 
-
 from geopandas import GeoDataFrame
 import geopandas as gpd
 import json
@@ -30,13 +29,11 @@ from shapely.geometry.point import Point
 from shapely import geometry
 import sys
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-from cabby.geo import item
-from cabby.geo import util
-from cabby.geo import geo_item
-from cabby.geo.map_processing import map_structure
 
+from cabby.geo.map_processing import map_structure
+from cabby.geo import geo_item
+from cabby.geo import util
+from cabby.geo import item
 
 _Geo_DataFrame_Driver = "GPKG"
 
@@ -74,7 +71,7 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
     # the dataframe numerically
     route_nodes['sort'] = route_nodes['osmid'].map(sorterIndex)
 
-    route_nodes.sort_values(['sort'], inplace=True)
+    route_nodes = route_nodes.sort_values(['sort'])
 
     return route_nodes
 
@@ -120,7 +117,7 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
     # Find nodes whithin 2000 meter path distance.
     outer_circle_graph = ox.truncate.truncate_graph_dist(
         map.nx_graph, dest, max_dist=2000, weight='length')
-    
+
     outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
 
     try:
@@ -368,34 +365,57 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
 
     return main_pivot, near_pivot, beyond_pivot
 
-def get_number_interesctions_past(main_pivot: Dict, route: GeoDataFrame, map: map_structure.Map) -> int:
+
+def get_number_interesctions_past(main_pivot: Dict, route: GeoDataFrame, map: map_structure.Map, end_point: Point) -> int:
     '''Return the number of intersections between the main_pivot and goal. If the main_pivot and goal are on different streets return -1.
     Arguments:
       main_pivot: The pivot along the route.
       route: The route along which a landmark will be chosen.
       map: The map of a specific region.
+      end_point: The goal location.
     Returns:
       The number of intersections between the main_pivot and goal. If the main_pivot and goal are on different streets return -1.
     '''
-    dist = route['geometry'].apply(lambda x: x.distance(main_pivot['geometry']))
+    dist = route['geometry'].apply(
+        lambda x: x.distance(main_pivot['geometry']))
     pivot_idx = dist.idxmin().tolist()
     pivot_goal_route = route.loc[pivot_idx:]
 
     if pivot_goal_route.shape[0] <= 1:
         return -1
 
-    # Check if goal and pivot are on the same street.
-    edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(lambda x: set(map.edges[map.edges['u']==x]['osmid'].tolist()))
+    # Check if main pivot is in the pivot_goal_route segment.
+    segment_pivot = LineString(pivot_goal_route['geometry'].iloc[0:2].values)
+    number_intersection = - \
+        util.project_point_in_segment(
+            segment_pivot, main_pivot['geometry'].centroid)
 
-    pivot_streets = edges_in_pivot_goal_route.iloc[0]
-    goal_streets = edges_in_pivot_goal_route.iloc[-1]
-    common_streets = pivot_streets & goal_streets
-    if not common_streets:
+    # Check if main end point is in the pivot_goal_route segment.
+    segment_goal = LineString(pivot_goal_route['geometry'].iloc[-2:].values)
+    number_intersection -= util.project_point_in_segment(
+        segment_goal, end_point['centroid'])
+
+    try:
+        # Check if goal and pivot are on the same street.
+        edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(
+            lambda x: set(map.edges[map.edges['u'] == x]['osmid'].tolist()))
+
+        pivot_streets = edges_in_pivot_goal_route.iloc[0]
+        goal_streets = edges_in_pivot_goal_route.iloc[-1]
+        common_streets = pivot_streets & goal_streets
+        if not common_streets:
+            return -1
+
+        number_intersection += edges_in_pivot_goal_route.apply(
+            lambda x: len(x - common_streets) > 0).count()
+
+        if number_intersection <= 0:
+            return -1
+    except Exception as e:
+        print(e)
         return -1
-    
-    streets_not_main_path = edges_in_pivot_goal_route.apply(lambda x: len(x - common_streets)>0).count()    
 
-    return streets_not_main_path
+    return number_intersection
 
 
 def get_cardinal_direction(start_point: Point, end_point: Point) -> Text:
@@ -456,8 +476,9 @@ def get_points_and_route(map: map_structure.Map) -> Optional[item.RVSPath]:
         return None
     main_pivot, near_pivot, beyond_pivot = result
 
-    # Get number of intersections between main pivot and goal location. 
-    number_intersections = get_number_interesctions_past(main_pivot, route, map)
+    # Get number of intersections between main pivot and goal location.
+    number_intersections = get_number_interesctions_past(
+        main_pivot, route, map, end_point)
 
     # Get cardinal direction.
     cardinal_direction = get_cardinal_direction(start_point, end_point)
@@ -540,6 +561,7 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
         entity = get_single_sample(map)
         if entity is None:
             continue
+        print(counter)
         counter += 1
         gdf_start_list = gdf_start_list.append(entity.tags_start,
                                                ignore_index=True)
@@ -571,3 +593,9 @@ def print_instructions(path: Text):
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
 
+
+# map_region = map_structure.Map(
+#     "Pittsburgh", 18, "/home/tzuf_google_com/dev/cabby/cabby/geo/map_processing/poiTestData/")
+
+# # Create a file with multile layers of data.
+# generate_and_save_rvs_routes("/mnt/hackney/data/cabby/pathData/v7/pittsburgh_geo_paths.gpkg", map_region, 40)
