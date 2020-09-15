@@ -155,7 +155,7 @@ def get_landmark_if_tag_exists(gdf: GeoDataFrame, tag: Text, main_tag:
     return None
 
 
-def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[Dict]:
+def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[Dict[Text, Any]]:
     '''Select a landmark from a set of landmarks by priority.
     Arguments:
       df_pivots: The set of landmarks.
@@ -180,7 +180,7 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[Dict]:
     return pivot
 
 def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> \
-        Optional[Dict]:
+        Optional[Dict[Text, Any]]:
     '''Return a picked landmark near the end_point.
     Arguments:
       map: The map of a specific region.
@@ -265,7 +265,6 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
     if main_pivot is None or near_pivot is None:
         return None
 
-    main_pivot = main_pivot
     return main_pivot, near_pivot
 
 
