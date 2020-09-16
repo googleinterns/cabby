@@ -73,7 +73,7 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
   # the dataframe numerically
   route_nodes['sort'] = route_nodes['osmid'].map(sorterIndex)
 
-  route_nodes.sort_values(['sort'], inplace=True)
+  route_nodes = route_nodes.sort_values(['sort'])
 
   return route_nodes
 
@@ -191,10 +191,15 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[Dict[Text, Any]]:
     pivot = get_landmark_if_tag_exists(df_pivots, main_tag, 'name',
                        named_tag)
     if pivot is not None:
+      if pivot['geometry'] is None:
+          pivot['centroid'] = Point()
+      elif isinstance(pivot['geometry'], Point):
+        pivot['centroid'] = pivot['geometry']
+      else:
+        pivot['centroid'] = pivot['geometry'].centroid
       return pivot.to_dict('records')[0]
 
   return pivot
-
 
 def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> \
     Optional[Dict[Text, Any]]:

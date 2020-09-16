@@ -4,7 +4,8 @@ pytype cabby
 # RVS
 bazel build cabby/rvs:*
 bazel query cabby/rvs:* | xargs bazel test
-bazel-bin/cabby/rvs/generate_rvs --start_lat 40.753628 --start_lon -73.985085 --goal_lat 40.748432 --goal_lon -73.98247
+bazel-bin/cabby/rvs/generate_rvs --start_lat 44.49582 --start_lon 11.33697 
+--goal_lat 44.49268 --goal_lon 11.34365 --region Bologna --min_s2_level 18 --directory "./cabby/geo/map_processing/poiTestData/" 
 
 # Geo
 bazel-bin/cabby/geo/geo_computation --orig_lat 40.749102 --orig_lon -73.984076 -dest_lat 40.748432 --dest_lon -73.982473
@@ -19,4 +20,3 @@ bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles=New_York_Stock_E
 
 # Wikigeo
 bazel-bin/cabby/data/extract_wikigeo_contexts --region Bologna --path bologna.json
-

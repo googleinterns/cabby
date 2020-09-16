@@ -222,9 +222,7 @@ class Map:
     path = self.get_valid_path(dir_name, '_edges', '.geojson')
     if not os.path.exists(path):
       # Drop columns with list type.
-      self.edges.drop(['highway', 'service', 'oneway', 'lanes', 'bridge',
-               'access', 'est_width', 'name', 'maxspeed', 'ref'],
-              axis=1, inplace=True)
+      self.edges.drop(self.edges.columns.difference(['osmid','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
       self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
       self.edges.to_file(path, driver='GeoJSON')
     else:
