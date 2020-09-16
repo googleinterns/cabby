@@ -56,23 +56,6 @@ class RVSPath:
     )
 
     # Create centroid point.
-    if isinstance(self.main_pivot['geometry'], Point):
-      self.main_pivot['centroid'] = self.main_pivot['geometry']
-    else:
-      self.main_pivot['centroid'] = self.main_pivot['geometry'].centroid
-
-    if isinstance(self.near_pivot['geometry'], Point):
-      self.near_pivot['centroid'] = self.near_pivot['geometry']
-    else:
-      self.near_pivot['centroid'] = self.near_pivot['geometry'].centroid
-
-    if self.beyond_pivot['geometry'] is None:
-      self.beyond_pivot['centroid']=Point()
-    elif isinstance(self.beyond_pivot['geometry'], Point):
-      self.beyond_pivot['centroid']=self.beyond_pivot['geometry']
-    else:
-      self.beyond_pivot['geometry'].centroid
-
     if "main_tag" in self.beyond_pivot:
       self.beyond_pivot['main_tag']=self.beyond_pivot['main_tag']
     else:
