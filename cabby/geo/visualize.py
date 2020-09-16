@@ -40,12 +40,14 @@ def read_file(path: Text) -> gpd.GeoDataFrame:
     route = gpd.read_file(path, layer='route')
     main = gpd.read_file(path, layer='main')
     near = gpd.read_file(path, layer='near')
+    beyond = gpd.read_file(path, layer='beyond')
 
     start = start.rename(columns={'geometry': 'start_point'})
     start['end_point'] = end['geometry']
     start['route'] = route['geometry']
     start['main_pivot_point'] = main['geometry']
     start['near_pivot_point'] = near['geometry']
+    start['beyond_pivot_point'] = beyond['geometry']
 
     return start
 
@@ -59,11 +61,11 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
     '''
 
     mid_point = util.midpoint(gdf.end_point, gdf.start_point)
-    zoom_location = util.list_yx_from_point(mid_point)
+    zoom_location = util.list_yx_from_point(gdf.end_point)
 
     # create a map
     map_osm = folium.Map(location=zoom_location,
-                         zoom_start=15, tiles='OpenStreetMap')
+                         zoom_start=18, tiles='OpenStreetMap')
 
     # draw the points
     start_point = util.list_yx_from_point(gdf.start_point)
@@ -81,6 +83,12 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
     folium.Marker(near_pivot, popup='near pivot: '+gdf.near_pivot, \
        icon=folium.Icon(
         color='red', icon='info-sign')).add_to(map_osm)
+    
+    if not gdf.beyond_pivot_point is None: 
+      beyond_pivot = util.list_yx_from_point(gdf.beyond_pivot_point)
+      folium.Marker(beyond_pivot, popup='beyond pivot: '+gdf.near_pivot, \
+        icon=folium.Icon(
+          color='green', icon='info-sign')).add_to(map_osm)
 
     place_lng, place_lat = gdf.route.exterior.xy
 

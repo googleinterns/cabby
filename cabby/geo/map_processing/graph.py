@@ -34,126 +34,126 @@ START_BIT = NUM_POS_BITS - 2
 
 class MapNode:
 
-    # TODO(jasonbaldridge): Init using builder pattern.
-    def __init__(self, parent):
-        self.parent = parent
-        self.neighbors = [None, None, None, None, None, None, None, None]
-        self.children = [None, None, None, None]
-        self.poi = []
-        self.streets = []
-        self.level = 0
-        if self.parent is not None:
-            self.level = self.parent.level + 1
+  # TODO(jasonbaldridge): Init using builder pattern.
+  def __init__(self, parent):
+    self.parent = parent
+    self.neighbors = [None, None, None, None, None, None, None, None]
+    self.children = [None, None, None, None]
+    self.poi = []
+    self.streets = []
+    self.level = 0
+    if self.parent is not None:
+      self.level = self.parent.level + 1
 
 
 class MapGraph:
 
-    def __init__(self):
-        self.faces = tuple([MapNode(None) for x in range(0, NUM_FACES)])
+  def __init__(self):
+    self.faces = tuple([MapNode(None) for x in range(0, NUM_FACES)])
 
-    def get_cell_neighbors(self, cell: s2.S2Cell) -> Sequence[MapNode]:
-        '''Get eight S2Cell neighbors for a given cell. 
-        Arguments:
-          cell(S2Cell): The relative S2Cell to which the S2Cell neighbors will 
-          refer to.
-        Returns:
-          A sequence of eight S2Cell2 neighbors.
-        '''
+  def get_cell_neighbors(self, cell: s2.S2Cell) -> Sequence[MapNode]:
+    '''Get eight S2Cell neighbors for a given cell. 
+    Arguments:
+      cell(S2Cell): The relative S2Cell to which the S2Cell neighbors will 
+      refer to.
+    Returns:
+      A sequence of eight S2Cell2 neighbors.
+    '''
 
-        four_neighbors = cell.GetEdgeNeighbors()
-        eight_neighbors = four_neighbors + [
-            four_neighbors[0].next(), four_neighbors[3].next(),
-            four_neighbors[1].prev(), four_neighbors[3].prev()
-        ]
+    four_neighbors = cell.GetEdgeNeighbors()
+    eight_neighbors = four_neighbors + [
+      four_neighbors[0].next(), four_neighbors[3].next(),
+      four_neighbors[1].prev(), four_neighbors[3].prev()
+    ]
 
-        eight_neighbors_nodes = [self.search(cell) for cell in eight_neighbors]
-        return eight_neighbors_nodes
+    eight_neighbors_nodes = [self.search(cell) for cell in eight_neighbors]
+    return eight_neighbors_nodes
 
-    def add_street(self, cells: Sequence[s2.S2Cell], osmid_of_street: int):
-        '''Add a street POI to multiple cells. 
-        Arguments:
-          cells(sequence): The S2Cells to which the street is to be added.
-          osmid_of_street(int): The osmid of the street that is to be added to
-          the S2Cells.
-        '''
+  def add_street(self, cells: Sequence[s2.S2Cell], osmid_of_street: int):
+    '''Add a street POI to multiple cells. 
+    Arguments:
+      cells(sequence): The S2Cells to which the street is to be added.
+      osmid_of_street(int): The osmid of the street that is to be added to
+      the S2Cells.
+    '''
 
-        for cell in cells:
-            curr_node = self.faces[cell.face()]
+    for cell in cells:
+      curr_node = self.faces[cell.face()]
 
-            # Calculate the last position bit for the current level.
-            # For each level 2 unique bits (=4 children) are reserved.
-            last_bit = NUM_POS_BITS - 2 * cell.level()
+      # Calculate the last position bit for the current level.
+      # For each level 2 unique bits (=4 children) are reserved.
+      last_bit = NUM_POS_BITS - 2 * cell.level()
 
-            for i in range(START_BIT, last_bit - 1, -2):
-                # Get value of unique bits in the current level.
-                value_unique_bits = (cell.id() >> i) & 3
+      for i in range(START_BIT, last_bit - 1, -2):
+        # Get value of unique bits in the current level.
+        value_unique_bits = (cell.id() >> i) & 3
 
-                # Check if the child node exists and if not add a child node.
-                if not curr_node.children[value_unique_bits]:
-                    curr_node.children[value_unique_bits] = MapNode(curr_node)
+        # Check if the child node exists and if not add a child node.
+        if not curr_node.children[value_unique_bits]:
+          curr_node.children[value_unique_bits] = MapNode(curr_node)
 
-                    # Connect the cell to its neighbors.
-                    curr_node.neighbors = self.get_cell_neighbors(cell)
+          # Connect the cell to its neighbors.
+          curr_node.neighbors = self.get_cell_neighbors(cell)
 
-                # Descend one level by changing th current node to be the child
-                # node.
-                curr_node = curr_node.children[value_unique_bits]
+        # Descend one level by changing th current node to be the child
+        # node.
+        curr_node = curr_node.children[value_unique_bits]
 
-            # Connect the cell to the street.
-            curr_node.streets.append(osmid_of_street)
+      # Connect the cell to the street.
+      curr_node.streets.append(osmid_of_street)
 
-    def add_poi(self, cells: Sequence[s2.S2Cell], poi: int):
-        '''Add a POI to multiple cells. 
-        Arguments:
-          cells(sequence): The S2Cells to which the POI will be added.
-          poi(int): an osmid of the POI that will be added to the S2Cells.
-        '''
+  def add_poi(self, cells: Sequence[s2.S2Cell], poi: int):
+    '''Add a POI to multiple cells. 
+    Arguments:
+      cells(sequence): The S2Cells to which the POI will be added.
+      poi(int): an osmid of the POI that will be added to the S2Cells.
+    '''
 
-        for cell in cells:
-            curr_node = self.faces[cell.face()]
+    for cell in cells:
+      curr_node = self.faces[cell.face()]
 
-            # Calculate the last position bit for the current level.
-            # For each level 2 unique bits (=4 children) are reserved.
-            last_bit = NUM_POS_BITS - 2 * cell.level()
+      # Calculate the last position bit for the current level.
+      # For each level 2 unique bits (=4 children) are reserved.
+      last_bit = NUM_POS_BITS - 2 * cell.level()
 
-            for i in range(START_BIT, last_bit - 1, -2):
-                # Get value of unique bits in the current level.
-                value_unique_bits = (cell.id() >> i) & 3
+      for i in range(START_BIT, last_bit - 1, -2):
+        # Get value of unique bits in the current level.
+        value_unique_bits = (cell.id() >> i) & 3
 
-                # Check if the child node exists and if not add a child node.
-                if not curr_node.children[value_unique_bits]:
-                    curr_node.children[value_unique_bits] = MapNode(curr_node)
+        # Check if the child node exists and if not add a child node.
+        if not curr_node.children[value_unique_bits]:
+          curr_node.children[value_unique_bits] = MapNode(curr_node)
 
-                    # Connect the cell to its neighbors.
-                    curr_node.neighbors = self.get_cell_neighbors(cell)
+          # Connect the cell to its neighbors.
+          curr_node.neighbors = self.get_cell_neighbors(cell)
 
-                # Descend one level by changing th current node to be the child
-                # node.
-                curr_node = curr_node.children[value_unique_bits]
+        # Descend one level by changing th current node to be the child
+        # node.
+        curr_node = curr_node.children[value_unique_bits]
 
-            # Connect the cell to the POI.
-            curr_node.poi.append(poi)
+      # Connect the cell to the POI.
+      curr_node.poi.append(poi)
 
-    def search(self, cell: s2.S2Cell) -> Optional[MapNode]:
-        '''Get all POI for a specific cell. 
-        Arguments:
-          cell(S2Cell): The S2Cell to search for in the graph.
-        Returns:
-          The Node in the graph that contains the S2Cell.
-        '''
+  def search(self, cell: s2.S2Cell) -> Optional[MapNode]:
+    '''Get all POI for a specific cell. 
+    Arguments:
+      cell(S2Cell): The S2Cell to search for in the graph.
+    Returns:
+      The Node in the graph that contains the S2Cell.
+    '''
 
-        curr_node = self.faces[cell.face()]
+    curr_node = self.faces[cell.face()]
 
-        # Calculate the last position bit for the current level. For each level
-        # 2 unique bits (=4 children) are reserved.
-        last_bit = NUM_POS_BITS - 2 * cell.level()
+    # Calculate the last position bit for the current level. For each level
+    # 2 unique bits (=4 children) are reserved.
+    last_bit = NUM_POS_BITS - 2 * cell.level()
 
-        for i in range(START_BIT, last_bit - 1, -2):
-            value_unique_bits = (cell.id() >> i) & 3
+    for i in range(START_BIT, last_bit - 1, -2):
+      value_unique_bits = (cell.id() >> i) & 3
 
-            curr_node = curr_node.children[value_unique_bits]
+      curr_node = curr_node.children[value_unique_bits]
 
-            if not curr_node:
-                return None
+      if not curr_node:
+        return None
 
-        return curr_node
+    return curr_node
