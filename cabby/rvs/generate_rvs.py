@@ -99,7 +99,7 @@ def main(argv):
   if result is None:
     sys.exit("No pivots found.")
 
-  main_pivot, near_pivot = result
+  main_pivot, near_pivot, beyond_pivot = result
 
   start_pivot_bearing = util.get_bearing(start, near_pivot["centroid"])
   pivot_dest_bearing = util.get_bearing(

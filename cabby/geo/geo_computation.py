@@ -41,27 +41,26 @@ flags.mark_flag_as_required("orig_lon")
 flags.mark_flag_as_required("dest_lat")
 flags.mark_flag_as_required("dest_lon")
 def main(argv):
-    del argv  # Unused.
+  del argv  # Unused.
 
-    # Create logger
-    geo_logger = logger.create_logger("geo_computation.log", 'geo_computation')
+  # Create logger
+  geo_logger = logger.create_logger("geo_computation.log", 'geo_computation')
 
-    geo_logger.info('Obtaining graph for Manhattan.')
-    graph = ox.graph_from_place('Manhattan, New York City, New York, USA')
+  geo_logger.info('Obtaining graph for Manhattan.')
+  graph = ox.graph_from_place('Manhattan, New York City, New York, USA')
 
-    geo_logger.info('Converting the graph to nodes and edge GeoDataFrames.')
-    nodes, _ = ox.graph_to_gdfs(graph)
+  geo_logger.info('Converting the graph to nodes and edge GeoDataFrames.')
+  nodes, _ = ox.graph_to_gdfs(graph)
 
-    origin = Point(FLAGS.orig_lon, FLAGS.orig_lat)
-    destination = Point(FLAGS.dest_lon, FLAGS.dest_lat)
+  origin = Point(FLAGS.orig_lon, FLAGS.orig_lat)
+  destination = Point(FLAGS.dest_lon, FLAGS.dest_lat)
 
-    geo_logger.info(f"Computing route between {origin} and {destination}.")
-    route = walk.compute_route(origin, destination, graph, nodes)
+  geo_logger.info(f"Computing route between {origin} and {destination}.")
+  route = walk.compute_route(origin, destination, graph, nodes)
 
-    geo_logger.info("Points obtained for the route.")
-    
-    for point in route['geometry'].values:
-      geo_logger.info(point)
+  geo_logger.info("Points obtained for the route.")
+  for point in route['geometry'].values:
+    geo_logger.info(point)
 
 if __name__ == '__main__':
-    app.run(main)
+  app.run(main)
