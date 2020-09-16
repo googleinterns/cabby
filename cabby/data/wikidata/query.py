@@ -234,6 +234,7 @@ _PITTSBURGH_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """]
 
+
 _BOLOGNA_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
