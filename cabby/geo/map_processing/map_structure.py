@@ -27,6 +27,11 @@ from shapely import wkt
 import sys
 from typing import Dict, Tuple, Sequence, Text, Optional
 
+from pandarallel import pandarallel
+pandarallel.initialize()
+
+sys.path.append("/home/tzuf_google_com/dev/cabby")
+
 from cabby import logger
 from cabby.geo import util
 from cabby.geo.map_processing import graph
@@ -54,13 +59,14 @@ class Map:
                 ccw=True)
         else:  # Bologna.
             self.polygon_area = box(
-                miny=44.4902, minx=11.3333, maxy=44.5000, maxx=11.3564, 
+                miny=44.4902, minx=11.3553, maxy=44.5000, maxx=11.3564, 
                 ccw=True)
 
         if load_directory is None:
             self.poi, self.streets = self.get_poi()
             self.nx_graph = ox.graph_from_polygon(
                 self.polygon_area, network_type='walk')
+            self.add_poi_to_graph()
             self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
 
             # Find closest nodes to POI.
@@ -83,6 +89,8 @@ class Map:
         tags = {'name': True}
 
         osm_poi = ox.pois.pois_from_polygon(self.polygon_area, tags=tags)
+        osm_poi = osm_poi.set_crs(epsg=4326)
+
         osm_poi_named_entities = osm_poi[osm_poi['name'].notnull()]
         osm_highway = osm_poi_named_entities['highway']
         osm_poi_no_streets = osm_poi_named_entities[osm_highway.isnull()]
@@ -93,6 +101,133 @@ class Map:
             lambda x: x if isinstance(x, Point) else x.centroid)
 
         return osm_poi_no_streets, osm_poi_streets
+    
+    def add_single_poi_to_graph(self, single_poi: pd.Series) -> int:
+        '''Add single POI to nx_graph..
+        Arguments:
+          single_poi: a single POI to be added to graph.
+        Returns:
+          The new osmid.
+        '''
+        
+        # Project POI on to the closest edge in graph.
+        point = single_poi['centroid']
+        near_edge_u, near_edge_v, near_edge_key, line = \
+        ox.distance.get_nearest_edge(
+        self.nx_graph, util.tuple_from_point(point), return_geom=True)
+
+        edge_id = (near_edge_u,near_edge_v, near_edge_key)
+        near_edge = self.nx_graph.edges[edge_id]
+
+        projected_point = line.interpolate(line.project(point))
+
+        max_node_number = max(list(self.nx_graph.nodes.keys()))
+        poi_osmid = single_poi['osmid']
+        poi_osmid =util.concat_numbers(max_node_number, poi_osmid) 
+        
+        # Add node POI to graph.
+        self.nx_graph.add_node(
+                              poi_osmid,
+                              highway = "poi",
+                              osmid = poi_osmid, 
+                              x = point.x , 
+                              y = point.y
+                              )
+        
+        projected_point_osmid = util.concat_numbers(max_node_number+1,poi_osmid)
+
+        self.nx_graph.add_node(
+                              projected_point_osmid, 
+                              highway = near_edge['highway'], 
+                              osmid = projected_point_osmid, 
+                              x = projected_point.x, 
+                              y = projected_point.y
+                              ) 
+
+        self.nx_graph.add_edge(
+                              u_for_edge = poi_osmid, 
+                              v_for_edge = projected_point_osmid, 
+                              length = 1e-8, 
+                              oneway =False, 
+                              osmid = poi_osmid, 
+                              highway = "poi"
+                              )
+
+        self.nx_graph.add_edge(
+                              u_for_edge = projected_point_osmid, 
+                              v_for_edge = poi_osmid, 
+                              length = 1e-8, 
+                              oneway =False, 
+                              osmid = poi_osmid, 
+                              highway = "poi"
+                              ) 
+
+
+        # Get nearest points - u and v.
+        u_node = self.nx_graph.nodes[near_edge_u]
+        u_point = Point(u_node['x'], u_node['y'])
+        
+        v_node = self.nx_graph.nodes[near_edge_v]
+        v_point = Point(v_node['x'], v_node['y'])
+
+        # Calculate distance between projected point and u and v.
+        dist_u = util.get_distance_m(u_point, projected_point)
+        dist_v = util.get_distance_m(v_point, projected_point)
+
+        # Add edges between projected point and u and v, on the street segment. 
+
+        name_street = near_edge['name'] if 'name' in near_edge else ""
+      
+        self.nx_graph.add_edge(
+                              u_for_edge = near_edge_u, 
+                              v_for_edge = projected_point_osmid, 
+                              length = dist_u, 
+                              osmid = near_edge['osmid'], 
+                              name = name_street, 
+                              highway = near_edge['highway'], 
+                              oneway = False
+                              )
+        
+        self.nx_graph.add_edge(
+                              u_for_edge = projected_point_osmid, 
+                              v_for_edge = near_edge_u, 
+                              length = dist_u, 
+                              osmid = near_edge['osmid'], 
+                              name = name_street, 
+                              highway = near_edge['highway'], 
+                              oneway = False
+                              )
+
+        self.nx_graph.add_edge(
+                              u_for_edge = near_edge_v,
+                              v_for_edge =  projected_point_osmid, 
+                              length = dist_v, 
+                              osmid = near_edge['osmid'], 
+                              name = name_street, 
+                              highway = near_edge['highway'], 
+                              oneway = False
+                              )
+
+        self.nx_graph.add_edge(
+                              u_for_edge= projected_point_osmid, 
+                              v_for_edge = near_edge_v, 
+                              length = dist_v, 
+                              osmid = near_edge['osmid'], 
+                              name = name_street, 
+                              highway = near_edge['highway'], 
+                              oneway = False
+                              )
+
+        # Remove u-v edge.
+        self.nx_graph.remove_edge(near_edge_u, near_edge_v)
+        self.nx_graph.remove_edge(near_edge_v ,near_edge_u)
+
+        return poi_osmid
+
+    def add_poi_to_graph(self):
+        '''Add all POI to nx_graph.'''
+
+        self.poi['osmid'] = self.poi.parallel_apply(self.add_single_poi_to_graph, axis =1)
 
     def create_S2Graph(self, level: int):
         '''Helper funcion for creating S2Graph.'''
@@ -258,4 +393,5 @@ def covert_string_to_list(string_list: Text) -> Sequence:
     string_list = string_list.split(",")
     map_object = map(int, string_list)
     return list(map_object)
+
 
