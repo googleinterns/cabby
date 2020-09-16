@@ -25,7 +25,7 @@ from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely import wkt
 import sys
-from typing import Dict, Tuple, Sequence, Text, Optional
+from typing import Dict, Tuple, Sequence, Text, Optional, Any
 
 from cabby import logger
 from cabby.geo import util
@@ -34,14 +34,16 @@ from cabby import logger
 
 map_logger = logger.create_logger("map.log", 'map')
 
+OSM_CRS = 4326 # Coordinate reference system.
 
 class Map:
 
     def __init__(self, map_name: Text, level: int, load_directory: Text = None):
-        assert map_name == "Manhattan" or map_name == "Pittsburgh" or \
-            map_name == "Bologna"
+        assert (map_name == "Manhattan" or map_name == "Pittsburgh" or
+                map_name == "Bologna")
         self.map_name = map_name
         self.s2_graph = None
+        self.level = level
 
         if map_name == "Manhattan":
             self.polygon_area = wkt.loads(
@@ -64,18 +66,25 @@ class Map:
             self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
 
             # Find closest nodes to POI.
-            self.poi['node'] = self.poi['centroid'].apply(lambda x:
-                                                          ox.distance.
-                                                          get_nearest_node(self.
-                                                          nx_graph, util.
-                                                          tuple_from_point(x)))
-                                                                                
+            self.poi['node'] = self.poi['centroid'].apply(self.closest_nodes)
+
         else:
             self.load_map(load_directory)
         self.create_S2Graph(level)
 
-        self.nodes = self.nodes.set_crs(epsg=4326)
-        self.edges = self.edges.set_crs(epsg=4326)
+        self.nodes = self.nodes.set_crs(epsg=OSM_CRS)
+        self.edges = self.edges.set_crs(epsg=OSM_CRS)
+
+    def closest_nodes(self, point: Point) -> int:
+        '''Find closest nodes to POI. 
+        Arguments:
+          point: The point to which a closest node will be retrived.
+        Returns:
+          The Node id closest to point.
+        '''
+        ""
+        point_xy = util.tuple_from_point(point)
+        return ox.distance.get_nearest_node(self.nx_graph, point_xy)
 
     def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
         '''Helper funcion for extracting POI for the defined place.'''
@@ -93,29 +102,42 @@ class Map:
             lambda x: x if isinstance(x, Point) else x.centroid)
 
         return osm_poi_no_streets, osm_poi_streets
+    
+    def get_cellids_for_poi(self, geometry: Any) -> Optional[Sequence[int]]:
+        '''get cellids for POI. 
+        Arguments:
+          geometry: The geometry to which a cellids will be retrived.
+        Returns:
+          The the cellids.
+        '''
+        ""
+        if isinstance(geometry, Point):
+            return util.cellid_from_point(geometry, self.level)
+        else:
+            return util.cellid_from_polygon(geometry, self.level)
+    
+    def get_cellids_for_streets(
+        self, geometry: Any) -> Optional[Sequence[int]]:
+        '''get cellids for streets. 
+        Arguments:
+          geometry: The geometry to which a cellids will be retrived.
+        Returns:
+          The the cellids.
+        '''
+        ""
+        if isinstance(geometry, Point):
+            return util.cellid_from_point(geometry, self.level)
+        else:
+            return util.cellid_from_polygon(geometry, self.level)
 
     def create_S2Graph(self, level: int):
         '''Helper funcion for creating S2Graph.'''
 
         # Get cellids for POI.
-        self.poi['cellids'] = self.poi['geometry'].apply(lambda x: util.
-                                                         cellid_from_point(
-                                                             x, level) if 
-                                                             isinstance(x, 
-                                                             Point) else util.
-                                                             cellid_from_polygon
-                                                             (x,level))
+        self.poi['cellids'] = self.poi['geometry'].apply(self.get_cellids_for_poi)
 
         # Get cellids for streets.
-        self.streets['cellids'] = self.streets['geometry'].apply(lambda x: util.
-                                                                 cellid_from_point
-                                                                 (x, level) if 
-                                                                 isinstance(x, 
-                                                                 Point) else 
-                                                                 util.
-                                                                 cellid_from_polyline
-                                                                 (x, level))
-
+        self.streets['cellids'] = self.streets['geometry'].apply(self.get_cellids_for_streets)
 
         # Filter out entities that we didn't mange to get cellids covering.
         self.poi = self.poi[self.poi['cellids'].notnull()]
@@ -147,9 +169,9 @@ class Map:
         base_filename = self.map_name.lower() + name_ending
 
         # Check if directory is valid.
-        assert os.path.exists(dir_name), "Current directory is: {0}. The \
-        directory {1} doesn't exist.".format(
-            os.getcwd(), dir_name)
+        assert os.path.exists(dir_name), (f"Current directory is: {os.getcwd()}."
+        f" The directory {dir_name} doesn't exist.")
+
 
         # Create path.
         path = os.path.join(dir_name, base_filename + file_ending)
@@ -168,7 +190,7 @@ class Map:
         if not os.path.exists(path):
             pd_poi.to_pickle(path)
         else:
-            map_logger.info("path {0} already exist.".format(path))
+            map_logger.info("Path {0} already exists.".format(path))
 
         # Write streets.
         pd_streets = copy.deepcopy(self.streets)
@@ -179,7 +201,7 @@ class Map:
         if not os.path.exists(path):
             pd_streets.to_pickle(path)
         else:
-            map_logger.info("path {0} already exist.".format(path))
+            map_logger.info("Path {0} already exists.".format(path))
 
         # Write graph.
         base_filename = self.map_name.lower() + "_graph"
@@ -187,26 +209,26 @@ class Map:
         if not os.path.exists(path):
             nx.write_gpickle(self.nx_graph, path)
         else:
-            map_logger.info("path {0} already exist.".format(path))
+            map_logger.info("Path {0} already exists.".format(path))
 
         # Write nodes.
         path = self.get_valid_path(dir_name, '_nodes', '.geojson')
         if not os.path.exists(path):
             self.nodes.to_file(path, driver='GeoJSON')
         else:
-            map_logger.info("path {0} already exist.".format(path))
+            map_logger.info("Path {0} already exists.".format(path))
 
         # Write edges.
         path = self.get_valid_path(dir_name, '_edges', '.geojson')
         if not os.path.exists(path):
             # Drop columns with list type.
             self.edges.drop(['highway', 'service', 'oneway', 'lanes', 'bridge',
-                             'access', 'est_width', 'name', 'maxspeed', 'ref'], 
-                             axis=1, inplace=True)
+                             'access', 'est_width', 'name', 'maxspeed', 'ref'],
+                            axis=1, inplace=True)
             self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
             self.edges.to_file(path, driver='GeoJSON')
         else:
-            map_logger.info("path {0} already exist.".format(path))
+            map_logger.info("Path {0} already exists.".format(path))
 
     def load_map(self, dir_name: Text):
         '''Load POI from disk.'''
@@ -214,7 +236,7 @@ class Map:
         # Load POI.
         path = self.get_valid_path(dir_name, '_poi', '.pkl')
         assert os.path.exists(
-            path), "path {0} doesn't exist.".format(path)
+            path), "Path {0} doesn't exist.".format(path)
         poi_pandas = pd.read_pickle(path)
         poi_pandas['cellids'] = poi_pandas['cellids'].apply(
             lambda x: util.s2cells_from_cellids(x))
@@ -223,7 +245,7 @@ class Map:
         # Load streets.
         path = self.get_valid_path(dir_name, '_streets', '.pkl')
         assert os.path.exists(
-            path), "path {0} doesn't exist.".format(path)
+            path), "Path {0} doesn't exist.".format(path)
         streets_pandas = pd.read_pickle(path)
         streets_pandas['cellids'] = streets_pandas['cellids'].apply(
             lambda x: util.s2cells_from_cellids(x))
@@ -232,17 +254,17 @@ class Map:
         # Load graph.
         path = self.get_valid_path(dir_name, '_graph', '.gpickle')
         assert os.path.exists(
-            path), "path {0} doesn't exists".format(path)
+            path), "Path {0} doesn't exist".format(path)
         self.nx_graph = nx.read_gpickle(path)
 
         # Load nodes.
         path = self.get_valid_path(dir_name, '_nodes', '.geojson')
         assert os.path.exists(
-            path), "path {0} doesn't exist.".format(path)
+            path), "Path {0} doesn't exist.".format(path)
         self.nodes = gpd.read_file(path, driver='GeoJSON')
 
         # Load nodes.
         path = self.get_valid_path(dir_name, '_edges', '.geojson')
         assert os.path.exists(
-            path), "path {0} doesn't exist.".format(path)
+            path), "Path {0} doesn't exist.".format(path)
         self.edges = gpd.read_file(path, driver='GeoJSON')
