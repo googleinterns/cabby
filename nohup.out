@@ -1,0 +1,9 @@
+/opt/conda/envs/cabby/lib/python3.7/site-packages/geopandas/geodataframe.py:853: SettingWithCopyWarning: 
+A value is trying to be set on a copy of a slice from a DataFrame.
+Try using .loc[row_indexer,col_indexer] = value instead
+
+See the caveats in the documentation: https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+  super(GeoDataFrame, self).__setitem__(key, value)
+I0917 11:10:28.564728 139812131333952 utils.py:141] NumExpr defaulting to 4 threads.
+INFO: Pandarallel will run on 4 workers.
+INFO: Pandarallel will use Memory file system to transfer data between the main process and workers.

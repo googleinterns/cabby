@@ -59,7 +59,7 @@ class Map:
                 ccw=True)
         else:  # Bologna.
             self.polygon_area = box(
-                miny=44.4902, minx=11.3553, maxy=44.5000, maxx=11.3564, 
+                miny=44.4902, minx=11.3333, maxy=44.5000, maxx=11.3564,
                 ccw=True)
 
         if load_directory is None:
