@@ -25,8 +25,8 @@ from cabby.data.wikidata import query
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-  "region", None, ['Pittsburgh', 'Manhattan'],
-  "Map areas: Manhattan or Pittsburgh.")
+  "region", None, ['Pittsburgh', 'Manhattan, Bologna'],
+  "Map areas: Manhattan, Pittsburgh or Bologna.")
 
 # Required flags.
 flags.mark_flag_as_required("region")
