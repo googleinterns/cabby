@@ -21,7 +21,7 @@ from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import box, mapping, LineString
-from typing import Optional, Tuple, Sequence
+from typing import Optional, Tuple, Sequence, Any
 import webbrowser
 
 
@@ -307,3 +307,16 @@ def midpoint(p1: Point, p2: Point) -> Point:
       A lat-lng Point.
     '''
     return Point((p1.x+p2.x)/2, (p1.y+p2.y)/2)
+
+def check_if_geometry_in_polygon(geometry: Any, poly: Polygon) -> Polygon:
+  '''Check if geometry is intersects with polygon.
+  Arguments:
+    geometry: The geometry to check intersection against a polygon.
+    poly: The polygon that to check intersection against a geometry.
+  Returns:
+    A lat-lng Point.
+  '''
+  if isinstance(geometry, Point):
+    return poly.contains(geometry)
+  else:
+    geometry['geometry'].intersects(poly)

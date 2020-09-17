@@ -50,5 +50,5 @@ class GeoEntity:
       route,
       main_pivot,
       near_pivot,
-			beyond_pivot
+      beyond_pivot
     )

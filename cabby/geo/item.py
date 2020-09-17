@@ -60,26 +60,34 @@ class RVSPath:
         else:
             intersection_instruction = ""
 
-        self.instruction = \
-            "Starting at {0} walk {1} past {2} {3}and your goal is {4}, near {5}. " \
+        self.instruction = (
+            "Starting at {0} walk {1} past {2} {3}and your goal is {4}, near {5}. " 
             .format(self.start_point['name'], self.cardinal_direction, self.
                     main_pivot['main_tag'], intersection_instruction, self.end_point['name'],
                     self.near_pivot['main_tag']) + avoid_instruction
+        )
+
+        # Creat basic template instruction.
+        if "main_tag" in self.beyond_pivot:
+          avoid_instruction = "If you reached {0}, you have gone too far.".format(
+            self.beyond_pivot['main_tag'])
+        else:
+          avoid_instruction = ""
+
+        self.instruction = (
+          "Starting at {0} walk past {1} and your goal is {2}, near {3}. "
+          .format(self.start_point['name'], self.main_pivot['main_tag'], self.
+              end_point['name'], self.near_pivot['main_tag']) +
+              avoid_instruction
+        )
 
         # Create centroid point.
-        self.main_pivot['centroid'] = self.main_pivot['geometry'] if \
-            isinstance(self.main_pivot['geometry'], Point) else \
-            self.main_pivot['geometry'].centroid
-
-        self.near_pivot['centroid'] = self.near_pivot['geometry'] if \
-            isinstance(self.near_pivot['geometry'], Point) else \
-            self.near_pivot['geometry'].centroid
-
-        self.beyond_pivot['centroid'] = Point() if self.beyond_pivot['geometry'] is None else self.beyond_pivot['geometry'] if \
-            isinstance(self.beyond_pivot['geometry'], Point) else \
-            self.beyond_pivot['geometry'].centroid
-
-        self.beyond_pivot['main_tag'] = self.beyond_pivot['main_tag'] if "main_tag" in self.beyond_pivot else ""
+        if self.beyond_pivot['geometry'] is None:
+          self.beyond_pivot['centroid'] = Point()
+        if "main_tag" in self.beyond_pivot:
+          self.beyond_pivot['main_tag']=self.beyond_pivot['main_tag']
+        else:
+          self.beyond_pivot['main_tag']= ""
 
     @classmethod
     def from_points_route_pivots(cls, start, end, route, main_pivot,
