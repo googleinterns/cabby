@@ -30,12 +30,15 @@ from shapely import geometry
 import sys
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
+sys.path.append("/home/tzuf_google_com/dev/cabby")
+
 from cabby.geo.map_processing import map_structure
 from cabby.geo import geo_item
 from cabby.geo import util
 from cabby.geo import item
 
 _Geo_DataFrame_Driver = "GPKG"
+OSM_CRS = 32633 # UTM Zones (North).
 
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
@@ -196,7 +199,8 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoDataFrame]:
             elif isinstance(pivot['geometry'], Point):
                 pivot['centroid'] = pivot['geometry'].copy()
             else:
-                pivot['centroid'] = pivot['geometry'].centroid
+                geometry = pivot['geometry'].copy()
+                pivot['centroid'] = geometry.centroid
             return pivot.to_dict('records')[0]
 
     return pivot
@@ -216,7 +220,7 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: GeoDataFrame) -> \
         tags = {'name': True, 'wikidata': True,
                 'amenity': True, 'shop': True, 'tourism': True}
         poi = ox.pois.pois_from_point(util.tuple_from_point(
-            end_point['centroid']), tags=tags, dist=40)
+            end_point['centroid']), tags=tags, dist=40).set_crs(epsg=OSM_CRS, allow_override=True)
 
         # Remove streets and roads.
         poi = poi[poi['highway'].isnull()]
@@ -252,7 +256,7 @@ def get_pivot_along_route(
         bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
         tags = {'wikipedia': True, 'wikidata': True, 'brand': True,
                 'tourism': True, 'amenity': True, 'shop': True, 'name': True}
-        df_pivots = ox.pois.pois_from_polygon(bounding_box, tags=tags)
+        df_pivots = ox.pois.pois_from_polygon(bounding_box, tags=tags).set_crs(epsg=OSM_CRS, allow_override=True)
 
         # Polygon along the route.
         df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
@@ -306,7 +310,7 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
         bounds = poly.bounds
         bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
         df_pivots = ox.pois.pois_from_polygon(
-            bounding_box, tags={"name": True})
+            bounding_box, tags={"name": True}).set_crs(epsg=OSM_CRS, allow_override=True)
 
         # Remove streets.
         df_pivots = df_pivots[(df_pivots['highway'].isnull())]
@@ -366,11 +370,11 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
     # Get pivot near the goal location.
     near_pivot = get_pivot_near_goal(map, end_point)
 
-    # Get pivot located past the goal location and beyond the route.
-    beyond_pivot = get_pivot_beyond_goal(map, end_point, route)
-
     if main_pivot is None or near_pivot is None:
         return None
+
+    # Get pivot located past the goal location and beyond the route.
+    beyond_pivot = get_pivot_beyond_goal(map, end_point, route)
 
     return main_pivot, near_pivot, beyond_pivot
 
@@ -445,6 +449,7 @@ def get_points_and_route(map: map_structure.Map) -> Optional[item.RVSPath]:
                                                             beyond_pivot,
                                                             cardinal_direction,
                                                             number_intersections)
+    return rvs_path_entity
 
 
 def get_number_interesctions_past(main_pivot: Dict, route: GeoDataFrame, map: map_structure.Map, end_point: Point) -> int:
@@ -469,7 +474,7 @@ def get_number_interesctions_past(main_pivot: Dict, route: GeoDataFrame, map: ma
     segment_pivot = LineString(pivot_goal_route['geometry'].iloc[0:2].values)
     number_intersection = - \
         util.project_point_in_segment(
-            segment_pivot, main_pivot['geometry'].centroid)
+            segment_pivot, main_pivot['centroid'])
 
     # Check if main end point is in the pivot_goal_route segment.
     segment_goal = LineString(pivot_goal_route['geometry'].iloc[-2:].values)
@@ -596,3 +601,4 @@ def print_instructions(path: Text):
         return None
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
+

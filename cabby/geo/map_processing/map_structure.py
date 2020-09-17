@@ -36,7 +36,7 @@ from cabby import logger
 
 map_logger = logger.create_logger("map.log", 'map')
 
-OSM_CRS = 4326 # WGS84 Coordinate reference system.
+OSM_CRS = 32633 # UTM Zones (North).
 
 class Map:
 
@@ -271,4 +271,3 @@ class Map:
     self.edges = gpd.read_file(path, driver='GeoJSON')
 
 
-# map = Map("Bologna", 18)
