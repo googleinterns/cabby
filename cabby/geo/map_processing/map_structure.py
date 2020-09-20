@@ -99,7 +99,8 @@ class Map:
     osm_poi_streets = osm_poi_named_entities[osm_highway.notnull()]
 
     # Get centroid for POI.
-    osm_poi_no_streets = osm_poi_no_streets.set_crs(epsg=OSM_CRS, allow_override=True)
+    osm_poi_no_streets = osm_poi_no_streets.set_crs(epsg=OSM_CRS, 
+    allow_override=True)
     osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
       lambda x: x if isinstance(x, Point) else x.centroid)
 
@@ -139,7 +140,8 @@ class Map:
     self.poi['cellids'] = self.poi['geometry'].apply(self.get_cellids_for_poi)
 
     # Get cellids for streets.
-    self.streets['cellids'] = self.streets['geometry'].apply(self.get_cellids_for_streets)
+    self.streets['cellids'] = self.streets['geometry'].apply(self.
+    get_cellids_for_streets)
 
     # Filter out entities that we didn't mange to get cellids covering.
     self.poi = self.poi[self.poi['cellids'].notnull()]

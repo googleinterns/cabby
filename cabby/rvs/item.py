@@ -30,7 +30,9 @@ class RVSPath:
   `main_pivot` is pivot along the route.
   `near_pivot` is the pivot near the goal location.
   `beyond_pivot` is the pivot beyond the goal.
-  `cardinal_direction` is the cardinal direction between the main pivot and the goal. Possible cardinal directions: North, South, East, West, North-East, North-West, South-East, South-West. 
+  `cardinal_direction` is the cardinal direction between the main pivot and the 
+  goal. Possible cardinal directions: North, South, East, West, North-East, 
+  North-West, South-East, South-West. 
   `instruction` is a basic template that includes the points and pivots.
   """
   start_point: Dict = attr.ib()
