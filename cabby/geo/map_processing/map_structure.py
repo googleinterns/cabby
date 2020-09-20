@@ -39,6 +39,7 @@ from cabby import logger
 
 map_logger = logger.create_logger("map.log", 'map')
 
+OSM_CRS = 32633 # UTM Zones (North).
 
 class Map:
 
@@ -81,8 +82,8 @@ class Map:
         if creat_s2_graph:
           self.create_S2Graph(level)
 
-        self.nodes = self.nodes.set_crs(epsg=4326)
-        self.edges = self.edges.set_crs(epsg=4326)
+        self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
+        self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
 
     def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
         '''Helper funcion for extracting POI for the defined place.'''
@@ -90,7 +91,7 @@ class Map:
         tags = {'name': True, 'building': True, 'amenity': True}
 
         osm_poi = ox.pois.pois_from_polygon(self.polygon_area, tags=tags)
-        osm_poi = osm_poi.set_crs(epsg=4326)
+        osm_poi = osm_poi.set_crs(epsg=OSM_CRS, allow_override=True)
 
         osm_poi_named_entities = osm_poi[osm_poi['name'].notnull()]
         osm_highway = osm_poi_named_entities['highway']
@@ -428,7 +429,6 @@ def covert_string_to_list(string_list: Text) -> Sequence:
     return list(map_object)
 
 
-
 map_new = Map("Pittsburgh", 18)
 map_new.write_map("/home/tzuf_google_com/dev/cabby/cabby/geo/map_processing/poiTestData/")
 print('Number of POI found: {0}'.format(map_new.poi.shape[0]))
@@ -439,4 +439,4 @@ print('Number of POI found: {0}'.format(map_new.nodes.shape[0]))
 # level = 18
 # region = "Bologna"
 # map_new = Map(region, level, directory)
-print ("END")
+#print ("END")
