@@ -16,9 +16,9 @@
 between them and pivots.
 
 Example:
-$ bazel-bin/cabby/geo/sample_poi --region Pittsburgh --min_s2_level 18 \
+$ bazel-bin/cabby/geo/sample_poi --region "DC" --min_s2_level 18 \
   --directory "./cabby/geo/map_processing/poiTestData/" \
-    --path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" --n_samples 1
+    --path "./cabby/geo/pathData/dc_geo_paths.gpkg" --n_samples 1
 '''
 
 from absl import app
@@ -33,8 +33,8 @@ from cabby.geo.map_processing import map_structure
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-  "region", None, ['Pittsburgh', 'Manhattan'],
-  "Map areas: Manhattan or Pittsburgh.")
+  "region", None, ['Pittsburgh', 'Manhattan', 'DC'],
+  "Map areas: Manhattan, Pittsburgh or DC.")
 flags.DEFINE_integer("min_s2_level", None, "Minimum S2 level of the map.")
 flags.DEFINE_string("directory", None,
           "The directory where the map will be loaded from.")

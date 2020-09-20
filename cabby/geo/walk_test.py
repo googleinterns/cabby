@@ -28,22 +28,22 @@ class WalkTest(unittest.TestCase):
     def setUpClass(self):
 
         # Load map from disk.
-        self.map = map_structure.Map("Bologna", 18)
+        self.map = map_structure.Map("DC", 18)
 
     def testRouteCalculation(self):
-        start_point = Point(11.3414, 44.4951)
-        end_point = Point(11.3444, 44.4946)
+        start_point = Point(-77.03994, 38.90842)
+        end_point = Point(-77.03958, 38.90830)
         route = walk.compute_route(start_point, end_point, self.map.
                                    nx_graph, self.map.nodes)
 
         # Check the size of the route.
-        self.assertEqual(route['geometry'].shape[0], 9)
+        self.assertEqual(route['geometry'].shape[0], 4)
 
         # Check that the correct points are in the route.
         first_point = util.tuple_from_point(route.iloc[0]['geometry'])
         second_point = util.tuple_from_point(route.iloc[1]['geometry'])
-        self.assertEqual(first_point, (44.498112, 11.3554509))
-        self.assertEqual(second_point, (44.4980591, 11.3554775))
+        self.assertEqual(first_point, (38.908415068520945, -77.03956245455889))
+        self.assertEqual(second_point, (38.90839802058634, -77.03951285220248))
 
     def testPointsSelection(self):
         geo_entity = walk.get_points_and_route(self.map)
