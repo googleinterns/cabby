@@ -234,7 +234,7 @@ _PITTSBURGH_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """]
 
-_BOLOGNA_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
+_DC_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
           WHERE 
@@ -247,8 +247,8 @@ _BOLOGNA_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
-            bd:serviceParam wikibase:cornerWest "Point(11.355,44.4902)"^^geo:wktLiteral .
-            bd:serviceParam wikibase:cornerEast "Point(11.3564,44.5000)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
             }
           }
           FILTER (?instance  not in
@@ -301,8 +301,8 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
   elif region == "Manhattan":
     query = _MANHATTAN_QUERY
   
-  elif region == "Bologna":
-    query = _BOLOGNA_QUERY
+  elif region == "D.C":
+    query = _DC_QUERY
     
   else:
     raise ValueError(f"{region} is not a supported region.")

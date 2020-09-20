@@ -29,8 +29,6 @@ from typing import Dict, Tuple, Sequence, Text, Optional, List
 
 import swifter
 
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 from cabby import logger
 from cabby.geo import util
 from cabby.geo.map_processing import graph
@@ -43,9 +41,9 @@ OSM_CRS = 32633 # UTM Zones (North).
 
 class Map:
 
-    def __init__(self, map_name: Text, level: int, load_directory: Text = None, creat_s2_graph: int = False):
+    def __init__(self, map_name: Text, level: int, load_directory: Text = None):
         assert map_name == "Manhattan" or map_name == "Pittsburgh" or \
-            map_name == "Bologna"
+            map_name == "DC"
         self.map_name = map_name
         self.s2_graph = None
 
@@ -60,8 +58,9 @@ class Map:
                 ccw=True)
         else:  # Bologna.
             self.polygon_area = box(
-                miny=44.4902, minx=11.3333, maxy=44.5000, maxx=11.3564,
+                miny=38.90821, minx=-77.04053, maxy=38.90922, maxx=-77.03937,
                 ccw=True)
+
 
         if load_directory is None:
             self.poi, self.streets = self.get_poi()
@@ -79,8 +78,8 @@ class Map:
 
         else:
             self.load_map(load_directory)
-        if creat_s2_graph:
-          self.create_S2Graph(level)
+        
+        self.create_S2Graph(level)
 
         self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
         self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
@@ -139,9 +138,7 @@ class Map:
         list_edges_connected_ids = []
         eddges_to_add = []
         for point in points:
-          current_edges= self.add_single_point_edge(single_poi, point, list_edges_connected_ids, poi_osmid)
-          if current_edges is not None:
-            eddges_to_add +=current_edges
+          eddges_to_add += self.add_single_point_edge(point, list_edges_connected_ids, poi_osmid)
 
         # Add node POI to graph.
         self.nx_graph.add_node(
@@ -155,7 +152,7 @@ class Map:
         return eddges_to_add
 
     
-    def add_single_point_edge(self, point: Point, list_edges_connected_ids: List, poi_osmid: int) -> Sequence[edge.Edge]:
+    def add_single_point_edge(self, point: Point, list_edges_connected_ids: List, poi_osmid: int) -> Optional[Sequence[edge.Edge]]:
         '''Connect a poi to the closest edge.
         Arguments:
           point: a point POI to be connected to the closest edge.
@@ -173,12 +170,12 @@ class Map:
 
         except Exception as e:
           print (e)
-          return
+          return []
 
         edge_id = (near_edge_u,near_edge_v, near_edge_key)
 
         if edge_id in list_edges_connected_ids: # Edge already connected
-          return 
+          return  []
         
         # Add to connected edges.
         list_edges_connected_ids.append(edge_id)
@@ -281,19 +278,9 @@ class Map:
                                                          cellid_from_polygon
                                                          (x, level))
 
-        # Get cellids for streets.
-        self.streets['cellids'] = self.streets['geometry'].apply(lambda x: util.
-                                                                 cellid_from_point
-                                                                 (x, level) if
-                                                                 isinstance(x,
-                                                                            Point) else
-                                                                 util.
-                                                                 cellid_from_polyline
-                                                                 (x, level))
 
         # Filter out entities that we didn't mange to get cellids covering.
         self.poi = self.poi[self.poi['cellids'].notnull()]
-        self.streets = self.streets[self.streets['cellids'].notnull()]
 
         # Create graph.
         self.s2_graph = graph.MapGraph()
@@ -302,9 +289,6 @@ class Map:
         self.poi[['cellids', 'osmid']].apply(
             lambda x: self.s2_graph.add_poi(x.cellids, x.osmid), axis=1)
 
-        # Add street to graph.
-        self.streets[['cellids', 'osmid']].apply(
-            lambda x: self.s2_graph.add_street(x.cellids, x.osmid), axis=1)
 
     def get_valid_path(self, dir_name: Text, name_ending: Text,
                        file_ending: Text) -> Optional[Text]:
@@ -439,15 +423,3 @@ def covert_string_to_list(string_list: Text) -> Sequence:
     map_object = map(int, string_list)
     return list(map_object)
 
-
-map_new = Map("Pittsburgh", 18)
-map_new.write_map("/home/tzuf_google_com/dev/cabby/cabby/geo/map_processing/poiTestData/")
-print('Number of POI found: {0}'.format(map_new.poi.shape[0]))
-print('Number of POI found: {0}'.format(map_new.nodes.shape[0]))
-
-
-# directory = "/home/tzuf_google_com/dev/cabby/cabby/geo/map_processing/poiTestData/"
-# level = 18
-# region = "Bologna"
-# map_new = Map(region, level, directory)
-#print ("END")
