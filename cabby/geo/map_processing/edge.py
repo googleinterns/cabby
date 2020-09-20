@@ -20,6 +20,7 @@ from typing import Text, Dict
 
 import attr
 
+OSM_CRS = 32633 # UTM Zones (North).
 
 @attr.s
 class Edge:
