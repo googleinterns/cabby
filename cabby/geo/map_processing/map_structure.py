@@ -105,7 +105,7 @@ class Map:
         return osm_poi_no_streets, osm_poi_streets
     
     def add_single_poi_to_graph(self, single_poi: pd.Series) -> Sequence[edge.Edge]:
-        '''Add single POI to nx_graph..
+        '''Add single POI to nx_graph.
         Arguments:
           single_poi: a single POI to be added to graph.
         Returns:
@@ -155,7 +155,16 @@ class Map:
         return eddges_to_add
 
     
-    def add_single_point_edge(self, single_poi: pd.Series, point: Point, list_edges_connected_ids: List, poi_osmid: int):
+    def add_single_point_edge(self, point: Point, list_edges_connected_ids: List, poi_osmid: int) -> Sequence[edge.Edge]:
+        '''Connect a poi to the closest edge.
+        Arguments:
+          point: a point POI to be connected to the closest edge.
+          list_edges_connected_ids: list of edges ids already connected to the POI. 
+          If the current edge found is already connected it will avoid connecting it again.
+          poi_osmid: the POI  id to be connected to the edge.
+        Returns:
+          The edges between the POI and the closest edge found to be added to the graph.
+        '''
         
         try:
           near_edge_u, near_edge_v, near_edge_key, line = \
@@ -228,7 +237,9 @@ class Map:
         self.nx_graph.remove_edge(near_edge_v ,near_edge_u)
         return edges_list
 
-    def add_two_ways_edges(self, edge_add):  
+    def add_two_ways_edges(self, edge_add: edge.Edge):  
+        '''Add edges to graph.'''
+
         self.nx_graph.add_edge(
                         u_for_edge = edge_add.u_for_edge,
                         v_for_edge =  edge_add.v_for_edge, 
