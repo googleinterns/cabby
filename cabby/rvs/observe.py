@@ -88,3 +88,4 @@ def get_pivot_poi(
   # Lower scores are better. Sort the POIs, then return the first.
   ranked_pois.sort(key=lambda x: x[1])
   return ranked_pois[0][0]
+

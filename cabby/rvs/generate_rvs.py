@@ -13,12 +13,12 @@
 # limitations under the License.
 
 '''Example command line method to output RVS instructions by templates.
-Example (Head to the GOAL. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. The GOAL will be near NEAR_PIVOT.):
+Example (Come to the Slacker. Go past First Avenue. The Slacker will be near Copies at Carson.):
 $ bazel-bin/cabby/rvs/generate_rvs \
 	--path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" \
 
 '''
-
+from random import randint
 from shapely.geometry.point import Point
 import sys
 from typing import Text
@@ -40,20 +40,54 @@ from cabby.rvs import templates
 # flags.mark_flag_as_required('path')
 
 # entities = walk.read_instructions(FLAGS.path)
-entities = walk.read_instructions("/mnt/hackney/data/cabby/pathData/v7/pittsburgh_geo_paths.gpkg")
+entities = walk.read_instructions("/mnt/hackney/data/cabby/pathData/v8/pittsburgh_geo_paths.gpkg")
 if entities is None:
   sys.exit("The path to the RVS data was not found.")
 
 # Get templates.
-templates = templates.create_templates()
+gen_templates = templates.create_templates()
 
+# Generate instructions.
+gen_instructions = []
 for entity in entities:
-  print(entity)
-  if entity.beyond_pivot is None:
-    current_templates = templates[templates['beyond_pivot']==False]
+  current_templates = gen_templates.copy()
+  if entity.tags_start.beyond_pivot is '':
+    current_templates = gen_templates[current_templates['beyond_pivot']==False]
   else:
-    current_templates = templates[templates['beyond_pivot']==True]
-  # if entity.tags_start
+    current_templates = gen_templates[current_templates['beyond_pivot']==True]
+
+  interscrions = -1
+  blocks = -1
+  if entity.tags_start.intersections > 0:
+    is_block = randint(0,1)
+    interscrions = -1 if is_block else entity.tags_start.intersections
+    blocks = entity.tags_start.intersections-1 if is_block else -1
+    if entity.tags_start.intersections == 1:
+      current_templates = current_templates[current_templates['next_intersection']==True]
+    elif blocks == 1:
+      current_templates = current_templates[current_templates['next_block']==True]
+    else:
+      if blocks >1:
+        current_templates = current_templates[current_templates['blocks']==True]
+      else:
+        current_templates = current_templates[current_templates['intersection']==True]
+  else:
+    current_templates = current_templates[(current_templates['intersection']==False) & (current_templates['blocks']==False) & (current_templates['next_intersection']==False) & (current_templates['next_block']==False)  ]
+
+  choosen_template = current_templates.sample(1)['sentence'].iloc[0]
+  gen_instruction = templates.add_features_to_template(choosen_template, entity.tags_start.end, entity.tags_start.main_pivot, entity.tags_start.near_pivot, entity.tags_start.beyond_pivot, intersection=interscrions, blocks=blocks, cardinal_direction = entity.tags_start.cardina_direction)
+  print (gen_instruction)
+  gen_instructions.append(gen_instruction)
+
+
+
+
+
+
+
+    
+
+
 
 
 
