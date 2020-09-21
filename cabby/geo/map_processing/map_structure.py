@@ -34,7 +34,7 @@ from cabby import logger
 
 map_logger = logger.create_logger("map.log", 'map')
 
-OSM_CRS = 4326 # Coordinate reference system.
+OSM_CRS = 32633 # UTM Zones (North).
 
 class Map:
 
@@ -71,9 +71,10 @@ class Map:
     else:
       self.load_map(load_directory)
     self.create_S2Graph(level)
-
-    self.nodes = self.nodes.set_crs(epsg=OSM_CRS)
-    self.edges = self.edges.set_crs(epsg=OSM_CRS)
+    
+    self.poi = self.poi.set_crs(epsg=OSM_CRS, allow_override=True)
+    self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
+    self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
 
   def closest_nodes(self, point: Point) -> int:
     '''Find closest nodes to POI. 
@@ -97,6 +98,7 @@ class Map:
     osm_poi_no_streets = osm_poi_named_entities[osm_highway.isnull()]
     osm_poi_streets = osm_poi_named_entities[osm_highway.notnull()]
 
+    osm_poi_no_streets = osm_poi_no_streets.set_crs(epsg=OSM_CRS, allow_override=True)
     # Get centroid for POI.
     osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
       lambda x: x if isinstance(x, Point) else x.centroid)

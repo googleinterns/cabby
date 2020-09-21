@@ -18,6 +18,8 @@ from nltk.parse.generate import generate, Nonterminal
 import pandas as pd
 from typing import Dict, Sequence, Text
 
+from cabby.geo import geo_item
+
 
 # Terminals in the grammar.
 MAIN_NO_V = [
@@ -26,9 +28,9 @@ MAIN_NO_V = [
     "NUMBER_BLOCKS blocks past MAIN_PIVOT",
     "NUMBER_INTERSECTIONS intersections past MAIN_PIVOT",
     "past MAIN_PIVOT",
-    "CARDINAL_DIRECTION past MAIN_PIVOT"
-    "next intersection past MAIN_PIVOT",
-    "next block past MAIN_PIVOT",
+    "CARDINAL_DIRECTION and past MAIN_PIVOT",
+    "past MAIN_PIVOT and continue to the next intersection",
+    "past MAIN_PIVOT and continue to the next block",
 ]
 MAIN = [
     ". When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away",
@@ -109,6 +111,7 @@ def create_templates():
   for sentence in generate(grammar):
 
     sentence = ' '.join(sentence)
+
     if sentence[-1] != '.':
         sentence += '.'
     sentence = sentence.replace(" .", ".")
@@ -131,26 +134,26 @@ def create_templates():
       lambda x: 'next block' in x)
   templates_df['next_intersection'] = templates_df['sentence'].apply(
       lambda x: 'next intersection' in x)
-
+  
   return templates_df
 
-def add_features_to_template(template, goal, main_pivot, near_pivot, beyond_pivot, intersection, blocks, cardinal_direction):
-  template= template.replace('GOAL_LOCATION', goal)
-  template= template.replace('MAIN_PIVOT', main_pivot)
-  template= template.replace('NEAR_PIVOT', near_pivot)
-  template= template.replace('BEYOND_PIVOT', beyond_pivot)
-  template= template.replace('NUMBER_INTERSECTIONS', str(int(intersection)))
-  template= template.replace('NUMBER_BLOCKS', str(int(blocks)))
-  template= template.replace('CARDINAL_DIRECTION', cardinal_direction)
+def add_features_to_template(template: Text, entity:geo_item.GeoEntity) -> Text:
+  '''Add the entity features to the picked template to create an instruction:
+    template: The choosen template.
+    entity: The features of the path to add to the template.
+  '''
+  intersections = int(entity.tags_start.intersections)
+  blocks = str(intersections-1)
+  intersections = str(intersections)
+  template= template.replace('GOAL_LOCATION', entity.tags_start.end)
+  template= template.replace('MAIN_PIVOT', entity.tags_start.main_pivot)
+  template= template.replace('NEAR_PIVOT', entity.tags_start.near_pivot)
+  template= template.replace('BEYOND_PIVOT', entity.tags_start.beyond_pivot)
+  template= template.replace('NUMBER_INTERSECTIONS', intersections)
+  template= template.replace('NUMBER_BLOCKS', blocks)
+  template= template.replace('CARDINAL_DIRECTION', entity.tags_start.cardina_direction)
 
   # Fixparesing.
   template = template.replace('The The', 'The')
   template = template.replace('the The', 'the')
   return template
-
-
-
-
-# print (create_templates()['sentence'].values)
-
-

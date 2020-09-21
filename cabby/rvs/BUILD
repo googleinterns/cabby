@@ -39,9 +39,9 @@ py_test(
 )
 
 py_binary(
-    name = 'generate_rvs',
-    main = 'generate_rvs.py',
-    srcs = ['generate_rvs.py'],
+    name = 'generate_single_rvs',
+    main = 'generate_single_rvs.py',
+    srcs = ['generate_single_rvs.py'],
     deps = [
         ':observe',
         ':speak',
@@ -49,6 +49,27 @@ py_binary(
         "//cabby/data/wikidata:query",
         "//cabby/geo:directions",
         "//cabby/geo/map_processing:map_structure",
+        "//cabby/geo:walk",
+
+
+    ],
+)
+
+py_library(
+    name = 'templates',
+    srcs = ['templates.py'],
+    deps = [
+        '//cabby/geo:geo_item',
+    ]
+)
+
+
+py_binary(
+    name = 'generate_rvs',
+    main = 'generate_rvs.py',
+    srcs = ['generate_rvs.py'],
+    deps = [
+        ":templates",
         "//cabby/geo:walk",
 
 

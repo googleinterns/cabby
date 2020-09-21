@@ -56,10 +56,14 @@ class RVSPath:
     )
 
     # Create centroid point.
+    if self.beyond_pivot['geometry'] is None:
+      self.beyond_pivot['centroid'] = Point()
     if "main_tag" in self.beyond_pivot:
       self.beyond_pivot['main_tag']=self.beyond_pivot['main_tag']
     else:
       self.beyond_pivot['main_tag']= ""
+
+      self.beyond_pivot['main_tag'] = self.beyond_pivot['main_tag'] if "main_tag" in self.beyond_pivot else ""
 
   @ classmethod
   def from_points_route_pivots(cls, start, end, route, main_pivot,
