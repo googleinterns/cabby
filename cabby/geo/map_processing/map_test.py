@@ -23,7 +23,8 @@ from cabby.geo.map_processing import map_structure
 
 class MapTest(unittest.TestCase):
 
-  def setUp(self):
+  @classmethod
+  def setUpClass(self):
 
     # Process the map for an area in Bologna.
     self.bologna_map = map_structure.Map("Bologna", 18)

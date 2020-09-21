@@ -7,6 +7,10 @@ py_library(
     srcs = ['observe.py'],
 )
 
+py_library(
+    name = 'item',
+    srcs = ['item.py'],
+)
 
 py_test(
     name = "observe_test",

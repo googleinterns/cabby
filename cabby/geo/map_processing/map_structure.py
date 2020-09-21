@@ -101,6 +101,8 @@ class Map:
     osm_poi_no_streets = osm_poi_no_streets.set_crs(
     epsg=OSM_CRS, allow_override=True)
     # Get centroid for POI.
+    osm_poi_no_streets = osm_poi_no_streets.set_crs(epsg=OSM_CRS, 
+    allow_override=True)
     osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
       lambda x: x if isinstance(x, Point) else x.centroid)
 
@@ -175,7 +177,6 @@ class Map:
     # Check if directory is valid.
     assert os.path.exists(dir_name), (f"Current directory is: {os.getcwd()}."
     f" The directory {dir_name} doesn't exist.")
-
 
     # Create path.
     path = os.path.join(dir_name, base_filename + file_ending)
