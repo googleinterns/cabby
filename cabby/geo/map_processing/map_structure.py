@@ -74,11 +74,7 @@ class Map:
       self.load_map(load_directory)
     self.create_S2Graph(level)
 
-<<<<<<< HEAD
     self.poi = self.poi.set_crs(epsg=OSM_CRS, allow_override=True)
-=======
-    
->>>>>>> master
     self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
     self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
 
