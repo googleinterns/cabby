@@ -20,7 +20,10 @@ import numpy as np
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
+<<<<<<< HEAD
 from shapely.geometry import box, mapping, LineString
+=======
+>>>>>>> master
 from typing import Optional, Tuple, Sequence, Any
 import webbrowser
 
@@ -261,6 +264,7 @@ def get_distance_km(start: Point, goal: Point) -> float:
 
 
 def tuple_from_point(point: Point) -> Tuple[float, float]:
+<<<<<<< HEAD
     '''Convert a Point into a tuple, with latitude as first element, and 
     longitude as second.
     Arguments:
@@ -307,6 +311,55 @@ def midpoint(p1: Point, p2: Point) -> Point:
       A lat-lng Point.
     '''
     return Point((p1.x+p2.x)/2, (p1.y+p2.y)/2)
+=======
+  '''Convert a Point into a tuple, with latitude as first element, and 
+  longitude as second.
+  Arguments:
+    point(Point): A lat-lng point.
+  Returns:
+    A lat-lng Tuple[float, float].
+  '''
+
+  return (point.y, point.x)
+
+
+def list_xy_from_point(point: Point) -> Sequence[float]:
+  '''Convert a Point into a sequence, with longitude as first element, and 
+  latitude as second.
+
+  Arguments:
+    point(Point): A lat-lng point.
+  Returns:
+    A lng-lat Sequence[float, float].
+  '''
+
+  return [point.x, point.y]
+
+
+def list_yx_from_point(point: Point) -> Sequence[float]:
+  '''Convert a Point into a sequence, with latitude as first element, and longitude as second.
+
+  Arguments:
+    point(Point): A lat-lng point.
+  Returns:
+    A lat-lng Sequence[float, float].
+  '''
+
+  return [point.y, point.x]
+
+
+def midpoint(p1: Point, p2: Point) -> Point:
+  '''Get the midpoint between two points.
+
+  Arguments:
+    p1(Point): A lat-lng point.
+    p2(Point): A lat-lng point.
+  Returns:
+    A lat-lng Point.
+  '''
+  return Point((p1.x+p2.x)/2, (p1.y+p2.y)/2)
+
+>>>>>>> master
 
 def check_if_geometry_in_polygon(geometry: Any, poly: Polygon) -> Polygon:
   '''Check if geometry is intersects with polygon.
