@@ -30,8 +30,6 @@ from shapely import geometry
 import sys
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 from cabby.geo.map_processing import map_structure
 from cabby.geo import geo_item
 from cabby.geo import util
@@ -522,6 +520,8 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
                                        main_pivot['main_tag'],
                                        'near_pivot': rvs_path_entity.near_pivot['main_tag'],
                                        'beyond_pivot': rvs_path_entity.beyond_pivot['main_tag'],
+                                       'cardina_direction': rvs_path_entity.cardinal_direction,
+                                       'intersections': rvs_path_entity.number_intersections,
                                        'instruction': rvs_path_entity.instruction
                                        }, index=[0])
 
@@ -601,4 +601,6 @@ def print_instructions(path: Text):
         return None
     start = gpd.read_file(path, layer='start')
     print('\n'.join(start['instruction'].values))
+
+
 

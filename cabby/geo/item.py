@@ -67,20 +67,6 @@ class RVSPath:
                     self.near_pivot['main_tag']) + avoid_instruction
         )
 
-        # Creat basic template instruction.
-        if "main_tag" in self.beyond_pivot:
-          avoid_instruction = "If you reached {0}, you have gone too far.".format(
-            self.beyond_pivot['main_tag'])
-        else:
-          avoid_instruction = ""
-
-        self.instruction = (
-          "Starting at {0} walk past {1} and your goal is {2}, near {3}. "
-          .format(self.start_point['name'], self.main_pivot['main_tag'], self.
-              end_point['name'], self.near_pivot['main_tag']) +
-              avoid_instruction
-        )
-
         # Create centroid point.
         if self.beyond_pivot['geometry'] is None:
           self.beyond_pivot['centroid'] = Point()
