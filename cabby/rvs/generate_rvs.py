@@ -34,8 +34,8 @@ from shapely.geometry.point import Point
 from cabby.geo import directions
 from cabby.geo import util
 from cabby.geo import walk
-from cabby.geo import item 
 from cabby.geo.map_processing import map_structure
+from cabby.rvs import item 
 from cabby.rvs import observe
 from cabby.rvs import speak
 
