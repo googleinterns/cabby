@@ -49,7 +49,7 @@ flags.DEFINE_enum(
   "Map areas: Manhattan, Pittsburgh or Bologna.")
 flags.DEFINE_integer("min_s2_level", None, "Minimum S2 level of the map.")
 flags.DEFINE_string("directory", None, "The directory where the files will be \
-saved to" )
+saved to." )
 
 
 # Required flags.

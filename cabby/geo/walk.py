@@ -37,8 +37,8 @@ from cabby.geo import geo_item
 from cabby.geo.map_processing import map_structure
 
 
+OSM_CRS = 32633 # UTM Zones (North).
 _Geo_DataFrame_Driver = "GPKG"
-
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
           nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
@@ -196,6 +196,7 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[Dict[Text, Any]]:
       elif isinstance(pivot['geometry'], Point):
         pivot['centroid'] = pivot['geometry']
       else:
+        pivot=pivot.set_crs(epsg=OSM_CRS, allow_override=True)
         pivot['centroid'] = pivot['geometry'].centroid
       return pivot.to_dict('records')[0]
 
