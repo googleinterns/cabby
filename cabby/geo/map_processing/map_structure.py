@@ -28,9 +28,6 @@ import swifter
 import sys
 from typing import Dict, Tuple, Sequence, Text, Optional, List
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 
 from cabby import logger
 from cabby.geo import util
@@ -262,7 +259,7 @@ class Map:
 
     def add_poi_to_graph(self):
         '''Add all POI to nx_graph.'''
-        eges_to_add_list = self.poi.swifter.set_npartitions(16).apply(self.add_single_poi_to_graph, axis =1)
+        eges_to_add_list = self.poi.swifter.apply(self.add_single_poi_to_graph, axis =1)
 
         eges_to_add_list.swifter.apply(lambda e_list: self.add_two_ways_edges(e_list[0]))
 
@@ -425,6 +422,3 @@ def covert_string_to_list(string_list: Text) -> Sequence:
     string_list = string_list.split(",")
     map_object = map(int, string_list)
     return list(map_object)
-
-map = Map("Pittsburgh", 18)
-print ("END")
