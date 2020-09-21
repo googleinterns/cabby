@@ -29,6 +29,10 @@ class RVSPath:
   `route` is route between the start and end points.
   `main_pivot` is pivot along the route.
   `near_pivot` is the pivot near the goal location.
+  `beyond_pivot` is the pivot beyond the goal.
+  `cardinal_direction` is the cardinal direction between the main pivot and the 
+  goal. Possible cardinal directions: North, South, East, West, North-East, 
+  North-West, South-East, South-West. 
   `instruction` is a basic template that includes the points and pivots.
   """
   start_point: Dict = attr.ib()
@@ -37,6 +41,7 @@ class RVSPath:
   main_pivot: Dict = attr.ib()
   near_pivot: Dict = attr.ib()
   beyond_pivot: Dict = attr.ib()
+  cardinal_direction: Text = attr.ib()
   instruction: Text = attr.ib(init=False)
 
   def __attrs_post_init__(self):
@@ -48,11 +53,24 @@ class RVSPath:
     else:
       avoid_instruction = ""
 
+    self.instruction = \
+      "Starting at {0} walk {1} past {2} and your goal is {3}, near {4}. " \
+      .format(self.start_point['name'], self.cardinal_direction, self.
+          main_pivot['main_tag'], self.end_point['name'],
+          self.near_pivot['main_tag']) + avoid_instruction
+
+    # Creat basic template instruction.
+    if "main_tag" in self.beyond_pivot:
+      avoid_instruction = "If you reached {0}, you have gone too far.".format(
+      self.beyond_pivot['main_tag'])
+    else:
+      avoid_instruction = ""
+
     self.instruction = (
       "Starting at {0} walk past {1} and your goal is {2}, near {3}. "
       .format(self.start_point['name'], self.main_pivot['main_tag'], self.
-          end_point['name'], self.near_pivot['main_tag']) +
-          avoid_instruction
+        end_point['name'], self.near_pivot['main_tag']) +
+        avoid_instruction
     )
 
     # Create centroid point.
@@ -65,9 +83,9 @@ class RVSPath:
 
       self.beyond_pivot['main_tag'] = self.beyond_pivot['main_tag'] if "main_tag" in self.beyond_pivot else ""
 
-  @ classmethod
+  @classmethod
   def from_points_route_pivots(cls, start, end, route, main_pivot,
-                 near_pivot, beyond_pivot):
+                 near_pivot, beyond_pivot, cardinal_direction):
     """Construct an Entity from the start and end points, route, and pivots.
     """
     return RVSPath(
@@ -76,5 +94,6 @@ class RVSPath:
       route,
       main_pivot,
       near_pivot,
-      beyond_pivot
+      beyond_pivot,
+      cardinal_direction
     )

@@ -25,7 +25,8 @@ from cabby.geo import util
 
 class WalkTest(unittest.TestCase):
 
-  def setUp(self):
+  @classmethod
+  def setUpClass(self):
 
     # Load map from disk.
     self.map = map_structure.Map(
