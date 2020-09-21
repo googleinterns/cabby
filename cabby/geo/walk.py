@@ -503,6 +503,27 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
   gdf_beyond_list.to_file(path, layer='beyond', driver=_Geo_DataFrame_Driver)
 
 
+
+def read_instructions(path: Text):
+  '''Read a geodata file and print instruction.'''
+  if not os.path.exists(path):
+    return None
+  start = gpd.read_file(path, layer='start')
+  end = gpd.read_file(path, layer='end')
+  route = gpd.read_file(path, layer='route')
+  main = gpd.read_file(path, layer='main')
+  near = gpd.read_file(path, layer='near')
+  beyond = gpd.read_file(path, layer='beyond')
+
+  entities = [] 
+  for index in range(beyond.shape[0]):
+    entity = geo_item.GeoEntity.from_points_route_pivots(
+      start.iloc[index], end.iloc[index], route.iloc[index], main.iloc[index], near.iloc[index], beyond.iloc[index])
+    entities.append(entity)
+
+  return entities
+
+
 def print_instructions(path: Text):
   '''Read a geodata file and print instruction.'''
   if not os.path.exists(path):
