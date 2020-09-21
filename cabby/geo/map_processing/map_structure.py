@@ -34,7 +34,7 @@ from cabby import logger
 
 map_logger = logger.create_logger("map.log", 'map')
 
-OSM_CRS = 4326 # Coordinate reference system.
+OSM_CRS = 32633 # UTM Zones (North).
 
 class Map:
 
@@ -72,8 +72,9 @@ class Map:
       self.load_map(load_directory)
     self.create_S2Graph(level)
 
-    self.nodes = self.nodes.set_crs(epsg=OSM_CRS)
-    self.edges = self.edges.set_crs(epsg=OSM_CRS)
+    
+    self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
+    self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
 
   def closest_nodes(self, point: Point) -> int:
     '''Find closest nodes to POI. 
@@ -98,6 +99,8 @@ class Map:
     osm_poi_streets = osm_poi_named_entities[osm_highway.notnull()]
 
     # Get centroid for POI.
+    osm_poi_no_streets = osm_poi_no_streets.set_crs(epsg=OSM_CRS, 
+    allow_override=True)
     osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
       lambda x: x if isinstance(x, Point) else x.centroid)
 
@@ -137,7 +140,8 @@ class Map:
     self.poi['cellids'] = self.poi['geometry'].apply(self.get_cellids_for_poi)
 
     # Get cellids for streets.
-    self.streets['cellids'] = self.streets['geometry'].apply(self.get_cellids_for_streets)
+    self.streets['cellids'] = self.streets['geometry'].apply(self.
+    get_cellids_for_streets)
 
     # Filter out entities that we didn't mange to get cellids covering.
     self.poi = self.poi[self.poi['cellids'].notnull()]

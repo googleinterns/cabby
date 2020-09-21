@@ -61,11 +61,11 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
     '''
 
     mid_point = util.midpoint(gdf.end_point, gdf.start_point)
-    zoom_location = util.list_yx_from_point(gdf.end_point)
+    zoom_location = util.list_yx_from_point(mid_point)
 
     # create a map
     map_osm = folium.Map(location=zoom_location,
-                         zoom_start=18, tiles='OpenStreetMap')
+                         zoom_start=15, tiles='OpenStreetMap')
 
     # draw the points
     start_point = util.list_yx_from_point(gdf.start_point)
