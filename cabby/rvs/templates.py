@@ -33,7 +33,8 @@ MAIN_NO_V = [
     "past MAIN_PIVOT and continue to the next block",
 ]
 MAIN = [
-    ". When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away",
+    ". When you pass MAIN_PIVOT, you'll be just \
+    NUMBER_INTERSECTIONS intersections away",
     ". When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away",
 ]
 V1 = ['Go', 'Walk', 'Head']
@@ -47,12 +48,15 @@ GOAL_END = ['and meet at GOAL_LOCATION.']
 GOAL = ["GOAL_LOCATION"]
 
 
-def add_rules(nonterminal_name: Text, list_terminals: Sequence[Text]) -> Sequence[Production]:
-    """Create the production rules for a givn nonterminal and a list of terminals corresponding to it.
+def add_rules(nonterminal_name: Text, 
+list_terminals: Sequence[Text]) -> Sequence[Production]:
+    """Create the production rules for a givn nonterminal and a
+     list of terminals corresponding to it.
 
     Args:
       nonterminal_name: The name of the nonterminal.
-      list_terminals: The list of terminals that for each one a rule with the nonterminal will be produced.
+      list_terminals: The list of terminals that for each one a rule with 
+      the nonterminal will be produced.
     Returns:
       A sequence of productions rules.
 
@@ -151,7 +155,8 @@ def add_features_to_template(template: Text, entity:geo_item.GeoEntity) -> Text:
   template= template.replace('BEYOND_PIVOT', entity.tags_start.beyond_pivot)
   template= template.replace('NUMBER_INTERSECTIONS', intersections)
   template= template.replace('NUMBER_BLOCKS', blocks)
-  template= template.replace('CARDINAL_DIRECTION', entity.tags_start.cardina_direction)
+  template= template.replace(
+  'CARDINAL_DIRECTION', entity.tags_start.cardina_direction)
 
   # Fixparesing.
   template = template.replace('The The', 'The')

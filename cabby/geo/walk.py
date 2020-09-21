@@ -266,7 +266,8 @@ def get_pivot_along_route(
   return main_pivot
 
 
-def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route: GeoDataFrame) -> Optional[Dict[Text, Any]]:
+def get_pivot_beyond_goal(map: map_structure.Map, 
+end_point: GeoDataFrame, route: GeoDataFrame) -> Optional[Dict[Text, Any]]:
   '''Return a picked landmark on a given route.
   Arguments:
     map: The map of a specific region.
@@ -283,7 +284,8 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
   before_last_node_in_route = route.iloc[-2]
 
   street_beyond_route = map.edges[(map.edges['u'] == last_node_in_route
-                   ['osmid']) & (map.edges['v'] == before_last_node_in_route['osmid'])]
+                   ['osmid']) & 
+                   (map.edges['v'] == before_last_node_in_route['osmid'])]
 
   street_beyond_osmid = street_beyond_route['osmid'].iloc[0]
 
@@ -327,7 +329,8 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
 
     df_pivots = df_pivots[df_pivots.apply(lambda x: not poly_route_with_end.
                         contains(x) if isinstance(
-                          x, Point) else not x['geometry'].intersects(poly_route_with_end),
+                          x, Point) 
+                          else not x['geometry'].intersects(poly_route_with_end),
                         axis=1)]
 
   except Exception as e:
@@ -452,7 +455,8 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
     geometry=[Polygon(rvs_path_entity.route['geometry'].tolist())])
 
   geo_entity = geo_item.GeoEntity.from_points_route_pivots(
-    gdf_tags_start, gdf_end, gdf_route, gdf_main_pivot, gdf_near_pivot, gdf_beyond_pivot)
+    gdf_tags_start, gdf_end, gdf_route, gdf_main_pivot, 
+    gdf_near_pivot, gdf_beyond_pivot)
 
   return geo_entity
 
@@ -519,7 +523,8 @@ def read_instructions(path: Text):
   entities = [] 
   for index in range(beyond.shape[0]):
     entity = geo_item.GeoEntity.from_points_route_pivots(
-      start.iloc[index], end.iloc[index], route.iloc[index], main.iloc[index], near.iloc[index], beyond.iloc[index])
+      start.iloc[index], end.iloc[index], route.iloc[index], 
+      main.iloc[index], near.iloc[index], beyond.iloc[index])
     entities.append(entity)
 
   return entities

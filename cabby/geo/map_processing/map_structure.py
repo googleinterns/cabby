@@ -98,7 +98,8 @@ class Map:
     osm_poi_no_streets = osm_poi_named_entities[osm_highway.isnull()]
     osm_poi_streets = osm_poi_named_entities[osm_highway.notnull()]
 
-    osm_poi_no_streets = osm_poi_no_streets.set_crs(epsg=OSM_CRS, allow_override=True)
+    osm_poi_no_streets = osm_poi_no_streets.set_crs(
+    epsg=OSM_CRS, allow_override=True)
     # Get centroid for POI.
     osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
       lambda x: x if isinstance(x, Point) else x.centroid)
@@ -139,7 +140,8 @@ class Map:
     self.poi['cellids'] = self.poi['geometry'].apply(self.get_cellids_for_poi)
 
     # Get cellids for streets.
-    self.streets['cellids'] = self.streets['geometry'].apply(self.get_cellids_for_streets)
+    self.streets['cellids'] = self.streets['geometry'].apply(
+    self.get_cellids_for_streets)
 
     # Filter out entities that we didn't mange to get cellids covering.
     self.poi = self.poi[self.poi['cellids'].notnull()]
@@ -224,7 +226,8 @@ class Map:
     path = self.get_valid_path(dir_name, '_edges', '.geojson')
     if not os.path.exists(path):
       # Drop columns with list type.
-      self.edges.drop(self.edges.columns.difference(['osmid','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
+      self.edges.drop(self.edges.columns.difference(
+      ['osmid','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
       self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
       self.edges.to_file(path, driver='GeoJSON')
     else:
