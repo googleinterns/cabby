@@ -342,6 +342,8 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoDataFrame, route
         # Return Empty.
         return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
+    # Reemove the end_point
+    df_pivots = df_pivots[df_pivots['geometry']!=end_point['geometry']]
     beyond_pivot = pick_prominent_pivot(df_pivots)
 
     if beyond_pivot is None:
