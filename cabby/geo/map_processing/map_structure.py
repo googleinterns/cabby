@@ -27,8 +27,6 @@ from shapely import wkt
 import sys
 from typing import Dict, Tuple, Sequence, Text, Optional, Any
 
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 from cabby import logger
 from cabby.geo import util
 from cabby.geo.map_processing import graph
