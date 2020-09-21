@@ -27,22 +27,22 @@ MAIN_NO_V = [
     "NUMBER_INTERSECTIONS intersections past MAIN_PIVOT",
     "past MAIN_PIVOT",
     "CARDINAL_DIRECTION past MAIN_PIVOT"
-    "NEXT intersection past MAIN_PIVOT",
-    "NEXT block past MAIN_PIVOT",
+    "next intersection past MAIN_PIVOT",
+    "next block past MAIN_PIVOT",
 ]
 MAIN = [
     ". When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away",
     ". When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away",
 ]
 V1 = ['Go', 'Walk', 'Head']
-V2 = ['Meet at the GOAL.', 'Come to the GOAL.']
-GOAL_END = ['and meet at GOAL.']
-NEAR_GOAL_END = [". The GOAL will be near NEAR_PIVOT."]
+V2 = ['Meet at the GOAL_LOCATION.', 'Come to the GOAL_LOCATION.']
+NEAR_GOAL_END = [". The GOAL_LOCATION will be near NEAR_PIVOT."]
 NEAR_GOAL_START = [". It will be near NEAR_PIVOT."]
 AVOID = [
         '. If you reach BEYOND_PIVOT, you have gone too far.',
          '']
-GOAL = ["GOAL"]
+GOAL_END = ['and meet at GOAL_LOCATION.']
+GOAL = ["GOAL_LOCATION"]
 
 
 def add_rules(nonterminal_name: Text, list_terminals: Sequence[Text]) -> Sequence[Production]:
@@ -85,7 +85,6 @@ def create_templates():
           'NEAR_GOAL_START'), Nonterminal('AVOID'))),    
       Production(Nonterminal('E'), (Nonterminal(
           'NEAR_GOAL_END'), Nonterminal('AVOID'))),
-      Production(Nonterminal('GOAL'), ('GOAL',)),
       Production(Nonterminal('V1_CON'), ('to the',)),
       Production(Nonterminal('NO_GOAL'),
                 (Nonterminal('MAIN_NO_V'), Nonterminal('G'))),
@@ -97,6 +96,7 @@ def create_templates():
   prods += add_rules('AVOID', AVOID)
   prods += add_rules('NEAR_GOAL_START', NEAR_GOAL_START)
   prods += add_rules('NEAR_GOAL_END', NEAR_GOAL_END)
+  prods += add_rules('GOAL', GOAL)
   prods += add_rules('GOAL_END', GOAL_END)
   prods += add_rules('MAIN_NO_V', MAIN_NO_V)
   prods += add_rules('MAIN', MAIN)
@@ -128,11 +128,28 @@ def create_templates():
   templates_df['beyond_pivot'] = templates_df['sentence'].apply(
       lambda x: 'BEYOND_PIVOT' in x)
   templates_df['next_block'] = templates_df['sentence'].apply(
-      lambda x: 'NEXT block' in x)
+      lambda x: 'next block' in x)
   templates_df['next_intersection'] = templates_df['sentence'].apply(
-      lambda x: 'NEXT intersection' in x)
+      lambda x: 'next intersection' in x)
 
   return templates_df
+
+def add_features_to_template(template, goal, main_pivot, near_pivot, beyond_pivot, intersection, blocks, cardinal_direction):
+  template= template.replace('GOAL_LOCATION', goal)
+  template= template.replace('MAIN_PIVOT', main_pivot)
+  template= template.replace('NEAR_PIVOT', near_pivot)
+  template= template.replace('BEYOND_PIVOT', beyond_pivot)
+  template= template.replace('NUMBER_INTERSECTIONS', str(int(intersection)))
+  template= template.replace('NUMBER_BLOCKS', str(int(blocks)))
+  template= template.replace('CARDINAL_DIRECTION', cardinal_direction)
+
+  # Fixparesing.
+  template = template.replace('The The', 'The')
+  template = template.replace('the The', 'the')
+  return template
+
+
+
 
 # print (create_templates()['sentence'].values)
 
