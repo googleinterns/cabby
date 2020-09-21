@@ -35,8 +35,8 @@ MAIN = [
     ". When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away",
 ]
 V1 = ['Go', 'Walk', 'Head']
-V2 = ['Meet at the GOAL_LOCATION.', 'Come to the GOAL_LOCATION.']
-NEAR_GOAL_END = [". The GOAL_LOCATION will be near NEAR_PIVOT."]
+V2 = ['Meet at GOAL_LOCATION.', 'Come to GOAL_LOCATION.']
+NEAR_GOAL_END = [". GOAL_LOCATION will be near NEAR_PIVOT."]
 NEAR_GOAL_START = [". It will be near NEAR_PIVOT."]
 AVOID = [
         '. If you reach BEYOND_PIVOT, you have gone too far.',
