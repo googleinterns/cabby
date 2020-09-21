@@ -262,7 +262,7 @@ class Map:
 
     def add_poi_to_graph(self):
         '''Add all POI to nx_graph.'''
-        eges_to_add_list = self.poi.swifter.set_npartitions(16).apply(self.add_single_poi_to_graph, axis =1).allow_dask_on_strings()
+        eges_to_add_list = self.poi.swifter.set_npartitions(16).apply(self.add_single_poi_to_graph, axis =1)
 
         eges_to_add_list.swifter.apply(lambda e_list: self.add_two_ways_edges(e_list[0]))
 
