@@ -34,7 +34,8 @@ from cabby import logger
 
 map_logger = logger.create_logger("map.log", 'map')
 
-OSM_CRS = 32633 # UTM Zones (North).
+OSM_CRS = 32633  # UTM Zones (North).
+
 
 class Map:
 
@@ -71,7 +72,7 @@ class Map:
     else:
       self.load_map(load_directory)
     self.create_S2Graph(level)
-    
+
     self.poi = self.poi.set_crs(epsg=OSM_CRS, allow_override=True)
     self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
     self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
@@ -99,15 +100,15 @@ class Map:
     osm_poi_streets = osm_poi_named_entities[osm_highway.notnull()]
 
     osm_poi_no_streets = osm_poi_no_streets.set_crs(
-    epsg=OSM_CRS, allow_override=True)
+      epsg=OSM_CRS, allow_override=True)
     # Get centroid for POI.
-    osm_poi_no_streets = osm_poi_no_streets.set_crs(epsg=OSM_CRS, 
-    allow_override=True)
+    osm_poi_no_streets = osm_poi_no_streets.set_crs(epsg=OSM_CRS,
+                            allow_override=True)
     osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
       lambda x: x if isinstance(x, Point) else x.centroid)
 
     return osm_poi_no_streets, osm_poi_streets
-  
+
   def get_cellids_for_poi(self, geometry: Any) -> Optional[Sequence[int]]:
     '''get cellids for POI. 
     Arguments:
@@ -120,9 +121,9 @@ class Map:
       return util.cellid_from_point(geometry, self.level)
     else:
       return util.cellid_from_polygon(geometry, self.level)
-  
+
   def get_cellids_for_streets(
-    self, geometry: Any) -> Optional[Sequence[int]]:
+      self, geometry: Any) -> Optional[Sequence[int]]:
     '''get cellids for streets. 
     Arguments:
       geometry: The geometry to which a cellids will be retrived.
@@ -139,11 +140,12 @@ class Map:
     '''Helper funcion for creating S2Graph.'''
 
     # Get cellids for POI.
-    self.poi['cellids'] = self.poi['geometry'].apply(self.get_cellids_for_poi)
+    self.poi['cellids'] = self.poi['geometry'].apply(
+      self.get_cellids_for_poi)
 
     # Get cellids for streets.
     self.streets['cellids'] = self.streets['geometry'].apply(
-    self.get_cellids_for_streets)
+      self.get_cellids_for_streets)
 
     # Filter out entities that we didn't mange to get cellids covering.
     self.poi = self.poi[self.poi['cellids'].notnull()]
@@ -176,7 +178,7 @@ class Map:
 
     # Check if directory is valid.
     assert os.path.exists(dir_name), (f"Current directory is: {os.getcwd()}."
-    f" The directory {dir_name} doesn't exist.")
+                      f" The directory {dir_name} doesn't exist.")
 
     # Create path.
     path = os.path.join(dir_name, base_filename + file_ending)
@@ -228,7 +230,7 @@ class Map:
     if not os.path.exists(path):
       # Drop columns with list type.
       self.edges.drop(self.edges.columns.difference(
-      ['osmid','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
+        ['osmid', 'length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
       self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
       self.edges.to_file(path, driver='GeoJSON')
     else:
