@@ -17,7 +17,8 @@ Output RVS instructions by templates.
 
 Example command line call:
 $ bazel-bin/cabby/rvs/generate_rvs \
-  --path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" 
+  --rvs_data_path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" \
+  --save_instruction_path "./cabby/rvs/data/pittsburgh_instructions.txt" \
 
 Example output: 
   "Meet at Swirl Crepe. Walk past Wellington. Swirl Crepe will be near Gyros."
@@ -38,8 +39,12 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("rvs_data_path", None,
           "The path of the RVS data file to use for generating the RVS instructions.")
 
+flags.DEFINE_string("save_instruction_path", None,
+          "The path of the file where the generated instructions will be saved. ")
+
 # Required flags.
 flags.mark_flag_as_required('rvs_data_path')
+flags.mark_flag_as_required('save_instruction_path')
 
 
 def main(argv):
@@ -106,6 +111,12 @@ def main(argv):
     gen_instruction = templates.add_features_to_template(
       choosen_template, entity)
     gen_instructions.append(gen_instruction)
+
+    # Save to file.
+    str_instructions = '\n'.join(gen_instructions)
+    with open(FLAGS.save_instruction_path,'w') as file:
+      file.write(str_instructions)
+
 
 
 if __name__ == '__main__':
