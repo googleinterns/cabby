@@ -26,7 +26,7 @@ from shapely.geometry.polygon import Polygon
 from shapely import wkt
 import swifter
 import sys
-from typing import Dict, Tuple, Sequence, Text, Optional, List
+from typing import Dict, Tuple, Sequence, Text, Optional, List, Any
 
 
 from cabby import logger
@@ -46,6 +46,7 @@ class Map:
             map_name == "DC"
         self.map_name = map_name
         self.s2_graph = None
+        self.level = level
 
         if map_name == "Manhattan":
             self.polygon_area = wkt.loads(
@@ -70,11 +71,7 @@ class Map:
             self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
 
             # Find closest nodes to POI.
-            self.poi['node'] = self.poi['centroid'].apply(lambda x:
-                                                          ox.distance.
-                                                          get_nearest_node(self.
-                                                                           nx_graph, util.
-                                                                           tuple_from_point(x)))
+            self.poi['node'] = self.poi['centroid'].apply(self.closest_nodes)
 
         else:
             self.load_map(load_directory)
@@ -83,6 +80,18 @@ class Map:
 
         self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
         self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
+
+
+    def closest_nodes(self, point: Point) -> int:
+      '''Find closest nodes to POI. 
+      Arguments:
+        point: The point to which a closest node will be retrived.
+      Returns:
+        The Node id closest to point.
+      '''
+      ""
+      point_xy = util.tuple_from_point(point)
+      return ox.distance.get_nearest_node(self.nx_graph, point_xy)
 
     def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
         '''Helper funcion for extracting POI for the defined place.'''
@@ -103,7 +112,8 @@ class Map:
 
         return osm_poi_no_streets, osm_poi_streets
     
-    def add_single_poi_to_graph(self, single_poi: pd.Series) -> Sequence[edge.Edge]:
+    def add_single_poi_to_graph(
+    self, single_poi: pd.Series) -> Sequence[edge.Edge]:
         '''Add single POI to nx_graph.
         Arguments:
           single_poi: a single POI to be added to graph.
@@ -138,7 +148,8 @@ class Map:
         list_edges_connected_ids = []
         eddges_to_add = []
         for point in points:
-          eddges_to_add += self.add_single_point_edge(point, list_edges_connected_ids, poi_osmid)
+          eddges_to_add += self.add_single_point_edge(
+          point, list_edges_connected_ids, poi_osmid)
 
         # Add node POI to graph.
         self.nx_graph.add_node(
@@ -152,7 +163,8 @@ class Map:
         return eddges_to_add
 
     
-    def add_single_point_edge(self, point: Point, list_edges_connected_ids: List, poi_osmid: int) -> Optional[Sequence[edge.Edge]]:
+    def add_single_point_edge(self, point: Point, 
+    list_edges_connected_ids: List, poi_osmid: int) -> Optional[Sequence[edge.Edge]]:
         '''Connect a poi to the closest edge.
         Arguments:
           point: a point POI to be connected to the closest edge.
@@ -184,9 +196,12 @@ class Map:
         
         projected_point = line.interpolate(line.project(point))
         
-        projected_point_osmid = util.concat_numbers(len(list_edges_connected_ids),poi_osmid)
+        projected_point_osmid = util.concat_numbers(
+        len(list_edges_connected_ids),poi_osmid)
 
-        assert projected_point_osmid not in self.poi['osmid'].tolist(), projected_point_osmid
+        assert projected_point_osmid not in self.poi['osmid'].tolist(), (
+        projected_point_osmid)
+        
 
 
         self.nx_graph.add_node(
@@ -222,10 +237,14 @@ class Map:
 
         street_name = near_edge['name'] if 'name' in near_edge else ""
       
-        edge_to_add = edge.Edge.from_projected(near_edge_u, projected_point_osmid, dist_u,  near_edge['highway'], near_edge['osmid'], street_name)
+        edge_to_add = edge.Edge.from_projected(
+        near_edge_u, projected_point_osmid, dist_u,  near_edge['highway'], 
+        near_edge['osmid'], street_name)
         self.add_two_ways_edges(edge_to_add)
 
-        edge_to_add = edge.Edge.from_projected(near_edge_v, projected_point_osmid, dist_v, near_edge['highway'], near_edge['osmid'], street_name)
+        edge_to_add = edge.Edge.from_projected(
+        near_edge_v, projected_point_osmid, dist_v, near_edge['highway'],
+        near_edge['osmid'], street_name)
         self.add_two_ways_edges(edge_to_add)
       
 
@@ -259,24 +278,34 @@ class Map:
 
     def add_poi_to_graph(self):
         '''Add all POI to nx_graph.'''
-        eges_to_add_list = self.poi.swifter.apply(self.add_single_poi_to_graph, axis =1)
+        eges_to_add_list = self.poi.swifter.apply(
+        self.add_single_poi_to_graph, axis =1)
 
-        eges_to_add_list.swifter.apply(lambda e_list: self.add_two_ways_edges(e_list[0]))
+        eges_to_add_list.swifter.apply(
+        lambda e_list: self.add_two_ways_edges(e_list[0]))
 
-        eges_to_add_list.swifter.apply(lambda e_list: self.add_two_ways_edges(e_list[1]))
+        eges_to_add_list.swifter.apply(
+        lambda e_list: self.add_two_ways_edges(e_list[1]))
 
+    def get_cellids_for_poi(self, geometry: Any) -> Optional[Sequence[int]]:
+      '''get cellids for POI. 
+      Arguments:
+        geometry: The geometry to which a cellids will be retrived.
+      Returns:
+        The the cellids.
+      '''
+      ""
+      if isinstance(geometry, Point):
+        return util.cellid_from_point(geometry, self.level)
+      else:
+        return util.cellid_from_polygon(geometry, self.level)
 
     def create_S2Graph(self, level: int):
         '''Helper funcion for creating S2Graph.'''
 
         # Get cellids for POI.
-        self.poi['cellids'] = self.poi['geometry'].apply(lambda x: util.
-                                                         cellid_from_point(
-                                                             x, level) if
-                                                         isinstance(x,
-                                                                    Point) else util.
-                                                         cellid_from_polygon
-                                                         (x, level))
+        self.poi['cellids'] = self.poi['geometry'].apply(
+        self.get_cellids_for_poi)
 
 
         # Filter out entities that we didn't mange to get cellids covering.
@@ -361,7 +390,8 @@ class Map:
         path = self.get_valid_path(dir_name, '_edges', '.geojson')
         if not os.path.exists(path):
             # Drop columns with list type.
-            self.edges.drop(self.edges.columns.difference(['osmid','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
+            self.edges.drop(self.edges.columns.difference(
+            ['osmid','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
             self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
             self.edges.to_file(path, driver='GeoJSON')
         else:
