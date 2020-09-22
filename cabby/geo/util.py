@@ -320,3 +320,5 @@ def check_if_geometry_in_polygon(geometry: Any, poly: Polygon) -> Polygon:
     return poly.contains(geometry)
   else:
     geometry['geometry'].intersects(poly)
+
+

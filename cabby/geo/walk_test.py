@@ -16,6 +16,8 @@
 import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from cabby.geo import walk
 from cabby.geo import util

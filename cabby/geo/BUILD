@@ -31,9 +31,6 @@ py_test(
         "//cabby/geo/map_processing:map_structure",
 
     ],
-    data = [
-        "//cabby/geo/map_processing/poiTestData:poiGroup"
-    ],
 		
 )
 
