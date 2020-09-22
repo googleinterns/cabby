@@ -301,7 +301,7 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
   elif region == "Manhattan":
     query = _MANHATTAN_QUERY
   
-  elif region == "D.C":
+  elif region == "DC":
     query = _DC_QUERY
     
   else:
