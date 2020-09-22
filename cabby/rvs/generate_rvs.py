@@ -12,11 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Example command line method to output RVS instructions by templates.
-Example (Meet at Swirl Crepe. Walk past Wellington. \
-Swirl Crepe will be near Gyros.):
+'''
+Output RVS instructions by templates.
+
+Example command line call:
 $ bazel-bin/cabby/rvs/generate_rvs \
-	--path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" \
+  --path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" 
+
+Example output: 
+  "Meet at Swirl Crepe. Walk past Wellington. Swirl Crepe will be near Gyros."
 
 '''
 
@@ -31,78 +35,78 @@ from cabby.rvs import templates
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string("path", None, 
-"The path of the RVS data file to use for generating the RVS instructions." )
+flags.DEFINE_string("rvs_data_path", None,
+          "The path of the RVS data file to use for generating the RVS instructions.")
 
 # Required flags.
-flags.mark_flag_as_required('path')
+flags.mark_flag_as_required('rvs_data_path')
+
 
 def main(argv):
   del argv  # Unused.
 
-  entities = walk.read_instructions(FLAGS.path)
+  entities = walk.get_path_entities(FLAGS.rvs_data_path)
 
   if entities is None:
     sys.exit("The path to the RVS data was not found.")
 
-  print ("Number of RVS samples to create: ",len(entities))
+  print("Number of RVS samples to create: ", len(entities))
 
   # Get templates.
   gen_templates = templates.create_templates()
 
-  print ("Number of templates: ",gen_templates.shape[0])
+  print("Number of templates: ", gen_templates.shape[0])
 
   # Generate instructions.
   gen_instructions = []
   for entity in entities:
-    current_templates = gen_templates.copy()
+    current_templates = gen_templates.copy()  # Candidate templates.
     if entity.tags_start.beyond_pivot is '':
+      # Filter out templates with the beyond pivot mention.
       current_templates = gen_templates[
-      current_templates['beyond_pivot']==False]
+        current_templates['beyond_pivot'] == False]
     else:
-      current_templates = gen_templates[current_templates['beyond_pivot']==True]
+      # Filter out templates without the beyond pivot mention.
+      current_templates = gen_templates[current_templates['beyond_pivot'] == True]
 
     if entity.tags_start.intersections > 0:
-      is_block = randint(0,1)
+      # Pick templates with either blocks or intersections.
+      is_block = randint(0, 1)
       blocks = entity.tags_start.intersections-1 if is_block else -1
       if entity.tags_start.intersections == 1:
+        # Filter out templates without the next intersection mention.
         current_templates = current_templates[
-        current_templates['next_intersection']==True]
+          current_templates['next_intersection'] == True]
       elif blocks == 1:
+        # Filter out templates without the next block mention.
         current_templates = current_templates[
-        current_templates['next_block']==True]
+          current_templates['next_block'] == True]
       else:
-        if blocks >1:
+        if blocks > 1:
+          # Filter out templates without mentions of the number of blocks
+          # that should be passed.
           current_templates = current_templates[
-          current_templates['blocks']==True]
+            current_templates['blocks'] == True]
         else:
+          # Filter out templates without mentions of the number of
+          # intersections that should be passed.
           current_templates = current_templates[
-          current_templates['intersection']==True]
+            current_templates['intersection'] == True]
     else:
+      # Filter out templates with mentions of intersection\block.
       current_templates = current_templates[
-      (current_templates['intersection']==False) & 
-      (current_templates['blocks']==False) &
-      (current_templates['next_intersection']==False) & 
-      (current_templates['next_block']==False)  ]
+        (current_templates['intersection'] == False) &
+        (current_templates['blocks'] == False) &
+        (current_templates['next_intersection'] == False) &
+        (current_templates['next_block'] == False)]
 
+    # From the candidates left, pick randomly one template.
     choosen_template = current_templates.sample(1)['sentence'].iloc[0]
+
     gen_instruction = templates.add_features_to_template(
-    choosen_template, entity)
+      choosen_template, entity)
     gen_instructions.append(gen_instruction)
+
 
 if __name__ == '__main__':
   app.run(main)
-
-
-
-
-
-
-      
-
-
-
-
-
-
-
