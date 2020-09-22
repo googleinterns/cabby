@@ -7,6 +7,10 @@ py_library(
     srcs = ['observe.py'],
 )
 
+py_library(
+    name = 'item',
+    srcs = ['item.py'],
+)
 
 py_test(
     name = "observe_test",
@@ -48,5 +52,9 @@ py_binary(
         "//cabby/data/wikidata:item",
         "//cabby/data/wikidata:query",
         "//cabby/geo:directions",
+        "//cabby/geo/map_processing:map_structure",
+        "//cabby/geo:walk",
+
+
     ],
 )

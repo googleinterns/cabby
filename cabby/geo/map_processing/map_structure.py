@@ -438,10 +438,10 @@ class Map:
             path), "path {0} doesn't exist.".format(path)
         self.edges = gpd.read_file(path, driver='GeoJSON')
         self.edges['osmid_list'] = self.edges['osmid'].apply(
-            lambda x: covert_string_to_list(x))
+            lambda x: convert_string_to_list(x))
 
 
-def covert_string_to_list(string_list: Text) -> Sequence:
+def convert_string_to_list(string_list: Text) -> Sequence:
     '''Splitting a string into integers and creates a new list of the integers. 
     Arguments: 
     string_list: A string in the form of a list. E.g "[1,2,3]". 

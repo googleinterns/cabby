@@ -32,7 +32,8 @@ flags.DEFINE_enum(
   "Map areas: Manhattan, Pittsburgh or D.C.")
 flags.DEFINE_integer("min_s2_level", None, "Minimum S2 level of the map.")
 
-flags.DEFINE_string("directory", None, "The directory where the files will be saved to" )
+flags.DEFINE_string("directory", None,
+          "The directory where the files will be saved to")
 
 # Required flags.
 flags.mark_flag_as_required("region")
@@ -43,13 +44,16 @@ def main(argv):
   del argv  # Unused.
   map = map_structure.Map(FLAGS.region, FLAGS.min_s2_level)
 
-  # Write to disk.
-  map.write_map(FLAGS.directory)
+  if FLAGS.directory is not None:
+    # Write to disk.
+    map.write_map(FLAGS.directory)
 
-  # Load from disk.
-  map_new = map_structure.Map(FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
+    # Load from disk.
+    map_new = map_structure.Map(
+      FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
 
-  print('Number of POI found: {0}'.format(map_new.poi.shape[0]))
+    print('Number of POI found: {0}'.format(map_new.poi.shape[0]))
+
 
 if __name__ == '__main__':
   app.run(main)

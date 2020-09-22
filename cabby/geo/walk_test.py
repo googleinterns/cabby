@@ -20,6 +20,7 @@ from shapely.geometry.point import Point
 from cabby.geo import walk
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
+from cabby.geo import util
 
 
 class WalkTest(unittest.TestCase):
