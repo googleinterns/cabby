@@ -71,10 +71,19 @@ class Map:
     else:
       self.load_map(load_directory)
     self.create_S2Graph(level)
+    self.process_param()
 
-    self.poi = self.poi.set_crs(epsg=OSM_CRS, allow_override=True)
-    self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
-    self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
+  def process_param(self):
+      '''Helper funcion for process the class data objects.'''
+
+      # Set the coordinate system.
+      self.poi = self.poi.set_crs(epsg=OSM_CRS, allow_override=True)
+      self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
+      self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
+      
+      # Drop columns with list type.
+      self.edges.drop(self.edges.columns.difference(['osmid','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
+      self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
 
   def closest_nodes(self, point: Point) -> int:
     '''Find closest nodes to POI. 
@@ -225,9 +234,6 @@ class Map:
     # Write edges.
     path = self.get_valid_path(dir_name, '_edges', '.geojson')
     if not os.path.exists(path):
-      # Drop columns with list type.
-      self.edges.drop(self.edges.columns.difference(['osmid','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
-      self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
       self.edges.to_file(path, driver='GeoJSON')
     else:
       map_logger.info("Path {0} already exists.".format(path))
@@ -240,8 +246,9 @@ class Map:
     assert os.path.exists(
       path), "Path {0} doesn't exist.".format(path)
     poi_pandas = pd.read_pickle(path)
-    poi_pandas['cellids'] = poi_pandas['cellids'].apply(
-      lambda x: util.s2cells_from_cellids(x))
+    if 'cellids' in poi_pandas:
+      poi_pandas['cellids'] = poi_pandas['cellids'].apply(
+        lambda x: util.s2cells_from_cellids(x))
     self.poi = poi_pandas
 
     # Load streets.
@@ -249,8 +256,6 @@ class Map:
     assert os.path.exists(
       path), "Path {0} doesn't exist.".format(path)
     streets_pandas = pd.read_pickle(path)
-    streets_pandas['cellids'] = streets_pandas['cellids'].apply(
-      lambda x: util.s2cells_from_cellids(x))
     self.streets = streets_pandas
 
     # Load graph.
@@ -265,10 +270,10 @@ class Map:
       path), "Path {0} doesn't exist.".format(path)
     self.nodes = gpd.read_file(path, driver='GeoJSON')
 
-    # Load nodes.
+    # Load edges.
     path = self.get_valid_path(dir_name, '_edges', '.geojson')
     assert os.path.exists(
       path), "Path {0} doesn't exist.".format(path)
     self.edges = gpd.read_file(path, driver='GeoJSON')
 
-
+    
