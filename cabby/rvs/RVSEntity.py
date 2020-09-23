@@ -37,7 +37,6 @@ class RVSData:
   distance: int = attr.ib()
   instruction: Text = attr.ib()
   id: int = attr.ib()
-  
 
   def __attrs_post_init__(self):
     pass
