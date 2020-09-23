@@ -567,7 +567,7 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
                                                   ['centroid']])
 
     gdf_route = gpd.GeoDataFrame(
-        geometry=[Polygon(rvs_path_entity.route['geometry'].tolist())])
+        geometry=[LineString(rvs_path_entity.route['geometry'].tolist())])
 
     geo_entity = geo_item.GeoEntity.from_points_route_pivots(
         gdf_tags_start, gdf_end, gdf_route, gdf_main_pivot, 
