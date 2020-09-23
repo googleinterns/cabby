@@ -75,7 +75,7 @@ class Map:
     self.process_param()
 
   def process_param(self):
-    '''Helper funcion for process the class data objects.'''
+    '''Helper function for processing the class data objects.'''
 
     # Set the coordinate system.
     self.poi = self.poi.set_crs(epsg=OSM_CRS, allow_override=True)
