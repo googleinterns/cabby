@@ -14,13 +14,21 @@
 '''Library to support map geographical computations.'''
 
 import folium
+from functools import partial
 import geographiclib
 from geopy.distance import geodesic
+import pyproj
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
+from shapely.ops import transform
+from shapely.geometry import box, mapping, LineString
+
 from typing import Optional, Tuple, Sequence, Any
 import webbrowser
+
+UTM_CRS = 32633  # UTM Zones (North).
+WGS84_CRS = 4326  # WGS84 Latitude/Longitude.
 
 
 def s2ids_from_s2cells(list_s2cells: Sequence[s2.S2Cell]) -> Sequence[int]:
@@ -295,3 +303,23 @@ def check_if_geometry_in_polygon(geometry: Any, poly: Polygon) -> Polygon:
     return poly.contains(geometry)
   else:
     geometry['geometry'].intersects(poly)
+
+
+def get_linestring_distance(line: LineString) -> int:
+  '''Calculate the line length in meters.
+  Arguments:
+    route: The line that length calculation will be performed on.
+  Returns:
+    Line length in meters.
+  '''
+  project = partial(
+    pyproj.transform,
+    pyproj.Proj(WGS84_CRS),
+    pyproj.Proj(UTM_CRS))
+  
+  trans_line = transform(project, line)
+
+  return round(trans_line.length)
+
+
+

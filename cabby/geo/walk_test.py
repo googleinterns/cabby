@@ -49,15 +49,12 @@ class WalkTest(unittest.TestCase):
 
 
   def testPointsSelection(self):
-    geo_entity = walk.get_points_and_route(self.map)
-    if geo_entity is None:
-      return
-
-    self.assertGreaterEqual(geo_entity.route.shape[0], 1)
-    self.assertIsNotNone(geo_entity.end_point['name'])
-    self.assertIsNotNone(geo_entity.start_point['name'])
-    self.assertIsNotNone(geo_entity.main_pivot['main_tag'])
-    self.assertIsNotNone(geo_entity.near_pivot['main_tag'])
+    geo_entity = walk.get_single_sample(self.map)
+    self.assertEqual(geo_entity.start_point['osmid'], 4696835894)
+    self.assertEqual(geo_entity.end_point['osmid'], 1685776652)
+    self.assertEqual(geo_entity.main_pivot['osmid'], 148753535)
+    self.assertEqual(geo_entity.near_pivot['osmid'], 1685776628)
+    self.assertEqual(geo_entity.beyond_pivot['osmid'], 1704264322)
 
 
 
