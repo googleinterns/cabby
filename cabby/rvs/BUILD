@@ -74,8 +74,14 @@ py_binary(
     srcs = ['generate_rvs.py'],
     deps = [
         ":templates",
+        ":rvs_item",
         "//cabby/geo:walk",
 
 
     ],
+)
+
+py_library(
+    name = 'rvs_item',
+    srcs = ['rvs_item.py'],
 )

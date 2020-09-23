@@ -25,10 +25,9 @@ Example output:
 
 '''
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
+import json
 from random import randint
+from shapely.geometry import box, mapping, LineString
 import sys
 
 from absl import app
@@ -36,31 +35,28 @@ from absl import flags
 
 from cabby.geo import walk
 from cabby.rvs import templates
-from cabby.rvs import RVSEntity
+from cabby.rvs import rvs_item
 
 
 
 
-# FLAGS = flags.FLAGS
+FLAGS = flags.FLAGS
 
-# flags.DEFINE_string("rvs_data_path", None,
-#           "The path of the RVS data file to use for generating the RVS instructions.")
+flags.DEFINE_string("rvs_data_path", None,
+          "The path of the RVS data file to use for generating the RVS instructions.")
 
-# flags.DEFINE_string("save_instruction_path", None,
-#           "The path of the file where the generated instructions will be saved. ")
+flags.DEFINE_string("save_instruction_path", None,
+          "The path of the file where the generated instructions will be saved. ")
 
-# # Required flags.
-# flags.mark_flag_as_required('rvs_data_path')
-# flags.mark_flag_as_required('save_instruction_path')
+# Required flags.
+flags.mark_flag_as_required('rvs_data_path')
+flags.mark_flag_as_required('save_instruction_path')
 
 
-# def main(argv):
-#   del argv  # Unused.
+def main(argv):
+  del argv  # Unused.
 
-  # entities = walk.get_path_entities(FLAGS.rvs_data_path)
-
-def temp():  
-  entities = walk.get_path_entities("./cabby/geo/pathData/pittsburgh_geo_paths.gpkg")
+  entities = walk.get_path_entities(FLAGS.rvs_data_path)
 
   if entities is None:
     sys.exit("No entities found.")
@@ -73,7 +69,7 @@ def temp():
   print("Number of templates: ", gen_templates.shape[0])
 
   # Generate instructions.
-  gen_instructions = []
+  gen_samples = []
   for entity_idx, entity in enumerate(entities):
     current_templates = gen_templates.copy()  # Candidate templates.
     if entity.tags_start.beyond_pivot is '':
@@ -120,18 +116,18 @@ def temp():
 
     gen_instruction = templates.add_features_to_template(
       choosen_template, entity)
-    rvs_entity = RVSEntity.RVSData.from_geo_entities(entity.tags_start.geometry, entity.end.iloc[0], entity.route, gen_instruction, entity_idx)
-    gen_instructions.append(gen_instruction)
+    rvs_entity = rvs_item.RVSData.from_geo_entities(entity.tags_start.geometry, entity.end.iloc[0], , LineString(entity.route.iloc[0].exterior.coords[0:-1]), gen_instruction, entity_idx)
+    gen_samples.append(rvs_entity.sample)
 
-    # # Save to file.
-    # str_instructions = '\n'.join(gen_instructions)
-    # with open(FLAGS.save_instruction_path,'w') as file:
-    #   file.write(str_instructions)
-
-
-
-# if __name__ == '__main__':
-#   app.run(main)
+    # Save to file.
+    with open(FLAGS.save_instruction_path, 'a') as outfile:
+        for sample in gen_samples:
+            json.dump(sample, outfile, default=lambda o: o.__dict__)
+            outfile.write('\n')
+            outfile.flush()
 
 
-temp()
+if __name__ == '__main__':
+  app.run(main)
+
+
