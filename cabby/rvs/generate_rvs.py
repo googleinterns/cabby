@@ -53,7 +53,7 @@ def main(argv):
   entities = walk.get_path_entities(FLAGS.rvs_data_path)
 
   if entities is None:
-    sys.exit("The path to the RVS data was not found.")
+    sys.exit("No entities found.")
 
   print("Number of RVS samples to create: ", len(entities))
 
