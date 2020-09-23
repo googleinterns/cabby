@@ -23,7 +23,7 @@ import attr
 
 @attr.s
 class RVSPath:
-  """Construct a Wikigeo sample.
+  """Construct a RVSPath sample.
   `start_point` is the beginning location.
   `end_point` is the goal location.
   `route` is route between the start and end points.

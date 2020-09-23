@@ -75,9 +75,18 @@ def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
 
   return route_nodes
 
+def get_path_distance(route: GeoDataFrame) -> int:
+  '''Calculate the path distance.
+  Arguments:
+    route: The route that distance calculation will be performed on.
+  Returns:
+    A path distance.
+  '''
+  pass
+
 
 def get_end_poi(map: map_structure.Map) -> Optional[Dict[Text, Any]]:
-  '''Returns the a random POI.
+  '''Returns a random POI.
   Arguments:
     map: The map of a specific region.
   Returns:
@@ -436,7 +445,8 @@ def get_points_and_route(map: map_structure.Map) -> Optional[item.RVSPath]:
   cardinal_direction = get_cardinal_direction(start_point, end_point)
 
   rvs_path_entity = item.RVSPath.from_points_route_pivots(start_point,
-                              end_point, route,
+                              end_point, 
+                              route,
                               main_pivot,
                               near_pivot,
                               beyond_pivot,
@@ -480,7 +490,7 @@ def get_single_sample(map: map_structure.Map) -> Optional[geo_item.
                           ['centroid']])
 
   gdf_route = gpd.GeoDataFrame(
-    geometry=[Polygon(rvs_path_entity.route['geometry'].tolist())])
+    geometry=[LineString(rvs_path_entity.route['geometry'].tolist())])
 
   geo_entity = geo_item.GeoEntity.from_points_route_pivots(
     gdf_tags_start, gdf_end, gdf_route, gdf_main_pivot, gdf_near_pivot, gdf_beyond_pivot)
@@ -562,3 +572,5 @@ def print_instructions(path: Text):
     sys.exit("The path to the RVS data was not found.")
   start = gpd.read_file(path, layer='start')
   print('\n'.join(start['instruction'].values))
+
+
