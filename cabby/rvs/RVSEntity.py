@@ -20,35 +20,37 @@ from typing import Text, Dict
 
 import attr
 
+from cabby.geo import walk
+
 
 @attr.s
-class GeoEntity:
-  """Construct a GeoEntity sample.
-
-  `tags_start` includes the tags, instruction and start geolocation.
-  `end` is the goal geolocation.
-  `route` is geometry of the route between the start and end points.
-  `main_pivot` is pivot along the route geolocation.
-  `near_pivot` is the pivot near the goal geolocation. 
-  `beyond_pivot` is the pivot beyond the goal geolocation. 
+class RVSData:
+  """Construct a RVSdata sample.
+  `start_point` is the beginning location.
+  `end_point` is the goal location.
+  `distance` path distance between start and end point.
+  `instruction` the instruction describing how to get to the end point.
+  `id` is the id of the entity.
   """
-  tags_start: GeoDataFrame = attr.ib()
-  end: GeoDataFrame = attr.ib()
-  route: GeoDataFrame = attr.ib()
-  main_pivot: GeoDataFrame = attr.ib()
-  near_pivot: GeoDataFrame = attr.ib()
-  beyond_pivot: GeoDataFrame = attr.ib()
+  start_point: tuple = attr.ib()
+  end_point: tuple = attr.ib()
+  distance: int = attr.ib()
+  instruction: Text = attr.ib()
+  id: int = attr.ib()
+  
+
+  def __attrs_post_init__(self):
+    pass
 
   @classmethod
-  def from_points_route_pivots(cls, start, end, route, main_pivot,
-                 near_pivot, beyond_pivot):
+  def from_geo_entities(cls, start, end, route, instruction,
+                 id):
     """Construct an Entity from the start and end points, route, and pivots.
     """
-    return GeoEntity(
+    return RVSData(
       start,
       end,
-      route,
-      main_pivot,
-      near_pivot,
-      beyond_pivot
+      walk.get_path_distance(route),
+      instruction,
+      id
     )

@@ -25,6 +25,9 @@ Example output:
 
 '''
 
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
+
 from random import randint
 import sys
 
@@ -33,24 +36,31 @@ from absl import flags
 
 from cabby.geo import walk
 from cabby.rvs import templates
-
-FLAGS = flags.FLAGS
-
-flags.DEFINE_string("rvs_data_path", None,
-          "The path of the RVS data file to use for generating the RVS instructions.")
-
-flags.DEFINE_string("save_instruction_path", None,
-          "The path of the file where the generated instructions will be saved. ")
-
-# Required flags.
-flags.mark_flag_as_required('rvs_data_path')
-flags.mark_flag_as_required('save_instruction_path')
+from cabby.rvs import RVSEntity
 
 
-def main(argv):
-  del argv  # Unused.
 
-  entities = walk.get_path_entities(FLAGS.rvs_data_path)
+
+# FLAGS = flags.FLAGS
+
+# flags.DEFINE_string("rvs_data_path", None,
+#           "The path of the RVS data file to use for generating the RVS instructions.")
+
+# flags.DEFINE_string("save_instruction_path", None,
+#           "The path of the file where the generated instructions will be saved. ")
+
+# # Required flags.
+# flags.mark_flag_as_required('rvs_data_path')
+# flags.mark_flag_as_required('save_instruction_path')
+
+
+# def main(argv):
+#   del argv  # Unused.
+
+  # entities = walk.get_path_entities(FLAGS.rvs_data_path)
+
+def temp():  
+  entities = walk.get_path_entities("./cabby/geo/pathData/pittsburgh_geo_paths.gpkg")
 
   if entities is None:
     sys.exit("No entities found.")
@@ -64,7 +74,7 @@ def main(argv):
 
   # Generate instructions.
   gen_instructions = []
-  for entity in entities:
+  for entity_idx, entity in enumerate(entities):
     current_templates = gen_templates.copy()  # Candidate templates.
     if entity.tags_start.beyond_pivot is '':
       # Filter out templates with the beyond pivot mention.
@@ -110,14 +120,18 @@ def main(argv):
 
     gen_instruction = templates.add_features_to_template(
       choosen_template, entity)
+    rvs_entity = RVSEntity.RVSData.from_geo_entities(entity.tags_start.geometry, entity.end.iloc[0], entity.route, gen_instruction, entity_idx)
     gen_instructions.append(gen_instruction)
 
-    # Save to file.
-    str_instructions = '\n'.join(gen_instructions)
-    with open(FLAGS.save_instruction_path,'w') as file:
-      file.write(str_instructions)
+    # # Save to file.
+    # str_instructions = '\n'.join(gen_instructions)
+    # with open(FLAGS.save_instruction_path,'w') as file:
+    #   file.write(str_instructions)
 
 
 
-if __name__ == '__main__':
-  app.run(main)
+# if __name__ == '__main__':
+#   app.run(main)
+
+
+temp()
