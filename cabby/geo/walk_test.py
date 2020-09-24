@@ -18,6 +18,8 @@ import unittest
 from shapely.geometry.point import Point
 import sys
 
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from cabby.geo import walk
 from cabby.geo import util
@@ -28,10 +30,10 @@ from cabby.geo import util
 class WalkTest(unittest.TestCase):
 
   @classmethod
-  def setUpClass(self):
+  def setUpClass(cls):
 
     # Load map from disk.
-    self.map = map_structure.Map("Bologna", 18)
+    cls.map = map_structure.Map("Bologna", 18)
 
   def testRouteCalculation(self):
     start_point = Point(11.3414, 44.4951)

@@ -25,23 +25,23 @@ from typing import Optional, Tuple, Sequence, Any
 import webbrowser
 
 
-def s2ids_from_s2cells(list_s2cells: Sequence[s2.S2Cell]) -> Sequence[int]:
-    '''Converts a sequence of S2Cells to a sequence of ids of the S2Cells. 
+def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]:
+    '''Converts a sequence of S2CellIds to a sequence of ids of the S2CellIds. 
     Arguments:
-      list_s2cells(S2Cells): The list of S2Cells to be converted to ids.
+      list_s2cells(S2CellIds): The list of S2CellIds to be converted to ids.
     Returns:
-      A sequence of ids corresponding to the S2Cells.
+      A sequence of ids corresponding to the S2CellIds.
     '''
 
     return [cell.id() for cell in list_s2cells]
 
 
-def s2cells_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2Cell]:
-    '''Converts a sequence of ids of S2Cells to a sequence of S2Cells. 
+def s2cellids_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2CellId]:
+    '''Converts a sequence of ids of S2CellIds to a sequence of S2CellIds. 
     Arguments:
-      list_ids(list): The list of S2Cells ids to be converted to S2Cells.
+      list_ids(list): The list of S2CellIds ids to be converted to S2CellIds.
     Returns:
-      A sequence of S2Cells corresponding to the ids.
+      A sequence of S2CellIds corresponding to the ids.
     '''
     return [s2.S2Cell(s2.S2CellId(cellid)) for cellid in list_ids]
 

@@ -25,6 +25,7 @@ from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely import wkt
 import sys
+from s2geometry import pywraps2 as s2
 from typing import Dict, Tuple, Sequence, Text, Optional, Any
 
 from cabby import logger
@@ -117,7 +118,8 @@ class Map:
 
     return osm_poi_no_streets, osm_poi_streets
 
-  def get_cellids_for_poi(self, geometry: Any) -> Optional[Sequence[int]]:
+  def get_s2cellids_for_poi(
+      self, geometry: Any) -> Optional[Sequence[s2.S2CellId]]:
     '''get cellids for POI. 
     Arguments:
       geometry: The geometry to which a cellids will be retrived.
@@ -130,8 +132,8 @@ class Map:
     else:
       return util.cellid_from_polygon(geometry, self.level)
 
-  def get_cellids_for_streets(
-      self, geometry: Any) -> Optional[Sequence[int]]:
+  def get_s2cellids_for_streets(
+      self, geometry: Any) -> Optional[Sequence[s2.S2CellId]]:
     '''get cellids for streets. 
     Arguments:
       geometry: The geometry to which a cellids will be retrived.
@@ -148,27 +150,27 @@ class Map:
     '''Helper funcion for creating S2Graph.'''
 
     # Get cellids for POI.
-    self.poi['cellids'] = self.poi['geometry'].apply(
-      self.get_cellids_for_poi)
+    self.poi['s2cellids'] = self.poi['geometry'].apply(
+      self.get_s2cellids_for_poi)
 
     # Get cellids for streets.
-    self.streets['cellids'] = self.streets['geometry'].apply(self.
-                                 get_cellids_for_streets)
+    self.streets['s2cellids'] = self.streets['geometry'].apply(self.
+                                   get_s2cellids_for_streets)
 
     # Filter out entities that we didn't mange to get cellids covering.
-    self.poi = self.poi[self.poi['cellids'].notnull()]
-    self.streets = self.streets[self.streets['cellids'].notnull()]
+    self.poi = self.poi[self.poi['s2cellids'].notnull()]
+    self.streets = self.streets[self.streets['s2cellids'].notnull()]
 
     # Create graph.
     self.s2_graph = graph.MapGraph()
 
     # Add POI to graph.
-    self.poi[['cellids', 'osmid']].apply(
-      lambda x: self.s2_graph.add_poi(x.cellids, x.osmid), axis=1)
+    self.poi[['s2cellids', 'osmid']].apply(
+      lambda x: self.s2_graph.add_poi(x.s2cellids, x.osmid), axis=1)
 
     # Add street to graph.
-    self.streets[['cellids', 'osmid']].apply(
-      lambda x: self.s2_graph.add_street(x.cellids, x.osmid), axis=1)
+    self.streets[['s2cellids', 'osmid']].apply(
+      lambda x: self.s2_graph.add_street(x.s2cellids, x.osmid), axis=1)
 
   def get_valid_path(self, dir_name: Text, name_ending: Text,
              file_ending: Text) -> Optional[Text]:
@@ -198,8 +200,9 @@ class Map:
 
     # Write POI.
     pd_poi = copy.deepcopy(self.poi)
-    pd_poi['cellids'] = pd_poi['cellids'].apply(
-      lambda x: util.s2ids_from_s2cells(x))
+    pd_poi['cellids'] = pd_poi['s2cellids'].apply(
+      lambda x: util.cellids_from_s2cellids(x))
+    pd_poi.drop(['s2cellids'], 1, inplace=True)
 
     path = self.get_valid_path(dir_name, '_poi', '.pkl')
     if not os.path.exists(path):
@@ -209,8 +212,9 @@ class Map:
 
     # Write streets.
     pd_streets = copy.deepcopy(self.streets)
-    pd_streets['cellids'] = pd_streets['cellids'].apply(
-      lambda x: util.s2ids_from_s2cells(x))
+    pd_streets['cellids'] = pd_streets['s2cellids'].apply(
+      lambda x: util.cellids_from_s2cellids(x))
+    pd_streets.drop(['s2cellids'], 1, inplace=True)
 
     path = self.get_valid_path(dir_name, '_streets', '.pkl')
     if not os.path.exists(path):
@@ -249,8 +253,10 @@ class Map:
       path), "Path {0} doesn't exist.".format(path)
     poi_pandas = pd.read_pickle(path)
     if 'cellids' in poi_pandas:
-      poi_pandas['cellids'] = poi_pandas['cellids'].apply(
-        lambda x: util.s2cells_from_cellids(x))
+      poi_pandas['s2cellids'] = poi_pandas['cellids'].apply(
+        lambda x: util.s2cellids_from_cellids(x))
+      poi_pandas.drop(['cellids'], 1, inplace=True)
+
     self.poi = poi_pandas
 
     # Load streets.
@@ -258,6 +264,10 @@ class Map:
     assert os.path.exists(
       path), "Path {0} doesn't exist.".format(path)
     streets_pandas = pd.read_pickle(path)
+    if 'cellids' in streets_pandas:
+      streets_pandas['s2cellids'] = streets_pandas['cellids'].apply(
+        lambda x: util.s2cellids_from_cellids(x))
+      streets_pandas.drop(['cellids'], 1, inplace=True)
     self.streets = streets_pandas
 
     # Load graph.

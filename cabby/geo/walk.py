@@ -86,7 +86,7 @@ def get_end_poi(map: map_structure.Map) -> Optional[Dict[Text, Any]]:
   '''
 
   # Filter large POI.
-  small_poi = map.poi[map.poi['cellids'].str.len() <= 4]
+  small_poi = map.poi[map.poi['s2cellids'].str.len() <= 4]
 
   if small_poi.shape[0] == 0:
     return None
@@ -137,7 +137,7 @@ def get_start_poi(map: map_structure.Map, end_point: GeoDataFrame) -> \
   poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
 
   # Filter large POI.
-  small_poi = poi_in_ring[poi_in_ring['cellids'].str.len() <= 4]
+  small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= 4]
 
   if small_poi.shape[0] == 0:
     return None
@@ -599,7 +599,6 @@ def generate_and_save_rvs_routes(path: Text, map: map_structure.Map, n_samples:
     entity = get_single_sample(map)
     if entity is None:
       continue
-    print (counter)
     counter += 1
     gdf_start_list = gdf_start_list.append(entity.tags_start,
                          ignore_index=True)
