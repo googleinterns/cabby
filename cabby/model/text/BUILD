@@ -12,6 +12,10 @@ py_library(
     srcs = ['model.py'],
 )
 
+py_library(
+    name = 'dataset',
+    srcs = ['dataset.py'],
+)
 
 py_binary(
     name = 'train',
@@ -20,5 +24,14 @@ py_binary(
     deps = [
         ':input_pipeline',
         ':model',
+    ],
+)
+
+py_binary(
+    name = 'train_2',
+    main = 'train_2.py',
+    srcs = ['train_2.py'],
+    deps = [
+        ':dataset',
     ],
 )
