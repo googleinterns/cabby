@@ -31,8 +31,7 @@ py_test(
         "//cabby/geo/map_processing:map_structure",
 
     ],
-    data = [":testdata"],
-
+		
 )
 
 
@@ -71,19 +70,6 @@ py_binary(
     
 )
 
-
-filegroup(
-    name = "testdata",
-    srcs = [
-        "testdata/bologna_streets.pkl",
-        "testdata/bologna_poi.pkl",
-        "testdata/bologna_nodes.geojson",
-        "testdata/bologna_graph.gpickle",
-    ],
-    visibility = [
-        "//visibility:public",
-    ],
-)
 
 py_binary(
     name = 'sample_poi',
