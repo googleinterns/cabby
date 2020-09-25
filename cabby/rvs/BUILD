@@ -42,24 +42,6 @@ py_test(
     ],
 )
 
-py_binary(
-    name = 'generate_single_rvs',
-    main = 'generate_single_rvs.py',
-    srcs = ['generate_single_rvs.py'],
-    deps = [
-        ':observe',
-        ':speak',
-        "//cabby/data/wikidata:item",
-        "//cabby/data/wikidata:query",
-        "//cabby/geo:directions",
-        "//cabby/geo/map_processing:map_structure",
-        "//cabby/geo:walk",
-
-
-    ],
-)
-
-
 
 py_binary(
     name = 'generate_rvs',
