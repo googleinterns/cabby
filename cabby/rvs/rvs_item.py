@@ -13,12 +13,12 @@
 # limitations under the License.
 '''Basic classes and functions for Wikigeo items.'''
 
-from geopandas import GeoDataFrame
 import re
-from shapely.geometry.point import Point
 from typing import Text, Dict
 
 import attr
+from geopandas import GeoDataFrame
+from shapely.geometry.point import Point
 
 from cabby.geo import util
 

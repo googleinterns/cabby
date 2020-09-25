@@ -55,8 +55,7 @@ flags.mark_flag_as_required('save_instruction_path')
 def main(argv):
   del argv  # Unused.
 
-  # entities = walk.get_path_entities(FLAGS.rvs_data_path)
-  entities = walk.get_path_entities("pittsburgh_geo_paths.gpkg")
+  entities = walk.get_path_entities(FLAGS.rvs_data_path)
 
   if entities is None:
     sys.exit("No entities found.")

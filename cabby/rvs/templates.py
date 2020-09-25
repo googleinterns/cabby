@@ -13,14 +13,14 @@
 # limitations under the License.
 '''Define templates for RVS.'''
 
-from cabby.rvs import item
-from nltk import CFG, Production
-from nltk.parse.generate import generate, Nonterminal
-import pandas as pd
 from typing import Dict, Sequence, Text
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
+import nltk
+from nltk import CFG, Production
+from nltk.parse.generate import Nonterminal
+import pandas as pd
+
+from cabby.rvs import item
 
 
 # Terminals in the grammar.
@@ -140,7 +140,7 @@ def create_templates():
 
   # Generate templates.
   templates = []
-  for sentence in generate(grammar):
+  for sentence in nltk.parse.generate.generate(grammar):
 
     sentence = ' '.join(sentence)
 
