@@ -76,53 +76,53 @@ def create_templates():
   prods = [
     # Specific verb with goal and the rest of instruction body.
     Production(Nonterminal('S'), (Nonterminal('V2'),
-                    Nonterminal('V2_BODY'))),  
+                    Nonterminal('V2_BODY'))),
     # A verb and rest of the instruction body assuming goal already mentioned.
     Production(Nonterminal('V2_BODY'), (Nonterminal('V1'),
-                      Nonterminal('M_G'))),  
-    # A verb and the rest of the instruction body assuming the goal wasn't 
+                      Nonterminal('M_G'))),
+    # A verb and the rest of the instruction body assuming the goal wasn't
     # mentioned before.
     Production(Nonterminal('S'), (Nonterminal(
       'V1'), Nonterminal('NO_GOAL'))),
     # The goal in the begining and the rest of the instruction body assuming
-    # goal already mentioned.  
+    # goal already mentioned.
     Production(Nonterminal('S'), (Nonterminal('V1_GOAL'),
-                    Nonterminal('WITH_GOAL'))),  
+                    Nonterminal('WITH_GOAL'))),
     # A verb and 'to the' and then goal mention and the rest of the instruction
     # body.
     Production(Nonterminal('V1_GOAL'), (Nonterminal('V1'),
-                      Nonterminal('V1_CON'))),  
+                      Nonterminal('V1_CON'))),
     # A goal mention and the rest of the instruction body.
     Production(Nonterminal('WITH_GOAL'), (Nonterminal('GOAL'),
-                        Nonterminal('M_G'))),  
+                        Nonterminal('M_G'))),
     # Main part of the instruction without verb in begining and resuming
     # sentence.
     Production(Nonterminal('M_G'), (Nonterminal('MAIN_NO_V'),
-                    Nonterminal('E'))),  
+                    Nonterminal('E'))),
     # Main part of the instruction, adding a new sentence.
     Production(Nonterminal('M_G'), (Nonterminal('MAIN'),
-                    Nonterminal('E'))),  
+                    Nonterminal('E'))),
     # End part - (1) near pivot assuming goal already mentioned; and (2) avoid
     # sentence.
     Production(Nonterminal('E'), (Nonterminal('NEAR_GOAL_START'),
-                    Nonterminal('AVOID'))),  
+                    Nonterminal('AVOID'))),
     # End part - (1) near pivot assuming goal not mentioned yet; and (2) avoid
     # sentence.
     Production(Nonterminal('E'), (Nonterminal('NEAR_GOAL_END'),
-                    Nonterminal('AVOID'))),  
+                    Nonterminal('AVOID'))),
     # Main part of the instruction without verb in begining and resuming
     # sentence assuming no goal mentioned before.
     Production(Nonterminal('NO_GOAL'), (Nonterminal('MAIN_NO_V'),
-                      Nonterminal('G'))),  
-    # Add Goal to main part and then resume instruction by adding an 
+                      Nonterminal('G'))),
+    # Add Goal to main part and then resume instruction by adding an
     # ending(near+avoid).
-    Production(Nonterminal('G'), (Nonterminal('GOAL_END'), 
-    Nonterminal('E'))),  
+    Production(Nonterminal('G'), (Nonterminal('GOAL_END'),
+                    Nonterminal('E'))),
     # Add Goal with near and then add an avoid sentenece.
-    Production(Nonterminal('G'), (Nonterminal('NEAR_GOAL_END'), 
-    Nonterminal('AVOID'))), 
+    Production(Nonterminal('G'), (Nonterminal('NEAR_GOAL_END'),
+                    Nonterminal('AVOID'))),
     # Termial for IN+DT after verb.
-    Production(Nonterminal('V1_CON'), ('to the',)),  
+    Production(Nonterminal('V1_CON'), ('to the',)),
 
   ]
 
@@ -153,7 +153,8 @@ def create_templates():
     sentence = sentence.replace("  ", " ")
     templates.append(sentence)
 
-  templates_df = pd.DataFrame(templates, columns=['sentence']).drop_duplicates()
+  templates_df = pd.DataFrame(
+    templates, columns=['sentence']).drop_duplicates()
   # Save templates
   templates_df.to_csv('templates.csv', index=False)
 
