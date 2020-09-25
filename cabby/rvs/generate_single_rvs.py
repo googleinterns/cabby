@@ -101,9 +101,9 @@ def main(argv):
 
   main_pivot, near_pivot, beyond_pivot = result
 
-  start_pivot_bearing = util.get_bearing(start, near_pivot["centroid"])
+  start_pivot_bearing = util.get_bearing(start, near_pivot["geometry"])
   pivot_dest_bearing = util.get_bearing(
-    near_pivot["centroid"], target["centroid"])
+    near_pivot["geometry"], target["centroid"])
 
   # Computes the bearing of the target by using the bearing from start to
   # pivot as zero. E.g. so instead of 270 meaning west (as usual with bearings),
@@ -113,7 +113,7 @@ def main(argv):
 
   instruction = speak.describe_meeting_point(
     near_pivot["main_tag"], target["name"], target_bearing_relative_to_pivot,
-    util.get_distance_km(near_pivot["centroid"], target["centroid"]))
+    util.get_distance_km(near_pivot["geometry"], target["centroid"]))
 
   print(f'Rendezvous instruction:\n\n  {instruction}\n')
 

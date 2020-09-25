@@ -32,7 +32,7 @@ class RVSData:
     `start_point` is the beginning location.
     `end_point` is the goal location.
     `distance` path distance between start and end point.
-    `instruction` the instruction describing how to get to the end point.
+    `instructions` the instructions describing how to get to the end point.
     `id` is the id of the entity.
     `sample` RVS sample.
     """
@@ -41,20 +41,26 @@ class RVSData:
     start_osmid: int = attr.ib()
     end_osmid: int = attr.ib()
     distance: int = attr.ib()
-    instruction: Text = attr.ib()
+    instructions: Text = attr.ib()
     id: int = attr.ib()
     sample: dict = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         # Create RVS sample
         self.sample = {
-            'start_point': self.start_point, 'end_point': self.end_point, 'distance':
-            self.distance, 'instruction': self.instruction, 'id': self.id, 'version': VERSION
+            'start_point': self.start_point, 
+            'start_osmid': self.start_osmid,
+            'end_point': self.end_point, 
+            'end_osmid': self.start_osmid,
+            'distance':self.distance, 
+            'instructions': self.instructions, 
+            'id': self.id, 
+            'version': VERSION
         }
 
     @classmethod
     def from_geo_entities(cls, start, start_osmid, end_osmid, end, route,
-                          instruction, id):
+                          instructions, id):
         """Construct an Entity from the start and end points, route, and pivots.
         """
         return RVSData(
@@ -63,6 +69,6 @@ class RVSData:
             start_osmid,
             end_osmid,
             util.get_linestring_distance(route),
-            instruction,
+            instructions,
             id
         )
