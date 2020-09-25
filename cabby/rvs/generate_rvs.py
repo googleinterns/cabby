@@ -18,7 +18,7 @@ Output RVS instructions by templates.
 Example command line call:
 $ bazel-bin/cabby/rvs/generate_rvs \
   --rvs_data_path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" \
-  --save_instruction_path "./cabby/rvs/data/pittsburgh_instructions.txt" \
+  --save_instruction_path "./cabby/rvs/data/pittsburgh_instructions.json" \
 
 Example output: 
   "Meet at Swirl Crepe. Walk past Wellington. Swirl Crepe will be near Gyros."
@@ -33,11 +33,10 @@ import sys
 from absl import app
 from absl import flags
 
+
 from cabby.geo import walk
 from cabby.rvs import templates
 from cabby.rvs import rvs_item
-
-
 
 
 FLAGS = flags.FLAGS
@@ -56,7 +55,8 @@ flags.mark_flag_as_required('save_instruction_path')
 def main(argv):
   del argv  # Unused.
 
-  entities = walk.get_path_entities(FLAGS.rvs_data_path)
+  # entities = walk.get_path_entities(FLAGS.rvs_data_path)
+  entities = walk.get_path_entities("pittsburgh_geo_paths.gpkg")
 
   if entities is None:
     sys.exit("No entities found.")
@@ -72,7 +72,7 @@ def main(argv):
   gen_samples = []
   for entity_idx, entity in enumerate(entities):
     current_templates = gen_templates.copy()  # Candidate templates.
-    if entity.tags_start.beyond_pivot is '':
+    if entity.beyond_pivot.main_tag is '':
       # Filter out templates with the beyond pivot mention.
       current_templates = gen_templates[
         current_templates['beyond_pivot'] == False]
@@ -80,11 +80,11 @@ def main(argv):
       # Filter out templates without the beyond pivot mention.
       current_templates = gen_templates[current_templates['beyond_pivot'] == True]
 
-    if entity.tags_start.intersections > 0:
+    if entity.intersections > 0:
       # Pick templates with either blocks or intersections.
       is_block = randint(0, 1)
-      blocks = entity.tags_start.intersections-1 if is_block else -1
-      if entity.tags_start.intersections == 1:
+      blocks = entity.intersections-1 if is_block else -1
+      if entity.intersections == 1:
         # Filter out templates without the next intersection mention.
         current_templates = current_templates[
           current_templates['next_intersection'] == True]
@@ -102,11 +102,11 @@ def main(argv):
           # Filter out templates without mentions of the number of
           # intersections that should be passed.
           current_templates = current_templates[
-            current_templates['intersection'] == True]
+            current_templates['intersections'] == True]
     else:
       # Filter out templates with mentions of intersection\block.
       current_templates = current_templates[
-        (current_templates['intersection'] == False) &
+        (current_templates['intersections'] == False) &
         (current_templates['blocks'] == False) &
         (current_templates['next_intersection'] == False) &
         (current_templates['next_block'] == False)]
@@ -114,20 +114,26 @@ def main(argv):
     # From the candidates left, pick randomly one template.
     choosen_template = current_templates.sample(1)['sentence'].iloc[0]
 
-    gen_instruction = templates.add_features_to_template(
+    gen_instructions = templates.add_features_to_template(
       choosen_template, entity)
-    rvs_entity = rvs_item.RVSData.from_geo_entities(entity.tags_start.geometry, entity.end.iloc[0], , LineString(entity.route.iloc[0].exterior.coords[0:-1]), gen_instruction, entity_idx)
+    rvs_entity = rvs_item.RVSData.from_geo_entities(
+      start=entity.start_point.geometry,
+      start_osmid=entity.start_point.osmid,
+      end_osmid=entity.end_point.osmid,
+      end=entity.end_point.geometry,
+      route=entity.route,
+      instructions=gen_instructions,
+      id=entity_idx,
+    )
     gen_samples.append(rvs_entity.sample)
 
     # Save to file.
     with open(FLAGS.save_instruction_path, 'a') as outfile:
-        for sample in gen_samples:
-            json.dump(sample, outfile, default=lambda o: o.__dict__)
-            outfile.write('\n')
-            outfile.flush()
+      for sample in gen_samples:
+        json.dump(sample, outfile, default=lambda o: o.__dict__)
+        outfile.write('\n')
+        outfile.flush()
 
 
 if __name__ == '__main__':
   app.run(main)
-
-

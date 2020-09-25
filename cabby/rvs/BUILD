@@ -59,13 +59,6 @@ py_binary(
     ],
 )
 
-py_library(
-    name = 'templates',
-    srcs = ['templates.py'],
-    deps = [
-        '//cabby/geo:geo_item',
-    ]
-)
 
 
 py_binary(
@@ -79,6 +72,11 @@ py_binary(
 
 
     ],
+)
+
+py_library(
+    name = 'templates',
+    srcs = ['templates.py'],
 )
 
 py_library(

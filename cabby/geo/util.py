@@ -17,6 +17,7 @@ import folium
 from functools import partial
 import geographiclib
 from geopy.distance import geodesic
+import numpy as np
 import pyproj
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
@@ -31,23 +32,23 @@ UTM_CRS = 32633  # UTM Zones (North).
 WGS84_CRS = 4326  # WGS84 Latitude/Longitude.
 
 
-def s2ids_from_s2cells(list_s2cells: Sequence[s2.S2Cell]) -> Sequence[int]:
-  '''Converts a sequence of S2Cells to a sequence of ids of the S2Cells. 
+def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]:
+  '''Converts a sequence of S2CellIds to a sequence of ids of the S2CellIds. 
   Arguments:
-    list_s2cells(S2Cells): The list of S2Cells to be converted to ids.
+    list_s2cells(S2CellIds): The list of S2CellIds to be converted to ids.
   Returns:
-    A sequence of ids corresponding to the S2Cells.
+    A sequence of ids corresponding to the S2CellIds.
   '''
 
   return [cell.id() for cell in list_s2cells]
 
 
-def s2cells_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2Cell]:
-  '''Converts a sequence of ids of S2Cells to a sequence of S2Cells. 
+def s2cellids_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2CellId]:
+  '''Converts a sequence of ids of S2CellIds to a sequence of S2CellIds. 
   Arguments:
-    list_ids(list): The list of S2Cells ids to be converted to S2Cells.
+    list_ids(list): The list of S2CellIds ids to be converted to S2CellIds.
   Returns:
-    A sequence of S2Cells corresponding to the ids.
+    A sequence of S2CellIds corresponding to the ids.
   '''
   return [s2.S2Cell(s2.S2CellId(cellid)) for cellid in list_ids]
 
@@ -219,6 +220,31 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
   return get_s2cover_for_s2polygon(s2polygon, level)
 
 
+def project_point_in_segment(line_segment: LineString, point: Point):
+  """Projects point to line and check if the point projected is in a segment. 
+  Args:
+    line_segment: The line segment.
+    point: The point to be projected on the line.
+  Returns:
+    1 if the projected point is in the segment and 0 if inot.
+  """
+
+  point = np.array(point.coords[0])
+
+  line_point_1 = np.array(line_segment.coords[0])
+  line_point_2 = np.array(line_segment.coords[len(line_segment.coords)-1])
+
+  diff = line_point_2 - line_point_1
+  diff_norm = diff/np.linalg.norm(diff, 2)
+
+  projected_point = line_point_1 + diff_norm * \
+    np.dot(point - line_point_1, diff_norm)
+
+  projected_point = Point(projected_point)
+
+  return 1 if line_segment.distance(projected_point) < 1e-8 else 0
+
+
 def get_bearing(start: Point, goal: Point) -> float:
   """Get the bearing (heading) from the start lat-lon to the goal lat-lon.
   Args:
@@ -316,10 +342,7 @@ def get_linestring_distance(line: LineString) -> int:
     pyproj.transform,
     pyproj.Proj(WGS84_CRS),
     pyproj.Proj(UTM_CRS))
-  
+
   trans_line = transform(project, line)
 
   return round(trans_line.length)
-
-
-
