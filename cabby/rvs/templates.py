@@ -164,7 +164,7 @@ def add_features_to_template(template: Text, entity: item.RVSPath) -> Text:
   template = template.replace(
     'CARDINAL_DIRECTION', entity.cardinal_direction)
 
-  # Fixparesing.
+  # Fix text.
   template = template.replace('The The', 'The')
   template = template.replace('the The', 'the')
   return template
