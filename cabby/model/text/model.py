@@ -7,10 +7,9 @@ class BERT(nn.Module):
     def __init__(self):
         super(BERT, self).__init__()
 
-        options_name = "bert-base-uncased"
-        self.encoder = BertForSequenceClassification.from_pretrained(options_name)
+        self.encoder = BertForSequenceClassification.from_pretrained("bert-base-uncased", return_dict=True,num_labels=2)
 
     def forward(self, instruction, label):
-        loss, text_fea = self.encoder(instruction, labels=label)[:2]
+        outputs = self.encoder(instruction, labels=label)
 
-        return loss, text_fea
+        return outputs.loss, outputs.logits

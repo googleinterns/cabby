@@ -46,8 +46,7 @@ def train(model,
         for (instruction, labels) in train_loader:
             labels = labels.type(torch.LongTensor).to(device)           
             instruction = instruction.type(torch.LongTensor).to(device)  
-            output = model(instruction, labels)
-            loss, _ = output
+            loss, _ = model(instruction, labels)
 
             optimizer.zero_grad()
             loss.backward()
@@ -66,9 +65,7 @@ def train(model,
                     for (instruction, labels) in valid_loader:
                         labels = labels.type(torch.LongTensor)           
                         instruction = instruction.type(torch.LongTensor)  
-                        output = model(instruction, labels)
-                        loss, _ = output
-                        
+                        loss, _ = model(instruction, labels)
                         valid_running_loss += loss.item()
 
                 # evaluation
