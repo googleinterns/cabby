@@ -31,7 +31,7 @@ def tokenize(instruction):
         max_length=MAX_SEQ_LEN,
         truncation=True,
         padding='max_length',
-        return_tensors='pt',
+        # return_tensors='pt',
         add_special_tokens=True,)
     return tokenize
 
@@ -67,10 +67,21 @@ def create_dataset(data_dir, batch_sizes, device):
             ('instructions', TEXT)])
 
     train_iter, val_iter, test_iter = data.BucketIterator.splits(
-        (train_ds, valid_ds, test_ds), batch_sizes=batch_sizes, shuffle=True, device=device
+        (train_ds, valid_ds, test_ds), 
+        batch_sizes=batch_sizes, 
+        shuffle=True, 
+        device=device,
+        sort_key = lambda x: len(x.instructions),
+        sort = True,
     )
+    # print (vars(train_ds[0]))
 
-    logging.info('Data sample: %s', vars(train_ds[0]))
+    TEXT.build_vocab(train_ds)
+    LABELS.build_vocab(train_ds)
+
+    # print (next(iter(train_iter)))
+
+    # logging.info('Data sample: %s', vars(train_ds[0]))
 
     return train_iter, val_iter, test_iter
 

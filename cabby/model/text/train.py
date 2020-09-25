@@ -43,13 +43,16 @@ def train(model,
     # training loop
     model.train()
     for epoch in range(num_epochs):
-        for (instruction, labels) in train_loader:
+        for batch in train_loader:
+            (labels, instruction),_ = batch
+            # print (labels, instruction)
             labels = labels.type(torch.LongTensor).to(device)           
             instruction = instruction.type(torch.LongTensor).to(device)  
             loss, _ = model(instruction, labels)
 
             optimizer.zero_grad()
             loss.backward()
+            print (loss)
             optimizer.step()
 
             # update running values
@@ -62,9 +65,10 @@ def train(model,
                 with torch.no_grad():                    
 
                     # validation loop
-                    for (instruction, labels) in valid_loader:
-                        labels = labels.type(torch.LongTensor)           
-                        instruction = instruction.type(torch.LongTensor)  
+                    for batch in valid_loader:
+                        (labels, instruction),_ = batch
+                        labels = labels.type(torch.LongTensor).to(device)              
+                        instruction = instruction.type(torch.LongTensor).to(device)     
                         loss, _ = model(instruction, labels)
                         valid_running_loss += loss.item()
 
@@ -91,7 +95,7 @@ def train(model,
 
 print ("START")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-train_iter, val_iter, test_iter =  dataset.create_dataset("~/data/morp/morp-balanced", (16, 256, 256), device)
+train_iter, val_iter, test_iter =  dataset.create_dataset("~/data/morp/morp-small", (2, 4, 4), device)
 
 bert_model = model.BERT().to(device)
 optimizer = AdamW(bert_model.parameters(), lr=2e-5)
