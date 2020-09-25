@@ -4,7 +4,6 @@ pytype cabby
 # RVS
 bazel build cabby/rvs:*
 bazel query cabby/rvs:* | xargs bazel test
-bazel-bin/cabby/rvs/generate_single_rvs --start_lat 44.49582 --start_lon 11.33697 --goal_lat 44.49268 --goal_lon 11.34365 --region Bologna --min_s2_level 18 --directory "./cabby/geo/map_processing/poiTestData/" 
 bazel-bin/cabby/rvs/generate_rvs --rvs_data_path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" --save_instruction_path "./cabby/rvs/data/pittsburgh_instructions.json" 
 
 # Geo
