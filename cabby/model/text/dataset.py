@@ -15,51 +15,71 @@
 """Loads the dataset."""
 
 from torchtext import data
+import torch
 import os
 from absl import logging
 from transformers import BertTokenizer
 
 
+MAX_SEQ_LEN = 512
+tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+
+
+def tokenize(instruction):
+    tokenize = tokenizer.encode(
+        instruction,
+        max_length=MAX_SEQ_LEN,
+        truncation=True,
+        padding='max_length',
+        return_tensors='pt',
+        add_special_tokens=True,)
+    return tokenize
 
 
 def create_dataset(data_dir, batch_sizes, device):
-  # Load datasets.
+    # Load datasets.
 
-  tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-  MAX_SEQ_LEN = 124
-  PAD_INDEX = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
-  UNK_INDEX = tokenizer.convert_tokens_to_ids(tokenizer.unk_token)
+    # print (PAD_INDEX,UNK_INDEX)
 
+    TEXT = data.Field(
+        use_vocab=False,
+        tokenize=tokenize,
+        batch_first=True,
+        
+    )
+    LABELS = data.Field(
+        sequential=False,
+        preprocessing=lambda xs: 1 if xs == "manhattan" else 0,
+        use_vocab=False, 
+        batch_first=True, 
+        dtype=torch.float
+    )
 
-  TEXT =data.Field(use_vocab=False, tokenize=tokenizer.encode, fix_length=MAX_SEQ_LEN, pad_token=PAD_INDEX, unk_token=UNK_INDEX)
-  LABELS = data.LabelField()
+    train_ds, valid_ds, test_ds = data.TabularDataset.splits(
+        path=data_dir,
+        format='tsv',
+        skip_header=True,
+        train='train.tsv',
+        validation='dev.tsv',
+        test='test.tsv',
+        fields=[
+            ('label', LABELS),
+            ('instructions', TEXT)])
 
+    train_iter, val_iter, test_iter = data.BucketIterator.splits(
+        (train_ds, valid_ds, test_ds), batch_sizes=batch_sizes, shuffle=True, device=device
+    )
 
-  train_ds, valid_ds, test_ds = data.TabularDataset.splits(
-  path=data_dir, 
-  format='tsv', 
-  skip_header=True, 
-  train='train.tsv', 
-  validation='dev.tsv', 
-  test='test.tsv',  
-  fields=[
-  ('labels', LABELS), 
-  ('instructions', TEXT)])
+    logging.info('Data sample: %s', vars(train_ds[0]))
 
+    return train_iter, val_iter, test_iter
 
-  # # Get a vocabulary.
-  LABELS.build_vocab(train_ds)
+    # for i in train_ds.examples:
+    #   if len(i.instructions)>512:
+    #       print (len(i.instructions))
 
-  train_iter, val_iter, test_iter = data.BucketIterator.splits(
-  (train_ds, valid_ds, test_ds), batch_sizes=batch_sizes, shuffle=True, device=device
-  )
-
-  return train_iter, val_iter, test_iter
-  
-
-
-  # # Print an example.
-  logging.info('Data sample: %s', vars(train_ds[0]))
+    # # Print an example.
+    # logging.info('Data sample: %s', vars(train_ds[0]))
 
 
 #   #  print (vars(train_ds[0]))

@@ -44,8 +44,8 @@ def train(model,
     model.train()
     for epoch in range(num_epochs):
         for (instruction, labels) in train_loader:
-            labels = labels.type(torch.LongTensor)           
-            instruction = instruction.type(torch.LongTensor)  
+            labels = labels.type(torch.LongTensor).to(device)           
+            instruction = instruction.type(torch.LongTensor).to(device)  
             output = model(instruction, labels)
             loss, _ = output
 
@@ -92,6 +92,7 @@ def train(model,
     print('Finished Training!')
 
 
+print ("START")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 train_iter, val_iter, test_iter =  dataset.create_dataset("~/data/morp/morp-balanced", (16, 256, 256), device)
 
