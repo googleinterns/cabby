@@ -60,7 +60,7 @@ class RVSPath:
     if "main_tag" in self.beyond_pivot:
       avoid_instruction = "If you reached {0}, you have gone too far.".format(
         self.beyond_pivot['main_tag'])
-    
+
     else:
       avoid_instruction = ""
       self.beyond_pivot['main_tag'] = ""
@@ -73,7 +73,7 @@ class RVSPath:
                     .format(self.intersections))
     else:
       intersection_instruction = ""
-    
+
     self.instructions = (
       "Starting at {0} walk {1} past {2} {3}and your goal is {4}, near {5}. "
       .format(self.start_point['name'], self.cardinal_direction,
@@ -95,18 +95,18 @@ class RVSPath:
     self.route['cardinal_direction'] = self.cardinal_direction
     self.route['instructions'] = self.instructions
     self.route['intersections'] = self.intersections
-     
 
   @classmethod
   def from_points_route_pivots(cls, start, end, route, main_pivot,
-                 near_pivot, beyond_pivot, cardinal_direction,
-                 intersections):
+                              near_pivot, beyond_pivot, cardinal_direction, 
+                              intersections):
     """Construct an Entity from the start and end points, route, and pivots.
     """
     return RVSPath(
       start,
       end,
-      gpd.GeoSeries({'geometry':LineString(route['geometry'].tolist())}),
+      gpd.GeoSeries(
+        {'geometry': LineString(route['geometry'].tolist())}),
       main_pivot,
       near_pivot,
       beyond_pivot,
@@ -117,8 +117,8 @@ class RVSPath:
 
   @classmethod
   def from_file(cls, start, end, route, main_pivot,
-                  near_pivot, beyond_pivot, cardinal_direction,
-                  intersections):
+                near_pivot, beyond_pivot, cardinal_direction,
+                intersections):
     """Construct an Entity from the start and end points, route, and pivots.
     """
     return RVSPath(
@@ -140,5 +140,3 @@ def prune_columns(gds: GeoDataFrame):
     gds['main_tag'] = gds['name']
   gds.drop(gds.keys().difference(
     ['osmid', 'geometry', 'main_tag']), inplace=True)
-
-# def create_route_with_features(route: GeoSeries, cardinal_direction, intersections: int)

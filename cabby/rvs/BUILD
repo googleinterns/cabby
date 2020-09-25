@@ -42,6 +42,15 @@ py_test(
     ],
 )
 
+py_test(
+    name = "templates_test",
+    srcs = ["templates_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":templates",
+        ':item',
+    ],
+)
 
 py_binary(
     name = 'generate_rvs',
