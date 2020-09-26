@@ -13,6 +13,9 @@
 # limitations under the License.
 '''Tests for walk.py'''
 
+from cabby.geo.map_processing import map_structure
+from cabby.geo import util
+from cabby.geo import walk
 import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
@@ -20,11 +23,6 @@ import sys
 
 import sys
 sys.path.append("/home/tzuf_google_com/dev/cabby")
-
-from cabby.geo import walk
-from cabby.geo import util
-from cabby.geo.map_processing import map_structure
-from cabby.geo import util
 
 
 class WalkTest(unittest.TestCase):
@@ -51,14 +49,14 @@ class WalkTest(unittest.TestCase):
     self.assertEqual(second_point, (44.4948365, 11.3424075))
 
   def testPointsSelection(self):
-    geo_entity = walk.get_points_and_route(self.map)
+    geo_entity = walk.get_single_sample(self.map)
     if geo_entity is None:
       return
 
-    self.assertEqual(geo_entity.start_point['osmid'], 4696835894) 
-    self.assertEqual(geo_entity.end_point['osmid'], 1685776652) 
-    self.assertEqual(geo_entity.main_pivot['osmid'], 148753535) 
-    self.assertEqual(geo_entity.near_pivot['osmid'], 1685776628) 
+    self.assertEqual(geo_entity.start_point['osmid'], 4696835894)
+    self.assertEqual(geo_entity.end_point['osmid'], 1685776652)
+    self.assertEqual(geo_entity.main_pivot['osmid'], 148753535)
+    self.assertEqual(geo_entity.near_pivot['osmid'], 1685776628)
     self.assertEqual(geo_entity.beyond_pivot['osmid'], 1704264322)
 
 

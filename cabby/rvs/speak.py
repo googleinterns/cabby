@@ -77,3 +77,4 @@ def describe_egocentric_direction(
     return f'{dist_descr} before you get to'
   else:
     raise ValueError(f'Invalid direction type: {direction}')
+

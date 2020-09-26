@@ -25,7 +25,7 @@ class MapTest(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-  
+
     # Process the map for an area in Bologna.
     cls.bologna_map = map_structure.Map("Bologna", 18)
 
