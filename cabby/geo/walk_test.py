@@ -13,50 +13,49 @@
 # limitations under the License.
 '''Tests for walk.py'''
 
+from cabby.geo.map_processing import map_structure
+from cabby.geo import util
+from cabby.geo import walk
 import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
-
-from cabby.geo import walk
-from cabby.geo import util
-from cabby.geo.map_processing import map_structure
-from cabby.geo import util
+import sys
 
 
 class WalkTest(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(self):
+  @classmethod
+  def setUpClass(cls):
 
-        # Load map from disk.
-        self.map = map_structure.Map("DC", 18)
+    # Load map from disk.
+    cls.map = map_structure.Map("DC", 18)
 
-    def testRouteCalculation(self):
-        start_point = Point(-77.03994, 38.90842)
-        end_point = Point(-77.03958, 38.90830)
-        route = walk.compute_route(start_point, end_point, self.map.
-                                   nx_graph, self.map.nodes)
+  def testRouteCalculation(self):
+    start_point = Point(-77.03994, 38.90842)
+    end_point = Point(-77.03958, 38.90830)
+    route = walk.compute_route(start_point, end_point, self.map.
+                   nx_graph, self.map.nodes)
 
-        # Check the size of the route.
-        self.assertEqual(route['geometry'].shape[0], 4)
+    # Check the size of the route.
+    self.assertEqual(route['geometry'].shape[0], 4)
 
-        # Check that the correct points are in the route.
-        first_point = util.tuple_from_point(route.iloc[0]['geometry'])
-        second_point = util.tuple_from_point(route.iloc[1]['geometry'])
-        self.assertEqual(first_point, (38.908415068520945, -77.03956245455889))
-        self.assertEqual(second_point, (38.90839802058634, -77.03951285220248))
+    # Check that the correct points are in the route.
+    first_point = util.tuple_from_point(route.iloc[0]['geometry'])
+    second_point = util.tuple_from_point(route.iloc[1]['geometry'])
+    self.assertEqual(first_point, (38.908415068520945, -77.03956245455889))
+    self.assertEqual(second_point, (38.90839802058634, -77.03951285220248))
 
-    def testPointsSelection(self):
-        geo_entity = walk.get_points_and_route(self.map)
-        if geo_entity is None:
-            return
+  def testPointsSelection(self):
+    geo_entity = walk.get_single_sample(self.map)
+    if geo_entity is None:
+      return
 
-        self.assertGreaterEqual(geo_entity.route.shape[0], 1)
-        self.assertIsNotNone(geo_entity.end_point['name'])
-        self.assertIsNotNone(geo_entity.start_point['name'])
-        self.assertIsNotNone(geo_entity.main_pivot['main_tag'])
-        self.assertIsNotNone(geo_entity.near_pivot['main_tag'])
+    self.assertEqual(geo_entity.start_point['osmid'], 4696835894)
+    self.assertEqual(geo_entity.end_point['osmid'], 1685776652)
+    self.assertEqual(geo_entity.main_pivot['osmid'], 148753535)
+    self.assertEqual(geo_entity.near_pivot['osmid'], 1685776628)
+    self.assertEqual(geo_entity.beyond_pivot['osmid'], 1704264322)
 
 
 if __name__ == "__main__":
-    unittest.main()
+  unittest.main()

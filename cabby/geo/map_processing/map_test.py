@@ -39,7 +39,7 @@ class MapTest(unittest.TestCase):
 
     # Check the cellid.
     list_cells = self.map.poi[self.map.poi[
-      'name'] == 'The Brookings Institution']['cellids'].tolist()[0]
+      'name'] == 'The Brookings Institution']['s2cellids'].tolist()[0]
     expected_ids = [9923602369881309184]
     found_ids = [list_cells[i].id() for i in range(len(list_cells))]
     for expected, found in zip(expected_ids, found_ids):

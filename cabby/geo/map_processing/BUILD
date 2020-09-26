@@ -31,8 +31,8 @@ py_test(
     python_version = 'PY3',
     deps = [
         ':edge',
-        "//cabby/geo/map_processing:map_structure",
-        "//cabby/geo/map_processing:graph",
+        ":map_structure",
+        ":graph",
         "//cabby/geo:util",
         "//cabby:logger",
 

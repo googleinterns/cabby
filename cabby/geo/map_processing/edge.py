@@ -20,51 +20,51 @@ from typing import Text, Dict
 
 import attr
 
-OSM_CRS = 32633 # UTM Zones (North).
+OSM_CRS = 32633  # UTM Zones (North).
+
 
 @attr.s
 class Edge:
-    """Construct a Wikigeo sample.
-    `u_for_edge` is one side of the segment.
-    `v_for_edge` is the other side of the segment.
-    `length` is the length of the segment.
-    `oneway` whether it is directional.
-    `highway` is always poi.
+  """Construct a Wikigeo sample.
+  `u_for_edge` is one side of the segment.
+  `v_for_edge` is the other side of the segment.
+  `length` is the length of the segment.
+  `oneway` whether it is directional.
+  `highway` is always poi.
+  """
+  u_for_edge: int = attr.ib()
+  v_for_edge: int = attr.ib()
+  length: float = attr.ib()
+  oneway: int = attr.ib()
+  highway: Text = attr.ib()
+  osmid: int = attr.ib()
+  name: Text = attr.ib()
+
+  @classmethod
+  def from_projected(cls, u_for_edge, v_for_edge, length, highway, osmid, name):
+    """Construct an Entity from the start and end points, route, and pivots.
     """
-    u_for_edge: int = attr.ib()
-    v_for_edge: int = attr.ib()
-    length: float = attr.ib()
-    oneway: int = attr.ib()
-    highway: Text = attr.ib()
-    osmid: int = attr.ib()
-    name: Text = attr.ib()
+    return Edge(
+      u_for_edge,
+      v_for_edge,
+      length,
+      False,
+      highway,
+      osmid,
+      name
+    )
 
+  @classmethod
+  def from_poi(cls, u_for_edge, v_for_edge, osmid):
+    """Construct an Entity from the start and end points, route, and pivots.
+    """
+    return Edge(
+      u_for_edge,
+      v_for_edge,
+      1e-8,
+      False,
+      "poi",
+      osmid,
+      "poi"
 
-    @classmethod
-    def from_projected(cls, u_for_edge, v_for_edge, length, highway, osmid, name):
-        """Construct an Entity from the start and end points, route, and pivots.
-        """
-        return Edge(
-          u_for_edge,
-          v_for_edge,
-          length,
-          False,
-          highway,
-          osmid,
-          name
-        )
-
-    @classmethod
-    def from_poi(cls, u_for_edge, v_for_edge, osmid):
-        """Construct an Entity from the start and end points, route, and pivots.
-        """
-        return Edge(
-          u_for_edge,
-          v_for_edge,
-          1e-8,
-          False,
-          "poi",
-          osmid,
-          "poi"
-
-        )
+    )

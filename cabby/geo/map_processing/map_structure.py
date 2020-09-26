@@ -78,9 +78,20 @@ class Map:
         
         self.create_S2Graph(level)
 
-        self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
-        self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
+        self.process_param()
 
+    def process_param(self):
+      '''Helper function for processing the class data objects.'''
+
+      # Set the coordinate system.
+      self.poi = self.poi.set_crs(epsg=OSM_CRS, allow_override=True)
+      self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
+      self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
+
+      # Drop columns with list type.
+      self.edges.drop(self.edges.columns.difference(
+        ['osmid', 'length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
+      self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
 
     def closest_nodes(self, point: Point) -> int:
       '''Find closest nodes to POI. 
@@ -287,7 +298,7 @@ class Map:
         eges_to_add_list.swifter.apply(
         lambda e_list: self.add_two_ways_edges(e_list[1]))
 
-    def get_cellids_for_poi(self, geometry: Any) -> Optional[Sequence[int]]:
+    def get_s2cellids_for_poi(self, geometry: Any) -> Optional[Sequence[int]]:
       '''get cellids for POI. 
       Arguments:
         geometry: The geometry to which a cellids will be retrived.
@@ -304,19 +315,19 @@ class Map:
         '''Helper funcion for creating S2Graph.'''
 
         # Get cellids for POI.
-        self.poi['cellids'] = self.poi['geometry'].apply(
-        self.get_cellids_for_poi)
+        self.poi['s2cellids'] = self.poi['geometry'].apply(
+        self.get_s2cellids_for_poi)
 
 
         # Filter out entities that we didn't mange to get cellids covering.
-        self.poi = self.poi[self.poi['cellids'].notnull()]
+        self.poi = self.poi[self.poi['s2cellids'].notnull()]
 
         # Create graph.
         self.s2_graph = graph.MapGraph()
 
         # Add POI to graph.
-        self.poi[['cellids', 'osmid']].apply(
-            lambda x: self.s2_graph.add_poi(x.cellids, x.osmid), axis=1)
+        self.poi[['s2cellids', 'osmid']].apply(
+            lambda x: self.s2_graph.add_poi(x.s2cellids, x.osmid), axis=1)
 
 
     def get_valid_path(self, dir_name: Text, name_ending: Text,
@@ -348,9 +359,10 @@ class Map:
 
         # Write POI.
         pd_poi = copy.deepcopy(self.poi)
-        if 'cellids' in pd_poi.columns:
-          pd_poi['cellids'] = pd_poi['cellids'].apply(
-              lambda x: util.s2ids_from_s2cells(x))
+        if 's2cellids' in pd_poi.columns:
+          pd_poi['cellids'] = pd_poi['s2cellids'].apply(
+              lambda x: util.cellids_from_s2cellids(x))
+        pd_poi.drop(['s2cellids'], 1, inplace=True)
 
         path = self.get_valid_path(dir_name, '_poi', '.pkl')
         if not os.path.exists(path):
@@ -361,10 +373,6 @@ class Map:
         # Write streets.
         pd_streets = copy.deepcopy(self.streets)
         
-        if 'cellids' in pd_streets.columns:
-          pd_streets['cellids'] = pd_streets['cellids'].apply(
-              lambda x: util.s2ids_from_s2cells(x))
-
         path = self.get_valid_path(dir_name, '_streets', '.pkl')
         if not os.path.exists(path):
             pd_streets.to_pickle(path)
@@ -389,10 +397,6 @@ class Map:
         # Write edges.
         path = self.get_valid_path(dir_name, '_edges', '.geojson')
         if not os.path.exists(path):
-            # Drop columns with list type.
-            self.edges.drop(self.edges.columns.difference(
-            ['osmid','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
-            self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
             self.edges.to_file(path, driver='GeoJSON')
         else:
             map_logger.info("path {0} already exist.".format(path))
@@ -406,8 +410,8 @@ class Map:
             path), "path {0} doesn't exist.".format(path)
         poi_pandas = pd.read_pickle(path)
         if 'cellids' in poi_pandas.columns:
-            poi_pandas['cellids'] = poi_pandas['cellids'].apply(
-                lambda x: util.s2cells_from_cellids(x))
+            poi_pandas['s2cellids'] = poi_pandas['cellids'].apply(
+                lambda x: util.s2cellids_from_cellids(x))
         self.poi = poi_pandas
 
         # Load streets.
@@ -415,9 +419,6 @@ class Map:
         assert os.path.exists(
             path), "path {0} doesn't exist.".format(path)
         streets_pandas = pd.read_pickle(path)
-        if 'cellids' in streets_pandas.columns:
-          streets_pandas['cellids'] = streets_pandas['cellids'].apply(
-              lambda x: util.s2cells_from_cellids(x))
         self.streets = streets_pandas
 
         # Load graph.

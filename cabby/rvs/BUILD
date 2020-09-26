@@ -42,19 +42,35 @@ py_test(
     ],
 )
 
+py_test(
+    name = "templates_test",
+    srcs = ["templates_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":templates",
+        ':item',
+    ],
+)
+
 py_binary(
     name = 'generate_rvs',
     main = 'generate_rvs.py',
     srcs = ['generate_rvs.py'],
     deps = [
-        ':observe',
-        ':speak',
-        "//cabby/data/wikidata:item",
-        "//cabby/data/wikidata:query",
-        "//cabby/geo:directions",
-        "//cabby/geo/map_processing:map_structure",
+        ":templates",
+        ":rvs_item",
         "//cabby/geo:walk",
 
 
     ],
+)
+
+py_library(
+    name = 'templates',
+    srcs = ['templates.py'],
+)
+
+py_library(
+    name = 'rvs_item',
+    srcs = ['rvs_item.py'],
 )
