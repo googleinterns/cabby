@@ -17,6 +17,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from transformers import AdamW
+import numpy as np
 
 
 import dataset
@@ -40,22 +41,24 @@ def train(model,
     valid_loss_list = []
     global_steps_list = []
 
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+
     # training loop
     model.train()
     for epoch in range(num_epochs):
         for batch in train_loader:
+            optimizer.zero_grad()
             (labels, instruction),_ = batch
-            # print (labels, instruction)
+            # print (labels.shape, instruction.shape)
             labels = labels.type(torch.LongTensor).to(device)           
             instruction = instruction.type(torch.LongTensor).to(device)  
-            loss, _ = model(instruction, labels)
-
-            optimizer.zero_grad()
-            loss.backward()
+            output = model(instruction, labels=labels)
+            output.loss.backward()
             optimizer.step()
 
             # update running values
-            running_loss += loss.item()
+            running_loss += output.loss.item()
             global_step += 1
 
             # evaluation step
@@ -64,13 +67,22 @@ def train(model,
                 with torch.no_grad():                    
 
                     # validation loop
+                    success = 0
+                    all_count = 0
                     for batch in valid_loader:
                         (labels, instruction),_ = batch
                         labels = labels.type(torch.LongTensor).to(device)              
                         instruction = instruction.type(torch.LongTensor).to(device)     
-                        loss, _ = model(instruction, labels)
-                        valid_running_loss += loss.item()
+                        output = model(instruction, labels=labels)
+                        topv, topi = output.logits.squeeze().topk(1)
+                        topi=topi.squeeze().detach().cpu().numpy()
 
+                        label_ids = labels.to('cpu').numpy()
+                        success+=np.sum(label_ids==topi)
+                        all_count+=label_ids.shape[0]
+                        # print(topi,label_ids)
+                        valid_running_loss += output.loss.item()
+                print (success/all_count)
                 # evaluation
                 average_train_loss = running_loss / eval_every
                 average_valid_loss = valid_running_loss / len(valid_loader)
@@ -92,11 +104,18 @@ def train(model,
     print('Finished Training!')
 
 
+
+
 print ("START")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-train_iter, val_iter, test_iter =  dataset.create_dataset("~/data/morp/morp-balanced", (2, 4, 4), device)
+train_iter, val_iter, test_iter =  dataset.create_dataset("~/data/morp/morp-balanced", (8, 32, 32), device)
 
-bert_model = model.BERT().to(device)
+from transformers import BertForSequenceClassification
+bert_model = BertForSequenceClassification.from_pretrained("bert-base-uncased", return_dict=True, num_labels = 2)
+bert_model.to(device)
+# bert_model = model.BERT().to(device)
+
+
 optimizer = AdamW(bert_model.parameters(), lr=2e-5)
 criterion = nn.BCELoss()
 

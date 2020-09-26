@@ -19,6 +19,7 @@ import torch
 import os
 from absl import logging
 from transformers import BertTokenizer
+import pandas as pd
 
 
 MAX_SEQ_LEN = 512
@@ -30,9 +31,13 @@ def tokenize(instruction):
         instruction,
         max_length=MAX_SEQ_LEN,
         truncation=True,
-        padding='max_length',
+        padding=True,
+        # return_attention_mask = True,
         # return_tensors='pt',
-        add_special_tokens=True,)
+        # add_special_tokens=True,
+        )
+        train_encodings = tokenizer(train_texts, truncation=True, padding=True)
+
     return tokenize
 
 
@@ -58,7 +63,7 @@ def create_dataset(data_dir, batch_sizes, device):
     train_ds, valid_ds, test_ds = data.TabularDataset.splits(
         path=data_dir,
         format='tsv',
-        skip_header=True,
+        skip_header=False,
         train='train.tsv',
         validation='dev.tsv',
         test='test.tsv',
@@ -74,7 +79,7 @@ def create_dataset(data_dir, batch_sizes, device):
         sort_key = lambda x: len(x.instructions),
         sort = True,
     )
-    # print (vars(train_ds[0]))
+    print (vars(train_ds[0]))
 
     TEXT.build_vocab(train_ds)
     LABELS.build_vocab(train_ds)
@@ -84,6 +89,9 @@ def create_dataset(data_dir, batch_sizes, device):
     # logging.info('Data sample: %s', vars(train_ds[0]))
 
     return train_iter, val_iter, test_iter
+
+
+
 
     # for i in train_ds.examples:
     #   if len(i.instructions)>512:
@@ -96,7 +104,7 @@ def create_dataset(data_dir, batch_sizes, device):
 #   #  print (vars(train_ds[0]))
 #   #   print (train_ds.examples[0].text)
 
-# import torch
-# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+import torch
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-# create_dataset("~/data/morp/morp-small", (16, 256, 256), device)
+create_dataset("~/data/morp/morp-small", (16, 256, 256), device)
