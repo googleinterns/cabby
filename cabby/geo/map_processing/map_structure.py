@@ -110,6 +110,8 @@ class Map:
     osm_poi_no_streets = osm_poi_named_entities[osm_highway.isnull()]
     osm_poi_streets = osm_poi_named_entities[osm_highway.notnull()]
 
+    osm_poi_no_streets = osm_poi_no_streets.set_crs(
+      epsg=OSM_CRS, allow_override=True)
     # Get centroid for POI.
     osm_poi_no_streets = osm_poi_no_streets.set_crs(epsg=OSM_CRS,
                             allow_override=True)
