@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 '''Tests for map_structure.py'''
 
 import osmnx as ox
@@ -24,31 +25,31 @@ from cabby.geo.map_processing import map_structure
 class MapTest(unittest.TestCase):
 
   @classmethod
-  def setUpClass(cls):
+  def setUpClass(self):
 
     # Process the map for an area in Bologna.
-    cls.bologna_map = map_structure.Map("Bologna", 18)
+    self.map = map_structure.Map("DC", 18)
 
   def testSingleOutput(self):
     # Verify that a known POI is present.
 
-    specific_poi_found = self.bologna_map.poi[self.bologna_map.poi[
-      'name'] == 'Delizie di Forno']
+    specific_poi_found = self.map.poi[self.map.poi[
+      'name'] == 'The Brookings Institution']
     # Check that the number of Frick Building POI found is exactly 1.
     self.assertEqual(specific_poi_found.shape[0], 1)
 
     # Check the cellid.
-    list_cells = self.bologna_map.poi[self.bologna_map.poi[
-      'name'] == 'Delizie di Forno']['s2cellids'].tolist()[0]
-    expected_ids = [5152070235402010624]
+    list_cells = self.map.poi[self.map.poi[
+      'name'] == 'The Brookings Institution']['s2cellids'].tolist()[0]
+    expected_ids = [9923602369881309184]
     found_ids = [list_cells[i].id() for i in range(len(list_cells))]
     for expected, found in zip(expected_ids, found_ids):
       self.assertEqual(expected, found)
 
     # Check that the POI was added correctly to the graph.
     cell_to_search = list_cells[0]
-    node = self.bologna_map.s2_graph.search(cell_to_search)
-    self.assertTrue(hasattr(node, 'poi') and 4696883190 in node.poi)
+    node = self.map.s2_graph.search(cell_to_search)
+    self.assertTrue(hasattr(node, 'poi') and 3265952196 in node.poi)
 
 
 if __name__ == "__main__":

@@ -267,6 +267,23 @@ def get_distance_km(start: Point, goal: Point) -> float:
   """
   return geodesic(start.coords, goal.coords).km
 
+def concat_numbers(n_1: int, n_2: int) -> int:
+  '''Return the concatenation of two numbers.
+  Arguments:
+    n_1: The first number to be concatenated.
+    n_2: The second number to be concatenated.
+  Returns:
+    A concatenated int of the two numbers
+  '''
+  return int(str(n_1) + str(n_2))
+
+
+def get_distance_m(start: Point, goal: Point) -> float:
+  """Returns the geodesic distance (in meters) between start and goal.
+  This distance is direct (as the bird flies), rather than based on a route
+  going over roads and around buildings.
+  """
+  return geodesic(start.coords, goal.coords).m
 
 def tuple_from_point(point: Point) -> Tuple[float, float]:
   '''Convert a Point into a tuple, with latitude as first element, and 
@@ -283,7 +300,6 @@ def tuple_from_point(point: Point) -> Tuple[float, float]:
 def list_xy_from_point(point: Point) -> Sequence[float]:
   '''Convert a Point into a sequence, with longitude as first element, and 
   latitude as second.
-
   Arguments:
     point(Point): A lat-lng point.
   Returns:
@@ -295,7 +311,6 @@ def list_xy_from_point(point: Point) -> Sequence[float]:
 
 def list_yx_from_point(point: Point) -> Sequence[float]:
   '''Convert a Point into a sequence, with latitude as first element, and longitude as second.
-
   Arguments:
     point(Point): A lat-lng point.
   Returns:
@@ -307,7 +322,6 @@ def list_yx_from_point(point: Point) -> Sequence[float]:
 
 def midpoint(p1: Point, p2: Point) -> Point:
   '''Get the midpoint between two points.
-
   Arguments:
     p1(Point): A lat-lng point.
     p2(Point): A lat-lng point.
