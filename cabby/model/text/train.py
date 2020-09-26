@@ -52,7 +52,6 @@ def train(model,
 
             optimizer.zero_grad()
             loss.backward()
-            print (loss)
             optimizer.step()
 
             # update running values
@@ -95,7 +94,7 @@ def train(model,
 
 print ("START")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-train_iter, val_iter, test_iter =  dataset.create_dataset("~/data/morp/morp-small", (2, 4, 4), device)
+train_iter, val_iter, test_iter =  dataset.create_dataset("~/data/morp/morp-balanced", (2, 4, 4), device)
 
 bert_model = model.BERT().to(device)
 optimizer = AdamW(bert_model.parameters(), lr=2e-5)
