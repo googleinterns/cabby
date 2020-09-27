@@ -14,13 +14,12 @@
 
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
+from absl import logging
+import os
+import pandas as pd
 from torchtext import data
 import torch
-import os
-from absl import logging
 import transformers
-import pandas as pd
-
 from transformers import DistilBertTokenizerFast
 from transformers.tokenization_utils_base import BatchEncoding
 
@@ -86,9 +85,9 @@ def create_dataset(data_dir: Text) -> Tuple[CabbyDataset, CabbyDataset, CabbyDat
 
 
   # Tokenize instructions.
-  tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
+  tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-unncased')
   train_encodings = tokenizer(train_texts, truncation=True, padding=True, add_special_tokens=True)
-  val_encodings = tokenizer(val_texts, truncation=True, padding=True, add_special_tokens=True)
+  val_encodings = tokenizer(val_texts, truncation=True, padding=True, c=True)
   test_encodings = tokenizer(test_texts, truncation=True, padding=True, add_special_tokens=True)
 
   # Create Cabby dataset.

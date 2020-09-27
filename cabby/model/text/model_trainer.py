@@ -18,7 +18,8 @@ are linked to either Manhattan or Pittburgh. This is just to get something
 basic that works for the geo-oriented text problems we are addressing with
 the Rendezvous task.
 
-A sentence is encoded with an BERT and a binary prediction is made from CLS token embedding using an MLP.
+A sentence is encoded with an BERT and a binary prediction is made from CLS 
+token embedding using an MLP.
 
 Example command line call:
 $ bazel-bin/cabby/model/text/model_trainer \
@@ -26,23 +27,19 @@ $ bazel-bin/cabby/model/text/model_trainer \
   --output_dir ~/tmp/output
 
 """
-# pylint: disable=import-error,too-many-locals,too-many-arguments
-
 
 from absl import app
 from absl import flags
 
+import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from transformers import DistilBertForSequenceClassification, AdamW
-import numpy as np
 from torch.utils.data import DataLoader
 
-# from cabby.model.text 
-import train
-# from cabby.model.text 
-import dataset
+from cabby.model.text import train
+from cabby.model.text import dataset
 
 FLAGS = flags.FLAGS
 
@@ -53,52 +50,59 @@ flags.DEFINE_string("output_dir", None,
           "The directory where the model and results will be save to.")
 
 flags.DEFINE_float(
-    'learning_rate', default=5e-5,
-    help=('The learning rate for the Adam optimizer.'))
+  'learning_rate', default=5e-5,
+  help=('The learning rate for the Adam optimizer.'))
 
 flags.DEFINE_integer(
-    'train_batch_size', default=4,
-    help=('Batch size for training.'))
+  'train_batch_size', default=2,
+  help=('Batch size for training.'))
 
 flags.DEFINE_integer(
-    'test_batch_size', default=16,
-    help=('Batch size for testing and validating.'))
+  'test_batch_size', default=8,
+  help=('Batch size for testing and validating.'))
 
 flags.DEFINE_integer(
-    'num_epochs', default=20,
-    help=('Number of training epochs.'))
+  'num_epochs', default=20,
+  help=('Number of training epochs.'))
 
 flags.DEFINE_integer(
-    'eval_every', None,
-    help=('Evaluation after a number of trained samples.'))
+  'eval_every', None,
+  help=('Evaluation after a number of trained samples.'))
 
 # Required flags.
 flags.mark_flag_as_required("data_dir")
 flags.mark_flag_as_required("output_dir")
 
+
 def main(argv):
 
-  device=torch.device(
-      'cuda') if torch.cuda.is_available() else torch.device('cpu')
+  device = torch.device(
+    'cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-  model=DistilBertForSequenceClassification.from_pretrained(
-      'distilbert-base-uncased')
+  model = DistilBertForSequenceClassification.from_pretrained(
+    'distilbert-base-uncased')
   model.to(device)
 
-  train_dataset, val_dataset, test_dataset=dataset.create_dataset(
-      FLAGS.data_dir)
+  train_dataset, val_dataset, test_dataset = dataset.create_dataset(
+    FLAGS.data_dir)
 
-  train_loader=DataLoader(
-      train_dataset, batch_size=FLAGS.train_batch_size, shuffle=True)
-  valid_loader=DataLoader(
-      val_dataset, batch_size=FLAGS.test_batch_size, shuffle=False)
+  train_loader = DataLoader(
+    train_dataset, batch_size=FLAGS.train_batch_size, shuffle=True)
+  valid_loader = DataLoader(
+    val_dataset, batch_size=FLAGS.test_batch_size, shuffle=False)
 
-  optimizer=AdamW(model.parameters(), lr=FLAGS.learning_rate)
+  optimizer = AdamW(model.parameters(), lr=FLAGS.learning_rate)
 
-  train.train_model(model=model, device=device, optimizer=optimizer, train_loader=train_loader,
-                    valid_loader=valid_loader, file_path=FLAGS.output_dir, eval_every=len(train_dataset) // 10)
+  train.train_model(
+    model=model,
+    device=device,
+    optimizer=optimizer,
+    train_loader=train_loader,
+    valid_loader=valid_loader,
+    file_path=FLAGS.output_dir, 
+    eval_every=len(train_dataset) // 10
+    )
 
 
 if __name__ == '__main__':
   app.run(main)
-
