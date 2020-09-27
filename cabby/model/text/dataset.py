@@ -12,99 +12,90 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Loads the dataset."""
+from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
 from torchtext import data
 import torch
 import os
 from absl import logging
-from transformers import BertTokenizer
+import transformers
 import pandas as pd
 
-
-MAX_SEQ_LEN = 512
-tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
-
-
-def tokenize(instruction):
-    tokenize = tokenizer.encode(
-        instruction,
-        max_length=MAX_SEQ_LEN,
-        truncation=True,
-        padding=True,
-        # return_attention_mask = True,
-        # return_tensors='pt',
-        # add_special_tokens=True,
-        )
-        train_encodings = tokenizer(train_texts, truncation=True, padding=True)
-
-    return tokenize
+from transformers import DistilBertTokenizerFast
+from transformers.tokenization_utils_base import BatchEncoding
 
 
-def create_dataset(data_dir, batch_sizes, device):
-    # Load datasets.
+class CabbyDataset(torch.utils.data.Dataset):
+  def __init__(self, encodings: BatchEncoding , labels: Sequence[int]):
 
-    # print (PAD_INDEX,UNK_INDEX)
+    self.encodings = encodings
+    self.labels = labels
 
-    TEXT = data.Field(
-        use_vocab=False,
-        tokenize=tokenize,
-        batch_first=True,
-        
-    )
-    LABELS = data.Field(
-        sequential=False,
-        preprocessing=lambda xs: 1 if xs == "manhattan" else 0,
-        use_vocab=False, 
-        batch_first=True, 
-        dtype=torch.float
-    )
+  def __getitem__(self, idx: int):
+    item = {key: torch.tensor(val[idx])
+                              for key, val in self.encodings.items()}
+    item['labels'] = torch.tensor(self.labels[idx])
+    return item
 
-    train_ds, valid_ds, test_ds = data.TabularDataset.splits(
-        path=data_dir,
-        format='tsv',
-        skip_header=False,
-        train='train.tsv',
-        validation='dev.tsv',
-        test='test.tsv',
-        fields=[
-            ('label', LABELS),
-            ('instructions', TEXT)])
-
-    train_iter, val_iter, test_iter = data.BucketIterator.splits(
-        (train_ds, valid_ds, test_ds), 
-        batch_sizes=batch_sizes, 
-        shuffle=True, 
-        device=device,
-        sort_key = lambda x: len(x.instructions),
-        sort = True,
-    )
-    print (vars(train_ds[0]))
-
-    TEXT.build_vocab(train_ds)
-    LABELS.build_vocab(train_ds)
-
-    # print (next(iter(train_iter)))
-
-    # logging.info('Data sample: %s', vars(train_ds[0]))
-
-    return train_iter, val_iter, test_iter
+  def __len__(self):
+    return len(self.labels)
 
 
+def create_dataset(data_dir: Text) -> Tuple[CabbyDataset, CabbyDataset, CabbyDataset]:
+  '''Loads data and creates datasets and train, validate and test sets.
+  Arguments:
+    data_dir: The directory of the data.
+  Returns:
+    The train, validate and test sets.
+  '''
+
+  LABELS = data.Field(
+      sequential=False,
+      preprocessing=lambda xs: 1 if xs == "manhattan" else 0,
+      use_vocab=False, 
+      batch_first=True, 
+  )
+  TEXT = data.Field(
+      use_vocab=False,
+      batch_first=True,
+      sequential=False,  
+  )
+
+  train_ds, valid_ds, test_ds = data.TabularDataset.splits(
+      path=data_dir,
+      format='tsv',
+      skip_header=False,
+      train='train.tsv',
+      validation='dev.tsv',
+      test='test.tsv',
+      fields=[
+          ('label', LABELS),
+          ('instructions', TEXT)])
+
+  logging.info('Data sample: %s', vars(train_ds[0]))
+
+  # Get list of instructions.
+  train_texts = [train_ds.examples[idx].instructions for idx in range(len(train_ds))]
+  val_texts = [valid_ds.examples[idx].instructions for idx in range(len(valid_ds))]
+  test_texts = [test_ds.examples[idx].instructions for idx in range(len(test_ds))]
+
+  # Get list of lables.
+  train_labels = [train_ds.examples[idx].label for idx in range(len(train_ds))]
+  val_labels = [valid_ds.examples[idx].label for idx in range(len(valid_ds))]
+  test_labels = [test_ds.examples[idx].label for idx in range(len(test_ds))]
 
 
-    # for i in train_ds.examples:
-    #   if len(i.instructions)>512:
-    #       print (len(i.instructions))
+  # Tokenize instructions.
+  tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
+  train_encodings = tokenizer(train_texts, truncation=True, padding=True, add_special_tokens=True)
+  val_encodings = tokenizer(val_texts, truncation=True, padding=True, add_special_tokens=True)
+  test_encodings = tokenizer(test_texts, truncation=True, padding=True, add_special_tokens=True)
 
-    # # Print an example.
-    # logging.info('Data sample: %s', vars(train_ds[0]))
+  # Create Cabby dataset.
+  train_dataset = CabbyDataset(train_encodings, train_labels)
+  val_dataset = CabbyDataset(val_encodings, val_labels)
+  test_dataset = CabbyDataset(test_encodings, test_labels)
+
+  return train_dataset, val_dataset, test_dataset
 
 
-#   #  print (vars(train_ds[0]))
-#   #   print (train_ds.examples[0].text)
-
-import torch
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-create_dataset("~/data/morp/morp-small", (16, 256, 256), device)

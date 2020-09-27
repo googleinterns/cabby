@@ -13,110 +13,157 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+from typing import Tuple, Sequence, Optional, Dict, Text, Any
+
 import torch 
 import torch.optim as optim
 import torch.nn as nn
-from transformers import AdamW
+from transformers import AdamW, DistilBertForSequenceClassification
 import numpy as np
+from torch.utils.data import DataLoader
+from absl import logging
 
 
-import dataset
-import model 
+def save_checkpoint(save_path: Text, model: DistilBertForSequenceClassification, valid_loss: int):
+    '''Funcion for saving model.'''
 
-
-def train(model,
-          optimizer,
-          criterion,
-          train_loader,
-          valid_loader,
-          num_epochs = 100,
-          eval_every = 10,
-          ):
+    if save_path == None:
+        return
     
+    state_dict = {'model_state_dict': model.state_dict(),
+                  'valid_loss': valid_loss}
+    
+    torch.save(state_dict, save_path)
+    logging.info(f'Model saved to ==> {save_path}')
+
+
+def load_checkpoint(load_path: Text, model: DistilBertForSequenceClassification, device: torch.device):
+    '''Funcion for loading model.'''
+
+    if load_path==None:
+        return
+    
+    state_dict = torch.load(load_path, map_location=device)
+    logging.info(f'Model loaded from <== {load_path}')
+    
+    model.load_state_dict(state_dict['model_state_dict'])
+    return state_dict['valid_loss']
+
+
+def save_metrics(save_path: Text, train_loss_list: Sequence[float], valid_loss_list: Sequence[float], global_steps_list: Sequence[int], valid_accuracy_list:  Sequence[float]):
+    '''Funcion for saving results.'''
+
+    if save_path == None:
+        return
+    
+    state_dict = {'train_loss_list': train_loss_list,
+                  'valid_loss_list': valid_loss_list,
+                  'global_steps_list': global_steps_list,
+                  'valid_accuracy_list': valid_accuracy_list}
+    
+    torch.save(state_dict, save_path)
+    logging.info(f'Results saved to ==> {save_path}')
+
+
+def load_metrics(load_path: Text, device: torch.device) -> Dict[Text,float]:
+    '''Funcion for loading results.'''
+
+    if load_path==None:
+        return
+    
+    state_dict = torch.load(load_path, map_location=device)
+    logging.info(f'Results loaded from <== {load_path}')
+    
+    return state_dict
+
+def train_model(model: DistilBertForSequenceClassification,
+          device: torch.device, 
+          optimizer: AdamW,
+          file_path: Text,
+          train_loader: DataLoader,
+          valid_loader: DataLoader,
+          eval_every: int,
+          num_epochs: int = 5,
+          best_valid_loss: float = float("Inf")):  
+    '''Main funcion for training model.'''
     # initialize running values
     running_loss = 0.0
     valid_running_loss = 0.0
     global_step = 0
+    valid_accuracy_list = []
     train_loss_list = []
     valid_loss_list = []
     global_steps_list = []
 
-    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-
-    # training loop
+    # Training loop.
     model.train()
-    for epoch in range(num_epochs):
-        for batch in train_loader:
-            optimizer.zero_grad()
-            (labels, instruction),_ = batch
-            # print (labels.shape, instruction.shape)
-            labels = labels.type(torch.LongTensor).to(device)           
-            instruction = instruction.type(torch.LongTensor).to(device)  
-            output = model(instruction, labels=labels)
-            output.loss.backward()
-            optimizer.step()
 
-            # update running values
-            running_loss += output.loss.item()
+    for epoch in range(num_epochs):
+        counter=0
+        for batch in train_loader:
+            counter+=1
+            optimizer.zero_grad()
+            input_ids = batch['input_ids'].to(device)
+            attention_mask = batch['attention_mask'].to(device)
+            labels = batch['labels'].to(device)
+            loss, logits = model(input_ids, attention_mask=attention_mask, labels=labels)
+            loss.backward()
+            optimizer.step()
+            
+            # Update running values.
+            running_loss += loss.item()
             global_step += 1
 
-            # evaluation step
+            
+            # Evaluation step.
             if global_step % eval_every == 0:
                 model.eval()
-                with torch.no_grad():                    
+                total, correct = 0,0
 
-                    # validation loop
-                    success = 0
-                    all_count = 0
-                    for batch in valid_loader:
-                        (labels, instruction),_ = batch
-                        labels = labels.type(torch.LongTensor).to(device)              
-                        instruction = instruction.type(torch.LongTensor).to(device)     
-                        output = model(instruction, labels=labels)
-                        topv, topi = output.logits.squeeze().topk(1)
-                        topi=topi.squeeze().detach().cpu().numpy()
+                # Validation loop.
+                for batch in valid_loader:
+                    input_ids = batch['input_ids'].to(device)
+                    attention_mask = batch['attention_mask'].to(device)
+                    labels = batch['labels'].to(device)
+                    loss, logits = model(input_ids, attention_mask=attention_mask, labels=labels)
+                    valid_running_loss += loss.item()
+                    topv, topi = logits.squeeze().topk(1)
+                    topi=topi.squeeze().detach().cpu().numpy()
 
-                        label_ids = labels.to('cpu').numpy()
-                        success+=np.sum(label_ids==topi)
-                        all_count+=label_ids.shape[0]
-                        # print(topi,label_ids)
-                        valid_running_loss += output.loss.item()
-                print (success/all_count)
-                # evaluation
+                    label_ids = labels.to('cpu').numpy()
+                    correct+=np.sum(label_ids==topi)
+                    total+=label_ids.shape[0]
+
+                # Evaluation.
                 average_train_loss = running_loss / eval_every
                 average_valid_loss = valid_running_loss / len(valid_loader)
+                accuracy = 100*correct/total
                 train_loss_list.append(average_train_loss)
                 valid_loss_list.append(average_valid_loss)
                 global_steps_list.append(global_step)
+                valid_accuracy_list.append(accuracy)
 
-                # resetting running values
+                # Resetting running values.
                 running_loss = 0.0                
                 valid_running_loss = 0.0
                 model.train()
 
-                # print progress
-                print('Epoch [{}/{}], Step [{}/{}], Train Loss: {:.4f}, Valid Loss: {:.4f}'
-                      .format(epoch+1, num_epochs, global_step, num_epochs*len(train_loader),
-                              average_train_loss, average_valid_loss))
-                
+                logging.info('Epoch [{}/{}], Step [{}/{}], Accuracy: {:.4f},Train Loss: {:.4f}, Valid Loss: {:.4f}'
+                      .format(epoch+1, num_epochs, global_step, num_epochs*len(train_loader), accuracy, average_train_loss, average_valid_loss))
 
-    print('Finished Training!')
+                # Save model and results in checkpoint. 
+                if best_valid_loss > average_valid_loss:
+                    best_valid_loss = average_valid_loss
+                    save_checkpoint(file_path + '/' + 'model.pt', model, best_valid_loss)
+                    save_metrics(file_path + '/' + 'metrics.pt', train_loss_list, valid_loss_list, global_steps_list, valid_accuracy_list)
 
-
-
-
-print ("START")
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-train_iter, val_iter, test_iter =  dataset.create_dataset("~/data/morp/morp-balanced", (8, 32, 32), device)
-
-from transformers import BertForSequenceClassification
-bert_model = BertForSequenceClassification.from_pretrained("bert-base-uncased", return_dict=True, num_labels = 2)
-bert_model.to(device)
-# bert_model = model.BERT().to(device)
+    save_metrics(file_path + '/' + 'metrics.pt', train_loss_list, valid_loss_list, global_steps_list, validation_accuracy_list)
+    logging.info('Finished Training.')  
 
 
-optimizer = AdamW(bert_model.parameters(), lr=2e-5)
-criterion = nn.BCELoss()
 
-train(model=bert_model, optimizer=optimizer, criterion=criterion, train_loader=train_iter,valid_loader = val_iter)
+
+
+
+
