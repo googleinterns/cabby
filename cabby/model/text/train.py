@@ -25,7 +25,6 @@ from transformers import AdamW
 from torch.utils.data import DataLoader
 
 
-
 def save_checkpoint(save_path: Text, model:  torch.nn.Module, valid_loss: int):
   '''Funcion for saving model.'''
 

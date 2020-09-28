@@ -59,7 +59,7 @@ flags.DEFINE_integer(
   help=('Batch size for training.'))
 
 flags.DEFINE_integer(
-  'test_batch_size', default=8,
+  'test_batch_size', default=4,
   help=('Batch size for testing and validating.'))
 
 flags.DEFINE_integer(
@@ -82,9 +82,11 @@ def main(argv):
 
   model = DistilBertForSequenceClassification.from_pretrained(
     'distilbert-base-uncased')
-  
-  logging.info("Model configuration: ", model.config)
-  
+
+  if torch.cuda.device_count() > 1:
+    logging.info("Using {} GPUs.".format(torch.cuda.device_count()))
+    model = nn.DataParallel(model)
+
   model.to(device)
 
   train_dataset, val_dataset, test_dataset = dataset.create_dataset(
