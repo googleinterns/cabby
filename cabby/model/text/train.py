@@ -90,7 +90,7 @@ def train_model(model:  torch.nn.Module,
         train_loader: DataLoader,
         valid_loader: DataLoader,
         eval_every: int,
-        num_epochs: int = 5,
+        num_epochs: int,
         best_valid_loss: float = float("Inf")):
   '''Main funcion for training model.'''
   # initialize running values

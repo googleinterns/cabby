@@ -102,6 +102,7 @@ def main(argv):
   train.train_model(
     model=model,
     device=device,
+    num_epochs=FLAGS.num_epochs,
     optimizer=optimizer,
     train_loader=train_loader,
     valid_loader=valid_loader,
