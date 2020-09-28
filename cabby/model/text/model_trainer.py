@@ -31,6 +31,7 @@ $ bazel-bin/cabby/model/text/model_trainer \
 from absl import app
 from absl import flags
 
+from absl import logging
 import numpy as np
 import torch
 import torch.optim as optim
@@ -81,6 +82,9 @@ def main(argv):
 
   model = DistilBertForSequenceClassification.from_pretrained(
     'distilbert-base-uncased')
+  
+  logging.info("Model configuration: ", model.config)
+  
   model.to(device)
 
   train_dataset, val_dataset, test_dataset = dataset.create_dataset(

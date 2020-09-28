@@ -25,6 +25,7 @@ from transformers import AdamW
 from torch.utils.data import DataLoader
 
 
+
 def save_checkpoint(save_path: Text, model:  torch.nn.Module, valid_loss: int):
   '''Funcion for saving model.'''
 
@@ -106,9 +107,7 @@ def train_model(model:  torch.nn.Module,
   model.train()
 
   for epoch in range(num_epochs):
-    counter = 0
     for batch in train_loader:
-      counter += 1
       optimizer.zero_grad()
       input_ids = batch['input_ids'].to(device)
       attention_mask = batch['attention_mask'].to(device)

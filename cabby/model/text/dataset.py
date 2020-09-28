@@ -85,9 +85,9 @@ def create_dataset(data_dir: Text) -> Tuple[CabbyDataset, CabbyDataset, CabbyDat
 
 
   # Tokenize instructions.
-  tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-unncased')
+  tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
   train_encodings = tokenizer(train_texts, truncation=True, padding=True, add_special_tokens=True)
-  val_encodings = tokenizer(val_texts, truncation=True, padding=True, c=True)
+  val_encodings = tokenizer(val_texts, truncation=True, padding=True)
   test_encodings = tokenizer(test_texts, truncation=True, padding=True, add_special_tokens=True)
 
   # Create Cabby dataset.
