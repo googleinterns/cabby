@@ -14,6 +14,7 @@
 
 '''Tests for map_structure.py'''
 
+import collections
 import osmnx as ox
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
@@ -25,10 +26,20 @@ from cabby.geo.map_processing import map_structure
 class MapTest(unittest.TestCase):
 
   @classmethod
-  def setUpClass(self):
+  def setUpClass(cls):
 
     # Process the map for an area in Bologna.
-    self.map = map_structure.Map("DC", 18)
+    cls.map = map_structure.Map("DC", 18)
+
+  def testDuplicatesEdgesInGraph(self):
+    edges = set()
+    multiple = 0
+    for edge in self.map.nx_graph.edges():
+      if edge in edges:
+        multiple+=1
+      edges.add(edge)
+
+    self.assertEqual(multiple, 0)
 
   def testSingleOutput(self):
     # Verify that a known POI is present.
@@ -50,6 +61,8 @@ class MapTest(unittest.TestCase):
     cell_to_search = list_cells[0]
     node = self.map.s2_graph.search(cell_to_search)
     self.assertTrue(hasattr(node, 'poi') and 3265952196 in node.poi)
+
+  
 
 
 if __name__ == "__main__":

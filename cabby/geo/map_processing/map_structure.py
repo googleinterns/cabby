@@ -28,7 +28,6 @@ import swifter
 import sys
 from typing import Dict, Tuple, Sequence, Text, Optional, List, Any
 
-
 from cabby import logger
 from cabby.geo import util
 from cabby.geo.map_processing import graph
@@ -100,12 +99,14 @@ class Map:
     Returns:
       The Node id closest to point.
     '''
-    ""
     point_xy = util.tuple_from_point(point)
     return ox.distance.get_nearest_node(self.nx_graph, point_xy)
 
   def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
-    '''Helper funcion for extracting POI for the defined place.'''
+    '''Extract point of interests (POI) for the defined region. 
+    Returns:
+      (1) The POI that are not roads; and (2) the roads POI.
+    '''
 
     tags = {'name': True, 'building': True, 'amenity': True}
 
@@ -156,9 +157,9 @@ class Map:
     assert poi_osmid not in self.poi['osmid'].tolist(), poi_osmid
 
     list_edges_connected_ids = []
-    eddges_to_add = []
+    edges_to_add = []
     for point in points:
-      eddges_to_add += self.add_single_point_edge(
+      edges_to_add += self.add_single_point_edge(
         point, list_edges_connected_ids, poi_osmid)
 
     # Add node POI to graph.
@@ -170,11 +171,11 @@ class Map:
       y=point.y
     )
 
-    return eddges_to_add
+    return edges_to_add
 
   def add_single_point_edge(self, point: Point,
                 list_edges_connected_ids: List, poi_osmid: int) -> Optional[Sequence[edge.Edge]]:
-    '''Connect a poi to the closest edge.
+    '''Connect a POI to the closest edge: (1) claculate the projected point to the nearest edge; (2) add the projected node to the graph; (3) create an edge between the point of the POI and the projcted point (add to the list to be returned); (4) create two edges from the closest edge (u-v) and the projected point: (a) u-projected point; (b) v-projected point; (5) remove closest edge u-v.
     Arguments:
       point: a point POI to be connected to the closest edge.
       list_edges_connected_ids: list of edges ids already connected to the POI. 
@@ -225,10 +226,6 @@ class Map:
                      )
     edges_list.append(edge_to_add)
 
-    edge_to_add = edge.Edge.from_poi(u_for_edge=projected_point_osmid,
-                     v_for_edge=poi_osmid, osmid=poi_osmid)
-    edges_list.append(edge_to_add)
-
     # Get nearest points - u and v.
     u_node = self.nx_graph.nodes[near_edge_u]
     u_point = Point(u_node['x'], u_node['y'])
@@ -243,16 +240,17 @@ class Map:
     # Add edges between projected point and u and v, on the street segment.
 
     street_name = near_edge['name'] if 'name' in near_edge else ""
+    if not projected_point_osmid==near_edge_u:
+      edge_to_add = edge.Edge.from_projected(
+        near_edge_u, projected_point_osmid, dist_u, near_edge['highway'],
+        near_edge['osmid'], street_name)
+      self.add_two_ways_edges(edge_to_add)
 
-    edge_to_add = edge.Edge.from_projected(
-      near_edge_u, projected_point_osmid, dist_u, near_edge['highway'],
-      near_edge['osmid'], street_name)
-    self.add_two_ways_edges(edge_to_add)
-
-    edge_to_add = edge.Edge.from_projected(
-      near_edge_v, projected_point_osmid, dist_v, near_edge['highway'],
-      near_edge['osmid'], street_name)
-    self.add_two_ways_edges(edge_to_add)
+    if not projected_point_osmid==near_edge_v:
+      edge_to_add = edge.Edge.from_projected(
+        near_edge_v, projected_point_osmid, dist_v, near_edge['highway'],
+        near_edge['osmid'], street_name)
+      self.add_two_ways_edges(edge_to_add)
 
     # Remove u-v edge.
     self.nx_graph.remove_edge(near_edge_u, near_edge_v)
@@ -261,7 +259,7 @@ class Map:
 
   def add_two_ways_edges(self, edge_add: edge.Edge):
     '''Add edges to graph.'''
-
+    
     self.nx_graph.add_edge(
       u_for_edge=edge_add.u_for_edge,
       v_for_edge=edge_add.v_for_edge,
@@ -283,16 +281,13 @@ class Map:
     )
 
   def add_poi_to_graph(self):
-    '''Add all POI to nx_graph.'''
-    eges_to_add_list = self.poi.swifter.apply(
+    '''Add all POI to nx_graph(currently contains only the roads).'''
+    eges_to_add_list = self.poi.apply(
       self.add_single_poi_to_graph, axis=1)
 
-    eges_to_add_list.swifter.apply(
+    eges_to_add_list.apply(
       lambda e_list: self.add_two_ways_edges(e_list[0]))
-
-    eges_to_add_list.swifter.apply(
-      lambda e_list: self.add_two_ways_edges(e_list[1]))
-
+    
   def get_s2cellids_for_poi(self, geometry: Any) -> Optional[Sequence[int]]:
     '''get cellids for POI. 
     Arguments:
@@ -446,3 +441,4 @@ def convert_string_to_list(string_list: Text) -> Sequence:
   string_list = string_list.split(",")
   map_object = map(int, string_list)
   return list(map_object)
+
