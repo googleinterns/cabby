@@ -16,7 +16,11 @@
 
 import sys
 from SPARQLWrapper import SPARQLWrapper, JSON
-from typing import Dict, Tuple, Sequence, Text
+from typing import Dict, Tuple, Sequence, Text, Any
+
+
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
@@ -128,7 +132,8 @@ _BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
         """
 
 
-def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
+def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
+
   '''Get Wikidata items for a specific area. 
   Arguments:
     region(Text): The area to query the Wikidata items.
@@ -170,7 +175,7 @@ def get_geofenced_wikidata_items_by_qid(qid: Text) -> Sequence[Dict]:
   '''
   query = _BY_QID_QUERY % qid
 
-  return query_api([query])
+  return query_api(query)
 
 
 def query_api(query: Text) -> Dict[Text, Dict]:
