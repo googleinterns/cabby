@@ -19,7 +19,7 @@ from geopy.distance import geodesic
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
-from typing import Optional, Tuple, Sequence, Any
+from typing import Optional, Tuple, Sequence, Any, Text
 import webbrowser
 
 
@@ -80,11 +80,35 @@ def s2polygon_from_shapely_point(shapely_point: Point) -> s2.S2Polygon:
   latlng = s2.S2LatLng.FromDegrees(y, x)
   return s2.S2Polygon(s2.S2Cell(s2.S2CellId(latlng)))
 
+def s2cellid_from_coord_yx(coords: Tuple[float,float]) -> s2.S2CellId:
+  '''Converts coordinates (latitude and longtitude) to the S2CellId.
+  Arguments:
+    coord(Tuple): The coordinates given as latitude and
+    longtitude to be converted to S2CellId.
+  Returns:
+    The S2CellId equivelent to the input coordinates.
+  '''
+  y, x = coords[0], coords[0]
+  latlng = s2.S2LatLng.FromDegrees(y, x)
+  return s2.S2CellId(latlng)
+
+
+def s2cellid_from_point(point: Point) -> int:
+  '''Converts point to the S2CellId.
+  Arguments:
+    point: The point to be converted to S2CellId.
+  Returns:
+    The S2CellId equivelent to the input point.
+  '''
+  y, x = point.y, point.x
+  latlng = s2.S2LatLng.FromDegrees(y, x)
+  return s2.S2CellId(latlng).id()
+
 
 def s2point_from_coord_xy(coord: Tuple) -> s2.S2Point:
   '''Converts coordinates (longtitude and latitude) to the S2Point.
   Arguments:
-    coord(S2Polygon): The coordinates given as longtitude and
+    coord(Tuple): The coordinates given as longtitude and
     latitude to be converted to S2Point.
   Returns:
     The S2Point equivelent to the input coordinates .
@@ -170,7 +194,8 @@ def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
   webbrowser.open(filepath, new=2)
 
 
-def cellid_from_point(point: Point, level: int) -> Sequence:
+
+def s2cellid_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
   '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
   Arguments:
     point(Point): a Shapely Point to which S2Cells.
@@ -183,8 +208,21 @@ def cellid_from_point(point: Point, level: int) -> Sequence:
   cellid = get_s2cover_for_s2polygon(s2polygon, level)[0]
   return [cellid]
 
+def cellid_from_point(point: Point, level: int) -> int:
+  '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
+  Arguments:
+    point(Point): a Shapely Point to which S2Cells.
+    covering will be performed.
+  Returns:
+    An id of S2Cellsid that cover the provided Shapely Point.
+  '''
 
-def cellid_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
+  s2polygon = s2polygon_from_shapely_point(point)
+  cellid = get_s2cover_for_s2polygon(s2polygon, level)[0]
+  return cellid.id()
+
+
+def s2cellids_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
   '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
   Arguments:
     polygon(Polygon): a Shapely Polygon to which S2Cells.
@@ -195,6 +233,23 @@ def cellid_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
 
   s2polygon = s2polygon_from_shapely_polygon(polygon)
   return get_s2cover_for_s2polygon(s2polygon, level)
+
+
+def cellids_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
+  '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
+  Arguments:
+    polygon(Polygon): a Shapely Polygon to which S2Cells.
+    covering will be performed..
+  Returns:
+    A sequence of S2Cells ids that cover the provided Shapely Polygon.
+  '''
+
+  s2polygon = s2polygon_from_shapely_polygon(polygon)
+  s2cells = get_s2cover_for_s2polygon(s2polygon, level)
+  return [cell.id() for cell in s2cells]
+
+
+
 
 
 def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
@@ -233,6 +288,19 @@ def get_distance_km(start: Point, goal: Point) -> float:
   """
   return geodesic(start.coords, goal.coords).km
 
+
+
+def point_from_str_coord(coord_str: Text) -> Point:
+  '''Converts coordinates in string format (latitude and longtitude) to Point.
+  Arguments:
+    coord: A lat-lng coordinate to be converted to a point.
+  Returns:
+    A point.
+  '''
+  list_coords_str = coord_str.replace("(","").replace(")","").split(',')
+  coord = list(map(float, list_coords_str))
+
+  return Point(coord[1], coord[0])
 
 def tuple_from_point(point: Point) -> Tuple[float, float]:
   '''Convert a Point into a tuple, with latitude as first element, and 

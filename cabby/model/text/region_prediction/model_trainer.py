@@ -39,8 +39,8 @@ import torch.nn as nn
 from transformers import DistilBertForSequenceClassification, AdamW
 from torch.utils.data import DataLoader
 
-from cabby.model.text import train
-from cabby.model.text import dataset
+from cabby.model.text.region_prediction import train
+from cabby.model.text.region_prediction import dataset
 
 FLAGS = flags.FLAGS
 
