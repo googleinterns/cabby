@@ -133,7 +133,8 @@ def train_model(model:  torch.nn.Module,
           labels = batch['labels'].to(device)
           outputs = model(
             input_ids, attention_mask=attention_mask, labels=labels)
-          loss, logits = outputs.Loss, outputs.logits
+          loss = outputs.loss
+          logits = outputs.logits
           valid_running_loss += loss.item()
           topv, topi = logits.squeeze().topk(1)
           topi = topi.squeeze().detach().cpu().numpy()

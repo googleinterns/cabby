@@ -56,14 +56,14 @@ class CabbyDataset(torch.utils.data.Dataset):
     return len(self.labels)
 
 
-def create_dataset(data_dir: Text, region: Text, s2level) -> Tuple[CabbyDataset, CabbyDataset, CabbyDataset, int]:
+def create_dataset(data_dir: Text, region: Text, s2level) -> Tuple[CabbyDataset, CabbyDataset, CabbyDataset, Dict[int,int]]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.
     region: The region of the data.
     s2level: The s2level of the cells.
   Returns:
-    The train, validate and test sets and the number of labels.
+    The train, validate and test sets and the dictionary of labels to cellids.
   '''
 
   train_ds = pd.read_json(data_dir + '/' + 'train.json')
@@ -82,8 +82,7 @@ def create_dataset(data_dir: Text, region: Text, s2level) -> Tuple[CabbyDataset,
   val_dataset = CabbyDataset(valid_ds, s2level, cellid_to_label)
   test_dataset = CabbyDataset(test_ds, s2level, cellid_to_label)
 
-  n_lables = len(cellid_to_label)
-  return train_dataset, val_dataset, test_dataset, n_lables
+  return train_dataset, val_dataset, test_dataset, label_to_cellid
 
 
 
