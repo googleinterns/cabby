@@ -152,9 +152,9 @@ class Map:
       return single_poi['osmid']
 
     poi_osmid = single_poi['osmid']
-    poi_osmid = util.concat_numbers(9999, poi_osmid)
-    single_poi['osmid'] = poi_osmid
+    poi_osmid = util.concat_numbers(9999999, poi_osmid)
     assert poi_osmid not in self.poi['osmid'].tolist(), poi_osmid
+    self.poi.loc[self.poi['osmid']==single_poi['osmid'], 'osmid']= poi_osmid
 
     list_edges_connected_ids = []
     edges_to_add = []
@@ -287,6 +287,8 @@ class Map:
 
     eges_to_add_list.apply(
       lambda e_list: self.add_two_ways_edges(e_list[0]))
+    
+    self.poi.set_index('osmid', inplace=True, drop=False)
     
   def get_s2cellids_for_poi(self, geometry: Any) -> Optional[Sequence[int]]:
     '''get cellids for POI. 

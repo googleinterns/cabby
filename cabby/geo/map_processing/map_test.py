@@ -20,6 +20,7 @@ from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 import unittest
 
+
 from cabby.geo.map_processing import map_structure
 
 
@@ -40,6 +41,11 @@ class MapTest(unittest.TestCase):
       edges.add(edge)
 
     self.assertEqual(multiple, 0)
+  
+  def testPOIInGraph(self):
+    osmids = self.map.poi['osmid'].tolist()
+    for osmid in osmids:
+      self.assertIn(osmid, self.map.nx_graph.nodes)
 
   def testSingleOutput(self):
     # Verify that a known POI is present.
@@ -60,7 +66,7 @@ class MapTest(unittest.TestCase):
     # Check that the POI was added correctly to the graph.
     cell_to_search = list_cells[0]
     node = self.map.s2_graph.search(cell_to_search)
-    self.assertTrue(hasattr(node, 'poi') and 3265952196 in node.poi)
+    self.assertTrue(hasattr(node, 'poi') and 99999993265952196 in node.poi)
 
   
 
