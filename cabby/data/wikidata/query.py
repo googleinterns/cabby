@@ -350,12 +350,21 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
   return query_api(query)
 
 
-def get_geofenced_wikidata_relations(region: Text) -> Sequence[Dict]:
+def get_geofenced_wikidata_relations(region: Text,
+                                     extract_qids = False) -> Sequence[Dict]:
   '''Get Wikidata relations for a specific area.
   Arguments:
     region(Text): The area to query the Wikidata items.
+    extract_qids: If true, the columns place, p, and instance will hold just the
+                  QIDs/PIDs found in the last part of the wikidata URI.
   Returns:
-    The Wikidata items, and certain relations to other Wikidata items.
+    The Wikidata items, and certain relations to other Wikidata items. Columns:
+      place: wikidata item corresponding to place within the region
+      p: wikidata property extracted from the place
+      instance: value of the property p
+      instanceLabel: human-readable version of instance
+      placeLabel: human-readable version of place
+      propLabel: human-readable version of p
   '''
   if region == "Pittsburgh":
     query = _PITTSBURGH_RELATION_QUERY
@@ -371,9 +380,11 @@ def get_geofenced_wikidata_relations(region: Text) -> Sequence[Dict]:
 
   query_result = query_api(query)
   result_df = pd.DataFrame([{k: v['value'] for k, v in x.items()} for x in query_result])
+  if extract_qids:
+    extract_qid = lambda s: s.apply(lambda x: x.rsplit("/", 1)[1])
+    extract_cols = ["place", "p", "instance"]
+    result_df[extract_cols] = result_df[extract_cols].apply(extract_qid)
   return result_df
-
-
 
 def get_geofenced_wikidata_items_by_qid(qid: Text) -> Sequence[Dict]:
   '''Get Wikidata items for a specific area. 
