@@ -37,9 +37,6 @@ map_logger = logger.create_logger("map.log", 'map')
 
 OSM_CRS = 32633  # UTM Zones (North).
 
-
-
-
 def get_region(region: Text):
   assert (region == "Manhattan" or region == "Pittsburgh" or
         region == "Bologna")
@@ -56,7 +53,6 @@ def get_region(region: Text):
         miny=44.4902, minx=11.3333, maxy=44.5000, maxx=11.3564,
         ccw=True)
   return polygon_area  
-
 
 
 class Map:
@@ -101,7 +97,6 @@ class Map:
     Returns:
       The Node id closest to point.
     '''
-    ""
     point_xy = util.tuple_from_point(point)
     return ox.distance.get_nearest_node(self.nx_graph, point_xy)
 

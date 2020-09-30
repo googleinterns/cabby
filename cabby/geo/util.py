@@ -468,3 +468,16 @@ def get_linestring_distance(line: LineString) -> int:
   trans_line = transform(project, line)
 
   return round(trans_line.length)
+
+def point_str_to_shapely_point(point_str: Text) -> Point:
+  '''Converts point string to shapely point. 
+  Arguments:
+    point_str: The point string to be converted to shapely point. E.g, of string 'Point(-74.037258 40.715865)'.
+  Returns:
+    A Point.
+  '''
+  point_str=point_str.split('(')[-1]
+  point_str=point_str.split(')')[0]
+  coords = point_str.split(" ")
+  x, y = float(coords[0]), float(coords[1])
+  return Point(x,y)
