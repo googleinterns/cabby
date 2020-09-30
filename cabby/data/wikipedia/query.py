@@ -36,7 +36,6 @@ def get_wikipedia_item(title: Text) -> Optional[Sequence]:
     '?action=query'
     '&prop=extracts'
     '&exintro'
-    '&exsentences=3'
     '&explaintext'
     f'&titles={title}'
     '&format=json'
@@ -44,11 +43,28 @@ def get_wikipedia_item(title: Text) -> Optional[Sequence]:
   )
   try:
     json_response = requests.get(url).json()
+    entity = list(json_response['query']['pages'].values())[0]
   except:
     print("An exception occurred when runing query: {0}".format(url))
     return []
+  
+  text = clean_text(entity['extract'])
 
-  return json_response['query']['pages']
+  doc = nlp(text)
+
+  entities = []
+
+  for span in list(doc.sents):
+    sub_sentences = span.text.split('\n')
+    for sentence in sub_sentences:
+      # Filter short sentences
+      if len(sentence.split(" "))<5:
+        continue
+      sub_entity = copy.deepcopy(entity)
+      sub_entity['extract'] = sentence
+      if sub_entity not in entities:
+        entities.append(sub_entity)
+  return entities
 
 
 def get_wikipedia_items(titles: Sequence[Text]) -> Sequence:
@@ -83,11 +99,11 @@ def clean_text(text: Text) -> Text:
     The text after parsing.
   '''
   # Remove titles.
-  clean_text = text.split('== See also ==')[0]
-  clean_text = clean_text.split('== Notes ==')[0]
-  clean_text = clean_text.split('== References ==')[0]
-  clean_text = re.sub(r'=.*=', r'.', clean_text)
-  return clean_text
+  text = text.split('== See also ==')[0]
+  text = text.split('== Notes ==')[0]
+  text = text.split('== References ==')[0]
+  text = re.sub(r'=.*=', r'.', text)
+  return text
 
 
 def get_wikipedia_items_title_in_text(backlink_id: int, orig_title: Text) -> Sequence:
