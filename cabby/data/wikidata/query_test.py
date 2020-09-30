@@ -14,22 +14,56 @@
 
 '''Tests for query.py'''
 
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
+
 from cabby.data.wikidata import query
 import unittest
 
 
 class WikidataTest(unittest.TestCase):
 
-  def testSingleOutput(self):
-    output = query.get_geofenced_wikidata_items('Manhattan')
+  @classmethod
+  def setUpClass(cls):
+
+    # Load map from disk.
+    cls.items_lean = query.get_geofenced_wikidata_items('Manhattan')
+    cls.items_info = query.get_geofenced_info_wikidata_items('Manhattan')
+
+  def testLeanQuery(self):
+    items = self.items_lean
     expected_place_label = 'New York Stock Exchange'
-    poi_by_value = [x['placeLabel']['value'] for x in output]
+    poi_by_value = [x['placeLabel']['value'] for x in items]
     self.assertIn(expected_place_label, poi_by_value)
 
     not_expected = 'Rabin Square'
 
     self.assertNotIn(not_expected, poi_by_value)
     self.assertNotIn('', poi_by_value)
+
+  def testExtensiveInfoQuery(self):
+    items = self.items_info
+    place_label = 'New York Stock Exchange'
+    poi_by_value = [x for x in items if x['placeLabel']['value']==place_label][0]
+    instance_of = poi_by_value['instance']['value']
+    self.assertEqual(instance_of, 'stock exchange')
+    description = poi_by_value['placeDescription']['value']
+    self.assertEqual(description, 'American stock exchange')
+  
+
+  def testExtensiveInfoQueryDuplicates(self):
+    # Test for duplicate items.
+    items = self.items_info
+    places = [x['place']['value'] for x in items]
+    places_set = set(places)
+    self.assertEqual(len(places),len(places_set))
+
+  def testLeanQueryDuplicates(self):
+    # Test for duplicate items.
+    items = self.items_lean
+    places = [x['place']['value'] for x in items]
+    places_set = set(places)
+    self.assertEqual(len(places),len(places_set))
 
 
 if __name__ == "__main__":

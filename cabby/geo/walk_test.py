@@ -21,10 +21,6 @@ import unittest
 from shapely.geometry.point import Point
 import sys
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
-
 class WalkTest(unittest.TestCase):
 
   @classmethod
