@@ -347,7 +347,7 @@ def get_linestring_distance(line: LineString) -> int:
 
   return round(trans_line.length)
 
-def point_str_to_sheply_point(point_str: Text) -> Point:
+def point_str_to_shapely_point(point_str: Text) -> Point:
   '''Converts point string to shapely point. 
   Arguments:
     point_str: The point string to be converted to shapely point. E.g, of string 'Point(-74.037258 40.715865)'.
