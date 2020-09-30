@@ -18,8 +18,10 @@ Example command line call:
 $ bazel-bin/cabby/rvs/generate_rvs \
   --rvs_data_path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" \
   --save_instruction_path "./cabby/rvs/data/pittsburgh_instructions.json" \
+
 Example output: 
   "Meet at Swirl Crepe. Walk past Wellington. Swirl Crepe will be near Gyros."
+
 '''
 
 import json

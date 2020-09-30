@@ -35,7 +35,8 @@ from cabby import logger
 
 map_logger = logger.create_logger("map.log", 'map')
 
-OSM_CRS = 32633 # UTM Zones (North).
+OSM_CRS = 32633  # UTM Zones (North).
+
 
 
 

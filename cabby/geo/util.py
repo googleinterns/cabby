@@ -273,6 +273,31 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
   return get_s2cover_for_s2polygon(s2polygon, level)
 
 
+def project_point_in_segment(line_segment: LineString, point: Point):
+  """Projects point to line and check if the point projected is in a segment. 
+  Args:
+    line_segment: The line segment.
+    point: The point to be projected on the line.
+  Returns:
+    1 if the projected point is in the segment and 0 if inot.
+  """
+
+  point = np.array(point.coords[0])
+
+  line_point_1 = np.array(line_segment.coords[0])
+  line_point_2 = np.array(line_segment.coords[len(line_segment.coords)-1])
+
+  diff = line_point_2 - line_point_1
+  diff_norm = diff/np.linalg.norm(diff, 2)
+
+  projected_point = line_point_1 + diff_norm * \
+    np.dot(point - line_point_1, diff_norm)
+
+  projected_point = Point(projected_point)
+
+  return 1 if line_segment.distance(projected_point) < 1e-8 else 0
+
+
 def get_bearing(start: Point, goal: Point) -> float:
   """Get the bearing (heading) from the start lat-lon to the goal lat-lon.
   Arguments:

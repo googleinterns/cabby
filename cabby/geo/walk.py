@@ -20,7 +20,6 @@ from shapely import geometry
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon, LinearRing
 from shapely.geometry import box, mapping, LineString
-import sys
 from random import sample
 import os
 import osmnx as ox
@@ -29,10 +28,11 @@ import pandas as pd
 import json
 import geopandas as gpd
 from geopandas import GeoDataFrame, GeoSeries
-
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 from cabby.rvs import item
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 
 _Geo_DataFrame_Driver = "GPKG"
