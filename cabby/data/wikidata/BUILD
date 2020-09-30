@@ -10,11 +10,7 @@ py_library(
 py_library(
     name = 'query',
     srcs = ['query.py'],
-    dep = [
-        "//cabby/geo:util",
-        "//cabby/geo/map_processing:map_structure"
 
-    ]
 )
 
 py_test(
@@ -23,8 +19,6 @@ py_test(
     python_version = "PY3",
     deps = [
         ":query",
-        "//cabby/geo:util",
-        "//cabby/geo/map_processing:map_structure"
     ],
 )
 
@@ -34,7 +28,5 @@ py_binary(
     srcs = ['extract_geofenced_wikidata_items.py'],
     deps = [
         ":query",
-        "//cabby/geo:util",
-        "//cabby/geo/map_processing:map_structure"
     ],
 )

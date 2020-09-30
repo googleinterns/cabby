@@ -352,33 +352,6 @@ def check_if_geometry_in_polygon(geometry: Any, poly: Polygon) -> Polygon:
     geometry['geometry'].intersects(poly)
 
 
-def point_str_to_shapely_point(point_str: Text) -> Point:
-  '''Converts point string to shapely point. 
-  Arguments:
-    point_str: The point string to be converted to shapely point. E.g, of string 'Point(-74.037258 40.715865)'.
-  Returns:
-    A Point.
-  '''
-  point_str = point_str.split('(')[-1]
-  point_str = point_str.split(')')[0]
-  coords = point_str.split(" ")
-  x, y = float(coords[0]), float(coords[1])
-  return Point(x, y)
-
-def point_str_to_tuple_point(point_str: Text) -> Tuple[Tuple[float, float]]:
-  '''Converts point string to tuple. 
-  Arguments:
-    point_str: The point string to be converted to shapely point. E.g, of string 'Point(-74.037258 40.715865)'.
-  Returns:
-    A tuple.
-  '''
-  point_str = point_str.split('(')[-1]
-  point_str = point_str.split(')')[0]
-  coords = point_str.split(" ")
-  x, y = float(coords[0]), float(coords[1])
-  return [[x, y]]
-
-
 def point_from_str_coord(coord_str: Text) -> Point:
   '''Converts coordinates in string format (latitude and longtitude) to Point. 
   E.g, of string '(40.715865, -74.037258)'.

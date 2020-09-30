@@ -22,7 +22,7 @@ token embedding using an MLP.
 Example command line call:
 $ bazel-bin/cabby/model/text/s2cellid_prediction/model_trainer \
   --data_dir ~/data/wikigeo/pittsburgh  \
-  --dataloader_dir ~/model/wikigeo/pittsburgh \
+  --dataset_dir ~/model/wikigeo/dataset/pittsburgh \
   --region Pittsburgh \ 
   --s2_level 12 \
   --output_dir ~/tmp/output\
@@ -50,7 +50,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
-flags.DEFINE_string("dataloader_dir", None,
+flags.DEFINE_string("dataset_dir", None,
           "The directory to save\load dataloader.")
 flags.DEFINE_enum(
   "region", None, ['Pittsburgh', 'Manhattan'],
@@ -64,15 +64,15 @@ flags.DEFINE_float(
   help=('The learning rate for the Adam optimizer.'))
 
 flags.DEFINE_integer(
-  'train_batch_size', default=8,
+  'train_batch_size', default=16,
   help=('Batch size for training.'))
 
 flags.DEFINE_integer(
-  'test_batch_size', default=8,
+  'test_batch_size', default=16,
   help=('Batch size for testing and validating.'))
 
 flags.DEFINE_integer(
-  'num_epochs', default=20,
+  'num_epochs', default=5,
   help=('Number of training epochs.'))
 
 flags.DEFINE_integer(
@@ -81,7 +81,7 @@ flags.DEFINE_integer(
 
 # Required flags.
 flags.mark_flag_as_required("data_dir")
-flags.mark_flag_as_required("dataloader_dir")
+flags.mark_flag_as_required("dataset_dir")
 flags.mark_flag_as_required("region")
 flags.mark_flag_as_required("s2_level")
 flags.mark_flag_as_required("output_dir")
@@ -90,39 +90,41 @@ flags.mark_flag_as_required("output_dir")
 def main(argv):
 
 
-  if not os.path.exists(FLAGS.dataloader_dir):
-    sys.exit("Dataloader path doesn't exsist: {}.".format(FLAGS.dataloader_dir))
+  if not os.path.exists(FLAGS.dataset_dir):
+    sys.exit("Dataset path doesn't exsist: {}.".format(FLAGS.dataset_dir))
 
-  loader_path = os.path.join(FLAGS.dataloader_dir, str(FLAGS.s2_level))
-  train_path_loader = os.path.join(loader_path,'train.pth')
-  valid_path_loader = os.path.join(loader_path,'valid.pth')
-  lables_dictionary = os.path.join(loader_path,"label_to_cellid.npy")
+  dataset_path = os.path.join(FLAGS.dataset_dir, str(FLAGS.s2_level))
+  train_path_dataset = os.path.join(dataset_path,'train.pth')
+  valid_path_dataset = os.path.join(dataset_path,'valid.pth')
+  lables_dictionary = os.path.join(dataset_path,"label_to_cellid.npy")
 
 
-  if os.path.exists(loader_path):
-    logging.info("Loading dataloader.")
-    train_loader = torch.load(train_path_loader)
-    valid_loader = torch.load(valid_path_loader)
+  if os.path.exists(dataset_path):
+    logging.info("Loading dataset.")
+    train_dataset = torch.load(train_path_dataset)
+    valid_dataset = torch.load(valid_path_dataset)
     label_to_cellid = np.load(lables_dictionary, allow_pickle='TRUE').item()
     n_lables = len(label_to_cellid)
 
   else:
     logging.info("Preparing data.")
-    train_dataset, val_dataset, test_dataset, label_to_cellid = dataset.create_dataset(
+    train_dataset, valid_dataset, test_dataset, label_to_cellid = dataset.create_dataset(
       FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
     n_lables = len(label_to_cellid)
     logging.info("Number of lables: {}".format(n_lables))
-    train_loader = DataLoader(
-      train_dataset, batch_size=FLAGS.train_batch_size, shuffle=True)
-    valid_loader = DataLoader(
-      val_dataset, batch_size=FLAGS.test_batch_size, shuffle=False)
+
     
     # Save to dataloaders and lables to cells dictionary.
-    os.mkdir(loader_path)
-    torch.save(train_loader, train_path_loader)
-    torch.save(valid_loader, valid_path_loader)
+    os.mkdir(dataset_path)
+    torch.save(train_dataset, train_path_dataset)
+    torch.save(valid_dataset, valid_path_dataset)
     np.save(lables_dictionary, label_to_cellid) 
     logging.info("Saved data.")
+
+  train_loader = DataLoader(
+  train_dataset, batch_size=FLAGS.train_batch_size, shuffle=True)
+  valid_loader = DataLoader(
+  valid_dataset, batch_size=FLAGS.test_batch_size, shuffle=False)
 
 
   device = torch.device(

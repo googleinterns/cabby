@@ -24,7 +24,6 @@ from transformers import DistilBertTokenizerFast
 from transformers.tokenization_utils_base import BatchEncoding
 
 from shapely.geometry.point import Point
-import pandas as pd
 
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
@@ -32,32 +31,39 @@ from cabby.geo.map_processing import map_structure
 
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
+
 class CabbyDataset(torch.utils.data.Dataset):
-  def __init__(
-  self, data: pd.DataFrame, s2level:int, cellid_to_label: Dict[int, int] = None):
+  def __init__(self, data: pd.DataFrame, s2level: int,
+         cellid_to_label: Dict[int, int] = None):
 
     # Tokenize instructions.
-    self.encodings = tokenizer(data.text.tolist(), truncation=True, padding=True, add_special_tokens=True)
-    
-    data['point'] = data.ref_point.apply(lambda x: util.point_from_str_coord(x))
-    self.points = data.ref_point.apply(lambda x: util.coords_from_str_coord(x)).tolist()
-    data['cellid'] = data.point.apply(lambda x: util.cellid_from_point(x, s2level))
-    
-    self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
+    self.encodings = tokenizer(
+      data.text.tolist(), truncation=True,
+      padding=True, add_special_tokens=True)
 
+    data['point'] = data.ref_point.apply(
+      lambda x: util.point_from_str_coord(x))
+    self.points = data.ref_point.apply(
+      lambda x: util.coords_from_str_coord(x)).tolist()
+    data['cellid'] = data.point.apply(
+      lambda x: util.cellid_from_point(x, s2level))
+
+    self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
 
   def __getitem__(self, idx: int):
     item = {key: torch.tensor(val[idx])
-                              for key, val in self.encodings.items()}
-    item['labels'] = torch.tensor(self.labels[idx]) 
-    points = torch.tensor(self.points[idx]) 
+        for key, val in self.encodings.items()}
+    item['labels'] = torch.tensor(self.labels[idx])
+    points = torch.tensor(self.points[idx])
     return item, points
 
   def __len__(self):
     return len(self.labels)
 
 
-def create_dataset(data_dir: Text, region: Text, s2level) -> Tuple[CabbyDataset, CabbyDataset, CabbyDataset, Dict[int,int]]:
+def create_dataset(data_dir: Text,
+           region: Text, s2level) -> Tuple[CabbyDataset, CabbyDataset,
+                           CabbyDataset, Dict[int, int]]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.
@@ -72,11 +78,10 @@ def create_dataset(data_dir: Text, region: Text, s2level) -> Tuple[CabbyDataset,
   test_ds = pd.read_json(data_dir + '/' + 'test.json')
 
   # Get lables.
-  get_region = map_structure.get_region(region)  
+  get_region = map_structure.get_region(region)
   unique_cellid = util.cellids_from_polygon(get_region, s2level)
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
-
 
   # Create Cabby dataset.
   train_dataset = CabbyDataset(train_ds, s2level, cellid_to_label)
@@ -84,10 +89,3 @@ def create_dataset(data_dir: Text, region: Text, s2level) -> Tuple[CabbyDataset,
   test_dataset = CabbyDataset(test_ds, s2level, cellid_to_label)
 
   return train_dataset, val_dataset, test_dataset, label_to_cellid
-
-
-
-
-
-
-
