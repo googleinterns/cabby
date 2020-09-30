@@ -98,7 +98,6 @@ class Map:
     Returns:
       The Node id closest to point.
     '''
-    ""
     point_xy = util.tuple_from_point(point)
     return ox.distance.get_nearest_node(self.nx_graph, point_xy)
 
