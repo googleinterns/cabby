@@ -18,11 +18,14 @@ from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
 from absl import logging
 import numpy as np
+from sklearn.metrics import accuracy_score
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from transformers import AdamW
 from torch.utils.data import DataLoader
+
+from cabby.geo import util
 
 
 def save_checkpoint(save_path: Text, model:  torch.nn.Module, valid_loss: int):
@@ -56,16 +59,19 @@ def save_metrics(save_path: Text,
          train_loss_list: Sequence[float],
          valid_loss_list: Sequence[float],
          global_steps_list: Sequence[int],
-         valid_accuracy_list:  Sequence[float]):
+         valid_accuracy_list:  Sequence[float],
+         true_points_list: Sequence[Sequence[Tuple[float,float]]],
+         pred_points_list: Sequence[Sequence[Tuple[float,float]]]):
   '''Funcion for saving results.'''
 
   if save_path == None:
     return
-
   state_dict = {'train_loss_list': train_loss_list,
           'valid_loss_list': valid_loss_list,
           'global_steps_list': global_steps_list,
-          'valid_accuracy_list': valid_accuracy_list}
+          'valid_accuracy_list': valid_accuracy_list,
+          'true_points_list': true_points_list,
+          'pred_points_list': pred_points_list}
 
   torch.save(state_dict, save_path)
   logging.info(f'Results saved to ==> {save_path}')
@@ -82,6 +88,55 @@ def load_metrics(load_path: Text, device: torch.device) -> Dict[Text, float]:
 
   return state_dict
 
+def predictions_to_points(preds, label_to_cellid):
+  preds_flat = np.argmax(preds, axis=1).flatten().tolist()
+  cellids = [label_to_cellid[label] for label in preds_flat]
+  coords = util.get_cell_center_from_s2cellids(cellids)
+  return coords
+
+
+def evaluate(model, valid_loader, device, label_to_cellid):
+
+  model.eval()
+
+  loss_val_total = 0
+
+  # Validation loop.
+  true_points_list, pred_points_list, predictions, true_vals = [], [], [], []
+  for batch, points in valid_loader:
+    input_ids = batch['input_ids'].to(device)
+    attention_mask = batch['attention_mask'].to(device)
+    labels = batch['labels'].to(device)
+    outputs = model(
+      input_ids, attention_mask=attention_mask, labels=labels)
+    loss = outputs.loss
+    loss_val_total += loss.item()
+    label_ids = labels.cpu().numpy()
+    true_vals.append(label_ids)
+    logits = outputs.logits.detach().cpu().numpy()
+    predictions.append(logits)
+    points = points.cpu().numpy()
+    true_points_list.append(points)
+    pred_points = predictions_to_points(logits, label_to_cellid)
+    pred_points_list.append(pred_points)
+
+  # Evaluation.
+  pred_points_list = np.concatenate(pred_points_list, axis=0)
+  true_points_list = np.concatenate(true_points_list, axis=0)
+  predictions = np.concatenate(predictions, axis=0)
+  true_vals = np.concatenate(true_vals, axis=0)
+  average_valid_loss = loss_val_total / len(valid_loader)
+
+  return (average_valid_loss, predictions, true_vals, true_points_list, 
+  pred_points_list)
+
+
+def accuracy_cells(labels, preds):
+    preds_flat = np.argmax(preds, axis=1).flatten()
+    labels_flat = labels.flatten()
+    return accuracy_score(labels_flat,preds_flat)
+
+
 
 def train_model(model:  torch.nn.Module,
         device: torch.device,
@@ -89,24 +144,26 @@ def train_model(model:  torch.nn.Module,
         file_path: Text,
         train_loader: DataLoader,
         valid_loader: DataLoader,
+        label_to_cellid: Dict[int,int],
         eval_every: int,
         num_epochs: int,
         best_valid_loss: float = float("Inf")):
   '''Main funcion for training model.'''
   # initialize running values
   running_loss = 0.0
-  valid_running_loss = 0.0
   global_step = 0
   valid_accuracy_list = []
   train_loss_list = []
   valid_loss_list = []
   global_steps_list = []
+  true_points_list = []
+  pred_points_list = []
 
   # Training loop.
   model.train()
 
   for epoch in range(num_epochs):
-    for batch in train_loader:
+    for batch, _ in train_loader:
       optimizer.zero_grad()
       input_ids = batch['input_ids'].to(device)
       attention_mask = batch['attention_mask'].to(device)
@@ -123,45 +180,25 @@ def train_model(model:  torch.nn.Module,
 
       # Evaluation step.
       if global_step % eval_every == 0:
-        model.eval()
-        total, correct = 0, 0
-
-        # Validation loop.
-        for batch in valid_loader:
-          input_ids = batch['input_ids'].to(device)
-          attention_mask = batch['attention_mask'].to(device)
-          labels = batch['labels'].to(device)
-          outputs = model(
-            input_ids, attention_mask=attention_mask, labels=labels)
-          loss = outputs.loss
-          logits = outputs.logits
-          valid_running_loss += loss.item()
-          topv, topi = logits.squeeze().topk(1)
-          topi = topi.squeeze().detach().cpu().numpy()
-
-          label_ids = labels.to('cpu').numpy()
-          correct += np.sum(label_ids == topi)
-          total += label_ids.shape[0]
-
-        # Evaluation.
+        average_valid_loss, predictions, true_vals, true_points, pred_points = evaluate(model, valid_loader, device, label_to_cellid)
+        
         average_train_loss = running_loss / eval_every
-        average_valid_loss = valid_running_loss / len(valid_loader)
-        accuracy = 100*correct/total
+        accuracy = accuracy_cells(true_vals, predictions)
         train_loss_list.append(average_train_loss)
         valid_loss_list.append(average_valid_loss)
         global_steps_list.append(global_step)
         valid_accuracy_list.append(accuracy)
+        true_points_list.append(true_points)
+        pred_points_list.append(pred_points)
 
         # Resetting running values.
         running_loss = 0.0
-        valid_running_loss = 0.0
-        model.train()
 
         logging.info('Epoch [{}/{}], Step [{}/{}], \
         Accuracy: {:.4f},Train Loss: {:.4f}, Valid Loss: {:.4f}'
-               .format(epoch+1, num_epochs, global_step,
-                   num_epochs*len(train_loader), accuracy,
-                   average_train_loss, average_valid_loss))
+        .format(epoch+1, num_epochs, global_step,
+            num_epochs*len(train_loader), accuracy,
+            average_train_loss, average_valid_loss))
 
         # Save model and results in checkpoint.
         if best_valid_loss > average_valid_loss:
@@ -169,8 +206,8 @@ def train_model(model:  torch.nn.Module,
           save_checkpoint(file_path + '/' + 'model.pt',
                   model, best_valid_loss)
           save_metrics(file_path + '/' + 'metrics.pt', train_loss_list,
-                 valid_loss_list, global_steps_list, valid_accuracy_list)
+                  valid_loss_list, global_steps_list, valid_accuracy_list, true_points_list, pred_points_list)
+        
+        model.train() 
 
-  save_metrics(file_path + '/' + 'metrics.pt', train_loss_list,
-         valid_loss_list, global_steps_list, valid_accuracy_list)
   logging.info('Finished Training.')

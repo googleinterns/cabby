@@ -1,0 +1,21 @@
+I0930 05:52:46.593060 140336315680576 model_trainer.py:103] Loading dataloader.
+Some weights of the model checkpoint at distilbert-base-uncased were not used when initializing DistilBertForSequenceClassification: ['vocab_transform.weight', 'vocab_transform.bias', 'vocab_layer_norm.weight', 'vocab_layer_norm.bias', 'vocab_projector.weight', 'vocab_projector.bias']
+- This IS expected if you are initializing DistilBertForSequenceClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPretraining model).
+- This IS NOT expected if you are initializing DistilBertForSequenceClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+Some weights of DistilBertForSequenceClassification were not initialized from the model checkpoint at distilbert-base-uncased and are newly initialized: ['pre_classifier.weight', 'pre_classifier.bias', 'classifier.weight', 'classifier.bias']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+I0930 06:00:56.057475 140336315680576 train.py:201] Epoch [1/20], Step [1000/36520],         Accuracy: 0.4250,Train Loss: 0.6847, Valid Loss: 2.0861
+I0930 06:00:57.292704 140336315680576 train.py:41] Model saved to ==> /home/tzuf_google_com/tmp/output/model.pt
+I0930 06:00:57.294018 140336315680576 train.py:77] Results saved to ==> /home/tzuf_google_com/tmp/output/metrics.pt
+I0930 06:09:00.315755 140336315680576 train.py:201] Epoch [2/20], Step [2000/36520],         Accuracy: 0.4973,Train Loss: 0.3386, Valid Loss: 1.9509
+I0930 06:09:01.548088 140336315680576 train.py:41] Model saved to ==> /home/tzuf_google_com/tmp/output/model.pt
+I0930 06:09:01.549489 140336315680576 train.py:77] Results saved to ==> /home/tzuf_google_com/tmp/output/metrics.pt
+I0930 06:17:04.481940 140336315680576 train.py:201] Epoch [2/20], Step [3000/36520],         Accuracy: 0.4852,Train Loss: 0.2453, Valid Loss: 2.1312
+I0930 06:25:07.137615 140336315680576 train.py:201] Epoch [3/20], Step [4000/36520],         Accuracy: 0.5257,Train Loss: 0.2037, Valid Loss: 2.1623
+I0930 06:33:09.694410 140336315680576 train.py:201] Epoch [3/20], Step [5000/36520],         Accuracy: 0.4726,Train Loss: 0.1719, Valid Loss: 2.4386
+I0930 06:41:12.395899 140336315680576 train.py:201] Epoch [4/20], Step [6000/36520],         Accuracy: 0.4978,Train Loss: 0.1397, Valid Loss: 2.7029
+I0930 06:49:15.295789 140336315680576 train.py:201] Epoch [4/20], Step [7000/36520],         Accuracy: 0.4222,Train Loss: 0.1251, Valid Loss: 2.8383
+I0930 06:57:18.061343 140336315680576 train.py:201] Epoch [5/20], Step [8000/36520],         Accuracy: 0.4589,Train Loss: 0.0969, Valid Loss: 2.5396
+I0930 07:05:20.752483 140336315680576 train.py:201] Epoch [5/20], Step [9000/36520],         Accuracy: 0.4863,Train Loss: 0.1039, Valid Loss: 2.4237
+I0930 07:13:23.489434 140336315680576 train.py:201] Epoch [6/20], Step [10000/36520],         Accuracy: 0.5268,Train Loss: 0.0676, Valid Loss: 2.8401
+I0930 07:21:26.218913 140336315680576 train.py:201] Epoch [7/20], Step [11000/36520],         Accuracy: 0.4721,Train Loss: 0.0812, Valid Loss: 2.7059

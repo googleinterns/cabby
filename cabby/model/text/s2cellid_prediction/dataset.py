@@ -40,7 +40,7 @@ class CabbyDataset(torch.utils.data.Dataset):
     self.encodings = tokenizer(data.text.tolist(), truncation=True, padding=True, add_special_tokens=True)
     
     data['point'] = data.ref_point.apply(lambda x: util.point_from_str_coord(x))
-    self.points = data.point.tolist()
+    self.points = data.ref_point.apply(lambda x: util.coords_from_str_coord(x)).tolist()
     data['cellid'] = data.point.apply(lambda x: util.cellid_from_point(x, s2level))
     
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
@@ -49,8 +49,9 @@ class CabbyDataset(torch.utils.data.Dataset):
   def __getitem__(self, idx: int):
     item = {key: torch.tensor(val[idx])
                               for key, val in self.encodings.items()}
-    item['labels'] = torch.tensor(self.labels[idx])
-    return item
+    item['labels'] = torch.tensor(self.labels[idx]) 
+    points = torch.tensor(self.points[idx]) 
+    return item, points
 
   def __len__(self):
     return len(self.labels)

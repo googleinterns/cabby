@@ -16,6 +16,7 @@
 import folium
 import geographiclib
 from geopy.distance import geodesic
+import numpy as np
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
@@ -80,7 +81,8 @@ def s2polygon_from_shapely_point(shapely_point: Point) -> s2.S2Polygon:
   latlng = s2.S2LatLng.FromDegrees(y, x)
   return s2.S2Polygon(s2.S2Cell(s2.S2CellId(latlng)))
 
-def s2cellid_from_coord_yx(coords: Tuple[float,float]) -> s2.S2CellId:
+
+def s2cellid_from_coord_yx(coords: Tuple[float, float]) -> s2.S2CellId:
   '''Converts coordinates (latitude and longtitude) to the S2CellId.
   Arguments:
     coord(Tuple): The coordinates given as latitude and
@@ -194,7 +196,6 @@ def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
   webbrowser.open(filepath, new=2)
 
 
-
 def s2cellid_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
   '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
   Arguments:
@@ -207,6 +208,7 @@ def s2cellid_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
   s2polygon = s2polygon_from_shapely_point(point)
   cellid = get_s2cover_for_s2polygon(s2polygon, level)[0]
   return [cellid]
+
 
 def cellid_from_point(point: Point, level: int) -> int:
   '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
@@ -249,9 +251,6 @@ def cellids_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
   return [cell.id() for cell in s2cells]
 
 
-
-
-
 def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
   '''Get s2cell covering from shapely polygon that are lines (OpenStreetMaps
   Ways of streets).  
@@ -289,18 +288,6 @@ def get_distance_km(start: Point, goal: Point) -> float:
   return geodesic(start.coords, goal.coords).km
 
 
-
-def point_from_str_coord(coord_str: Text) -> Point:
-  '''Converts coordinates in string format (latitude and longtitude) to Point.
-  Arguments:
-    coord: A lat-lng coordinate to be converted to a point.
-  Returns:
-    A point.
-  '''
-  list_coords_str = coord_str.replace("(","").replace(")","").split(',')
-  coord = list(map(float, list_coords_str))
-
-  return Point(coord[1], coord[0])
 
 def tuple_from_point(point: Point) -> Tuple[float, float]:
   '''Convert a Point into a tuple, with latitude as first element, and 
@@ -365,15 +352,72 @@ def check_if_geometry_in_polygon(geometry: Any, poly: Polygon) -> Polygon:
     geometry['geometry'].intersects(poly)
 
 
-def point_str_to_sheply_point(point_str: Text) -> Point:
+def point_str_to_shapely_point(point_str: Text) -> Point:
   '''Converts point string to shapely point. 
   Arguments:
     point_str: The point string to be converted to shapely point. E.g, of string 'Point(-74.037258 40.715865)'.
   Returns:
     A Point.
   '''
-  point_str=point_str.split('(')[-1]
-  point_str=point_str.split(')')[0]
+  point_str = point_str.split('(')[-1]
+  point_str = point_str.split(')')[0]
   coords = point_str.split(" ")
   x, y = float(coords[0]), float(coords[1])
-  return Point(x,y)
+  return Point(x, y)
+
+def point_str_to_tuple_point(point_str: Text) -> Tuple[Tuple[float, float]]:
+  '''Converts point string to tuple. 
+  Arguments:
+    point_str: The point string to be converted to shapely point. E.g, of string 'Point(-74.037258 40.715865)'.
+  Returns:
+    A tuple.
+  '''
+  point_str = point_str.split('(')[-1]
+  point_str = point_str.split(')')[0]
+  coords = point_str.split(" ")
+  x, y = float(coords[0]), float(coords[1])
+  return [[x, y]]
+
+
+def point_from_str_coord(coord_str: Text) -> Point:
+  '''Converts coordinates in string format (latitude and longtitude) to Point. 
+  E.g, of string '(40.715865, -74.037258)'.
+  Arguments:
+    coord: A lat-lng coordinate to be converted to a point.
+  Returns:
+    A point.
+  '''
+  list_coords_str = coord_str.replace("(", "").replace(")", "").split(',')
+  coord = list(map(float, list_coords_str))
+
+  return Point(coord[1], coord[0])
+
+def coords_from_str_coord(coord_str: Text) -> Tuple[float, float]:
+  '''Converts coordinates in string format (latitude and longtitude) to coordinates in a tuple format. 
+  E.g, of string '(40.715865, -74.037258)'.
+  Arguments:
+    coord: A lat-lng coordinate to be converted to a tuple.
+  Returns:
+    A tuple of lat-lng.
+  '''
+  list_coords_str = coord_str.replace("(", "").replace(")", "").split(',')
+  coord = list(map(float, list_coords_str))
+
+  return (coord[0], coord[1])
+
+def get_cell_center_from_s2cellids(
+    s2cell_ids: Sequence[int]) -> Sequence[Tuple]:
+  """Returns the center latitude and longitude of s2 cells.
+  Args:
+    s2cell_ids: array of valid s2 cell ids. 1D array
+  Returns:
+    a list of shapely points of shape the size of the cellids list.
+
+  """
+  prediction_coords = []
+  for s2cellid in s2cell_ids:
+    s2_latlng = s2.S2CellId(int(s2cellid)).ToLatLng()
+    lat = s2_latlng.lat().degrees()
+    lng = s2_latlng.lng().degrees()
+    prediction_coords.append([lat, lng])
+  return np.array(prediction_coords)

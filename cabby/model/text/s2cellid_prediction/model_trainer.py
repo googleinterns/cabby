@@ -146,8 +146,9 @@ def main(argv):
     optimizer=optimizer,
     train_loader=train_loader,
     valid_loader=valid_loader,
+    label_to_cellid = label_to_cellid,
     file_path=FLAGS.output_dir, 
-    eval_every=200
+    eval_every=1000,
     )
 
 
