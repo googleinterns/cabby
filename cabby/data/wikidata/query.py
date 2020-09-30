@@ -157,7 +157,7 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
   filtered_results = []
   for result in results:
     point_str = result['point']['value']
-    point = util.point_str_to_sheply_point(point_str) 
+    point = util.point_str_to_shapely_point(point_str) 
     if polygon_region.contains(point):
       filtered_results.append(result)
   return filtered_results
