@@ -51,13 +51,6 @@ class WikidataTest(unittest.TestCase):
     self.assertEqual(description, 'American stock exchange')
   
 
-  def testExtensiveInfoQueryDuplicates(self):
-    # Test for duplicate items.
-    items = self.items_info
-    places = [x['place']['value'] for x in items]
-    places_set = set(places)
-    self.assertEqual(len(places),len(places_set))
-
   def testLeanQueryDuplicates(self):
     # Test for duplicate items.
     items = self.items_lean

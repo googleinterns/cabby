@@ -260,15 +260,7 @@ def get_geofenced_info_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]
     if polygon_region.contains(point):
       filtered_results.append(result)
   
-  
-  # Remove duplicates.
-  results = []
-  places = []
-  for item in filtered_results:
-    if item['place']['value'] not in places:
-      results.append(item)
-      places.append(item['place']['value'])
-  return results
+  return filtered_results
 
 
 def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
