@@ -20,6 +20,8 @@ from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 import unittest
 
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from cabby.geo.map_processing import map_structure
 
@@ -31,16 +33,6 @@ class MapTest(unittest.TestCase):
 
     # Process the map for an area in Bologna.
     cls.map = map_structure.Map("DC", 18)
-
-  def testDuplicatesEdgesInGraph(self):
-    edges = set()
-    multiple = 0
-    for edge in self.map.nx_graph.edges():
-      if edge in edges:
-        multiple+=1
-      edges.add(edge)
-
-    self.assertEqual(multiple, 0)
   
   def testPOIInGraph(self):
     osmids = self.map.poi['osmid'].tolist()

@@ -27,12 +27,13 @@ from geopandas import GeoDataFrame
 import osmnx as ox
 from shapely.geometry.point import Point
 
+from cabby.geo import regions
 from cabby.geo import walk
 from cabby.geo.map_processing import map_structure
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-  "region", None, ['Pittsburgh', 'Manhattan', 'DC'],
+  "region", None, regions.ALLOWED_REGIONS,
   "Map areas: Manhattan, Pittsburgh or DC.")
 flags.DEFINE_integer("min_s2_level", None, "Minimum S2 level of the map.")
 flags.DEFINE_string("directory", None,

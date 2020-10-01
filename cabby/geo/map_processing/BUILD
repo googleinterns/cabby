@@ -20,6 +20,7 @@ py_library(
         ':edge',
         '//cabby/geo:util',
         '//cabby:logger',
+         '//cabby/geo:regions'
 
     ]
 )
@@ -35,6 +36,8 @@ py_test(
         ":graph",
         "//cabby/geo:util",
         "//cabby:logger",
+        '//cabby/geo:regions'
+
 
     ],
 )        
@@ -49,5 +52,6 @@ py_binary(
         ':graph',
         ':edge',
         '//cabby:logger',
+        '//cabby/geo:regions'
         ],
 )

@@ -25,11 +25,13 @@ import json
 import os
 
 from cabby.data import extract
+from cabby.geo import regions
+
 
 FLAGS = flags.FLAGS
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-  "region", None, ['Pittsburgh', 'Manhattan', 'DC'],
+  "region", None, regions.ALLOWED_REGIONS,
   "Map areas: Manhattan, Pittsburgh or DC.")
 flags.DEFINE_string("path", None, "The path where the data will be saved.")
 
