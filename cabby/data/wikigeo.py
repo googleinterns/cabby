@@ -40,7 +40,7 @@ class WikigeoEntity:
   ref_pageid: int = attr.ib()
   ref_title: Text = attr.ib()
   ref_point: Point = attr.ib()
-  ref_instance: Point = attr.ib()
+  ref_instance: Text = attr.ib()
   sample: dict = attr.ib(init=False)
 
   def __attrs_post_init__(self):
@@ -64,8 +64,8 @@ class WikigeoEntity:
       wikidata_ref.instance)
   
   @classmethod
-  def from_tags(cls, result):
-    """Construct an Entity from the Wikidata tags."""
+  def from_wikidata(cls, result):
+    """Construct an Entity from the Wikidata entity."""
     return WikigeoEntity(
       -1,
       result.sample,
@@ -76,6 +76,18 @@ class WikigeoEntity:
       result.location,
       result.instance)
 
+  @classmethod
+  def from_osm(cls, result):
+    """Construct an Entity from an osm entity."""
+    return WikigeoEntity(
+      result.osmid,
+      result.text,
+      result.name,
+      result.qid,
+      result.osmid,
+      result.name,
+      result.point,
+      "")
 
 def text_from_point(point: Point) -> Text:
   '''Convert a Point into a tuple, with latitude as first element, and longitude as second.

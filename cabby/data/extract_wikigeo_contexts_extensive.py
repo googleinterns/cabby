@@ -13,12 +13,15 @@
 # limitations under the License.
 
 
-'''Example command line method to extract Wikipedia and Wikidata items and save to file.
+'''Example command line method to extract Wikipedia and Wikidata items and save 
+to file.
 Example:
 $ bazel-bin/cabby/data/extract_wikigeo_contexts_extensive \
---region Bologna --path bologna.json
+--region Bologna 
+--save_path bologna.json
+--osm_path  "./cabby/geo/map_processing/poiTestData/bologna_poi.pkl"
 '''
-
+from absl import logging
 from absl import app
 from absl import flags
 import json
@@ -31,35 +34,41 @@ FLAGS = flags.FLAGS
 flags.DEFINE_enum(
   "region", None, ['Pittsburgh', 'Manhattan', 'Bologna'],
   "Map areas: Manhattan, Pittsburgh or Bologna.")
-flags.DEFINE_string("path", None, "The path where the data will be saved.")
+flags.DEFINE_string("save_path", None,
+          "The path where the data will be saved.")
+flags.DEFINE_string(
+  "osm_path", None, 
+  "The path where the OSM data will be loaded and used to construct the samples.")
 
 
 # Required flags.
 flags.mark_flag_as_required("region")
-flags.mark_flag_as_required("path")
+flags.mark_flag_as_required("save_path")
+flags.mark_flag_as_required("osm_path")
 
 
 def main(argv):
   del argv  # Unused.
 
-  results = extract.get_data_by_region_extensive(FLAGS.region)
-  print('The number of results items found is: {}'.format(
+  results = extract.get_data_by_region_extensive(
+    FLAGS.region, FLAGS.osm_path)
+  logging.info('The number of results items found is: {}'.format(
     len(results)))
-  
-  extract.write_files(FLAGS.path, results)
+
+  extract.write_files(FLAGS.save_path, results)
 
   # Create train, dev, and test sets.
   train_set, dev_set, test_set = extract.split_dataset(results, 0.8, 0.1)
 
-  print('The size of the train-set is: {}'.format(
+  logging.info('The size of the train-set is: {}'.format(
     len(train_set)))
-  print('The size of the dev-set is: {}'.format(
-    len(dev_set)))    
-  print('The size of the test-set is: {}'.format(
+  logging.info('The size of the dev-set is: {}'.format(
+    len(dev_set)))
+  logging.info('The size of the test-set is: {}'.format(
     len(test_set)))
 
   # Create paths for the train, dev, and test sets.
-  split_path = FLAGS.path.split('.')
+  split_path = FLAGS.save_path.split('.')
   path_without_endidng = split_path[0]
   ending = split_path[-1]
 

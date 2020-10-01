@@ -253,27 +253,12 @@ class Map:
 
     # Load POI.
     path = self.get_valid_path(dir_name, '_poi', '.pkl')
-    assert os.path.exists(
-      path), "Path {0} doesn't exist.".format(path)
-    poi_pandas = pd.read_pickle(path)
-    if 'cellids' in poi_pandas:
-      poi_pandas['s2cellids'] = poi_pandas['cellids'].apply(
-        lambda x: util.s2cellids_from_cellids(x))
-      poi_pandas.drop(['cellids'], 1, inplace=True)
-
-    self.poi = poi_pandas
+    self.poi = load_poi(path)
 
     # Load streets.
     path = self.get_valid_path(dir_name, '_streets', '.pkl')
-    assert os.path.exists(
-      path), "Path {0} doesn't exist.".format(path)
-    streets_pandas = pd.read_pickle(path)
-    if 'cellids' in streets_pandas:
-      streets_pandas['s2cellids'] = streets_pandas['cellids'].apply(
-        lambda x: util.s2cellids_from_cellids(x))
-      streets_pandas.drop(['cellids'], 1, inplace=True)
-    self.streets = streets_pandas
-
+    self.streets = load_poi(path)
+    
     # Load graph.
     path = self.get_valid_path(dir_name, '_graph', '.gpickle')
     assert os.path.exists(
@@ -291,3 +276,15 @@ class Map:
     assert os.path.exists(
       path), "Path {0} doesn't exist.".format(path)
     self.edges = gpd.read_file(path, driver='GeoJSON')
+
+def load_poi(path: Text):
+    '''Load POI from disk.'''
+    assert os.path.exists(
+      path), "Path {0} doesn't exist.".format(path)
+    poi_pandas = pd.read_pickle(path)
+    if 'cellids' in poi_pandas:
+      poi_pandas['s2cellids'] = poi_pandas['cellids'].apply(
+        lambda x: util.s2cellids_from_cellids(x))
+      poi_pandas.drop(['cellids'], 1, inplace=True)
+
+    return poi_pandas

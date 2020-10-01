@@ -32,7 +32,7 @@ class GeoSetTest(unittest.TestCase):
     self.assertEqual(two_pnc_plazza['title'], 'Two PNC Plaza')
     self.assertEqual(two_pnc_plazza['ref_qid'], two_pnc_plaza_qid)
     self.assertEqual(two_pnc_plazza['ref_instance'], 'skyscraper')
-
+  
 
 if __name__ == "__main__":
   unittest.main()
