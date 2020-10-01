@@ -13,9 +13,6 @@ py_library(
     ],
 )
 
-        
-
-
 py_binary(
     name = 'train',
     main = 'train.py',
@@ -34,4 +31,3 @@ py_binary(
         ':dataset',
     ],
 )
-

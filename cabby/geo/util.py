@@ -18,17 +18,24 @@ from functools import partial
 import geographiclib
 from geopy.distance import geodesic
 import numpy as np
+from numpy import int64
 import pyproj
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import box, mapping, LineString
 from shapely.ops import transform
+import sys
 from typing import Optional, Tuple, Sequence, Any, Text
 import webbrowser
 
 UTM_CRS = 32633  # UTM Zones (North).
 WGS84_CRS = 4326  # WGS84 Latitude/Longitude.
+
+
+from collections import namedtuple
+CoordsYX = namedtuple('CoordsYX', ('y x'))
+CoordsXY = namedtuple('CoordsXY', ('x y'))
 
 
 def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]:
@@ -90,17 +97,6 @@ def s2polygon_from_shapely_point(shapely_point: Point) -> s2.S2Polygon:
   return s2.S2Polygon(s2.S2Cell(s2.S2CellId(latlng)))
 
 
-def s2cellid_from_coord_yx(coords: Tuple[float, float]) -> s2.S2CellId:
-  '''Converts coordinates (latitude and longtitude) to the S2CellId.
-  Arguments:
-    coord(Tuple): The coordinates given as latitude and
-    longtitude to be converted to S2CellId.
-  Returns:
-    The S2CellId equivelent to the input coordinates.
-  '''
-  y, x = coords[0], coords[0]
-  latlng = s2.S2LatLng.FromDegrees(y, x)
-  return s2.S2CellId(latlng)
 
 
 def s2cellid_from_point(point: Point) -> int:
@@ -115,10 +111,10 @@ def s2cellid_from_point(point: Point) -> int:
   return s2.S2CellId(latlng).id()
 
 
-def s2point_from_coord_xy(coord: Tuple) -> s2.S2Point:
+def s2point_from_coord_xy(coord: CoordsXY) -> s2.S2Point:
   '''Converts coordinates (longtitude and latitude) to the S2Point.
   Arguments:
-    coord(Tuple): The coordinates given as longtitude and
+    coord: The coordinates given as longtitude and
     latitude to be converted to S2Point.
   Returns:
     The S2Point equivelent to the input coordinates .
@@ -228,7 +224,10 @@ def cellid_from_point(point: Point, level: int) -> int:
   '''
 
   s2polygon = s2polygon_from_shapely_point(point)
-  cellid = get_s2cover_for_s2polygon(s2polygon, level)[0]
+  cellids = get_s2cover_for_s2polygon(s2polygon, level)
+  if cellids is None:
+    sys.exit("S2cellid covering failed because the point is a None.")
+  cellid = cellids[0]
   return cellid.id()
 
 
@@ -273,29 +272,30 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
   return get_s2cover_for_s2polygon(s2polygon, level)
 
 
-def project_point_in_segment(line_segment: LineString, point: Point):
+def project_point_in_segment(line_segment: LineString, point: Point) -> bool:
   """Projects point to line and check if the point projected is in a segment. 
-  Args:
+  Arguments:
     line_segment: The line segment.
     point: The point to be projected on the line.
   Returns:
-    1 if the projected point is in the segment and 0 if inot.
+    True if the projected point is in the segment and False if inot.
   """
 
   point = np.array(point.coords[0])
 
-  line_point_1 = np.array(line_segment.coords[0])
-  line_point_2 = np.array(line_segment.coords[len(line_segment.coords)-1])
+  # The line_segment has two ends - u and v. 
+  u = np.array(line_segment.coords[0])
+  v = np.array(line_segment.coords[len(line_segment.coords)-1])
 
-  diff = line_point_2 - line_point_1
+  diff = v - u
   diff_norm = diff/np.linalg.norm(diff, 2)
 
-  projected_point = line_point_1 + diff_norm * \
-    np.dot(point - line_point_1, diff_norm)
+  projected_point = u + diff_norm * \
+    np.dot(point - u, diff_norm)
 
   projected_point = Point(projected_point)
 
-  return 1 if line_segment.distance(projected_point) < 1e-8 else 0
+  return (line_segment.distance(projected_point) < 1e-8)
 
 
 def get_bearing(start: Point, goal: Point) -> float:
@@ -321,16 +321,16 @@ def get_distance_km(start: Point, goal: Point) -> float:
   return geodesic(start.coords, goal.coords).km
 
 
-def tuple_from_point(point: Point) -> Tuple[float, float]:
+def tuple_from_point(point: Point) -> CoordsYX:
   '''Convert a Point into a tuple, with latitude as first element, and 
   longitude as second.
   Arguments:
     point(Point): A lat-lng point.
   Returns:
-    A lat-lng Tuple[float, float].
+    A lat-lng coordinates.
   '''
 
-  return (point.y, point.x)
+  return CoordsYX(point.y, point.x)
 
 
 def list_xy_from_point(point: Point) -> Sequence[float]:
@@ -396,7 +396,7 @@ def point_from_str_coord(coord_str: Text) -> Point:
   return Point(coord[1], coord[0])
 
 
-def coords_from_str_coord(coord_str: Text) -> Tuple[float, float]:
+def coords_from_str_coord(coord_str: Text) -> CoordsYX:
   '''Converts coordinates in string format (latitude and longtitude) to 
   coordinates in a tuple format. 
   E.g, of string '(40.715865, -74.037258)'.
@@ -408,13 +408,13 @@ def coords_from_str_coord(coord_str: Text) -> Tuple[float, float]:
   list_coords_str = coord_str.replace("(", "").replace(")", "").split(',')
   coord = list(map(float, list_coords_str))
 
-  return (coord[0], coord[1])
+  return CoordsYX(coord[0], coord[1])
 
 
 def get_cell_center_from_s2cellids(
-    s2cell_ids: Sequence[int]) -> Sequence[Tuple]:
+    s2cell_ids: Sequence[int64]) -> Sequence[CoordsYX]:
   """Returns the center latitude and longitude of s2 cells.
-  Args:
+  Arguments:
     s2cell_ids: array of valid s2 cell ids. 1D array
   Returns:
     a list of shapely points of shape the size of the cellids list.
@@ -427,31 +427,6 @@ def get_cell_center_from_s2cellids(
     lng = s2_latlng.lng().degrees()
     prediction_coords.append([lat, lng])
   return np.array(prediction_coords)
-
-def project_point_in_segment(line_segment: LineString, point: Point):
-  """Projects point to line and check if the point projected is in a segment. 
-  Args:
-    line_segment: The line segment.
-    point: The point to be projected on the line.
-  Returns:
-    1 if the projected point is in the segment and 0 if inot.
-  """
-
-  point = np.array(point.coords[0])
-
-  line_point_1 = np.array(line_segment.coords[0])
-  line_point_2 = np.array(line_segment.coords[len(line_segment.coords)-1])
-
-  diff = line_point_2 - line_point_1
-  diff_norm = diff/np.linalg.norm(diff, 2)
-
-  projected_point = line_point_1 + diff_norm * \
-    np.dot(point - line_point_1, diff_norm)
-
-  projected_point = Point(projected_point)
-
-  return 1 if line_segment.distance(projected_point) < 1e-8 else 0
-
 
 def get_linestring_distance(line: LineString) -> int:
   '''Calculate the line length in meters.

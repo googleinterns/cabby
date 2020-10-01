@@ -107,7 +107,7 @@ def main(argv):
     train_loader=train_loader,
     valid_loader=valid_loader,
     file_path=FLAGS.output_dir, 
-    eval_every=len(train_dataset) // 10
+    eval_every=1000
     )
 
 
