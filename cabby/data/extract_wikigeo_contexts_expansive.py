@@ -16,7 +16,7 @@
 '''Example command line method to extract Wikipedia and Wikidata items and save 
 to file.
 Example:
-$ bazel-bin/cabby/data/extract_wikigeo_contexts_extensive \
+$ bazel-bin/cabby/data/extract_wikigeo_contexts_expansive \
 --region Bologna 
 --save_path bologna.json
 --osm_path  "./cabby/geo/map_processing/poiTestData/bologna_poi.pkl"
@@ -50,7 +50,7 @@ flags.mark_flag_as_required("osm_path")
 def main(argv):
   del argv  # Unused.
 
-  results = extract.get_data_by_region_extensive(
+  results = extract.get_data_by_region_expansive(
     FLAGS.region, FLAGS.osm_path)
   logging.info('The number of results items found is: {}'.format(
     len(results)))

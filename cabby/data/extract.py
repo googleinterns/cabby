@@ -112,7 +112,7 @@ def get_data_by_region(region: Text) -> Sequence:
   return get_wikigeo_data(wikidata_items)
 
 
-def get_data_by_region_extensive(region: Text, path_osm: Text) -> Sequence:
+def get_data_by_region_expansive(region: Text, path_osm: Text) -> Sequence:
   '''Get data from Wikipedia and Wikidata by region and add sampes created from 
   Wikidata tags." 
   Arguments:
