@@ -51,7 +51,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-import tensorflow.compat.v2 as tf
+import tensorflow as tf
+tf.config.experimental.set_visible_devices([], "GPU")
 import tensorflow_datasets as tfds
 from tensorflow.io import gfile
 
@@ -330,7 +331,6 @@ def train_and_evaluate(
     checkpoints_to_keep: Number of checkpoints to keep.
     l2_reg: L2 regularization to keep. 
   """
-  tf.enable_v2_behavior()
 
   # Prepare data.
   data_source = input_pipeline.MorpDataSource(data_dir, min_freq=min_freq)
