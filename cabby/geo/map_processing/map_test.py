@@ -20,8 +20,6 @@ from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 import unittest
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from cabby.geo.map_processing import map_structure
 
@@ -38,6 +36,12 @@ class MapTest(unittest.TestCase):
     osmids = self.map.poi['osmid'].tolist()
     for osmid in osmids:
       self.assertIn(osmid, self.map.nx_graph.nodes)
+
+  def testAttributeInGraph(self):
+    self.assertIn(199999993782128268, self.map.nx_graph.nodes)
+    node = self.map.nx_graph.nodes[199999993782128268]
+    self.assertEqual('footway', node['highway'])
+
 
   def testSingleOutput(self):
     # Verify that a known POI is present.
@@ -59,6 +63,7 @@ class MapTest(unittest.TestCase):
     cell_to_search = list_cells[0]
     node = self.map.s2_graph.search(cell_to_search)
     self.assertTrue(hasattr(node, 'poi') and 99999993265952196 in node.poi)
+    
 
   
 

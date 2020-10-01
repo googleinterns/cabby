@@ -37,11 +37,11 @@ from cabby import logger
 
 map_logger = logger.create_logger("map.log", 'map')
 
-# Coordinate Reference Systems (CRS) - UTM Zones (North). 
-# This variable is used (:map_structure.py; :edge.py; cabby.geo.util.py, 
-# cabby.geo.walk.py) to project the geometries into this CRS for geo operations 
+# Coordinate Reference Systems (CRS) - UTM Zones (North).
+# This variable is used (:map_structure.py; :edge.py; cabby.geo.util.py,
+# cabby.geo.walk.py) to project the geometries into this CRS for geo operations
 # such as calculating the centroid.
-OSM_CRS = 32633  
+OSM_CRS = 32633
 
 
 class Map:
@@ -144,7 +144,8 @@ class Map:
     poi_osmid = single_poi['osmid']
     poi_osmid = util.concat_numbers(9999999, poi_osmid)
     assert poi_osmid not in self.poi['osmid'].tolist(), poi_osmid
-    self.poi.loc[self.poi['osmid']==single_poi['osmid'], 'osmid']= poi_osmid
+    self.poi.loc[self.poi['osmid'] ==
+           single_poi['osmid'], 'osmid'] = poi_osmid
 
     list_edges_connected_ids = []
     edges_to_add = []
@@ -202,18 +203,25 @@ class Map:
     assert projected_point_osmid not in self.poi['osmid'].tolist(), (
       projected_point_osmid)
 
+    if isinstance(near_edge['highway'], list):
+      highway = ','.join(near_edge['highway'])
+    else:
+      highway = near_edge['highway']
+
     self.nx_graph.add_node(
       projected_point_osmid,
-      highway=','.join(near_edge['highway']),
+      highway=highway,
       osmid=projected_point_osmid,
       x=projected_point.x,
       y=projected_point.y
     )
 
     edges_list = []
-    edge_to_add = edge.Edge.from_poi(u_for_edge=poi_osmid,
-                     v_for_edge=projected_point_osmid, osmid=poi_osmid
-                     )
+    edge_to_add = edge.Edge.from_poi(
+      u_for_edge=poi_osmid,
+      v_for_edge=projected_point_osmid,
+      osmid=poi_osmid
+    )
     edges_list.append(edge_to_add)
 
     # Get nearest points - u and v.
@@ -230,13 +238,13 @@ class Map:
     # Add edges between projected point and u and v, on the street segment.
 
     street_name = near_edge['name'] if 'name' in near_edge else ""
-    if not projected_point_osmid==near_edge_u:
+    if not projected_point_osmid == near_edge_u:
       edge_to_add = edge.Edge.from_projected(
         near_edge_u, projected_point_osmid, dist_u, near_edge['highway'],
         near_edge['osmid'], street_name)
       self.add_two_ways_edges(edge_to_add)
 
-    if not projected_point_osmid==near_edge_v:
+    if not projected_point_osmid == near_edge_v:
       edge_to_add = edge.Edge.from_projected(
         near_edge_v, projected_point_osmid, dist_v, near_edge['highway'],
         near_edge['osmid'], street_name)
@@ -249,7 +257,7 @@ class Map:
 
   def add_two_ways_edges(self, edge_add: edge.Edge):
     '''Add edges to graph.'''
-    
+
     self.nx_graph.add_edge(
       u_for_edge=edge_add.u_for_edge,
       v_for_edge=edge_add.v_for_edge,
@@ -272,14 +280,13 @@ class Map:
 
   def add_poi_to_graph(self):
     '''Add all POI to nx_graph(currently contains only the roads).'''
-    eges_to_add_list = self.poi.apply(
-      self.add_single_poi_to_graph, axis=1)
+    eges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
 
     eges_to_add_list.apply(
       lambda e_list: self.add_two_ways_edges(e_list[0]))
-    
+
     self.poi.set_index('osmid', inplace=True, drop=False)
-    
+
   def get_s2cellids_for_poi(self, geometry: Any) -> Optional[Sequence[int]]:
     '''get cellids for POI. 
     Arguments:
@@ -326,7 +333,7 @@ class Map:
 
     # Check if directory is valid.
     assert os.path.exists(dir_name), "Current directory is: {0}. The \
-    directory {1} doesn't exist.".format(
+  directory {1} doesn't exist.".format(
       os.getcwd(), dir_name)
 
     # Create path.
@@ -433,4 +440,3 @@ def convert_string_to_list(string_list: Text) -> Sequence:
   string_list = string_list.split(",")
   map_object = map(int, string_list)
   return list(map_object)
-
