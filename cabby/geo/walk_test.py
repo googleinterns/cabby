@@ -13,31 +13,33 @@
 # limitations under the License.
 '''Tests for walk.py'''
 
+from cabby.geo.map_processing import map_structure
+from cabby.geo import util
+from cabby.geo import walk
 import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
+import sys
 
-from cabby.geo import walk
-from cabby.geo import util
-from cabby.geo.map_processing import map_structure
-from cabby.geo import util
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 
 class WalkTest(unittest.TestCase):
 
-  def setUp(self):
+  @classmethod
+  def setUpClass(cls):
 
     # Load map from disk.
-    self.map = map_structure.Map(
-      "Bologna", 18)
+    cls.map = map_structure.Map("Bologna", 18)
 
   def testRouteCalculation(self):
     start_point = Point(11.3414, 44.4951)
     end_point = Point(11.3444, 44.4946)
     route = walk.compute_route(start_point, end_point, self.map.
-    nx_graph, self.map.nodes)
+                   nx_graph, self.map.nodes)
 
-    # Check the size of the route. 
+    # Check the size of the route.
     self.assertEqual(route['geometry'].shape[0], 9)
 
     # Check that the correct points are in the route.
@@ -46,18 +48,16 @@ class WalkTest(unittest.TestCase):
     self.assertEqual(first_point, (44.4950415, 11.341228))
     self.assertEqual(second_point, (44.4948365, 11.3424075))
 
-
   def testPointsSelection(self):
-    geo_entity = walk.get_points_and_route(self.map)
+    geo_entity = walk.get_single_sample(self.map)
     if geo_entity is None:
       return
 
-    self.assertGreaterEqual(geo_entity.route.shape[0], 1)
-    self.assertIsNotNone(geo_entity.end_point['name'])
-    self.assertIsNotNone(geo_entity.start_point['name'])
-    self.assertIsNotNone(geo_entity.main_pivot['main_tag'])
-    self.assertIsNotNone(geo_entity.near_pivot['main_tag'])
-
+    self.assertEqual(geo_entity.start_point['osmid'], 4696835894)
+    self.assertEqual(geo_entity.end_point['osmid'], 1685776652)
+    self.assertEqual(geo_entity.main_pivot['osmid'], 148753535)
+    self.assertEqual(geo_entity.near_pivot['osmid'], 1685776628)
+    self.assertEqual(geo_entity.beyond_pivot['osmid'], 1704264322)
 
 
 if __name__ == "__main__":
