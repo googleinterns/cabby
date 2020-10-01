@@ -16,15 +16,16 @@
 
 import json
 import os
-from typing import Dict, Tuple, Sequence, Text, Optional
+from typing import Dict, Tuple, Sequence, Text, Optional, List
 from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
 from cabby.data.wikidata import item as wdi
 from cabby.data.wikipedia import item as wpi
+from cabby.data.wikidata import info_item as wdqi
 from cabby.data import wikigeo
 
 
-def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> Sequence:
+def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> List:
     '''Get data from Wikipedia based on Wikidata items" 
     Arguments:
         wikidata_items: The Wikidata items to which corresponding Wikigeo  
@@ -104,6 +105,31 @@ def get_data_by_region(region: Text) -> Sequence:
 
     return get_wikigeo_data(wikidata_items)
 
+def get_data_by_region_extensive(region: Text) -> Sequence:
+    '''Get data from Wikipedia and Wikidata by region and add sampes created from Wikidata tags." 
+    Arguments:
+        region(Text): The region to extract items from.
+    Returns:
+        The Wikipedia (text,title) and Wikidata (location) data found.
+    '''
+
+    # Get Wikidata items by region.
+    wikidata_results = wdq.get_geofenced_wikidata_items(region)
+    wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
+                      for result in wikidata_results]
+    
+    samples = get_wikigeo_data(wikidata_items)
+    wikidata_tags = wdq.get_geofenced_info_wikidata_items(region)
+    for item in wikidata_tags:
+      info_item = wdqi.WikidataEntity.from_sparql_result_info(item)
+      sample = wikigeo.WikigeoEntity.from_tags(info_item).sample
+      samples.append(sample)
+
+    return samples
+
+
+      
+
 
 def split_dataset( 
     dataset: Sequence, percentage_train: float, percentage_dev: float):
@@ -151,3 +177,5 @@ def write_files(path: Text, items: Sequence):
             json.dump(item, outfile, default=lambda o: o.__dict__)
             outfile.write('\n')
             outfile.flush()
+
+

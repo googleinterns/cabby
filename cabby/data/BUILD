@@ -10,7 +10,9 @@ py_library(
         "//cabby/data/wikidata:item",
         "//cabby/data/wikidata:query",
         "//cabby/data/wikipedia:item",
-        "//cabby/data/wikipedia:query"
+        "//cabby/data/wikipedia:query",
+        "//cabby/data/wikidata:info_item",
+
     ],
 
 )
@@ -31,8 +33,8 @@ py_test(
         "//cabby/data/wikidata:item",
         "//cabby/data/wikidata:query",
         "//cabby/data/wikipedia:item",
-        "//cabby/data/wikipedia:query"
-
+        "//cabby/data/wikipedia:query",
+        "//cabby/data/wikidata:info_item",
 
     ],
 )
@@ -45,6 +47,24 @@ py_binary(
     deps = [
         ':extract',
         "//cabby/data/wikidata:item",
+        "//cabby/data/wikidata:query",
+        "//cabby/data/wikipedia:item",
+        "//cabby/data/wikipedia:query",
+        "//cabby/data:wikigeo"
+    ],
+
+)
+
+
+
+py_binary(
+    name = 'extract_wikigeo_contexts_extensive',
+    main = 'extract_wikigeo_contexts_extensive.py',
+    srcs = ['extract_wikigeo_contexts_extensive.py'],
+    deps = [
+        ':extract',
+        "//cabby/data/wikidata:item",
+        "//cabby/data/wikidata:info_item",
         "//cabby/data/wikidata:query",
         "//cabby/data/wikipedia:item",
         "//cabby/data/wikipedia:query",

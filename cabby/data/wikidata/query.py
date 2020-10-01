@@ -20,9 +20,6 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 from typing import Dict, Tuple, Sequence, Text, Any
 
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 
@@ -87,8 +84,7 @@ _MANHATTAN_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
 
 
 _PITTSBURGH_INFO_QUERY = """SELECT ?place ?placeLabel 
-          ?placeDescription ?         
-          architecturalStyleLabel ?subsidiaryLabel ?useLabel ?hasPartLabel
+          ?placeDescription ?architecturalStyleLabel ?subsidiaryLabel ?useLabel ?hasPartLabel
           ( GROUP_CONCAT ( DISTINCT ?altLabel; separator="; " ) AS ?altLabelList )
           ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
@@ -145,8 +141,7 @@ _PITTSBURGH_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
 
 
 _BOLOGNA_INFO_QUERY = """SELECT ?place ?placeLabel 
-          ?placeDescription ?         
-          architecturalStyleLabel ?subsidiaryLabel ?useLabel ?hasPartLabel
+          ?placeDescription ?architecturalStyleLabel ?subsidiaryLabel ?useLabel ?hasPartLabel
           ( GROUP_CONCAT ( DISTINCT ?altLabel; separator="; " ) AS ?altLabelList )
           ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)

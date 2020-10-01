@@ -37,7 +37,7 @@ class WikigeoEntity:
   text: Text = attr.ib()
   title: Text = attr.ib()
   ref_qid: Text = attr.ib()
-  ref_pageid: Text = attr.ib()
+  ref_pageid: int = attr.ib()
   ref_title: Text = attr.ib()
   ref_point: Point = attr.ib()
   ref_instance: Point = attr.ib()
@@ -62,6 +62,19 @@ class WikigeoEntity:
       wikipedia_ref.title,
       wikidata_ref.location,
       wikidata_ref.instance)
+  
+  @classmethod
+  def from_tags(cls, result):
+    """Construct an Entity from the Wikidata tags."""
+    return WikigeoEntity(
+      -1,
+      result.sample,
+      result.title,
+      result.qid,
+      -1,
+      result.title,
+      result.location,
+      result.instance)
 
 
 def text_from_point(point: Point) -> Text:

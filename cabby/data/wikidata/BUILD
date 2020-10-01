@@ -8,6 +8,11 @@ py_library(
 )
 
 py_library(
+    name = 'info_item',
+    srcs = ['info_item.py'],
+)
+
+py_library(
     name = 'query',
     srcs = ['query.py'],
     deps = [

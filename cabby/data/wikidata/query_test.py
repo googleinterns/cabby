@@ -14,8 +14,6 @@
 
 '''Tests for query.py'''
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from cabby.data.wikidata import query
 import unittest
