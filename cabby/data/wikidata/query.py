@@ -19,8 +19,6 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 from typing import Dict, Tuple, Sequence, Text, Any
 
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
