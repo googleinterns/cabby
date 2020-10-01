@@ -23,10 +23,11 @@ from cabby.geo.map_processing import map_structure
 
 class MapTest(unittest.TestCase):
 
-  def setUp(self):
+  @classmethod
+  def setUpClass(cls):
 
     # Process the map for an area in Bologna.
-    self.bologna_map = map_structure.Map("Bologna", 18)
+    cls.bologna_map = map_structure.Map("Bologna", 18)
 
   def testSingleOutput(self):
     # Verify that a known POI is present.
@@ -38,7 +39,7 @@ class MapTest(unittest.TestCase):
 
     # Check the cellid.
     list_cells = self.bologna_map.poi[self.bologna_map.poi[
-      'name'] == 'Delizie di Forno']['cellids'].tolist()[0]
+      'name'] == 'Delizie di Forno']['s2cellids'].tolist()[0]
     expected_ids = [5152070235402010624]
     found_ids = [list_cells[i].id() for i in range(len(list_cells))]
     for expected, found in zip(expected_ids, found_ids):
