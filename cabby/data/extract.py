@@ -21,6 +21,10 @@ import pandas as pd
 import string
 from typing import Dict, Tuple, Sequence, Text, Optional, List
 
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
+
+
 from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
 from cabby.data.wikidata import item as wdi
@@ -121,6 +125,7 @@ def get_data_by_region_expansive(region: Text, path_osm: Text) -> Sequence:
     The Wikipedia (text,title) and Wikidata (location) data found.
   '''
 
+
   # Get Wikidata items by region.
   wikidata_results = wdq.get_geofenced_wikidata_items(region)
   wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
@@ -147,10 +152,13 @@ def get_data_by_region_expansive(region: Text, path_osm: Text) -> Sequence:
   poi = poi[poi['s2cellids'].str.len() <= 10]  # Remove large entities.
   osm_entities = poi.apply(
     lambda row: osm_item.OSMEntity.from_osm(row), axis=1).tolist()
+  unique_texts = []
   for osm in osm_entities:
     sample = wikigeo.WikigeoEntity.from_osm(osm).sample
-    samples.append(sample)
-
+    if sample.text not in unique_texts:
+      unique_texts.append(sample.text)
+      samples.append(sample)
+      
   logging.info(
     'Created {} samples with OSM additional data.'.format(len(samples)))
   return samples
@@ -202,3 +210,7 @@ def write_files(path: Text, items: Sequence):
       json.dump(item, outfile, default=lambda o: o.__dict__)
       outfile.write('\n')
       outfile.flush()
+
+
+
+get_data_by_region_expansive("Pittsburgh", "/mnt/hackney/data/cabby/map/v10/pittsburgh_poi.pkl")
