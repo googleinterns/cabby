@@ -77,7 +77,6 @@ _PITTSBURGH_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
-<<<<<<< HEAD
 _PITTSBURGH_RELATION_QUERY = ["""SELECT ?place ?placeLabel ?p ?propLabel ?instance ?instanceLabel
           WHERE 
           {
@@ -118,10 +117,6 @@ _PITTSBURGH_RELATION_QUERY = ["""SELECT ?place ?placeLabel ?p ?propLabel ?instan
         """]
 
 _DC_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
-=======
-
-_BOLOGNA_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
->>>>>>> master
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
           WHERE 
@@ -206,7 +201,6 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
       filtered_results.append(result)
   return filtered_results
 
-<<<<<<< HEAD
 def get_geofenced_wikidata_relations(region: Text,
                                      extract_qids = False) -> Sequence[Dict]:
   '''Get Wikidata relations for a specific area.
@@ -243,12 +237,8 @@ def get_geofenced_wikidata_relations(region: Text,
     result_df[extract_cols] = result_df[extract_cols].apply(extract_qid)
   return result_df
 
-def get_geofenced_wikidata_items_by_qid(qid: Text) -> Sequence[Dict]:
-=======
-
 
 def get_geofenced_wikidata_items_by_qid(qid: Text) -> Sequence[Dict[Text, Any]]:
->>>>>>> master
   '''Get Wikidata items for a specific area. 
   Arguments:
     qid(Text): The qid to query the Wikidata items.
