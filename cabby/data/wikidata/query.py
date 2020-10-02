@@ -139,7 +139,7 @@ _DC_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
           wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
-        """
+        """]
 
 _BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
