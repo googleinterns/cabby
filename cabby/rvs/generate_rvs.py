@@ -12,93 +12,127 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Example command line method to output simple RVS instructions.
-Example (starting near SW corner of Bryant park and heading SE):
+'''
+Output RVS instructions by templates.
+
+Example command line call:
 $ bazel-bin/cabby/rvs/generate_rvs \
-  --start_lat 40.753628 --start_lon -73.985085 \
-  --goal_lat 40.748432 --goal_lon -73.982473
+  --rvs_data_path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" \
+  --save_instruction_path "./cabby/rvs/data/pittsburgh_instructions.json" \
+
+Example output: 
+  "Meet at Swirl Crepe. Walk past Wellington. Swirl Crepe will be near Gyros."
+
 '''
 
-from typing import Text
+import json
+from random import randint
+from shapely.geometry import box, mapping, LineString
+import sys
 
 from absl import app
 from absl import flags
 
-from shapely.geometry.point import Point
 
-from cabby.data.wikidata import item
-from cabby.data.wikidata import query
-from cabby.geo import directions
-from cabby.geo import util
-from cabby.rvs import observe
-from cabby.rvs import speak
+from cabby.geo import walk
+from cabby.rvs import templates
+from cabby.rvs import rvs_item
+
 
 FLAGS = flags.FLAGS
-flags.DEFINE_float('start_lat', None, 'The latitude of the start.')
-flags.DEFINE_float('start_lon', None, 'The longitidue of the start.')
-flags.DEFINE_float('goal_lat', None, 'The latitude of the goal.')
-flags.DEFINE_float('goal_lon', None, 'The longitidue of the goal.')
+
+flags.DEFINE_string("rvs_data_path", None,
+          "The path of the RVS data file to use for generating the RVS instructions.")
+
+flags.DEFINE_string("save_instruction_path", None,
+          "The path of the file where the generated instructions will be saved. ")
 
 # Required flags.
-flags.mark_flag_as_required('start_lat')
-flags.mark_flag_as_required('start_lon')
-flags.mark_flag_as_required('goal_lat')
-flags.mark_flag_as_required('goal_lon')
+flags.mark_flag_as_required('rvs_data_path')
+flags.mark_flag_as_required('save_instruction_path')
 
 
 def main(argv):
   del argv  # Unused.
 
-  # Example points, to be replaced by points sampled using OSM.
-  start = Point(FLAGS.start_lon, FLAGS.start_lat)
-  supplied_goal = Point(FLAGS.goal_lon, FLAGS.goal_lat)
+  entities = walk.get_path_entities(FLAGS.rvs_data_path)
 
-  # Get the distance and bearing for the supplied goal location.
-  path_distance = util.get_distance_km(start, supplied_goal)
-  bearing = util.get_bearing(start, supplied_goal)
-  print(f'Distance {path_distance} km | Bearing {bearing}')
-  
-  # Get all Wikidata entities in Manhattan region and create dictionary from
-  # each entity's QID to the entity representation.
-  entities = {}
-  for result in query.get_geofenced_wikidata_items('Manhattan'):
-    entity = item.WikidataEntity.from_sparql_result(result)
-    entities[entity.qid] = entity
+  if entities is None:
+    sys.exit("No entities found.")
 
-  # Find the closest POI in the Wikidata items so that we have something to
-  # describe. This isn't needed once we use OSM sampled start-goal pairs.
-  distances = observe.get_all_distances(supplied_goal, list(entities.values()))
-  ranked_pois = list(distances.items())
-  ranked_pois.sort(key=lambda x: x[1])
-  target_qid, target_distance = ranked_pois[0]
-  target = entities[target_qid]
-  print(f'\nChoosing entity {target.title} with QID {target_qid} '
-    f'as the goal, which is {target_distance} from the supplied goal '
-    f'coordinates {supplied_goal}.\n')
+  print("Number of RVS samples to create: ", len(entities))
 
-  # Remove the destination POI from the entities list so we can identify a
-  # pivot POI to use as a reference to get to that destination POI.
-  entities.pop(target_qid)
+  # Get templates.
+  gen_templates = templates.create_templates()
 
-  # Get the pivot POI.
-  pivot_qid = observe.get_pivot_poi(
-    start, target.location, list(entities.values()))
-  pivot = entities[pivot_qid]
+  print("Number of templates: ", gen_templates.shape[0])
 
-  start_pivot_bearing = util.get_bearing(start, pivot.location)
-  pivot_dest_bearing = util.get_bearing(
-    pivot.location, target.location)
+  # Generate instructions.
+  gen_samples = []
+  for entity_idx, entity in enumerate(entities):
+    current_templates = gen_templates.copy()  # Candidate templates.
+    if entity.beyond_pivot.main_tag is '':
+      # Filter out templates with the beyond pivot mention.
+      current_templates = gen_templates[
+        current_templates['beyond_pivot'] == False]
+    else:
+      # Filter out templates without the beyond pivot mention.
+      current_templates = gen_templates[current_templates['beyond_pivot'] == True]
 
-  # Computes the bearing of the target by using the bearing from start to
-  # pivot as zero. E.g. so instead of 270 meaning west (as usual with bearings),
-  # it would mean to the left of the pivot from the perspective of the start.
-  target_bearing_relative_to_pivot = pivot_dest_bearing - start_pivot_bearing
+    if entity.intersections > 0:
+      # Pick templates with either blocks or intersections.
+      is_block = randint(0, 1)
+      blocks = entity.intersections-1 if is_block else -1
+      if entity.intersections == 1:
+        # Filter out templates without the next intersection mention.
+        current_templates = current_templates[
+          current_templates['next_intersection'] == True]
+      elif blocks == 1:
+        # Filter out templates without the next block mention.
+        current_templates = current_templates[
+          current_templates['next_block'] == True]
+      else:
+        if blocks > 1:
+          # Filter out templates without mentions of the number of blocks
+          # that should be passed.
+          current_templates = current_templates[
+            current_templates['blocks'] == True]
+        else:
+          # Filter out templates without mentions of the number of
+          # intersections that should be passed.
+          current_templates = current_templates[
+            current_templates['intersections'] == True]
+    else:
+      # Filter out templates with mentions of intersection\block.
+      current_templates = current_templates[
+        (current_templates['intersections'] == False) &
+        (current_templates['blocks'] == False) &
+        (current_templates['next_intersection'] == False) &
+        (current_templates['next_block'] == False)]
 
-  instruction = speak.describe_meeting_point(
-    pivot.title, target.title, target_bearing_relative_to_pivot,
-    util.get_distance_km(pivot.location, target.location))
+    # From the candidates left, pick randomly one template.
+    choosen_template = current_templates.sample(1)['sentence'].iloc[0]
 
-  print(f'Rendezvous instruction:\n\n  {instruction}\n')
+    gen_instructions = templates.add_features_to_template(
+      choosen_template, entity)
+    rvs_entity = rvs_item.RVSData.from_geo_entities(
+      start=entity.start_point.geometry,
+      start_osmid=entity.start_point.osmid,
+      end_osmid=entity.end_point.osmid,
+      end=entity.end_point.geometry,
+      route=entity.route,
+      instructions=gen_instructions,
+      id=entity_idx,
+    )
+    gen_samples.append(rvs_entity.sample)
+
+    # Save to file.
+    with open(FLAGS.save_instruction_path, 'a') as outfile:
+      for sample in gen_samples:
+        json.dump(sample, outfile, default=lambda o: o.__dict__)
+        outfile.write('\n')
+        outfile.flush()
+
 
 if __name__ == '__main__':
   app.run(main)

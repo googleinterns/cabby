@@ -22,9 +22,9 @@ class WikidataTest(unittest.TestCase):
 
   def testSingleOutput(self):
     output = query.get_geofenced_wikidata_items('Manhattan')
-    expected = 'New York Stock Exchange'
+    expected_place_label = 'New York Stock Exchange'
     poi_by_value = [x['placeLabel']['value'] for x in output]
-    self.assertIn(expected, poi_by_value)
+    self.assertIn(expected_place_label, poi_by_value)
 
     not_expected = 'Rabin Square'
 

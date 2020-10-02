@@ -17,199 +17,17 @@
 import sys
 import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
-from typing import Dict, Tuple, Sequence, Text
+from typing import Dict, Tuple, Sequence, Text, Any
 
-_MANHATTAN_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl 
-      ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
-      (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)   Where
-      {{SELECT  ?place?placeLabel ?instance ?instanceLabel ?wikipediaUrl?location WHERE 
-      {
-      {
-      ?place wdt:P31 ?instance.?wikipediaUrl
-      schema:about?place.?wikipediaUrl schema:isPartOf
-      <https://en.wikipedia.org/>. SERVICE wikibase:label {bd:serviceParam
-      wikibase:language "[AUTO_LANGUAGE],en". } 
-      ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-      SERVICE wikibase:box
-      {?place wdt:P625?location . bd:serviceParam wikibase:cornerWest
-      "Point(-74.028,40.705)"^^geo:wktLiteral . bd:serviceParam
-      wikibase:cornerEast "Point(-73.975,40.712)"^^geo:wktLiteral .
-      }
-        }
-        UNION
-      {
-                  ?place wdt:P31 ?instance.
-            ?wikipediaUrl schema:about ?place. 
-            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
-        SERVICE wikibase:label { bd:serviceParam wikibase:language
-      "[AUTO_LANGUAGE],en". } 
-      ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-      SERVICE wikibase:box {?place
-      wdt:P625?location . bd:serviceParam wikibase:cornerWest
-      "Point(-74.02,40.695)"^^geo:wktLiteral . bd:serviceParam
-      wikibase:cornerEast "Point(-74,40.705)"^^geo:wktLiteral .
-      }
-      }
-      UNION
-      {
-       ?place wdt:P31 ?instance.?wikipediaUrl
-       schema:about?place.?wikipediaUrl schema:isPartOf
-       <https://en.wikipedia.org/>. SERVICE wikibase:label
-       {bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". } 
-       ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-       SERVICE
-       wikibase:box {?place wdt:P625?location . bd:serviceParam
-       wikibase:cornerWest "Point(-74.028,40.712)"^^geo:wktLiteral .
-       bd:serviceParam wikibase:cornerEast
-       "Point(-73.973,40.718)"^^geo:wktLiteral .
-      }
-        }
-      UNION
-      {
-      ?place wdt:P31 ?instance.?wikipediaUrl
-      schema:about?place.?wikipediaUrl schema:isPartOf
-      <https://en.wikipedia.org/>. SERVICE wikibase:label {bd:serviceParam
-      wikibase:language "[AUTO_LANGUAGE],en". } 
-      ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-      SERVICE wikibase:box
-      {?place wdt:P625?location . bd:serviceParam wikibase:cornerWest
-      "Point(-74.028,40.718)"^^geo:wktLiteral . bd:serviceParam
-      wikibase:cornerEast "Point(-73.972,40.725)"^^geo:wktLiteral .
-      }
-      }
-      UNION
-      {
-      ?place wdt:P31 ?instance.?wikipediaUrl
-      schema:about?place.?wikipediaUrl schema:isPartOf
-      <https://en.wikipedia.org/>. SERVICE wikibase:label {bd:serviceParam
-      wikibase:language "[AUTO_LANGUAGE],en". } 
-      ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-      SERVICE wikibase:box
-      {?place wdt:P625?location . bd:serviceParam wikibase:cornerWest
-      "Point(-74.028,40.712)"^^geo:wktLiteral . bd:serviceParam
-      wikibase:cornerEast "Point(-73.973,40.718)"^^geo:wktLiteral .
-      }
-      }
-      UNION
-      {
-       ?place wdt:P31 ?instance.?wikipediaUrl
-       schema:about?place.?wikipediaUrl schema:isPartOf
-       <https://en.wikipedia.org/>. SERVICE wikibase:label
-       {bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". } 
-       ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-       SERVICE
-       wikibase:box {?place wdt:P625?location . bd:serviceParam
-       wikibase:cornerWest "Point(-74.02,40.725)"^^geo:wktLiteral .
-       bd:serviceParam wikibase:cornerEast
-       "Point(-73.972,40.73)"^^geo:wktLiteral .
-      }
-      }
 
-      }
-      }
-        FILTER (?instance  not in (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757, wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683, wd:Q744913, wd:Q186117, wd:Q3298291) )
-      }
-      GROUP BY ?place ?placeLabel ?wikipediaUrl ?instanceLabel
-        """,
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 
-          """SELECT ?place ?placeLabel ?wikipediaUrl 
-      ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
-      (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)   Where
-      {{SELECT  ?place?placeLabel ?instance ?instanceLabel ?wikipediaUrl?location WHERE 
-      {
+from cabby.geo import util
+from cabby.geo.map_processing import map_structure
 
-      {
-       ?place wdt:P31 ?instance.?wikipediaUrl
-       schema:about?place.?wikipediaUrl schema:isPartOf
-       <https://en.wikipedia.org/>. SERVICE wikibase:label
-       {bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". } 
-       ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-       SERVICE
-       wikibase:box {?place wdt:P625?location . bd:serviceParam
-       wikibase:cornerWest "Point(-74.02,40.73)"^^geo:wktLiteral .
-       bd:serviceParam wikibase:cornerEast
-       "Point(-73.969,40.738)"^^geo:wktLiteral .
-      }
-      }
-      UNION
-      {
-       ?place wdt:P31 ?instance.?wikipediaUrl
-       schema:about?place.?wikipediaUrl schema:isPartOf
-       <https://en.wikipedia.org/>. SERVICE wikibase:label
-       {bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". } 
-       ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-       SERVICE
-       wikibase:box {?place wdt:P625?location . bd:serviceParam
-       wikibase:cornerWest "Point(-74.02,40.738)"^^geo:wktLiteral .
-       bd:serviceParam wikibase:cornerEast
-       "Point(-73.969,40.745)"^^geo:wktLiteral .
-      }
-      }
-      UNION
-      {
-                  ?place wdt:P31 ?instance.
-            ?wikipediaUrl schema:about ?place. 
-            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>.  SERVICE wikibase:label { bd:serviceParam
-      wikibase:language "[AUTO_LANGUAGE],en". } 
-      ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-      SERVICE wikibase:box
-      {?place wdt:P625 ?location . bd:serviceParam wikibase:cornerWest
-      "Point(-74.013,40.745)"^^geo:wktLiteral . bd:serviceParam
-      wikibase:cornerEast "Point(-73.963,40.752)"^^geo:wktLiteral .
-      }
-      }
-      UNION
-      {
-                  ?place wdt:P31 ?instance.
-            ?wikipediaUrl schema:about ?place. 
-            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>.  SERVICE wikibase:label { bd:serviceParam
-      wikibase:language "[AUTO_LANGUAGE],en". } 
-      ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-      SERVICE wikibase:box
-      {?place wdt:P625 ?location . bd:serviceParam wikibase:cornerWest
-      "Point(-74.013,40.752)"^^geo:wktLiteral . bd:serviceParam
-      wikibase:cornerEast "Point(-73.959,40.76)"^^geo:wktLiteral .
-      }
-      }
-      UNION
-      {
-      ?place wdt:P31 ?instance.?wikipediaUrl
-      schema:about?place.?wikipediaUrl schema:isPartOf
-      <https://en.wikipedia.org/>. SERVICE wikibase:label {bd:serviceParam
-      wikibase:language "[AUTO_LANGUAGE],en". } 
-      ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-      SERVICE wikibase:box
-      {?place wdt:P625?location . bd:serviceParam wikibase:cornerWest
-      "Point(-74.01,40.76)"^^geo:wktLiteral . bd:serviceParam
-      wikibase:cornerEast "Point(-73.952,40.7645)"^^geo:wktLiteral .
-      }
-      }
-      UNION
-      {
-        ?place wdt:P31 ?instance.?wikipediaUrl
-        schema:about?place.?wikipediaUrl schema:isPartOf
-        <https://en.wikipedia.org/>. 
 
-       SERVICE wikibase:label { bd:serviceParam wikibase:language
-      "[AUTO_LANGUAGE],en". }
-      ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-       SERVICE wikibase:box {?place
-      wdt:P625?location . bd:serviceParam wikibase:cornerWest
-      "Point(-74,40.7645)"^^geo:wktLiteral . bd:serviceParam
-      wikibase:cornerEast "Point(-73.946,40.772)"^^geo:wktLiteral .
-      }
-      }
-
-      }
-      }
-        FILTER (?instance  not in (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757, wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683, wd:Q744913, wd:Q186117, wd:Q3298291 ) )
-      }
-      GROUP BY ?place ?placeLabel ?wikipediaUrl
-      """
-
-          ]
-
-_PITTSBURGH_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
+_MANHATTAN_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
           WHERE 
@@ -220,7 +38,31 @@ _PITTSBURGH_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
             ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
             SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
+            SERVICE wikibase:box {
+            ?place wdt:P625 ?location .
+            bd:serviceParam wikibase:cornerWest "Point(-74.0379,40.6966)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-73.9293,40.7963)"^^geo:wktLiteral .
+            }
+          }
+          FILTER (?instance  not in
+          (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
+          wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
+          wd:Q744913, wd:Q186117, wd:Q3298291) )
+          }
+          GROUP BY ?place ?placeLabel ?wikipediaUrl 
+        """
 
+_PITTSBURGH_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
+           ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
+          (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
+          WHERE 
+          {
+          {
+            ?place wdt:P31 ?instance.
+            ?wikipediaUrl schema:about ?place. 
+            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
+            SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+                        ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
             bd:serviceParam wikibase:cornerWest "Point(-80.035,40.425)"^^geo:wktLiteral .
@@ -233,8 +75,9 @@ _PITTSBURGH_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
           wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
-        """]
+        """
 
+<<<<<<< HEAD
 _PITTSBURGH_RELATION_QUERY = ["""SELECT ?place ?placeLabel ?p ?propLabel ?instance ?instanceLabel
           WHERE 
           {
@@ -275,6 +118,10 @@ _PITTSBURGH_RELATION_QUERY = ["""SELECT ?place ?placeLabel ?p ?propLabel ?instan
         """]
 
 _DC_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
+=======
+
+_BOLOGNA_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
+>>>>>>> master
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
           WHERE 
@@ -297,7 +144,7 @@ _DC_QUERY = ["""SELECT ?place ?placeLabel ?wikipediaUrl
           wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
-        """]
+        """
 
 _BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
@@ -311,7 +158,6 @@ _BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
             ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
             SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
             bd:serviceParam wikibase:cornerWest "Point(-80.035,40.425)"^^geo:wktLiteral .
@@ -327,7 +173,8 @@ _BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
         """
 
 
-def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
+def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
+
   '''Get Wikidata items for a specific area. 
   Arguments:
     region(Text): The area to query the Wikidata items.
@@ -347,9 +194,19 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict]:
   else:
     raise ValueError(f"{region} is not a supported region.")
 
-  return query_api(query)
+  results = query_api(query)
 
+  # Filter by map region.
+  polygon_region = map_structure.get_region(region)
+  filtered_results = []
+  for result in results:
+    point_str = result['point']['value']
+    point = util.point_str_to_shapely_point(point_str) 
+    if polygon_region.contains(point):
+      filtered_results.append(result)
+  return filtered_results
 
+<<<<<<< HEAD
 def get_geofenced_wikidata_relations(region: Text,
                                      extract_qids = False) -> Sequence[Dict]:
   '''Get Wikidata relations for a specific area.
@@ -387,6 +244,11 @@ def get_geofenced_wikidata_relations(region: Text,
   return result_df
 
 def get_geofenced_wikidata_items_by_qid(qid: Text) -> Sequence[Dict]:
+=======
+
+
+def get_geofenced_wikidata_items_by_qid(qid: Text) -> Sequence[Dict[Text, Any]]:
+>>>>>>> master
   '''Get Wikidata items for a specific area. 
   Arguments:
     qid(Text): The qid to query the Wikidata items.
@@ -395,10 +257,10 @@ def get_geofenced_wikidata_items_by_qid(qid: Text) -> Sequence[Dict]:
   '''
   query = _BY_QID_QUERY % qid
 
-  return query_api([query])
+  return query_api(query)
 
 
-def query_api(queries: Sequence[Text]) -> Dict[Text, Dict]:
+def query_api(query: Text) -> Sequence[Dict[Text, Any]]:
   '''Query the Wikidata API. 
   Arguments:
     queries(Text): The list of queries to run on the Wikidata API.
@@ -418,12 +280,7 @@ def query_api(queries: Sequence[Text]) -> Dict[Text, Dict]:
     sys.version_info[0], sys.version_info[1])
   sparql = SPARQLWrapper(endpoint_url, agent=user_agent)
   sparql.setReturnFormat(JSON)
-  sparql.setQuery(queries[0])
+  sparql.setQuery(query)
   all_results = sparql.query().convert()
-
-  for query in queries[1:]:
-    sparql.setQuery(query)
-    query_results = sparql.query().convert()
-    all_results['results']['bindings'] += query_results['results']['bindings']
 
   return all_results["results"]["bindings"]

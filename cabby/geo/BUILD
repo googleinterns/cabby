@@ -6,10 +6,9 @@ py_library(
     name = 'walk',
     srcs = ['walk.py'],
     deps = [
-        ":util",
-        ':item',
-        ':geo_item',
-        "//cabby/geo/map_processing:map_structure",
+        ':util',
+        '//cabby/rvs:item',
+        '//cabby/geo/map_processing:map_structure',
 
     ],
 
@@ -25,13 +24,11 @@ py_test(
     srcs = ["walk_test.py"],
     python_version = "PY3",
     deps = [
-        ':item',
-        ':geo_item',
+        '//cabby/rvs:item',
         ":walk",
         "//cabby/geo/map_processing:map_structure",
 
     ],
-
 		
 )
 
@@ -49,15 +46,6 @@ py_library(
         ],
 )
 
-py_library(
-    name = 'item',
-    srcs = ['item.py'],
-)
-
-py_library(
-    name = 'geo_item',
-    srcs = ['geo_item.py'],
-)
 
 
 
@@ -68,8 +56,7 @@ py_binary(
     deps = [
         ':walk',
         ':util',
-        ':item',
-        ':geo_item',
+        '//cabby/rvs:item',
         "//cabby:logger"
         ],
     
@@ -83,8 +70,7 @@ py_binary(
     deps = [
         ':walk',
         ':util',
-        ':item',
-        ':geo_item',
+        '//cabby/rvs:item',
         "//cabby:logger",
         ],
 )
