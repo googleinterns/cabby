@@ -53,9 +53,13 @@ class Map:
     self.polygon_area = regions.get_region(map_name)
 
     if load_directory is None:
+      map_logger.info("Preparing map.")
+      map_logger.info("Extracting POI.")
       self.poi, self.streets = self.get_poi()
+      map_logger.info("Constructing graph.")
       self.nx_graph = ox.graph_from_polygon(
         self.polygon_area, network_type='walk')
+      map_logger.info("Add POI to graph.")
       self.add_poi_to_graph()
       self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
 
@@ -63,8 +67,10 @@ class Map:
       self.poi['node'] = self.poi['centroid'].apply(self.closest_nodes)
 
     else:
+      map_logger.info("Loading map from directory.")
       self.load_map(load_directory)
 
+    map_logger.info("Create S2Graph.")
     self.create_S2Graph(level)
 
     self.process_param()
