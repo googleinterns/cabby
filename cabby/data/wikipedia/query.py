@@ -35,7 +35,6 @@ def get_wikipedia_item(title: Text) -> Optional[Sequence]:
     'https://en.wikipedia.org/w/api.php'
     '?action=query'
     '&prop=extracts'
-    '&exintro'
     '&explaintext'
     f'&titles={title}'
     '&format=json'

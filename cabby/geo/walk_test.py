@@ -21,10 +21,6 @@ import unittest
 from shapely.geometry.point import Point
 import sys
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
-
 class WalkTest(unittest.TestCase):
 
   @classmethod
@@ -53,9 +49,9 @@ class WalkTest(unittest.TestCase):
     if geo_entity is None:
       return
 
-    self.assertEqual(geo_entity.start_point['osmid'], 4696835894)
+    self.assertEqual(geo_entity.start_point['osmid'], 4807313221)
     self.assertEqual(geo_entity.end_point['osmid'], 1685776652)
-    self.assertEqual(geo_entity.main_pivot['osmid'], 148753535)
+    self.assertEqual(geo_entity.main_pivot['osmid'], 5552755847)
     self.assertEqual(geo_entity.near_pivot['osmid'], 1685776628)
     self.assertEqual(geo_entity.beyond_pivot['osmid'], 1704264322)
 
