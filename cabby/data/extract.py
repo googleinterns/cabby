@@ -21,9 +21,6 @@ import pandas as pd
 import string
 from typing import Dict, Tuple, Sequence, Text, Optional, List
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 
 from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
@@ -211,6 +208,3 @@ def write_files(path: Text, items: Sequence):
       outfile.write('\n')
       outfile.flush()
 
-
-
-get_data_by_region_expansive("Pittsburgh", "/mnt/hackney/data/cabby/map/v10/pittsburgh_poi.pkl")
