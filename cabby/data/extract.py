@@ -152,8 +152,8 @@ def get_data_by_region_expansive(region: Text, path_osm: Text) -> Sequence:
   unique_texts = []
   for osm in osm_entities:
     sample = wikigeo.WikigeoEntity.from_osm(osm).sample
-    if sample.text not in unique_texts:
-      unique_texts.append(sample.text)
+    if sample['text'] not in unique_texts:
+      unique_texts.append(sample['text'])
       samples.append(sample)
       
   logging.info(

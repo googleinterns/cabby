@@ -47,7 +47,7 @@ class WikigeoEntity:
     # The QID is the part of the URL that comes after the last / character.
     self.sample = {
       'pageid': self.pageid, 'text': self.text, 'title': 
-      self.title, 'ref_qid': self.ref_qid, 'ref_pageid': self.ref_pageid, 'ref_title': self.ref_title, 'ref_point': text_from_point(self.ref_point), 'ref_instance': self.ref_instance
+      self.title, 'ref_qid': str(self.ref_qid), 'ref_pageid': self.ref_pageid, 'ref_title': self.ref_title, 'ref_point': text_from_point(self.ref_point), 'ref_instance': self.ref_instance
     }
 
   @classmethod

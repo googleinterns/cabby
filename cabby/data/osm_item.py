@@ -50,7 +50,8 @@ class OSMEntity:
       self.osmid)
 
     wanted_col = ['name', 'amenity', 'colour', 'brand', 'tourism', 'leisure', 'historic', 'building', 'description', 'building:colour', 'building:material', 'roof:material', 'roof:shape', 'roof:colour']
-    self.raw = self.raw[wanted_col]
+    col_included = [col for col in wanted_col if col in self.raw]
+    self.raw = self.raw[col_included]
     self.text = concat_dictionary(self.raw.to_dict())
 
   @classmethod
@@ -87,7 +88,13 @@ def concat_dictionary(dictionary: Dict) -> Text:
   return text
 
 
-def closest_color(hex_color):
+def closest_color(hex_color: Text) -> Text:
+    '''Find the closest color in css21.
+    Arguments:
+      hex_color: The color in Hex format to be converted.
+    Returns:
+      The name of the color.
+    '''
     rgb_color = webcolors.hex_to_rgb(hex_color)
     min_colors = {}
     for key, name in webcolors.css21_hex_to_names.items():
@@ -98,7 +105,15 @@ def closest_color(hex_color):
         min_colors[(rd + gd + bd)] = name
     return min_colors[min(min_colors.keys())]
 
-def get_colour_name(hex_color):
+def get_colour_name(hex_color: Text) -> Text:
+    '''Converts a color in Hex format to the closest color that has a name in 
+    css21.
+    Arguments:
+      hex_color: The color in Hex format to be converted.
+    Returns:
+      The name of the color.
+    '''
+
     try:
         closest_name = webcolors.css21_hex_to_names[hex_color]
     except KeyError:
