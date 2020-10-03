@@ -96,19 +96,20 @@ def main(argv):
   dataset_path = os.path.join(FLAGS.dataset_dir, str(FLAGS.s2_level))
   train_path_dataset = os.path.join(dataset_path,'train.pth')
   valid_path_dataset = os.path.join(dataset_path,'valid.pth')
-  lables_dictionary = os.path.join(dataset_path,"label_to_cellid.npy")
-
+  lables_dictionary_path = os.path.join(dataset_path,"label_to_cellid.npy")
+  cellids_dictionary_path = os.path.join(dataset_path,"cellid_to_label.npy")
 
   if os.path.exists(dataset_path):
     logging.info("Loading dataset.")
     train_dataset = torch.load(train_path_dataset)
     valid_dataset = torch.load(valid_path_dataset)
-    label_to_cellid = np.load(lables_dictionary, allow_pickle='TRUE').item()
+    label_to_cellid = np.load(lables_dictionary_path, 
+    allow_pickle='TRUE').item()
     n_lables = len(label_to_cellid)
 
   else:
     logging.info("Preparing data.")
-    train_dataset, valid_dataset, test_dataset, label_to_cellid = dataset.create_dataset(
+    train_dataset, valid_dataset, test_dataset, label_to_cellid, cellids_dictionary = dataset.create_dataset(
       FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
     n_lables = len(label_to_cellid)
     logging.info("Number of lables: {}".format(n_lables))
@@ -118,7 +119,8 @@ def main(argv):
     os.mkdir(dataset_path)
     torch.save(train_dataset, train_path_dataset)
     torch.save(valid_dataset, valid_path_dataset)
-    np.save(lables_dictionary, label_to_cellid) 
+    np.save(lables_dictionary_path, label_to_cellid) 
+    np.save(cellids_dictionary_path, cellids_dictionary) 
     logging.info("Saved data.")
 
   train_loader = DataLoader(

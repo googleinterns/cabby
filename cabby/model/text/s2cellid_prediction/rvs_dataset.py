@@ -25,6 +25,9 @@ from transformers.tokenization_utils_base import BatchEncoding
 
 from shapely.geometry.point import Point
 
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
+
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 
@@ -61,9 +64,7 @@ class CabbyDataset(torch.utils.data.Dataset):
     return len(self.labels)
 
 
-def create_dataset(data_dir: Text,
-           region: Text, s2level) -> Tuple[CabbyDataset, CabbyDataset,
-                           CabbyDataset, Dict[int, int]]:
+def create_dataset(path: Text,) -> CabbyDataset, CabbyDataset:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.
@@ -73,9 +74,8 @@ def create_dataset(data_dir: Text,
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
 
-  train_ds = pd.read_json(data_dir + '/' + 'train.json')
-  valid_ds = pd.read_json(data_dir + '/' + 'dev.json')
-  test_ds = pd.read_json(data_dir + '/' + 'test.json')
+  train_ds = pd.read_json(path)
+
 
   # Get lables.
   get_region = map_structure.get_region(region)
@@ -88,5 +88,6 @@ def create_dataset(data_dir: Text,
   val_dataset = CabbyDataset(valid_ds, s2level, cellid_to_label)
   test_dataset = CabbyDataset(test_ds, s2level, cellid_to_label)
 
-  return (
-    train_dataset, val_dataset, test_dataset, label_to_cellid, cellid_to_label)
+  return train_dataset, val_dataset, test_dataset, label_to_cellid
+
+create_dataset("/home/tzuf_google_com/data/wikigeo/pittsburgh/rvs.json")
