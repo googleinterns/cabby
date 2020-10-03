@@ -100,6 +100,7 @@ def clean_text(text: Text) -> Text:
   '''
   # Remove titles.
   text = text.split('== See also ==')[0]
+  text = text.split('== External links ==')[0]
   text = text.split('== Notes ==')[0]
   text = text.split('== References ==')[0]
   text = re.sub(r'=.*=', r'.', text)

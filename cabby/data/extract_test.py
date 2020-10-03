@@ -15,11 +15,6 @@
 '''Tests for wikidata.py'''
 
 
-
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
-
 from cabby.data import extract
 import unittest
 
