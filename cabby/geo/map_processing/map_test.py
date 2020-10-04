@@ -29,7 +29,7 @@ class MapTest(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
 
-    # Process the map for an area in Bologna.
+    # Process the map for an area in D.C.
     cls.map = map_structure.Map("DC", 18)
   
   def testPOIInGraph(self):
