@@ -17,8 +17,8 @@
 to file.
 Example:
 $ bazel-bin/cabby/data/extract_wikigeo_contexts_expansive \
---region Bologna 
---save_path bologna.json
+--region Bologna \
+--save_path bologna.json \
 --osm_path  "./cabby/geo/map_processing/poiTestData/bologna_poi.pkl"
 '''
 from absl import logging
