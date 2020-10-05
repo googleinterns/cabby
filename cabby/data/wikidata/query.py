@@ -94,13 +94,13 @@ _PITTSBURGH_RELATION_QUERY = """SELECT ?place ?placeLabel ?p ?propLabel ?instanc
                            wdt:P355,
                            wdt:P527,
                            wdt:P140) )
+            %s
             # SERVICE wikibase:label { bd:serviceParam wikibase:language "en". } 
               ?prop wikibase:directClaim ?p .
             ?wikipediaUrl schema:about ?place. 
             ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
             SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
             bd:serviceParam wikibase:cornerWest "Point(-80.035,40.425)"^^geo:wktLiteral .
@@ -201,10 +201,13 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
   return filtered_results
 
 def get_geofenced_wikidata_relations(region: Text,
+                                     place_filter: [Sequence[Text]] = [],
                                      extract_qids = False) -> Sequence[Dict]:
   '''Get Wikidata relations for a specific area.
   Arguments:
     region(Text): The area to query the Wikidata items.
+    place_filter: a list of QIDs (e.g. ["Q123", "Q987"]) to filter the places.
+                  If left empty, no place filtering will happen.
     extract_qids: If true, the columns place, p, and instance will hold just the
                   QIDs/PIDs found in the last part of the wikidata URI.
   Returns:
@@ -217,7 +220,12 @@ def get_geofenced_wikidata_relations(region: Text,
       propLabel: human-readable version of p
   '''
   if region == "Pittsburgh":
-    query = _PITTSBURGH_RELATION_QUERY
+    if len(place_filter) == 0:
+      query = _PITTSBURGH_RELATION_QUERY % ""
+    else:
+      filter_string = "FILTER (?place IN (%s))" % ",".join(
+        ["wd:%s" % qid for qid in place_filter])
+      query = _PITTSBURGH_RELATION_QUERY % filter_string
 
   elif region == "Manhattan":
     raise NotImplementedError(f"{region} is not an implemented region.")
