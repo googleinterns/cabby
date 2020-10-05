@@ -75,7 +75,7 @@ _PITTSBURGH_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
-_PITTSBURGH_RELATION_QUERY = ["""SELECT ?place ?placeLabel ?p ?propLabel ?instance ?instanceLabel
+_PITTSBURGH_RELATION_QUERY = """SELECT ?place ?placeLabel ?p ?propLabel ?instance ?instanceLabel
           WHERE 
           {
           {
@@ -112,7 +112,7 @@ _PITTSBURGH_RELATION_QUERY = ["""SELECT ?place ?placeLabel ?p ?propLabel ?instan
           wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
           wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
-        """]
+        """
 
 
 _BOLOGNA_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
