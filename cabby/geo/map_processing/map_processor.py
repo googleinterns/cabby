@@ -18,15 +18,14 @@ $ bazel-bin/cabby/geo/map_processing/map_processor --region "DC" \
 
 from absl import app
 from absl import flags
+from absl import logging
 
 import osmnx as ox
 from shapely.geometry.point import Point
 
 from cabby.geo import regions
 from cabby.geo.map_processing import map_structure
-from cabby import logger
 
-map_logger = logger.create_logger("map.log", 'map')
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
@@ -45,23 +44,23 @@ flags.mark_flag_as_required("min_s2_level")
 def main(argv):
   del argv  # Unused.
 
-  map_logger.info(
+  logging.info(
     "Starting to build map of {} at level {}.".format(FLAGS.region, FLAGS.min_s2_level))
 
   map = map_structure.Map(FLAGS.region, FLAGS.min_s2_level)
-  map_logger.info(
+  logging.info(
     "Created map of {} at level {}.".format(FLAGS.region, FLAGS.min_s2_level))
   
   if FLAGS.directory is not None:
     # Write to disk.
     map.write_map(FLAGS.directory)
-    map_logger.info("Map written to => {}".format(FLAGS.directory))
+    logging.info("Map written to => {}".format(FLAGS.directory))
 
     # Load from disk.
     map_new = map_structure.Map(
       FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
 
-    map_logger.info('Number of POI found: {0}'.format(map_new.poi.shape[0]))
+    logging.info('Number of POI found: {0}'.format(map_new.poi.shape[0]))
 
 
 if __name__ == '__main__':

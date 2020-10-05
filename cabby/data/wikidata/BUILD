@@ -10,6 +10,11 @@ py_library(
 py_library(
     name = 'query',
     srcs = ['query.py'],
+    deps = [
+        "//cabby/geo:util",
+        '//cabby/geo:regions',
+
+    ]
 )
 
 py_test(
@@ -17,7 +22,9 @@ py_test(
     srcs = ["query_test.py"],
     python_version = "PY3",
     deps = [
-        ":query"
+        ":query",
+        "//cabby/geo:util",
+        '//cabby/geo:regions',
     ],
 )
 
@@ -27,6 +34,6 @@ py_binary(
     srcs = ['extract_geofenced_wikidata_items.py'],
     deps = [
       ':query',
-      '//cabby/geo:regions'
+      '//cabby/geo:regions',
     ],
 )

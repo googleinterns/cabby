@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+from absl import logging
 import copy
 import geopandas as gpd
 from geopandas import GeoSeries
@@ -28,14 +28,12 @@ import swifter
 import sys
 from typing import Dict, Tuple, Sequence, Text, Optional, List, Any
 
-from cabby import logger
+
 from cabby.geo import util
 from cabby.geo.map_processing import graph
 from cabby.geo.map_processing import edge
 from cabby.geo import regions
-from cabby import logger
 
-map_logger = logger.create_logger("map.log", 'map')
 
 # Coordinate Reference Systems (CRS) - UTM Zones (North).
 # This variable is used (:map_structure.py; :edge.py; cabby.geo.util.py,
@@ -53,13 +51,13 @@ class Map:
     self.polygon_area = regions.get_region(map_name)
 
     if load_directory is None:
-      map_logger.info("Preparing map.")
-      map_logger.info("Extracting POI.")
+      logging.info("Preparing map.")
+      logging.info("Extracting POI.")
       self.poi, self.streets = self.get_poi()
-      map_logger.info("Constructing graph.")
+      logging.info("Constructing graph.")
       self.nx_graph = ox.graph_from_polygon(
         self.polygon_area, network_type='walk')
-      map_logger.info("Add POI to graph.")
+      logging.info("Add POI to graph.")
       self.add_poi_to_graph()
       self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
 
@@ -67,10 +65,10 @@ class Map:
       self.poi['node'] = self.poi['centroid'].apply(self.closest_nodes)
 
     else:
-      map_logger.info("Loading map from directory.")
+      logging.info("Loading map from directory.")
       self.load_map(load_directory)
 
-    map_logger.info("Create S2Graph.")
+    logging.info("Create S2Graph.")
     self.create_S2Graph(level)
 
     self.process_param()
@@ -148,7 +146,7 @@ class Map:
       return single_poi['osmid']
 
     poi_osmid = single_poi['osmid']
-    poi_osmid = util.concat_numbers(9999999, poi_osmid)
+    poi_osmid = util.concat_numbers(999, poi_osmid)
     assert poi_osmid not in self.poi['osmid'].tolist(), poi_osmid
     self.poi.loc[self.poi['osmid'] ==
            single_poi['osmid'], 'osmid'] = poi_osmid
@@ -264,6 +262,11 @@ class Map:
   def add_two_ways_edges(self, edge_add: edge.Edge):
     '''Add edges to graph.'''
 
+    assert edge_add.u_for_edge is not None
+    assert edge_add.v_for_edge is not None
+
+    logging.info("Adding U {} => V {}".format(edge_add.u_for_edge, edge_add.v_for_edge))
+
     self.nx_graph.add_edge(
       u_for_edge=edge_add.u_for_edge,
       v_for_edge=edge_add.v_for_edge,
@@ -287,9 +290,9 @@ class Map:
   def add_poi_to_graph(self):
     '''Add all POI to nx_graph(currently contains only the roads).'''
     eges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
-
-    eges_to_add_list.apply(
-      lambda e_list: self.add_two_ways_edges(e_list[0]))
+    
+    eges_to_add_list.swifter.apply(
+      lambda edges_list: [self.add_two_ways_edges(edge) for edge in edges_list])
 
     self.poi.set_index('osmid', inplace=True, drop=False)
 
@@ -361,7 +364,7 @@ class Map:
     if not os.path.exists(path):
       pd_poi.to_pickle(path)
     else:
-      map_logger.info("path {0} already exist.".format(path))
+      logging.info("path {0} already exist.".format(path))
 
     # Write streets.
     pd_streets = copy.deepcopy(self.streets)
@@ -370,7 +373,7 @@ class Map:
     if not os.path.exists(path):
       pd_streets.to_pickle(path)
     else:
-      map_logger.info("path {0} already exist.".format(path))
+      logging.info("path {0} already exist.".format(path))
 
     # Write graph.
     base_filename = self.map_name.lower() + "_graph"
@@ -378,21 +381,21 @@ class Map:
     if not os.path.exists(path):
       nx.write_gpickle(self.nx_graph, path)
     else:
-      map_logger.info("path {0} already exist.".format(path))
+      logging.info("path {0} already exist.".format(path))
 
     # Write nodes.
     path = self.get_valid_path(dir_name, '_nodes', '.geojson')
     if not os.path.exists(path):
       self.nodes.to_file(path, driver='GeoJSON')
     else:
-      map_logger.info("path {0} already exist.".format(path))
+      logging.info("path {0} already exist.".format(path))
 
     # Write edges.
     path = self.get_valid_path(dir_name, '_edges', '.geojson')
     if not os.path.exists(path):
       self.edges.to_file(path, driver='GeoJSON')
     else:
-      map_logger.info("path {0} already exist.".format(path))
+      logging.info("path {0} already exist.".format(path))
 
   def load_map(self, dir_name: Text):
     '''Load POI from disk.'''
@@ -446,3 +449,4 @@ def convert_string_to_list(string_list: Text) -> Sequence:
   string_list = string_list.split(",")
   map_object = map(int, string_list)
   return list(map_object)
+
