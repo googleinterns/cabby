@@ -325,12 +325,23 @@ def tuple_from_point(point: Point) -> CoordsYX:
   '''Convert a Point into a tuple, with latitude as first element, and 
   longitude as second.
   Arguments:
-    point(Point): A lat-lng point.
+    point(Point): A lng-lat point.
   Returns:
     A lat-lng coordinates.
   '''
 
   return CoordsYX(point.y, point.x)
+
+def point_from_list_yx(list_yx: CoordsYX) -> Point:
+  '''Convert a tuple (lat-lng) into a point.
+  Arguments:
+    list_xy: A lat-lng tuple.
+  Returns:
+    A lng-lat point.
+  '''
+
+  y, x = list_yx[0], list_yx[1]
+  return Point(x, y)
 
 
 def list_xy_from_point(point: Point) -> Sequence[float]:

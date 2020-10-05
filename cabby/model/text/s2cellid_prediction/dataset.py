@@ -15,6 +15,7 @@
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
 from absl import logging
+from numpy import int64
 import os
 import pandas as pd
 from torchtext import data
@@ -34,7 +35,7 @@ tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
 class CabbyDataset(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int,
-         cellid_to_label: Dict[int, int] = None):
+         cellid_to_label: Dict[int64, int64] = None):
 
     # Tokenize instructions.
     self.encodings = tokenizer(
@@ -63,7 +64,7 @@ class CabbyDataset(torch.utils.data.Dataset):
 
 def create_dataset(data_dir: Text,
            region: Text, s2level) -> Tuple[CabbyDataset, CabbyDataset,
-                           CabbyDataset, Dict[int, int]]:
+                           CabbyDataset, Dict[int64, int64]]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.

@@ -51,12 +51,13 @@ flags.DEFINE_integer(
   help=('Batch size for evaluation.'))
 
 flags.DEFINE_integer(
-  'label_dictionary_path', default=16,
-  help=('The label_to_.'))
+  'label_dictionary_dir', default=16,
+  help=('The label_to_cellids and cellids_to_label dictionaries.'))
 
 # Required flags.
 flags.mark_flag_as_required("rvs_path")
 flags.mark_flag_as_required("model_path")
+flags.mark_flag_as_required("label_dictionary_dir")
 flags.mark_flag_as_required("batch_size")
 
 def main(argv):
@@ -68,8 +69,16 @@ def main(argv):
   if not os.path.exists(FLAGS.model_path):
     sys.exit("Model path doesn't exsist: {}.".format(FLAGS.model_path))
 
+  if not os.path.exists(FLAGS.label_dictionary_dir):
+    sys.exit("Dictionaries directory doesn't exsist: {}.".format(FLAGS.label_dictionary_dir))
+
+
+  lables_dictionary_path = os.path.join(FLAGS.label_dictionary_dir,"label_to_cellid.npy")
+  cellids_dictionary_path = os.path.join(FLAGS.label_dictionary_dir,"cellid_to_label.npy")
+
   logging.info("Preparing data.")
-   = dataset.create_dataset(
+  
+  = dataset.create_dataset(
     FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
   n_lables = len(label_to_cellid)
   logging.info("Number of lables: {}".format(n_lables))
