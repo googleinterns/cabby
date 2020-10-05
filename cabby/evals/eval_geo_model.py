@@ -56,14 +56,14 @@ class Evaluator:
   def get_error_distances(self, input_file):
     """Compute error distance in meters between true and predicted coordinates.
 
-        Args:
-					input_file: TSV file containing example_id and true and
-						predicted co-ordinates. One example per line.
-					eval_logger: Logger object.
+			Args:
+				input_file: TSV file containing example_id and true and
+					predicted co-ordinates. One example per line.
+				eval_logger: Logger object.
 
-        Returns:
-					Array of distance error - one per example.
-        """
+			Returns:
+				Array of distance error - one per example.
+    """
     error_distances = []
     total_examples = 0
     for line in open(input_file):
@@ -85,9 +85,9 @@ class Evaluator:
   def compute_metrics(self, error_distances):
     """Compute distance error metrics given an array of error distances.
 
-        Args:
-					error_distances: Array of distance errors.
-					eval_logger: Logger object.
+			Args:
+				error_distances: Array of distance errors.
+				eval_logger: Logger object.
     """
     num_examples = len(error_distances)
     if num_examples == 0:
