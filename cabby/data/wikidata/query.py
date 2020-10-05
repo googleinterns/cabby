@@ -166,6 +166,19 @@ _BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
+_PITTSBURGH_LOCATION_QUERY = """SELECT ?place ?location
+          WHERE 
+          {
+          {
+            SERVICE wikibase:box {
+            ?place wdt:P625 ?location .
+            bd:serviceParam wikibase:cornerWest "Point(-80.035,40.425)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-79.930,40.460)"^^geo:wktLiteral .
+            }
+            %s
+          }
+          }
+        """
 
 def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
 
@@ -200,6 +213,47 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
       filtered_results.append(result)
   return filtered_results
 
+def get_filter_string(place_filter: [Sequence[Text]],
+                      place_param: Text = "place"):
+  """Get an appropriate FILTER sparql command for the input sequence.
+
+  Arguments:
+    place_filter: list of wd IDs as strings.
+    place_param: the name of the parameter to filter on.
+  Returns:
+    filter_string: a string like "FILTER (?place IN ...)". Returns empty string
+                   if the input list is empty.
+  """
+  if len(place_filter) == 0:
+    return ""
+  filter_string = "FILTER (?%s IN (%s))" % (
+    place_param,
+    ",".join(["wd:%s" % qid for qid in place_filter]))
+  return filter_string
+
+def get_locations_by_qid(region: Text,
+                         place_filter: [Sequence[Text]] = []):
+  """Get a map from QID to coordinate location in a particular region.
+
+  Arguments:
+    region(Text): region to query.
+    place_filter: a list of QIDs (e.g. ["Q123", "Q987"]) to filter the places.
+                  If left empty, no place filtering will happen.
+  Returns:
+    locations: map from QID (string) to shapely Point
+  """
+  if region == "Pittsburgh":
+    query = _PITTSBURGH_LOCATION_QUERY % get_filter_string(place_filter)
+  else:
+    raise NotImplementedError(f"{region} is not a supported region.")
+  query_result = query_api(query)
+  locations = {}
+  for result in query_result:
+    qid = result['place']['value'].rsplit("/", 1)[1]
+    point = util.point_str_to_shapely_point(result['location']['value'])
+    locations[qid] = point
+  return locations
+
 def get_geofenced_wikidata_relations(region: Text,
                                      place_filter: [Sequence[Text]] = [],
                                      extract_qids = False) -> Sequence[Dict]:
@@ -221,11 +275,7 @@ def get_geofenced_wikidata_relations(region: Text,
   '''
   if region == "Pittsburgh":
     if len(place_filter) == 0:
-      query = _PITTSBURGH_RELATION_QUERY % ""
-    else:
-      filter_string = "FILTER (?place IN (%s))" % ",".join(
-        ["wd:%s" % qid for qid in place_filter])
-      query = _PITTSBURGH_RELATION_QUERY % filter_string
+      query = _PITTSBURGH_RELATION_QUERY % get_filter_string(place_filter)
 
   elif region == "Manhattan":
     raise NotImplementedError(f"{region} is not an implemented region.")
