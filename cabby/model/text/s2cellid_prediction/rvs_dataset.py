@@ -64,7 +64,7 @@ class CabbyDataset(torch.utils.data.Dataset):
     return len(self.labels)
 
 
-def create_dataset(path: Text, cellid_to_label_path: Text, s2level: int) -> CabbyDataset:
+def create_dataset(path: Text, cellid_to_label_path: Text, lables_dictionary_path: Text, s2level: int) -> Tuple[CabbyDataset, Dict[int64,int64]]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.
@@ -78,12 +78,11 @@ def create_dataset(path: Text, cellid_to_label_path: Text, s2level: int) -> Cabb
   cellid_to_label = np.load(cellid_to_label_path, 
     allow_pickle='TRUE').item() 
 
+  lables_dictionary = np.load(lables_dictionary_path, 
+    allow_pickle='TRUE').item() 
+
   # Create Cabby dataset.
   valid_ds = CabbyDataset(valid_ds, s2level, cellid_to_label)
 
-  return valid_ds
+  return valid_ds, lables_dictionary
 
-
-create_dataset("/home/tzuf_google_com/data/wikigeo/pittsburgh/rvs.json", "/home/tzuf_google_com/model/wikigeo/dataset/pittsburgh/12/cellid_to_label.npy", 12)
-
-print ("END")

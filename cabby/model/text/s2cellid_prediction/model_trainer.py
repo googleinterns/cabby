@@ -51,7 +51,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
 flags.DEFINE_string("dataset_dir", None,
-          "The directory to save\load dataloader.")
+          "The directory to save\load preprocessed data.")
 flags.DEFINE_enum(
   "region", None, ['Pittsburgh', 'Manhattan'],
   "Map areas: Manhattan or Pittsburgh.")
@@ -123,10 +123,14 @@ def main(argv):
     np.save(cellids_dictionary_path, cellids_dictionary) 
     logging.info("Saved data.")
 
+  logging.info("Creating DataLoaders.")
+
   train_loader = DataLoader(
   train_dataset, batch_size=FLAGS.train_batch_size, shuffle=True)
   valid_loader = DataLoader(
   valid_dataset, batch_size=FLAGS.test_batch_size, shuffle=False)
+
+  logging.info("Init Model.")
 
 
   device = torch.device(
@@ -142,6 +146,8 @@ def main(argv):
   model.to(device)
 
   optimizer = AdamW(model.parameters(), lr=FLAGS.learning_rate)
+
+  logging.info("Starting training.")
 
   train.train_model(
     model=model,

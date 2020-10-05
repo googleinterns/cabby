@@ -19,6 +19,8 @@ Example command line call:
 $ bazel-bin/cabby/model/text/s2cellid_prediction/rvs_evaluation \
   --rvs_path ~/data/wikigeo/pittsburgh/rvs.json  \
   --model_path ~/tmp/output/model.pt \
+  --train_dataset_dir ~/model/wikigeo/dataset/pittsburgh \
+  --s2_level 12
 
 """
 
@@ -51,16 +53,21 @@ flags.DEFINE_integer(
   help=('Batch size for evaluation.'))
 
 flags.DEFINE_integer(
-  'label_dictionary_dir', default=16,
-  help=('The label_to_cellids and cellids_to_label dictionaries.'))
+  'train_dataset_dir', default=16,
+  help=('The directory of the trained dataset.'))
+
+flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
+
 
 # Required flags.
 flags.mark_flag_as_required("rvs_path")
 flags.mark_flag_as_required("model_path")
-flags.mark_flag_as_required("label_dictionary_dir")
+flags.mark_flag_as_required("train_dataset_dir")
 flags.mark_flag_as_required("batch_size")
+flags.mark_flag_as_required("s2_level")
 
 def main(argv):
+
 
 
   if not os.path.exists(FLAGS.rvs_path):
@@ -69,33 +76,25 @@ def main(argv):
   if not os.path.exists(FLAGS.model_path):
     sys.exit("Model path doesn't exsist: {}.".format(FLAGS.model_path))
 
-  if not os.path.exists(FLAGS.label_dictionary_dir):
-    sys.exit("Dictionaries directory doesn't exsist: {}.".format(FLAGS.label_dictionary_dir))
+  
+  dataset_path = os.path.join(FLAGS.train_dataset_dir, str(FLAGS.s2_level))
+
+  if not os.path.exists(dataset_path):
+    sys.exit("Trained datset path doesn't exist: {}.".format(dataset_path))
 
 
-  lables_dictionary_path = os.path.join(FLAGS.label_dictionary_dir,"label_to_cellid.npy")
-  cellids_dictionary_path = os.path.join(FLAGS.label_dictionary_dir,"cellid_to_label.npy")
+  lables_dictionary_path = os.path.join(dataset_path,"label_to_cellid.npy")
+  cellids_dictionary_path = os.path.join(dataset_path,"cellid_to_label.npy")
 
   logging.info("Preparing data.")
   
-  = dataset.create_dataset(
-    FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
+  valid_dataset, lables_dictionary = dataset.create_dataset(
+    FLAGS.rvs_path, cellids_dictionary_path, FLAGS.s2_level)
   n_lables = len(label_to_cellid)
   logging.info("Number of lables: {}".format(n_lables))
 
-    
-    # Save to dataloaders and lables to cells dictionary.
-    os.mkdir(dataset_path)
-    torch.save(train_dataset, train_path_dataset)
-    torch.save(valid_dataset, valid_path_dataset)
-    np.save(lables_dictionary, label_to_cellid) 
-    logging.info("Saved data.")
-
-  train_loader = DataLoader(
-  train_dataset, batch_size=FLAGS.train_batch_size, shuffle=True)
   valid_loader = DataLoader(
   valid_dataset, batch_size=FLAGS.test_batch_size, shuffle=False)
-
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
