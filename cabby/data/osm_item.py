@@ -40,10 +40,6 @@ class OSMEntity:
   raw: gpd.GeoSeries = attr.ib()
 
   def __attrs_post_init__(self):
-    # drop_col = ['element_type', 'wheelchair', 'internet_access',
-    #       'toilets:wheelchair', 'payment:credit_cards', 'wikidata', 'wikipedia',
-    #       'addr:postcode', 'addr:housenumber', 'addr:postcode', 'addr:postcode','website', 'source', "phone", "source:name", "fax", "contact:phone", "image", "email"]
-    # self.raw = self.raw.drop(drop_col)
     
     self.name = self.raw['name'] if 'name' in self.raw else ""
     self.qid = self.raw['wikidata'] if 'wikidata' in self.raw else str(
@@ -63,29 +59,20 @@ class OSMEntity:
       row)
 
 
-def is_english(text):
-  return text.isascii()
-
-
 def concat_dictionary(dictionary: Dict) -> Text:
-  text = ""
-  connect = " and "
+  tag_list = []
   for k, v in dictionary.items():
     if isinstance(v, str):
-      if not is_english(v):
-        continue
       if 'colour' in k and v[0]=='#':
         v = get_colour_name(v)
       k = k.replace("_", " ")
       v = v.replace("_", " ")
       if k in ['building','historic']:  
-        text += connect + k
+        tag_list.append(k)
       else:
-        text += connect + v
-      
+        tag_list.append(v)      
 
-  text = text[len(connect):]
-  return text
+  return ' and '.join(tag_list) + "."
 
 
 def closest_color(hex_color: Text) -> Text:

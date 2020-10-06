@@ -33,7 +33,7 @@ from cabby.geo.map_processing import map_structure
 
 
 def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> List:
-  '''Get data from Wikipedia based on Wikidata items" 
+  '''Get data from Wikipedia based on Wikidata items.
   Arguments:
     wikidata_items: The Wikidata items to which corresponding Wikigeo  
     items will be extracted.
@@ -49,16 +49,16 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> List:
   wikipedia_items = [wpi.WikipediaEntity.from_api_result(
     result) for result in wikipedia_pages]
 
-  # # Get Wikipedia titles.
+  # Get Wikipedia titles.
   wikipedia_titles = [entity.title for entity in wikipedia_items]
 
-  # # Change to Geodata dataset foramt.
+  # Change to Geodata dataset foramt.
   geo_data = []
   for wikipedia, wikidata in zip(wikipedia_items, wikidata_items):
     geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
       wikipedia, wikipedia, wikidata).sample)
 
-  # # Get backlinks for Wikipedia pages.
+  # Get backlinks for Wikipedia pages.
   backlinks_pages = wpq.get_backlinks_items_from_wikipedia_titles(
     wikipedia_titles)
   backlinks_items = []
@@ -68,9 +68,9 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> List:
         result in list_backlinks])
 
   # Change backlinks pages to Geodata dataset format.
-  for list_backlinks, original_wikipedia, original_wikidata in \
+  for backlinks, original_wikipedia, original_wikidata in \
       zip(backlinks_items, wikipedia_items, wikidata_items):
-    for backlink in list_backlinks:
+    for backlink in backlinks:
       wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
         backlink, original_wikipedia, original_wikidata).sample
 
@@ -98,7 +98,7 @@ def get_data_by_qid(qid: Text) -> Sequence:
 
 
 def get_data_by_region(region: Text) -> Sequence:
-  '''Get data from Wikipedia and Wikidata by region" 
+  '''Get data from Wikipedia and Wikidata by region.
   Arguments:
     region(Text): The region to extract items from.
   Returns:
@@ -114,12 +114,11 @@ def get_data_by_region(region: Text) -> Sequence:
 
 
 def get_data_by_region_expansive(region: Text, path_osm: Text) -> Sequence:
-  '''Get data from Wikipedia and Wikidata by region and add sampes created from 
-  Wikidata tags." 
+  '''Get three types of samples by region: (1) samples from Wikipedia(text,title) and Wikidata(location); (2) Concatenation of Wikidata tags; (3) Concatenation of OSM tags. 
   Arguments:
     region(Text): The region to extract items from.
   Returns:
-    The Wikipedia (text,title) and Wikidata (location) data found.
+    The Wikipedia(text,title) and Wikidata(location) data found.
   '''
 
 
@@ -146,7 +145,9 @@ def get_data_by_region_expansive(region: Text, path_osm: Text) -> Sequence:
 
   # Add sample from OSM only.
   poi = map_structure.load_poi(path_osm)
-  poi = poi[poi['s2cellids'].str.len() <= 10]  # Remove large entities.
+  num_cells_large_entities = 10
+  # Remove large entities.
+  poi = poi[poi['s2cellids'].str.len() <= num_cells_large_entities]  
   osm_entities = poi.apply(
     lambda row: osm_item.OSMEntity.from_osm(row), axis=1).tolist()
   unique_texts = []

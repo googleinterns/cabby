@@ -36,7 +36,7 @@ class WikidataEntity:
   `qid` is the Wikidata id assigned to this entity (which can be recovered from
     the URL, but is pulled out for convenience).
   `tags` is the tags of the entity.
-  `sample` is created from a concatenation of the entity's tags.
+  `text` is created from a concatenation of the entity's tags.
 
   """
   url: Text = attr.ib()
@@ -45,13 +45,13 @@ class WikidataEntity:
   instance: Text = attr.ib()
   qid: Text = attr.ib(init=False)
   tags: Dict = attr.ib()
-  sample: Text = attr.ib(init=False)
+  text: Text = attr.ib(init=False)
 
   def __attrs_post_init__(self):
     # The QID is the part of the URL that comes after the last / character.
     self.qid = self.url[self.url.rindex('/')+1:]
 
-    self.sample = create_sample_from_tags(self.tags)
+    self.text = create_sample_from_tags(self.tags)
   
 
   @classmethod
@@ -69,17 +69,15 @@ class WikidataEntity:
 def create_sample_from_tags(item: Dict) -> Text:
   '''Get a Wikidata item and return a sample based on tags." 
   Arguments:
-      item: The Wikidata item to create a sample from.
+      item: The Wikidata item to create a description of the entity.
   Returns:
-      A sample.
+      A description.
   '''
   unwanted_tags = ['place', 'point']
-  sample = ""
-  connect = " and "
+  list_tags = []
   for k, v in item.items():
     if k not in unwanted_tags:
-      sample+=connect + v['value']
-  sample = sample[len(connect):] + "." # Remove 'and' in the beginning.
+      list_tags.append(v['value'])
   
-  return sample
+  return ' and '.join(list_tags) + "."
 
