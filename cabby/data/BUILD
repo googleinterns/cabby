@@ -12,6 +12,8 @@ py_library(
         "//cabby/data/wikipedia:item",
         "//cabby/data/wikipedia:query",
         "//cabby/data/wikidata:info_item",
+        '//cabby/geo/map_processing:map_structure'
+
 
     ],
 
@@ -41,6 +43,8 @@ py_test(
         "//cabby/data/wikipedia:item",
         "//cabby/data/wikipedia:query",
         "//cabby/data/wikidata:info_item",
+        '//cabby/geo/map_processing:map_structure'
+
 
     ],
 )
@@ -76,7 +80,10 @@ py_binary(
         "//cabby/data/wikidata:query",
         "//cabby/data/wikipedia:item",
         "//cabby/data/wikipedia:query",
-        "//cabby/data:wikigeo"
+        "//cabby/data:wikigeo",
+        '//cabby/geo:regions',
+        '//cabby/geo/map_processing:map_structure'
+
     ],
 
 )

@@ -9,6 +9,7 @@ py_library(
         ':util',
         '//cabby/rvs:item',
         '//cabby/geo/map_processing:map_structure',
+        '//cabby/geo:regions'
 
     ],
 
@@ -19,6 +20,11 @@ py_library(
     srcs = ['util.py'],
 )
 
+py_library(
+    name = 'regions',
+    srcs = ['regions.py'],
+)
+
 py_test(
     name = "walk_test",
     srcs = ["walk_test.py"],
@@ -27,6 +33,7 @@ py_test(
         '//cabby/rvs:item',
         ":walk",
         "//cabby/geo/map_processing:map_structure",
+        '//cabby/geo:regions'
 
     ],
 		
@@ -72,5 +79,6 @@ py_binary(
         ':util',
         '//cabby/rvs:item',
         "//cabby:logger",
+        '//cabby/geo:regions'
         ],
 )

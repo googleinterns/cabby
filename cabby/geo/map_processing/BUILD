@@ -8,12 +8,19 @@ py_library(
 )
 
 py_library(
+    name = 'edge',
+    srcs = ['edge.py'],
+)
+
+py_library(
     name = 'map_structure',
     srcs = ['map_structure.py'],
     deps = [
         ':graph',
+        ':edge',
         '//cabby/geo:util',
         '//cabby:logger',
+         '//cabby/geo:regions'
 
     ]
 )
@@ -24,10 +31,13 @@ py_test(
     srcs = ['map_test.py'],
     python_version = 'PY3',
     deps = [
-        "//cabby/geo/map_processing:map_structure",
-        "//cabby/geo/map_processing:graph",
+        ':edge',
+        ":map_structure",
+        ":graph",
         "//cabby/geo:util",
         "//cabby:logger",
+        '//cabby/geo:regions'
+
 
     ],
 )        
@@ -40,6 +50,8 @@ py_binary(
     deps = [
         ':map_structure',
         ':graph',
+        ':edge',
         '//cabby:logger',
+        '//cabby/geo:regions'
         ],
 )

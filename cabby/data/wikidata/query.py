@@ -19,9 +19,8 @@ import sys
 from SPARQLWrapper import SPARQLWrapper, JSON
 from typing import Dict, Tuple, Sequence, Text, Any
 
-
 from cabby.geo import util
-from cabby.geo.map_processing import map_structure
+from cabby.geo import regions
 
 
 _MANHATTAN_INFO_QUERY = """SELECT ?place ?placeLabel 
@@ -139,8 +138,7 @@ _PITTSBURGH_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
-
-_BOLOGNA_INFO_QUERY = """SELECT ?place ?placeLabel 
+_DC_INFO_QUERY = """SELECT ?place ?placeLabel 
           ?placeDescription ?architecturalStyleLabel ?subsidiaryLabel ?useLabel ?hasPartLabel
           ( GROUP_CONCAT ( DISTINCT ?altLabel; separator="; " ) AS ?altLabelList )
           ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
@@ -160,8 +158,8 @@ _BOLOGNA_INFO_QUERY = """SELECT ?place ?placeLabel
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
-            bd:serviceParam wikibase:cornerWest "Point(11.355,44.4902)"^^geo:wktLiteral .
-            bd:serviceParam wikibase:cornerEast "Point(11.3564,44.5000)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
             }
           }
           FILTER (?instance  not in
@@ -170,8 +168,9 @@ _BOLOGNA_INFO_QUERY = """SELECT ?place ?placeLabel
           wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
           GROUP BY ?place ?placeLabel ?wikipediaUrl ?placeDescription ?architecturalStyleLabel ?subsidiaryLabel ?useLabel ?hasPartLabel
-"""
-_BOLOGNA_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
+        """
+
+_DC_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
           WHERE 
@@ -184,8 +183,8 @@ _BOLOGNA_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
-            bd:serviceParam wikibase:cornerWest "Point(11.355,44.4902)"^^geo:wktLiteral .
-            bd:serviceParam wikibase:cornerEast "Point(11.3564,44.5000)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
             }
           }
           FILTER (?instance  not in
@@ -195,6 +194,7 @@ _BOLOGNA_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
           }
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
+
 
 _BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
@@ -238,8 +238,8 @@ def get_geofenced_info_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]
   elif region == "Manhattan":
     query = _MANHATTAN_INFO_QUERY
   
-  elif region == "Bologna":
-    query = _BOLOGNA_INFO_QUERY
+  elif region == "DC":
+    query = _DC_INFO_QUERY
     
   else:
     raise ValueError(f"{region} is not a supported region.")
@@ -247,7 +247,7 @@ def get_geofenced_info_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]
   results = query_api(query)
 
   # Filter by map region.
-  polygon_region = map_structure.get_region(region)
+  polygon_region = regions.get_region(region)
   filtered_results = []
   for result in results:
     point_str = result['point']['value']
@@ -273,8 +273,8 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
   elif region == "Manhattan":
     query = _MANHATTAN_QUERY
   
-  elif region == "Bologna":
-    query = _BOLOGNA_QUERY
+  elif region == "DC":
+    query = _DC_QUERY
     
   else:
     raise ValueError(f"{region} is not a supported region.")
@@ -282,7 +282,7 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
   results = query_api(query)
 
   # Filter by map region.
-  polygon_region = map_structure.get_region(region)
+  polygon_region = regions.get_region(region)
   filtered_results = []
   for result in results:
     point_str = result['point']['value']
