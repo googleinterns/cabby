@@ -118,7 +118,7 @@ def evaluate(model: torch.nn.Module,
     outputs = model(
       input_ids, attention_mask=attention_mask, labels=labels)
     loss = outputs.loss
-    loss_val_total += loss.item()
+    loss_val_total += loss.mean().item()
     label_ids = labels.cpu().numpy()
     true_vals.append(label_ids)
     logits = outputs.logits.detach().cpu().numpy()
@@ -153,7 +153,6 @@ def train_model(model:  torch.nn.Module,
         train_loader: DataLoader,
         valid_loader: DataLoader,
         label_to_cellid: Dict[int, int],
-        eval_every: int,
         num_epochs: int,
         best_valid_loss: float = float("Inf")):
   '''Main funcion for training model.'''
@@ -175,44 +174,43 @@ def train_model(model:  torch.nn.Module,
       outputs = model(
         input_ids, attention_mask=attention_mask, labels=labels)
       loss = outputs.loss
-      loss.backward()
+      loss.mean().backward()
       optimizer.step()
 
       # Update running values.
-      running_loss += loss.item()
+      running_loss += loss.mean().item()
       global_step += 1
 
-      # Evaluation step.
-      if global_step % eval_every == 0:
-        valid_loss, predictions, true_vals, true_points, pred_points = evaluate(
-          model, valid_loader, device, label_to_cellid)
+    # Evaluation step.
+    valid_loss, predictions, true_vals, true_points, pred_points = evaluate(
+      model, valid_loader, device, label_to_cellid)
 
-        average_train_loss = running_loss / eval_every
-        accuracy = accuracy_cells(true_vals, predictions)
-        train_loss_list.append(average_train_loss)
-        valid_loss_list.append(valid_loss)
-        global_steps_list.append(global_step)
-        valid_accuracy_list.append(accuracy)
-        true_points_list.append(true_points)
-        pred_points_list.append(pred_points)
+    average_train_loss = running_loss / labels.shape[0]
+    accuracy = accuracy_cells(true_vals, predictions)
+    train_loss_list.append(average_train_loss)
+    valid_loss_list.append(valid_loss)
+    global_steps_list.append(global_step)
+    valid_accuracy_list.append(accuracy)
+    true_points_list.append(true_points)
+    pred_points_list.append(pred_points)
 
-        # Resetting running values.
-        running_loss = 0.0
+    # Resetting running values.
+    running_loss = 0.0
 
-        logging.info('Epoch [{}/{}], Step [{}/{}], \
-    Accuracy: {:.4f},Train Loss: {:.4f}, Valid Loss: {:.4f}'
-               .format(epoch+1, num_epochs, global_step,
-                   num_epochs*len(train_loader), accuracy,
-                   average_train_loss, valid_loss))
+    logging.info('Epoch [{}/{}], Step [{}/{}], \
+        Accuracy: {:.4f},Train Loss: {:.4f}, Valid Loss: {:.4f}'
+           .format(epoch+1, num_epochs, global_step,
+               num_epochs*len(train_loader), accuracy,
+               average_train_loss, valid_loss))
 
-        # Save model and results in checkpoint.
-        if best_valid_loss > valid_loss:
-          best_valid_loss = valid_loss
-          save_checkpoint(file_path + '/' + 'model.pt',
-                  model, best_valid_loss)
-          save_metrics(file_path + '/' + 'metrics.pt', train_loss_list,
-                 valid_loss_list, global_steps_list, valid_accuracy_list, true_points_list, pred_points_list)
+    # Save model and results in checkpoint.
+    if best_valid_loss > valid_loss:
+      best_valid_loss = valid_loss
+      save_checkpoint(file_path + '/' + 'model.pt',
+              model, best_valid_loss)
+      save_metrics(file_path + '/' + 'metrics.pt', train_loss_list,
+             valid_loss_list, global_steps_list, valid_accuracy_list, true_points_list, pred_points_list)
 
-        model.train()
+      model.train()
 
   logging.info('Finished Training.')
