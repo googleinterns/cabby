@@ -31,6 +31,13 @@ class WikidataTest(unittest.TestCase):
     self.assertNotIn(not_expected, poi_by_value)
     self.assertNotIn('', poi_by_value)
 
+  def testSingleOutputWithoutInstance(self):
+    output = query.get_geofenced_wikidata_items('Pittsburgh')
+    expected_place_label = 'Arrott Building'
+    poi_by_value = [x['placeLabel']['value'] for x in output]
+    self.assertIn(expected_place_label, poi_by_value)
+
+
 
 if __name__ == "__main__":
   unittest.main()
