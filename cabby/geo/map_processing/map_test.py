@@ -38,8 +38,8 @@ class MapTest(unittest.TestCase):
       self.assertIn(osmid, self.map.nx_graph.nodes)
 
   def testAttributeInGraph(self):
-    self.assertIn(199999993782128268, self.map.nx_graph.nodes)
-    node = self.map.nx_graph.nodes[199999993782128268]
+    self.assertIn(19993782128268, self.map.nx_graph.nodes)
+    node = self.map.nx_graph.nodes[19993782128268]
     self.assertEqual('footway', node['highway'])
 
 
@@ -62,7 +62,7 @@ class MapTest(unittest.TestCase):
     # Check that the POI was added correctly to the graph.
     cell_to_search = list_cells[0]
     node = self.map.s2_graph.search(cell_to_search)
-    self.assertTrue(hasattr(node, 'poi') and 99999993265952196 in node.poi)
+    self.assertTrue(hasattr(node, 'poi') and 9993265952196 in node.poi)
     
 
   
