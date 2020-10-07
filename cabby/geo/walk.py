@@ -32,7 +32,6 @@ from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 from cabby.rvs import item
 import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 
 _Geo_DataFrame_Driver = "GPKG"
