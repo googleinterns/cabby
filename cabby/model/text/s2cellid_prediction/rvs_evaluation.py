@@ -18,7 +18,7 @@ This script Loads a pre-trained geomodel and evaluates the RVS samples against i
 Example command line call:
 $ bazel-bin/cabby/model/text/s2cellid_prediction/rvs_evaluation \
   --rvs_path ~/data/wikigeo/pittsburgh/rvs.json  \
-  --model_path ~/tmp/output/model.pt \
+  --model_path ~/tmp/output/pittsburgh/12/model.pt \
   --train_dataset_dir ~/model/wikigeo/dataset/pittsburgh \
   --s2_level 12
 
@@ -118,8 +118,9 @@ def main(argv):
     valid_loader=valid_loader,
     label_to_cellid=label_to_cellid
   )
+  # print (true_vals)
   accuracy = train.accuracy_cells(true_vals, predictions)
-  logging.info('Accuracy: {:.4f},Train Loss: {:.4f}, Valid Loss: {:.4f}'
+  logging.info('Accuracy: {:.4f}, Valid Loss: {:.4f}'
          .format(accuracy, valid_loss))
 
 

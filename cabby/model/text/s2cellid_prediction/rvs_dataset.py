@@ -25,6 +25,8 @@ import transformers
 from transformers import DistilBertTokenizerFast
 from transformers.tokenization_utils_base import BatchEncoding
 
+
+
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 
@@ -38,7 +40,7 @@ class CabbyDataset(torch.utils.data.Dataset):
 
     # Tokenize instructions.
     self.encodings = tokenizer(
-      data.instruction.tolist(), truncation=True,
+      data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
 
     data['point'] = data.end_point.apply(
@@ -48,6 +50,7 @@ class CabbyDataset(torch.utils.data.Dataset):
       lambda x: util.cellid_from_point(x, s2level))
 
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
+    print (self.labels)
 
   def __getitem__(self, idx: int):
     item = {key: torch.tensor(val[idx])
@@ -60,25 +63,27 @@ class CabbyDataset(torch.utils.data.Dataset):
     return len(self.labels)
 
 
-def create_dataset(path: Text, cellid_to_label_path: Text, lables_dictionary_path: Text, s2level: int) -> Tuple[CabbyDataset, Dict[int64,int64]]:
+def create_dataset(path_rvs: Text, cellid_to_label_path: Text, label_to_cellid_path: Text, s2level: int) -> Tuple[CabbyDataset, Dict[int64,int64]]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
-    data_dir: The directory of the data.
-    region: The region of the data.
+    path_rvs: The directory of the data to evaluate.
+    cellid_to_label_path: The path to the dictionary mapping cellids to labels.
+    lables_dictionary_path: The path to the dictionary mapping labels to cellids.
     s2level: The s2level of the cells.
   Returns:
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
 
-  valid_ds = pd.read_json(path)
+  valid_ds = pd.read_json(path_rvs)
   cellid_to_label = np.load(cellid_to_label_path, 
     allow_pickle='TRUE').item() 
 
-  lables_dictionary = np.load(lables_dictionary_path, 
+  label_to_cellid = np.load(label_to_cellid_path, 
     allow_pickle='TRUE').item() 
 
   # Create Cabby dataset.
   valid_ds = CabbyDataset(valid_ds, s2level, cellid_to_label)
 
-  return valid_ds, lables_dictionary
+  return valid_ds, label_to_cellid
+
 

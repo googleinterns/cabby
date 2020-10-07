@@ -25,7 +25,7 @@ $ bazel-bin/cabby/model/text/s2cellid_prediction/model_trainer \
   --dataset_dir ~/model/wikigeo/dataset/pittsburgh \
   --region Pittsburgh \ 
   --s2_level 12 \
-  --output_dir ~/tmp/output\
+  --output_dir ~/tmp/output/pittsburgh/12\
 
 """
 
