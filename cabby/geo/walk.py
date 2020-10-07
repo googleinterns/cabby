@@ -82,9 +82,11 @@ def get_end_poi(map: map_structure.Map) -> Optional[GeoSeries]:
   Returns:
     A single POI.
   '''
+  # Filter with name.
+  named_poi = map.poi[map.poi['name'].notnull()]
 
   # Filter large POI.
-  small_poi = map.poi[map.poi['s2cellids'].str.len() <= 4]
+  small_poi = named_poi[named_poi['s2cellids'].str.len() <= 4]
 
   if small_poi.shape[0] == 0:
     return None
@@ -135,8 +137,11 @@ def get_start_poi(
 
   poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
 
+  # Filter with name.
+  named_poi = poi_in_ring[poi_in_ring['name'].notnull()]
+
   # Filter large POI.
-  small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= 4]
+  small_poi = named_poi[named_poi['s2cellids'].str.len() <= 4]
 
   if small_poi.shape[0] == 0:
     return None
