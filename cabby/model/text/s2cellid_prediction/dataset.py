@@ -64,7 +64,7 @@ class CabbyDataset(torch.utils.data.Dataset):
 
 def create_dataset(data_dir: Text,
            region: Text, s2level) -> Tuple[CabbyDataset, CabbyDataset,
-                           CabbyDataset, Dict[int64, int64]]:
+                           CabbyDataset, Dict[int64, int64], Dict[int64, int64]]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.

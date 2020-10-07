@@ -29,16 +29,15 @@ from absl import flags
 
 from absl import logging
 import numpy as np
-import os 
+import os
 import sys
 import torch
-import torch.optim as optim
 import torch.nn as nn
-from transformers import DistilBertForSequenceClassification, AdamW
+from transformers import DistilBertForSequenceClassification
 from torch.utils.data import DataLoader
 
 from cabby.model.text.s2cellid_prediction import train
-from cabby.model.text.s2cellid_prediction import dataset
+from cabby.model.text.s2cellid_prediction import rvs_dataset
 
 FLAGS = flags.FLAGS
 
@@ -52,8 +51,8 @@ flags.DEFINE_integer(
   'batch_size', default=16,
   help=('Batch size for evaluation.'))
 
-flags.DEFINE_integer(
-  'train_dataset_dir', default=16,
+flags.DEFINE_string(
+  'train_dataset_dir', None,
   help=('The directory of the trained dataset.'))
 
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
@@ -63,12 +62,10 @@ flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
 flags.mark_flag_as_required("rvs_path")
 flags.mark_flag_as_required("model_path")
 flags.mark_flag_as_required("train_dataset_dir")
-flags.mark_flag_as_required("batch_size")
 flags.mark_flag_as_required("s2_level")
 
+
 def main(argv):
-
-
 
   if not os.path.exists(FLAGS.rvs_path):
     sys.exit("RVS path doesn't exsist: {}.".format(FLAGS.rvs_path))
@@ -76,25 +73,29 @@ def main(argv):
   if not os.path.exists(FLAGS.model_path):
     sys.exit("Model path doesn't exsist: {}.".format(FLAGS.model_path))
 
-  
   dataset_path = os.path.join(FLAGS.train_dataset_dir, str(FLAGS.s2_level))
 
   if not os.path.exists(dataset_path):
     sys.exit("Trained datset path doesn't exist: {}.".format(dataset_path))
 
-
-  lables_dictionary_path = os.path.join(dataset_path,"label_to_cellid.npy")
-  cellids_dictionary_path = os.path.join(dataset_path,"cellid_to_label.npy")
+  lables_dictionary_path = os.path.join(dataset_path, "label_to_cellid.npy")
+  cellids_dictionary_path = os.path.join(dataset_path, "cellid_to_label.npy")
 
   logging.info("Preparing data.")
-  
-  valid_dataset, lables_dictionary = dataset.create_dataset(
-    FLAGS.rvs_path, cellids_dictionary_path, FLAGS.s2_level)
+
+  valid_dataset, label_to_cellid = rvs_dataset.create_dataset(
+    path=FLAGS.rvs_path,
+    cellid_to_label_path=cellids_dictionary_path, lables_dictionary_path=lables_dictionary_path,
+    s2level=FLAGS.s2_level
+  )
+  logging.info("Size of data: {}".format(len(valid_dataset)))
+
+
   n_lables = len(label_to_cellid)
   logging.info("Number of lables: {}".format(n_lables))
 
   valid_loader = DataLoader(
-  valid_dataset, batch_size=FLAGS.test_batch_size, shuffle=False)
+    valid_dataset, batch_size=FLAGS.batch_size, shuffle=False)
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -106,25 +107,21 @@ def main(argv):
     logging.info("Using {} GPUs.".format(torch.cuda.device_count()))
     model = nn.DataParallel(model)
 
+  logging.info("Loading model weights.")
+  train.load_checkpoint(FLAGS.model_path, model, device)
+
   model.to(device)
 
-  optimizer = AdamW(model.parameters(), lr=FLAGS.learning_rate)
-
-  train.train_model(
+  valid_loss, predictions, true_vals, true_points, pred_points = train.evaluate(
     model=model,
     device=device,
-    num_epochs=FLAGS.num_epochs,
-    optimizer=optimizer,
-    train_loader=train_loader,
     valid_loader=valid_loader,
-    label_to_cellid = label_to_cellid,
-    file_path=FLAGS.output_dir, 
-    eval_every=1000,
-    )
+    label_to_cellid=label_to_cellid
+  )
+  accuracy = train.accuracy_cells(true_vals, predictions)
+  logging.info('Accuracy: {:.4f},Train Loss: {:.4f}, Valid Loss: {:.4f}'
+         .format(accuracy, valid_loss))
 
 
 if __name__ == '__main__':
   app.run(main)
-
-
-

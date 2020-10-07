@@ -13,6 +13,16 @@ py_library(
     ],
 )
 
+py_library(
+    name = 'rvs_dataset',
+    srcs = ['rvs_dataset.py'],
+    deps = [
+          "//cabby/geo:util",
+          "//cabby/geo/map_processing:map_structure",
+
+    ],
+)
+
 py_binary(
     name = 'train',
     main = 'train.py',
@@ -29,5 +39,16 @@ py_binary(
     deps = [
         ':train',
         ':dataset',
+    ],
+)
+
+
+py_binary(
+    name = 'rvs_evaluation',
+    main = 'rvs_evaluation.py',
+    srcs = ['rvs_evaluation.py'],
+    deps = [
+        ':train',
+        ':rvs_dataset',
     ],
 )

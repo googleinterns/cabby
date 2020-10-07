@@ -25,10 +25,6 @@ import transformers
 from transformers import DistilBertTokenizerFast
 from transformers.tokenization_utils_base import BatchEncoding
 
-
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 
