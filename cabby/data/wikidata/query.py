@@ -267,7 +267,7 @@ def get_filter_string(place_filter: [Sequence[Text]],
   return filter_string
 
 def get_locations_by_qid(region: Text,
-                         place_filter: [Sequence[Text]] = []):
+                         place_filter: Sequence[Text] = []) -> Dict[Text, Any]:
   """Get a map from QID to coordinate location in a particular region.
   Arguments:
     region(Text): region to query.
@@ -289,8 +289,8 @@ def get_locations_by_qid(region: Text,
   return locations
 
 def get_geofenced_wikidata_relations(region: Text,
-                                     place_filter: [Sequence[Text]] = [],
-                                     extract_qids = False) -> Sequence[Dict]:
+                                     place_filter: Sequence[Text] = [],
+                                     extract_qids = False) -> Sequence[Dict[Text, Any]]:
   '''Get Wikidata relations for a specific area.
   Arguments:
     region(Text): The area to query the Wikidata items.

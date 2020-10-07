@@ -17,9 +17,13 @@
 import networkx as nx
 import pandas as pd
 
-def convert_pandas_df_to_metagraph(df, source_column, target_column,
-                                   source_metadata_columns, target_metadata_columns,
-                                   edge_attribute_columns):
+from typing import Dict, Tuple, Sequence, Text, Any
+
+def convert_pandas_df_to_metagraph(
+  df:Any, source_column: Text, target_column: Text,
+  source_metadata_columns: Dict[Text, Text],
+  target_metadata_columns: Dict[Text, Text],
+  edge_attribute_columns: Sequence[Text]) -> Any:
   '''Convert a pandas dataframe to a networkx multigraph
   Arguments:
     df: pandas dataframe
