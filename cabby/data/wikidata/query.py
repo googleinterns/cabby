@@ -33,19 +33,32 @@ _MANHATTAN_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
             ?place wdt:P31 ?instance.
             ?wikipediaUrl schema:about ?place. 
             ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
-            SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
             bd:serviceParam wikibase:cornerWest "Point(-74.0379,40.6966)"^^geo:wktLiteral .
             bd:serviceParam wikibase:cornerEast "Point(-73.9293,40.7963)"^^geo:wktLiteral .
             }
-          }
-          FILTER (?instance  not in
+           FILTER (?instance  not in
           (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
           wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
           wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
+            UNION
+                      {
+            ?wikipediaUrl schema:about ?place. 
+            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
+            SERVICE wikibase:box {
+            ?place wdt:P625 ?location .
+            bd:serviceParam wikibase:cornerWest "Point(-74.0379,40.6966)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-73.9293,40.7963)"^^geo:wktLiteral .
+            }
+          }
+          SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+
+          }
+
+
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
@@ -58,19 +71,31 @@ _PITTSBURGH_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
             ?place wdt:P31 ?instance.
             ?wikipediaUrl schema:about ?place. 
             ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
-            SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
             bd:serviceParam wikibase:cornerWest "Point(-80.035,40.425)"^^geo:wktLiteral .
             bd:serviceParam wikibase:cornerEast "Point(-79.930,40.460)"^^geo:wktLiteral .
             }
-          }
-          FILTER (?instance  not in
+           FILTER (?instance  not in
           (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
           wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
           wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
+            UNION
+                      {
+            ?wikipediaUrl schema:about ?place. 
+            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
+            SERVICE wikibase:box {
+            ?place wdt:P625 ?location .
+            bd:serviceParam wikibase:cornerWest "Point(-80.035,40.425)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-79.930,40.460)"^^geo:wktLiteral .
+            }
+          }
+          SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+
+          }
+
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
@@ -83,19 +108,32 @@ _DC_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
             ?place wdt:P31 ?instance.
             ?wikipediaUrl schema:about ?place. 
             ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
-            SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
             bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
             bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
             }
-          }
-          FILTER (?instance  not in
+           FILTER (?instance  not in
           (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
           wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
           wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
+            UNION
+                      {
+            ?wikipediaUrl schema:about ?place. 
+            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
+            SERVICE wikibase:box {
+            ?place wdt:P625 ?location .
+            bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
+            }
+          }
+          SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+
+          }
+
+
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
