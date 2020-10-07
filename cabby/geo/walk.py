@@ -111,19 +111,18 @@ def get_start_poi(
     lambda x: util.get_distance_km(end_point['geometry'], x))
 
   # Get closest nodes to points.
-  dest = ox.get_nearest_node(
-    map.nx_graph, util.tuple_from_point(end_point['centroid']))
+  dest_osmid = end_point['osmid']
 
   # Find nodes whithin 2000 meter path distance.
   outer_circle_graph = ox.truncate.truncate_graph_dist(
-    map.nx_graph, dest, max_dist=2000, weight='length')
+    map.nx_graph, dest_osmid, max_dist=2000, weight='length')
 
   outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
 
   try:
     # Get graph that is too close (less than 400 meter path distance)
     inner_circle_graph = ox.truncate.truncate_graph_dist(
-      map.nx_graph, dest, max_dist=400, weight='length')
+      map.nx_graph, dest_osmid, max_dist=400, weight='length')
     inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
   except ValueError:  # GeoDataFrame returned empty
