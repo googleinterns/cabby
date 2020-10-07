@@ -15,14 +15,13 @@
 '''Library to support Wikidata geographic queries from https://query.wikidata.org/sparql.'''
 
 import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
 from typing import Dict, Tuple, Sequence, Text, Any
 
 from cabby.geo import util
-from cabby.geo.map_processing import map_structure
+from cabby.geo import regions
 
 
 _MANHATTAN_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
@@ -75,6 +74,31 @@ _PITTSBURGH_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
+_DC_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
+           ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
+          (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
+          WHERE 
+          {
+          {
+            ?place wdt:P31 ?instance.
+            ?wikipediaUrl schema:about ?place. 
+            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
+            SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+                        ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
+            SERVICE wikibase:box {
+            ?place wdt:P625 ?location .
+            bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
+            }
+          }
+          FILTER (?instance  not in
+          (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
+          wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
+          wd:Q744913, wd:Q186117, wd:Q3298291) )
+          }
+          GROUP BY ?place ?placeLabel ?wikipediaUrl 
+        """
+
 _PITTSBURGH_RELATION_QUERY = """SELECT ?place ?placeLabel ?p ?propLabel ?instance ?instanceLabel
           WHERE 
           {
@@ -112,32 +136,6 @@ _PITTSBURGH_RELATION_QUERY = """SELECT ?place ?placeLabel ?p ?propLabel ?instanc
           wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
           wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
-        """
-
-
-_BOLOGNA_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
-           ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
-          (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
-          WHERE 
-          {
-          {
-            ?place wdt:P31 ?instance.
-            ?wikipediaUrl schema:about ?place. 
-            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
-            SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-                        ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-            SERVICE wikibase:box {
-            ?place wdt:P625 ?location .
-            bd:serviceParam wikibase:cornerWest "Point(11.355,44.4902)"^^geo:wktLiteral .
-            bd:serviceParam wikibase:cornerEast "Point(11.3564,44.5000)"^^geo:wktLiteral .
-            }
-          }
-          FILTER (?instance  not in
-          (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
-          wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
-          wd:Q744913, wd:Q186117, wd:Q3298291) )
-          }
-          GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
 _BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
@@ -195,8 +193,8 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
   elif region == "Manhattan":
     query = _MANHATTAN_QUERY
   
-  elif region == "Bologna":
-    query = _BOLOGNA_QUERY
+  elif region == "DC":
+    query = _DC_QUERY
     
   else:
     raise ValueError(f"{region} is not a supported region.")
@@ -204,7 +202,7 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
   results = query_api(query)
 
   # Filter by map region.
-  polygon_region = map_structure.get_region(region)
+  polygon_region = regions.get_region(region)
   filtered_results = []
   for result in results:
     point_str = result['point']['value']
@@ -216,7 +214,6 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
 def get_filter_string(place_filter: [Sequence[Text]],
                       place_param: Text = "place"):
   """Get an appropriate FILTER sparql command for the input sequence.
-
   Arguments:
     place_filter: list of wd IDs as strings.
     place_param: the name of the parameter to filter on.
@@ -234,7 +231,6 @@ def get_filter_string(place_filter: [Sequence[Text]],
 def get_locations_by_qid(region: Text,
                          place_filter: [Sequence[Text]] = []):
   """Get a map from QID to coordinate location in a particular region.
-
   Arguments:
     region(Text): region to query.
     place_filter: a list of QIDs (e.g. ["Q123", "Q987"]) to filter the places.
