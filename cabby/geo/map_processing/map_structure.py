@@ -102,15 +102,18 @@ class Map:
       (1) The POI that are not roads; and (2) the roads POI.
     '''
 
-    tags = {'name': True, 'building': True, 'amenity': True}
+    tags = {'name': True,
+        'building': True,
+        'amenity': True,
+        'wikidata': True,
+        'wikipedia': True}
 
     osm_poi = ox.pois.pois_from_polygon(self.polygon_area, tags=tags)
     osm_poi = osm_poi.set_crs(epsg=OSM_CRS, allow_override=True)
 
-    osm_poi_named_entities = osm_poi[osm_poi['name'].notnull()]
-    osm_highway = osm_poi_named_entities['highway']
-    osm_poi_no_streets = osm_poi_named_entities[osm_highway.isnull()]
-    osm_poi_streets = osm_poi_named_entities[osm_highway.notnull()]
+    osm_highway = osm_poi['highway']
+    osm_poi_no_streets = osm_poi[osm_highway.isnull()]
+    osm_poi_streets = osm_poi[osm_highway.notnull()]
 
     # Get centroid for POI.
     osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
@@ -265,7 +268,8 @@ class Map:
     assert edge_add.u_for_edge is not None
     assert edge_add.v_for_edge is not None
 
-    logging.info("Adding U {} => V {}".format(edge_add.u_for_edge, edge_add.v_for_edge))
+    logging.info("Adding U {} => V {}".format(
+      edge_add.u_for_edge, edge_add.v_for_edge))
 
     self.nx_graph.add_edge(
       u_for_edge=edge_add.u_for_edge,
@@ -290,7 +294,7 @@ class Map:
   def add_poi_to_graph(self):
     '''Add all POI to nx_graph(currently contains only the roads).'''
     eges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
-    
+
     eges_to_add_list.swifter.apply(
       lambda edges_list: [self.add_two_ways_edges(edge) for edge in edges_list])
 
@@ -449,4 +453,3 @@ def convert_string_to_list(string_list: Text) -> Sequence:
   string_list = string_list.split(",")
   map_object = map(int, string_list)
   return list(map_object)
-
