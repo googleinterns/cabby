@@ -48,7 +48,8 @@ py_binary(
         "//cabby/data/wikidata:query",
         "//cabby/data/wikipedia:item",
         "//cabby/data/wikipedia:query",
-        "//cabby/data:wikigeo"
+        "//cabby/data:wikigeo",
+        '//cabby/geo:regions'
     ],
 
 )

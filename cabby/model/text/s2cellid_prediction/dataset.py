@@ -26,7 +26,7 @@ from transformers.tokenization_utils_base import BatchEncoding
 from shapely.geometry.point import Point
 
 from cabby.geo import util
-from cabby.geo.map_processing import map_structure
+from cabby.geo import regions
 
 
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
@@ -78,7 +78,7 @@ def create_dataset(data_dir: Text,
   test_ds = pd.read_json(data_dir + '/' + 'test.json')
 
   # Get lables.
-  get_region = map_structure.get_region(region)
+  get_region = regions.get_region(region)
   unique_cellid = util.cellids_from_polygon(get_region, s2level)
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}

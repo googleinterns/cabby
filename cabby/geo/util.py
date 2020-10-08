@@ -320,6 +320,23 @@ def get_distance_km(start: Point, goal: Point) -> float:
   """
   return geodesic(start.coords, goal.coords).km
 
+def concat_numbers(n_1: int, n_2: int) -> int:
+  '''Return the concatenation of two numbers.
+  Arguments:
+    n_1: The first number to be concatenated.
+    n_2: The second number to be concatenated.
+  Returns:
+    A concatenated int of the two numbers
+  '''
+  return int(str(n_1) + str(n_2))
+
+
+def get_distance_m(start: Point, goal: Point) -> float:
+  """Returns the geodesic distance (in meters) between start and goal.
+  This distance is direct (as the bird flies), rather than based on a route
+  going over roads and around buildings.
+  """
+  return geodesic(start.coords, goal.coords).m
 
 def tuple_from_point(point: Point) -> CoordsYX:
   '''Convert a Point into a tuple, with latitude as first element, and 

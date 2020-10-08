@@ -11,25 +11,26 @@
 # the License.
 
 '''Command line application to output all POI in an area of the OSM.
-
 Example:
-
-$ bazel-bin/cabby/geo/map_processing/map_processor --region Pittsburgh \ 
+$ bazel-bin/cabby/geo/map_processing/map_processor --region "DC" \ 
 --min_s2_level 18 --directory "./cabby/geo/map_processing/poiTestData/"
 '''
 
 from absl import app
 from absl import flags
+from absl import logging
 
 import osmnx as ox
 from shapely.geometry.point import Point
 
+from cabby.geo import regions
 from cabby.geo.map_processing import map_structure
+
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-  "region", None, ['Pittsburgh', 'Manhattan', 'Bologna'],
-  "Map areas: Manhattan, Pittsburgh or Bologna.")
+  "region", None, regions.ALLOWED_REGIONS, 
+  "Map areas: Manhattan, Pittsburgh or D.C.")
 flags.DEFINE_integer("min_s2_level", None, "Minimum S2 level of the map.")
 
 flags.DEFINE_string("directory", None,
@@ -42,17 +43,24 @@ flags.mark_flag_as_required("min_s2_level")
 
 def main(argv):
   del argv  # Unused.
-  map = map_structure.Map(FLAGS.region, FLAGS.min_s2_level)
 
+  logging.info(
+    "Starting to build map of {} at level {}.".format(FLAGS.region, FLAGS.min_s2_level))
+
+  map = map_structure.Map(FLAGS.region, FLAGS.min_s2_level)
+  logging.info(
+    "Created map of {} at level {}.".format(FLAGS.region, FLAGS.min_s2_level))
+  
   if FLAGS.directory is not None:
     # Write to disk.
     map.write_map(FLAGS.directory)
+    logging.info("Map written to => {}".format(FLAGS.directory))
 
     # Load from disk.
     map_new = map_structure.Map(
       FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
 
-    print('Number of POI found: {0}'.format(map_new.poi.shape[0]))
+    logging.info('Number of POI found: {0}'.format(map_new.poi.shape[0]))
 
 
 if __name__ == '__main__':

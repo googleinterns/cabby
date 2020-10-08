@@ -1,0 +1,19 @@
+{
+"type": "FeatureCollection",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:EPSG::32633" } },
+"features": [
+{ "type": "Feature", "properties": { "y": 38.9086948, "x": -77.0403934, "osmid": 3957027456, "highway": null }, "geometry": { "type": "Point", "coordinates": [ -77.0403934, 38.9086948 ] } },
+{ "type": "Feature", "properties": { "y": 38.9086243, "x": -77.0405157, "osmid": 3011758096, "highway": null }, "geometry": { "type": "Point", "coordinates": [ -77.0405157, 38.9086243 ] } },
+{ "type": "Feature", "properties": { "y": 38.9088449, "x": -77.0403079, "osmid": 3011757968, "highway": null }, "geometry": { "type": "Point", "coordinates": [ -77.0403079, 38.9088449 ] } },
+{ "type": "Feature", "properties": { "y": 38.9082581, "x": -77.0394572, "osmid": 3011757958, "highway": null }, "geometry": { "type": "Point", "coordinates": [ -77.0394572, 38.9082581 ] } },
+{ "type": "Feature", "properties": { "y": 38.9083581, "x": -77.0393967, "osmid": 4193595047, "highway": null }, "geometry": { "type": "Point", "coordinates": [ -77.0393967, 38.9083581 ] } },
+{ "type": "Feature", "properties": { "y": 38.9086003, "x": -77.0404472, "osmid": 3011757964, "highway": null }, "geometry": { "type": "Point", "coordinates": [ -77.0404472, 38.9086003 ] } },
+{ "type": "Feature", "properties": { "y": 38.9085523, "x": -77.0403069, "osmid": 3011758093, "highway": null }, "geometry": { "type": "Point", "coordinates": [ -77.0403069, 38.9085523 ] } },
+{ "type": "Feature", "properties": { "y": 38.908415068520945, "x": -77.03956245455889, "osmid": 19999367142774, "highway": "f,o,o,t,w,a,y" }, "geometry": { "type": "Point", "coordinates": [ -77.03956245455889, 38.908415068520945 ] } },
+{ "type": "Feature", "properties": { "y": 38.908577, "x": -77.0395068, "osmid": 9999367142774, "highway": "poi" }, "geometry": { "type": "Point", "coordinates": [ -77.039506800000012, 38.908577 ] } },
+{ "type": "Feature", "properties": { "y": 38.9088449, "x": -77.0403079, "osmid": 199993265952196, "highway": "s,e,r,v,i,c,e" }, "geometry": { "type": "Point", "coordinates": [ -77.0403079, 38.9088449 ] } },
+{ "type": "Feature", "properties": { "y": 38.9088137, "x": -77.040181, "osmid": 99993265952196, "highway": "poi" }, "geometry": { "type": "Point", "coordinates": [ -77.040181, 38.908813699999989 ] } },
+{ "type": "Feature", "properties": { "y": 38.90839802058634, "x": -77.039512852202478, "osmid": 199993782128268, "highway": "f,o,o,t,w,a,y" }, "geometry": { "type": "Point", "coordinates": [ -77.039512852202478, 38.90839802058634 ] } },
+{ "type": "Feature", "properties": { "y": 38.9085614, "x": -77.0394567, "osmid": 99993782128268, "highway": "poi" }, "geometry": { "type": "Point", "coordinates": [ -77.0394567, 38.908561400000011 ] } }
+]
+}

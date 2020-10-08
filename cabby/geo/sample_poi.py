@@ -14,11 +14,10 @@
 
 '''Command line application to sample an end and starting point, the route  
 between them and pivots.
-
 Example:
-$ bazel-bin/cabby/geo/sample_poi --region Pittsburgh --min_s2_level 18 \
+$ bazel-bin/cabby/geo/sample_poi --region "DC" --min_s2_level 18 \
   --directory "./cabby/geo/map_processing/poiTestData/" \
-    --path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" --n_samples 1
+    --path "./cabby/geo/pathData/dc_geo_paths.gpkg" --n_samples 1
 '''
 
 from absl import app
@@ -28,13 +27,14 @@ from geopandas import GeoDataFrame
 import osmnx as ox
 from shapely.geometry.point import Point
 
+from cabby.geo import regions
 from cabby.geo import walk
 from cabby.geo.map_processing import map_structure
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-  "region", None, ['Pittsburgh', 'Manhattan'],
-  "Map areas: Manhattan or Pittsburgh.")
+  "region", None, regions.ALLOWED_REGIONS,
+  "Map areas: Manhattan, Pittsburgh or DC.")
 flags.DEFINE_integer("min_s2_level", None, "Minimum S2 level of the map.")
 flags.DEFINE_string("directory", None,
           "The directory where the map will be loaded from.")

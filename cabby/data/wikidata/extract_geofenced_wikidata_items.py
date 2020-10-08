@@ -22,11 +22,12 @@ from absl import app
 from absl import flags
 
 from cabby.data.wikidata import query
+from cabby.geo import regions
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-  "region", None, ['Pittsburgh', 'Manhattan, Bologna'],
-  "Map areas: Manhattan, Pittsburgh or Bologna.")
+  "region", None, regions.ALLOWED_REGIONS,
+  "Map areas: Manhattan, Pittsburgh or DC.")
 
 # Required flags.
 flags.mark_flag_as_required("region")

@@ -8,7 +8,7 @@ py_library(
     srcs = ['dataset.py'],
     deps = [
           "//cabby/geo:util",
-          "//cabby/geo/map_processing:map_structure",
+          "//cabby/geo:regions",
 
     ],
 )

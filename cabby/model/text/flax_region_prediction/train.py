@@ -47,7 +47,7 @@ import numpy as np
 import tensorflow as tf
 tf.config.experimental.set_visible_devices([], "GPU")
 import tensorflow_datasets as tfds
-from tensorflow.io import gfile
+import os 
 
 import input_pipeline
 import model as sst2_model
@@ -369,8 +369,8 @@ def main(argv):
 
   # TODO(mohitreddy): Change to flags.mark_flag_as_required('model_dir').
   assert FLAGS.model_dir is not None, 'Please provide model_dir.'
-  if not gfile.exists(FLAGS.model_dir):
-    gfile.makedirs(FLAGS.model_dir)
+  if not os.path.exists(FLAGS.model_dir):
+    os.mkdir(FLAGS.model_dir)
 
   assert FLAGS.data_dir is not None, 'Please provide data_dir.'
 
