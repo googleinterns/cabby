@@ -29,10 +29,6 @@ import osmnx as ox
 from typing import Optional, Tuple, Sequence, Any, Text
 import webbrowser
 
-UTM_CRS = 32633  # UTM Zones (North).
-WGS84_CRS = 4326  # WGS84 Latitude/Longitude.
-
-
 def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]:
   '''Converts a sequence of S2CellIds to a sequence of ids of the S2CellIds. 
   Arguments:
@@ -369,7 +365,7 @@ def get_polygon_distance_from_point(poly: Polygon, point: Point) -> int:
     The distance between point and polygon in meters.
   '''
   dist = 0
-  point_1 =  Point(poly.exterior.coords[0])
+  point_1 = Point(poly.exterior.coords[0])
   for coord in poly.exterior.coords[1:]:
     point_2 = Point(coord)
     dist += get_distance_between_points(point_1, point_2)

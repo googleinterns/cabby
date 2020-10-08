@@ -36,11 +36,9 @@ from cabby.geo import regions
 
 
 # Coordinate Reference Systems (CRS) - UTM Zones (North).
-# This variable is used (:map_structure.py; :edge.py; cabby.geo.util.py,
-# cabby.geo.walk.py) to project the geometries into this CRS for geo operations
-# such as calculating the centroid.
+# This variable is used (:map_structure.py; cabby.geo.walk.py) to project the 
+# geometries into this CRS for geo operations such as calculating the centroid.
 OSM_CRS = 4326
-POI_DISTANCE = 50
 
 
 class Map:
@@ -225,7 +223,7 @@ class Map:
       u_for_edge=poi_osmid,
       v_for_edge=projected_point_osmid,
       osmid=near_edge['osmid'],
-      dist=dist+POI_DISTANCE
+      length=dist
     )
     edges_list.append(edge_to_add)
 

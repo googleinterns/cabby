@@ -40,7 +40,16 @@ class Edge:
 
   @classmethod
   def from_projected(cls, u_for_edge, v_for_edge, length, highway, osmid, name):
-    """Construct an Entity from the start and end points, route, and pivots.
+    """Construct an edge entity to connect the projected point of POI.
+    Arguments:
+      u_for_edge: The u endside of the edge.
+      v_for_edge: The v endside of the edge.
+      length: length of the edge.
+      highway: highway tag of the edge.
+      osmid: of the edge.
+      name: name of the street.
+    Returns:
+      An edge entity.
     """
     return Edge(
       u_for_edge,
@@ -53,13 +62,20 @@ class Edge:
     )
 
   @classmethod
-  def from_poi(cls, u_for_edge, v_for_edge, osmid, dist):
-    """Construct an Entity from the start and end points, route, and pivots.
+  def from_poi(cls, u_for_edge, v_for_edge, osmid, length):
+    """Construct an edge entity to connect a POI.
+    Arguments:
+      u_for_edge: The u endside of the edge.
+      v_for_edge: The v endside of the edge.
+      osmid: of the edge.
+      length: length of the edge.
+    Returns:
+      An edge entity.
     """
     return Edge(
       u_for_edge,
       v_for_edge,
-      dist,
+      length,
       False,
       "poi",
       osmid,

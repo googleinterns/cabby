@@ -33,11 +33,16 @@ from cabby.geo.map_processing import map_structure
 from cabby.rvs import item
 import sys
 
-
 _Geo_DataFrame_Driver = "GPKG"
+
+# Coordinate Reference Systems (CRS) - UTM Zones (North).
+# This variable is used (:map_structure.py; cabby.geo.walk.py) to project the 
+# geometries into this CRS for geo operations such as calculating the centroid.
 OSM_CRS = 32633  # UTM Zones (North).
 SEED = 4
-POI_DISTANCE = 50
+MAX_PATH_DIST = 2000
+MIN_PATH_DIST = 200
+NEAR_PIVOT_DIST = 80
 
 
 def compute_route_from_nodes(origin_id: int, 
@@ -46,12 +51,12 @@ def compute_route_from_nodes(origin_id: int,
                               nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
   '''Returns the shortest path between a starting and end point.
   Arguments:
-  origin_id: The node id of the origin point.
-  goal_id(Point): The node id of the destination point.
-  graph(nx.MultiDiGraph): The directed graph class that stores multiedges.
-  nodes(GeoDataFrame): The GeoDataFrame of graph nodes.
+    origin_id: The node id of the origin point.
+    goal_id(Point): The node id of the destination point.
+    graph(nx.MultiDiGraph): The directed graph class that stores multiedges.
+    nodes(GeoDataFrame): The GeoDataFrame of graph nodes.
   Returns:
-  A sequence of Points which construct the geometry of the path.
+    A sequence of Points which construct the geometry of the path.
   '''
 
   # Get shortest route.
@@ -81,12 +86,12 @@ def compute_route_from_points(start_point: Point,
                               nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
   '''Returns the shortest path between a starting and end point.
   Arguments:
-  start_point(Point): The lat-lng point of the origin point.
-  end_point(Point): The lat-lng point of the destination point.
-  graph(nx.MultiDiGraph): The directed graph class that stores multiedges.
-  nodes(GeoDataFrame): The GeoDataFrame of graph nodes.
+    start_point(Point): The lat-lng point of the origin point.
+    end_point(Point): The lat-lng point of the destination point.
+    graph(nx.MultiDiGraph): The directed graph class that stores multiedges.
+    nodes(GeoDataFrame): The GeoDataFrame of graph nodes.
   Returns:
-  A sequence of Points which construct the geometry of the path.
+    A sequence of Points which construct the geometry of the path.
   '''
 
   # Get closest nodes to points.
@@ -151,14 +156,14 @@ def get_start_poi(
 
   # Find nodes whithin 2000 meter path distance.
   outer_circle_graph = ox.truncate.truncate_graph_dist(
-    map.nx_graph, dest_osmid, max_dist=2000+POI_DISTANCE, weight='length')
+    map.nx_graph, dest_osmid, max_dist=MAX_PATH_DIST, weight='length')
 
   outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
 
   try:
     # Get graph that is too close (less than 200 meter path distance)
     inner_circle_graph = ox.truncate.truncate_graph_dist(
-      map.nx_graph, dest_osmid, max_dist=200+POI_DISTANCE, weight='length')
+      map.nx_graph, dest_osmid, max_dist=MIN_PATH_DIST, weight='length')
     inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
   except ValueError:  # GeoDataFrame returned empty
@@ -207,7 +212,8 @@ def get_landmark_if_tag_exists(gdf: GeoDataFrame, tag: Text, main_tag:
   return None
 
 
-def pick_prominent_pivot(df_pivots: GeoDataFrame, end_point: Dict) -> Optional[GeoSeries]:
+def pick_prominent_pivot(df_pivots: GeoDataFrame, end_point: Dict
+) -> Optional[GeoSeries]:
   '''Select a landmark from a set of landmarks by priority.
   Arguments:
     df_pivots: The set of landmarks.
@@ -244,14 +250,14 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: Dict) -> \
     Optional[GeoSeries]:
   '''Return a picked landmark near the end_point.
   Arguments:
-  map: The map of a specific region.
-  end_point: The goal location.
+    map: The map of a specific region.
+    end_point: The goal location.
   Returns:
-  A single landmark near the goal location.
+    A single landmark near the goal location.
   '''
 
   near_poi_con = map.poi.apply(lambda x: util.get_distance_between_geometries(
-    x.geometry,end_point['centroid'])<80, axis=1)
+    x.geometry, end_point['centroid']) < NEAR_PIVOT_DIST, axis=1)
 
   poi = map.poi[near_poi_con]
   
@@ -464,10 +470,11 @@ def get_number_intersections_past(main_pivot: GeoSeries, route: GeoDataFrame,
     If the main_pivot and goal are on different streets return -1.
   '''
 
-  pivot_goal_route = compute_route_from_nodes(main_pivot['osmid'], 
-                              end_point['osmid'], 
-                              map.nx_graph,
-                              map.nodes)
+  pivot_goal_route = compute_route_from_nodes(
+          main_pivot['osmid'], 
+          end_point['osmid'], 
+          map.nx_graph,
+          map.nodes)
 
  
   edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(
