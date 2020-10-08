@@ -39,7 +39,8 @@ from cabby.geo import regions
 # This variable is used (:map_structure.py; :edge.py; cabby.geo.util.py,
 # cabby.geo.walk.py) to project the geometries into this CRS for geo operations
 # such as calculating the centroid.
-OSM_CRS = 32633
+OSM_CRS = 4326
+POI_DISTANCE = 50
 
 
 class Map:
@@ -57,12 +58,11 @@ class Map:
       logging.info("Constructing graph.")
       self.nx_graph = ox.graph_from_polygon(
         self.polygon_area, network_type='walk')
+      
+
       logging.info("Add POI to graph.")
       self.add_poi_to_graph()
       self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
-
-      # Find closest nodes to POI.
-      self.poi['node'] = self.poi['centroid'].apply(self.closest_nodes)
 
     else:
       logging.info("Loading map from directory.")
@@ -85,16 +85,6 @@ class Map:
     self.edges.drop(self.edges.columns.difference(
       ['osmid', 'length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
     self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
-
-  def closest_nodes(self, point: Point) -> int:
-    '''Find closest nodes to POI. 
-    Arguments:
-      point: The point to which a closest node will be retrived.
-    Returns:
-      The Node id closest to point.
-    '''
-    point_xy = util.tuple_from_point(point)
-    return ox.distance.get_nearest_node(self.nx_graph, point_xy)
 
   def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
     '''Extract point of interests (POI) for the defined region. 
@@ -169,21 +159,31 @@ class Map:
     return edges_to_add
 
   def add_single_point_edge(self, point: Point,
-                list_edges_connected_ids: List, poi_osmid: int) -> Optional[Sequence[edge.Edge]]:
-    '''Connect a POI to the closest edge: (1) claculate the projected point to the nearest edge; (2) add the projected node to the graph; (3) create an edge between the point of the POI and the projcted point (add to the list to be returned); (4) create two edges from the closest edge (u-v) and the projected point: (a) u-projected point; (b) v-projected point; (5) remove closest edge u-v.
+                list_edges_connected_ids: List, 
+                poi_osmid: int) -> Optional[Sequence[edge.Edge]]:
+    '''Connect a POI to the closest edge: (1) claculate the projected point to 
+    the nearest edge; (2) add the projected node to the graph; (3) create an 
+    edge between the point of the POI and the projcted point (add to the list 
+    to be returned); (4) create two edges from the closest edge (u-v) and the 
+    projected point: (a) u-projected point; (b) v-projected point; (5) remove 
+    closest edge u-v.
     Arguments:
       point: a point POI to be connected to the closest edge.
       list_edges_connected_ids: list of edges ids already connected to the POI. 
-      If the current edge found is already connected it will avoid connecting it again.
+      If the current edge found is already connected it will avoid connecting 
+      it again.
       poi_osmid: the POI  id to be connected to the edge.
     Returns:
-      The edges between the POI and the closest edge found to be added to the graph.
+      The edges between the POI and the closest edge found to be added to the 
+      graph.
     '''
 
     try:
-      near_edge_u, near_edge_v, near_edge_key, line = \
+      
+      near_edge_u, near_edge_v, near_edge_key, line, dist = \
         ox.distance.get_nearest_edge(
-          self.nx_graph, util.tuple_from_point(point), return_geom=True)
+          self.nx_graph, util.tuple_from_point(point), return_geom=True, 
+          return_dist=True)
 
     except Exception as e:
       print(e)
@@ -224,7 +224,8 @@ class Map:
     edge_to_add = edge.Edge.from_poi(
       u_for_edge=poi_osmid,
       v_for_edge=projected_point_osmid,
-      osmid=poi_osmid
+      osmid=near_edge['osmid'],
+      dist=dist+POI_DISTANCE
     )
     edges_list.append(edge_to_add)
 
@@ -236,8 +237,8 @@ class Map:
     v_point = Point(v_node['x'], v_node['y'])
 
     # Calculate distance between projected point and u and v.
-    dist_u = util.get_distance_m(u_point, projected_point)
-    dist_v = util.get_distance_m(v_point, projected_point)
+    dist_u = util.get_distance_between_points(u_point, projected_point)
+    dist_v = util.get_distance_between_points(v_point, projected_point)
 
     # Add edges between projected point and u and v, on the street segment.
 
@@ -264,8 +265,6 @@ class Map:
 
     assert edge_add.u_for_edge is not None
     assert edge_add.v_for_edge is not None
-
-    logging.info("Adding U {} => V {}".format(edge_add.u_for_edge, edge_add.v_for_edge))
 
     self.nx_graph.add_edge(
       u_for_edge=edge_add.u_for_edge,

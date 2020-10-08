@@ -36,10 +36,49 @@ import sys
 
 _Geo_DataFrame_Driver = "GPKG"
 OSM_CRS = 32633  # UTM Zones (North).
+SEED = 4
+POI_DISTANCE = 50
 
 
-def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
-          nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
+def compute_route_from_nodes(origin_id: int, 
+                              goal_id: int, 
+                              graph: nx.MultiDiGraph,
+                              nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
+  '''Returns the shortest path between a starting and end point.
+  Arguments:
+  origin_id: The node id of the origin point.
+  goal_id(Point): The node id of the destination point.
+  graph(nx.MultiDiGraph): The directed graph class that stores multiedges.
+  nodes(GeoDataFrame): The GeoDataFrame of graph nodes.
+  Returns:
+  A sequence of Points which construct the geometry of the path.
+  '''
+
+  # Get shortest route.
+  try:
+    route = nx.shortest_path(graph, origin_id, goal_id, 'length')
+  except nx.exception.NetworkXNoPath:
+    print("No route found for the start and end points.")
+    return None
+  route_nodes = nodes[nodes['osmid'].isin(route)]
+
+  # Create the dictionary that defines the order for sorting according to
+  # route order.
+  sorterIndex = dict(zip(route, range(len(route))))
+
+  # Generate a rank column that will be used to sort
+  # the dataframe numerically
+  route_nodes['sort'] = route_nodes['osmid'].map(sorterIndex)
+
+  route_nodes = route_nodes.sort_values(['sort'])
+
+  return route_nodes
+
+
+def compute_route_from_points(start_point: Point, 
+                              end_point: Point, 
+                              graph: nx.MultiDiGraph,
+                              nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
   '''Returns the shortest path between a starting and end point.
   Arguments:
   start_point(Point): The lat-lng point of the origin point.
@@ -90,7 +129,7 @@ def get_end_poi(map: map_structure.Map) -> Optional[GeoSeries]:
     return None
 
   # Pick random POI.
-  poi = small_poi.sample(1, random_state=1).iloc[0]
+  poi = small_poi.sample(1, random_state=SEED).iloc[0]
   poi['geometry'] = poi.centroid
 
   return poi
@@ -107,22 +146,19 @@ def get_start_poi(
     A single POI.
   '''
 
-  dist = map.poi['centroid'].apply(
-    lambda x: util.get_distance_km(end_point['geometry'], x))
-
   # Get closest nodes to points.
   dest_osmid = end_point['osmid']
 
   # Find nodes whithin 2000 meter path distance.
   outer_circle_graph = ox.truncate.truncate_graph_dist(
-    map.nx_graph, dest_osmid, max_dist=2000, weight='length')
+    map.nx_graph, dest_osmid, max_dist=2000+POI_DISTANCE, weight='length')
 
   outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
 
   try:
-    # Get graph that is too close (less than 400 meter path distance)
+    # Get graph that is too close (less than 200 meter path distance)
     inner_circle_graph = ox.truncate.truncate_graph_dist(
-      map.nx_graph, dest_osmid, max_dist=400, weight='length')
+      map.nx_graph, dest_osmid, max_dist=200+POI_DISTANCE, weight='length')
     inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
   except ValueError:  # GeoDataFrame returned empty
@@ -132,7 +168,7 @@ def get_start_poi(
     osmid for osmid in outer_circle_graph_osmid if osmid not in
     inner_circle_graph_osmid]
 
-  poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
+  poi_in_ring = map.poi[map.poi['osmid'].isin(osmid_in_range)]
 
   # Filter large POI.
   small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= 4]
@@ -141,7 +177,7 @@ def get_start_poi(
     return None
 
   # Pick random POI.
-  start_point = small_poi.sample(1, random_state=1).iloc[0]
+  start_point = small_poi.sample(1, random_state=SEED).iloc[0]
   start_point['geometry'] = start_point.centroid
   return start_point
 
@@ -163,21 +199,28 @@ def get_landmark_if_tag_exists(gdf: GeoDataFrame, tag: Text, main_tag:
       pivots = gdf[gdf[main_tag].notnull()]
       if main_tag in candidate_landmarks and pivots.shape[0]:
         pivots = pivots.assign(main_tag=pivots[main_tag])
-        return pivots.sample(1, random_state=1).iloc[0]
+        return pivots.sample(1, random_state=SEED).iloc[0]
       pivots = gdf[gdf[alt_main_tag].notnull()]
       if alt_main_tag in candidate_landmarks and pivots.shape[0]:
         pivots = pivots.assign(main_tag=pivots[alt_main_tag])
-        return pivots.sample(1, random_state=1).iloc[0]
+        return pivots.sample(1, random_state=SEED).iloc[0]
   return None
 
 
-def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoSeries]:
+def pick_prominent_pivot(df_pivots: GeoDataFrame, end_point: Dict) -> Optional[GeoSeries]:
   '''Select a landmark from a set of landmarks by priority.
   Arguments:
     df_pivots: The set of landmarks.
+    end_point: The goal location.
   Returns:
     A single landmark.
   '''
+
+  # Remove goal location.
+  df_pivots = df_pivots[df_pivots['osmid']!=end_point['osmid']]
+  if df_pivots.shape[0]==0:
+    return None
+
 
   tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'),
          ('brand', 'brand'), ('tourism', 'tourism'),
@@ -197,7 +240,7 @@ def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoSeries]:
   return pivot
 
 
-def get_pivot_near_goal(map: map_structure.Map, end_point: GeoSeries) -> \
+def get_pivot_near_goal(map: map_structure.Map, end_point: Dict) -> \
     Optional[GeoSeries]:
   '''Return a picked landmark near the end_point.
   Arguments:
@@ -207,13 +250,12 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: GeoSeries) -> \
   A single landmark near the goal location.
   '''
 
-  tags = {'name': True, 'wikidata': True,
-      'amenity': True, 'shop': True, 'tourism': True}
-  try:
-    poi = ox.pois.pois_from_point(util.tuple_from_point(
-      end_point['centroid']), tags=tags, dist=40)
+  near_poi_con = map.poi.apply(lambda x: util.get_distance_between_geometries(
+    x.geometry,end_point['centroid'])<80, axis=1)
 
-  except ValueError:  # GeoDataFrame returned empty
+  poi = map.poi[near_poi_con]
+  
+  if poi.shape[0]==0:
     return None
 
   # Remove streets and roads.
@@ -223,46 +265,41 @@ def get_pivot_near_goal(map: map_structure.Map, end_point: GeoSeries) -> \
   # Remove the endpoint.
   nearby_poi = poi[poi['osmid'] != end_point['osmid']]
 
-  prominent_poi = pick_prominent_pivot(nearby_poi)
+  prominent_poi = pick_prominent_pivot(nearby_poi, end_point)
 
   return prominent_poi
 
 
 def get_pivot_along_route(
-    route: GeoDataFrame, map: map_structure.Map) -> \
+    route: GeoDataFrame, map: map_structure.Map, end_point: Dict) -> \
     Optional[GeoSeries]:
   '''Return a picked landmark on a given route.
   Arguments:
     route: The route along which a landmark will be chosen.
     map: The map of a specific region.
+    end_point: The goal location.
   Returns:
     A single landmark. '''
 
   # Get POI along the route.
   points_route = route['geometry'].tolist()
 
-  poly = Polygon(points_route).buffer(0.0001)
-  bounds = poly.bounds
-  bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
-  tags = {'wikipedia': True, 'wikidata': True, 'brand': True,
-      'tourism': True, 'amenity': True, 'shop': True, 'name': True}
-  try:
-    df_pivots = ox.pois.pois_from_polygon(bounding_box, tags=tags)
-  except ValueError:  # GeoDataFrame returned empty
+  poly = LineString(points_route).buffer(0.0001)
+
+  df_pivots = map.poi[map.poi.apply(
+    lambda x: poly.intersects(x['geometry']), axis=1)]
+  if df_pivots.shape[0]==0:
     return None
-
-  # Polygon along the route.
-  df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
-
+    
   # Remove streets.
   if 'highway' in df_pivots.columns:
     df_pivots = df_pivots[(df_pivots['highway'].isnull())]
 
-  main_pivot = pick_prominent_pivot(df_pivots)
+  main_pivot = pick_prominent_pivot(df_pivots, end_point)
   return main_pivot
 
 
-def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoSeries,
+def get_pivot_beyond_goal(map: map_structure.Map, end_point: Dict,
               route: GeoDataFrame) -> Optional[GeoSeries]:
   '''Return a picked landmark on a given route.
   Arguments:
@@ -306,14 +343,11 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoSeries,
                 last_line['length'].max()].iloc[0]
 
   poly = last_line_max['geometry'].buffer(0.0001)
-  bounds = poly.bounds
-  bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
-  try:
 
-    df_pivots = ox.pois.pois_from_polygon(
-      bounding_box, tags={"name": True})
+  df_pivots = map.poi[map.poi.apply(
+    lambda x: poly.intersects(x['geometry']), axis=1)]
 
-  except ValueError:  # GeoDataFrame returned empty
+  if df_pivots.shape[0] == 0:
     # Return Empty.
     return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
@@ -352,7 +386,7 @@ def get_pivot_beyond_goal(map: map_structure.Map, end_point: GeoSeries,
 
   # Remove the end_point.
   df_pivots = df_pivots[df_pivots['geometry'] != end_point['geometry']]
-  beyond_pivot = pick_prominent_pivot(df_pivots)
+  beyond_pivot = pick_prominent_pivot(df_pivots, end_point)
 
   if beyond_pivot is None:
     # Return Empty.
@@ -373,7 +407,7 @@ def get_pivots(route: GeoDataFrame, map: map_structure.Map, end_point:
   '''
 
   # Get pivot along the goal location.
-  main_pivot = get_pivot_along_route(route, map)
+  main_pivot = get_pivot_along_route(route, map, end_point)
   if main_pivot is None:
     return None
 
@@ -416,11 +450,9 @@ def get_cardinal_direction(start_point: Point, end_point: Point) -> Text:
     cardinal = 'West'
   return cardinal
 
-  return main_pivot, near_pivot, beyond_pivot
-
 
 def get_number_intersections_past(main_pivot: GeoSeries, route: GeoDataFrame,
-                  map: map_structure.Map, end_point: Point) -> int:
+                  map: map_structure.Map, end_point: GeoSeries) -> int:
   '''Return the number of intersections between the main_pivot and goal. 
   Arguments:
     main_pivot: The pivot along the route.
@@ -431,27 +463,18 @@ def get_number_intersections_past(main_pivot: GeoSeries, route: GeoDataFrame,
     The number of intersections between the main_pivot and goal. 
     If the main_pivot and goal are on different streets return -1.
   '''
-  dist = route['geometry'].apply(
-    lambda x: x.distance(main_pivot['geometry']))
-  pivot_idx = dist.idxmin().tolist()
-  pivot_goal_route = route.loc[pivot_idx:]
 
-  if pivot_goal_route.shape[0] <= 1:
-    return -1
+  pivot_goal_route = compute_route_from_nodes(main_pivot['osmid'], 
+                              end_point['osmid'], 
+                              map.nx_graph,
+                              map.nodes)
 
-  # Check if main pivot is in the pivot_goal_route segment.
-  segment_pivot = LineString(pivot_goal_route['geometry'].iloc[0:2].values)
-  number_intersection = -util.project_point_in_segment(
-    segment_pivot, main_pivot['geometry'])
-
-  # Check if main end point is in the pivot_goal_route segment.
-  segment_goal = LineString(pivot_goal_route['geometry'].iloc[-2:].values)
-  number_intersection -= util.project_point_in_segment(
-    segment_goal, end_point['centroid'])
-
-  # Check if goal and pivot are on the same street.
+ 
   edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(
     lambda x: set(map.edges[map.edges['u'] == x]['osmid'].tolist()))
+
+  # Remove edges from pois to streets.
+  edges_in_pivot_goal_route = edges_in_pivot_goal_route[1:-1]
 
   pivot_streets = edges_in_pivot_goal_route.iloc[0]
   goal_streets = edges_in_pivot_goal_route.iloc[-1]
@@ -459,8 +482,8 @@ def get_number_intersections_past(main_pivot: GeoSeries, route: GeoDataFrame,
   if not common_streets:
     return -1
 
-  number_intersection += edges_in_pivot_goal_route.apply(
-    lambda x: len(x - common_streets) > 0).count()
+  number_intersection = edges_in_pivot_goal_route.apply(
+    lambda x: len(x - common_streets) > 0).sum()
 
   if number_intersection <= 0:
     return -1
@@ -487,13 +510,14 @@ def get_single_sample(map: map_structure.Map) -> Optional[item.RVSPath]:
     return None
 
   # Compute route between start and end points.
-  route = compute_route(
-    start_point['geometry'], end_point['geometry'], map.nx_graph, map.nodes)
+  route = compute_route_from_nodes(
+    start_point['osmid'], end_point['osmid'], map.nx_graph, map.nodes)
   if route is None:
     return None
 
   # Select pivots.
   result = get_pivots(route, map, end_point)
+
   if result is None:
     return None
   main_pivot, near_pivot, beyond_pivot = result

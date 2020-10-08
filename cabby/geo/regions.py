@@ -19,8 +19,10 @@ from typing import Dict, Tuple, Sequence, Text, Optional, List, Any
 
 from shapely.geometry import box
 from shapely import wkt
+from shapely.geometry.point import Point
 
-ALLOWED_REGIONS = ["Manhattan", "Pittsburgh", "DC"]
+
+ALLOWED_REGIONS = ["Manhattan", "Pittsburgh", "DC", "Baltimore"]
 
 def get_region(region: Text):
   assert (region in ALLOWED_REGIONS)
@@ -32,8 +34,15 @@ def get_region(region: Text):
     polygon_area = box(
             miny=40.425, minx=-80.035, maxy=40.460, maxx=-79.930,
             ccw=True)
-  else: # D.C
-    polygon_area = box(
-        miny=38.90821, minx=-77.04053, maxy=38.90922, maxx=-77.03937,
-        ccw=True)
+  elif region == "DC": # D.C
+    polygon_area = box(minx=-77.02767, 
+                      miny=38.96608, 
+                      maxx=-77.02704, 
+                      maxy=38.96859)
+  else: # Baltimore
+    polygon_area = Point(-76.6305,39.3362).buffer(0.0001)
+
   return polygon_area  
+
+
+    

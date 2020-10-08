@@ -32,7 +32,7 @@ FLAGS = flags.FLAGS
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
   "region", None, regions.ALLOWED_REGIONS,
-  "Map areas: Manhattan, Pittsburgh or DC.")
+  "Map areas: Manhattan, Pittsburgh, DC or Baltimore.")
 flags.DEFINE_string("path", None, "The path where the data will be saved.")
 
 

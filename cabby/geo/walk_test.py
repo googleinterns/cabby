@@ -13,6 +13,7 @@
 # limitations under the License.
 '''Tests for walk.py'''
 
+
 from cabby.geo.map_processing import map_structure
 from cabby.geo import util
 from cabby.geo import walk
@@ -20,6 +21,7 @@ import osmnx as ox
 import unittest
 from shapely.geometry.point import Point
 import sys
+from shapely.geometry import box
 
 
 class WalkTest(unittest.TestCase):
@@ -31,30 +33,30 @@ class WalkTest(unittest.TestCase):
     cls.map = map_structure.Map("DC", 18)
 
   def testRouteCalculation(self):
-    start_point = Point(-77.03994, 38.90842)
-    end_point = Point(-77.03958, 38.90830)
-    route = walk.compute_route(start_point, end_point, self.map.
+    orig = 9991360050503
+    dest = 9992975872267
+    route = walk.compute_route_from_nodes(orig, dest, self.map.
                    nx_graph, self.map.nodes)
 
     # Check the size of the route.
-    self.assertEqual(route['geometry'].shape[0], 4)
+    self.assertEqual(route['geometry'].shape[0], 20)
 
     # Check that the correct points are in the route.
     first_point = util.tuple_from_point(route.iloc[0]['geometry'])
     second_point = util.tuple_from_point(route.iloc[1]['geometry'])
-    self.assertEqual(first_point, (38.908415268553206, -77.03956303656908))
-    self.assertEqual(second_point, (38.90839802058633, -77.03951285220246))
+    self.assertEqual(first_point, (38.968002, -77.0271067))
+    self.assertEqual(second_point, (38.96803286410526, -77.02742946731615))
 
   def testPointsSelection(self):
     geo_entity = walk.get_single_sample(self.map)
     if geo_entity is None:
       return
 
-    self.assertEqual(geo_entity.start_point['osmid'], 4696835894)
-    self.assertEqual(geo_entity.end_point['osmid'], 1685776652)
-    self.assertEqual(geo_entity.main_pivot['osmid'], 148753535)
-    self.assertEqual(geo_entity.near_pivot['osmid'], 1685776628)
-    self.assertEqual(geo_entity.beyond_pivot['osmid'], 1704264322)
+    self.assertEqual(geo_entity.start_point['osmid'], 9991360050503)
+    self.assertEqual(geo_entity.end_point['osmid'], 9992975872267)
+    self.assertEqual(geo_entity.main_pivot['osmid'], 9991360050503)
+    self.assertEqual(geo_entity.near_pivot['osmid'], 999739653657)
+    self.assertEqual(geo_entity.intersections, 1)
 
 
 if __name__ == "__main__":

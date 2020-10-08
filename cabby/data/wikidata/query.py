@@ -72,7 +72,7 @@ _PITTSBURGH_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
-_DC_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
+_BALTIMORE_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
           WHERE 
@@ -85,16 +85,17 @@ _DC_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
-            bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
-            bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerWest "Point(-76.6305,39.3362)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-76.6305,39.3362)"^^geo:wktLiteral .
             }
+
           }
           FILTER (?instance  not in
           (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
           wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
           wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
-          GROUP BY ?place ?placeLabel ?wikipediaUrl 
+          GROUP BY ?place ?placeLabel ?wikipediaUrl
         """
 
 
@@ -140,8 +141,8 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
   elif region == "Manhattan":
     query = _MANHATTAN_QUERY
   
-  elif region == "DC":
-    query = _DC_QUERY
+  elif region == "Baltimore":
+    query = _BALTIMORE_QUERY
     
   else:
     raise ValueError(f"{region} is not a supported region.")

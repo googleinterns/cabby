@@ -24,6 +24,7 @@ from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely.ops import transform
 from shapely.geometry import box, mapping, LineString
+import osmnx as ox
 
 from typing import Optional, Tuple, Sequence, Any, Text
 import webbrowser
@@ -310,7 +311,8 @@ def list_xy_from_point(point: Point) -> Sequence[float]:
 
 
 def list_yx_from_point(point: Point) -> Sequence[float]:
-  '''Convert a Point into a sequence, with latitude as first element, and longitude as second.
+  '''Convert a Point into a sequence, with latitude as first element, and 
+  longitude as second.
   Arguments:
     point(Point): A lat-lng point.
   Returns:
@@ -345,6 +347,36 @@ def check_if_geometry_in_polygon(geometry: Any, poly: Polygon) -> Polygon:
     geometry['geometry'].intersects(poly)
 
 
+def get_distance_between_geometries(geometry: Any, point: Point) -> int:
+  '''Calculate the distance between point and polygon in meters.
+  Arguments:
+    route: The line that length calculation will be performed on.
+    point: point to measure distance from polygon.
+  Returns:
+    The distance between point and polygon in meters.
+  '''
+  if isinstance(geometry, Point):
+    return get_distance_between_points(geometry, point)
+  else:
+    return get_polygon_distance_from_point(geometry, point)
+
+def get_polygon_distance_from_point(poly: Polygon, point: Point) -> int:
+  '''Calculate the distance between point and polygon in meters.
+  Arguments:
+    route: The line that length calculation will be performed on.
+    point: point to measure distance from polygon.
+  Returns:
+    The distance between point and polygon in meters.
+  '''
+  dist = 0
+  point_1 =  Point(poly.exterior.coords[0])
+  for coord in poly.exterior.coords[1:]:
+    point_2 = Point(coord)
+    dist += get_distance_between_points(point_1, point_2)
+    point_1 = point_2
+
+  return dist
+
 def get_linestring_distance(line: LineString) -> int:
   '''Calculate the line length in meters.
   Arguments:
@@ -352,19 +384,35 @@ def get_linestring_distance(line: LineString) -> int:
   Returns:
     Line length in meters.
   '''
-  project = partial(
-    pyproj.transform,
-    pyproj.Proj(WGS84_CRS),
-    pyproj.Proj(UTM_CRS))
+  dist = 0
+  point_1 =  Point(line.coords[0])
+  for coord in line.coords[1:]:
+    point_2 = Point(coord)
+    dist += get_distance_between_points(point_1, point_2)
+    point_1 = point_2
 
-  trans_line = transform(project, line)
+  return dist
 
-  return round(trans_line.length)
+def get_distance_between_points(point_1: Point, point_2: Point) -> int:
+  '''Calculate the line length in meters.
+  Arguments:
+    point_1: The point to calculate the distance from.
+    point_2: The point to calculate the distance to.
+  Returns:
+    Distance length in meters.
+  '''
+  
+  dist = ox.distance.great_circle_vec(
+    point_1.y, point_1.x, point_2.y, point_2.x)
+  
+  return dist
+
 
 def point_str_to_shapely_point(point_str: Text) -> Point:
   '''Converts point string to shapely point. 
   Arguments:
-    point_str: The point string to be converted to shapely point. E.g, of string 'Point(-74.037258 40.715865)'.
+    point_str: The point string to be converted to shapely point. E.g, of 
+    string 'Point(-74.037258 40.715865)'.
   Returns:
     A Point.
   '''

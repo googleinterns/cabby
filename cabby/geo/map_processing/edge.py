@@ -20,8 +20,6 @@ from typing import Text, Dict
 
 import attr
 
-OSM_CRS = 32633  # UTM Zones (North).
-
 
 @attr.s
 class Edge:
@@ -55,13 +53,13 @@ class Edge:
     )
 
   @classmethod
-  def from_poi(cls, u_for_edge, v_for_edge, osmid):
+  def from_poi(cls, u_for_edge, v_for_edge, osmid, dist):
     """Construct an Entity from the start and end points, route, and pivots.
     """
     return Edge(
       u_for_edge,
       v_for_edge,
-      1e-8,
+      dist,
       False,
       "poi",
       osmid,
