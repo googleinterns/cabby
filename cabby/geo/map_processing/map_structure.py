@@ -305,9 +305,9 @@ class Map:
     '''
     ""
     if isinstance(geometry, Point):
-      return util.cellid_from_point(geometry, self.level)
+      return util.s2cellid_from_point(geometry, self.level)
     else:
-      return util.cellid_from_polygon(geometry, self.level)
+      return util.s2cellids_from_polygon(geometry, self.level)
 
   def create_S2Graph(self, level: int):
     '''Helper funcion for creating S2Graph.'''
@@ -449,4 +449,3 @@ def convert_string_to_list(string_list: Text) -> Sequence:
   string_list = string_list.split(",")
   map_object = map(int, string_list)
   return list(map_object)
-

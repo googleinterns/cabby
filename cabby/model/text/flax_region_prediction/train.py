@@ -13,25 +13,18 @@
 # limitations under the License.
 
 """Simple text classification example.
-
 This script trains a text classifier on a dataset containing paragraphs that
 are linked to either Manhattan or Pittburgh. This is just to get something
 basic that works for the geo-oriented text problems we are addressing with
 the Rendezvous task.
-
 A sentence is encoded with an LSTM and a binary prediction is made from
 the final LSTM state using an MLP.
-
 The data is loaded from raw text files and converted into TF Records.
-
 Example command line call:
-
 $ bazel-bin/cabby/model/text/train \
   --data_dir ~/data/morp/morp-balanced  \
   --model_dir ~/tmp/morp-model
-
 This code is copied with very few modifications from the Flax SST2 example:
-
 https://github.com/google/flax/tree/master/examples/sst2
 """
 # pylint: disable=import-error,too-many-locals,too-many-arguments
@@ -54,7 +47,7 @@ import numpy as np
 import tensorflow as tf
 tf.config.experimental.set_visible_devices([], "GPU")
 import tensorflow_datasets as tfds
-from tensorflow.io import gfile
+import os 
 
 import input_pipeline
 import model as sst2_model
@@ -376,8 +369,8 @@ def main(argv):
 
   # TODO(mohitreddy): Change to flags.mark_flag_as_required('model_dir').
   assert FLAGS.model_dir is not None, 'Please provide model_dir.'
-  if not gfile.exists(FLAGS.model_dir):
-    gfile.makedirs(FLAGS.model_dir)
+  if not os.path.exists(FLAGS.model_dir):
+    os.mkdir(FLAGS.model_dir)
 
   assert FLAGS.data_dir is not None, 'Please provide data_dir.'
 
