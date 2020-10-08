@@ -13,6 +13,7 @@
 # limitations under the License.
 '''Tests for walk.py'''
 
+
 from cabby.geo.map_processing import map_structure
 from cabby.geo import util
 from cabby.geo import walk
@@ -51,10 +52,10 @@ class WalkTest(unittest.TestCase):
     if geo_entity is None:
       return
 
-    self.assertEqual(geo_entity.start_point['osmid'], 9991360050503)
-    self.assertEqual(geo_entity.end_point['osmid'], 9992975872267)
-    self.assertEqual(geo_entity.main_pivot['osmid'], 9991360050503)
-    self.assertEqual(geo_entity.near_pivot['osmid'], 999739653657)
+    self.assertEqual(geo_entity.start_point['osmid'], 999739653657)
+    self.assertEqual(geo_entity.end_point['osmid'], 9991362253177)
+    self.assertEqual(geo_entity.main_pivot['osmid'], 9992984603460)
+    self.assertEqual(geo_entity.near_pivot['osmid'], 9992975908873)
     self.assertEqual(geo_entity.intersections, 1)
 
 

@@ -38,7 +38,7 @@ def get_region(region: Text):
     polygon_area = box(minx=-77.02767, 
                        miny=38.96608, 
                        maxx=-77.02704, 
-                       maxy=38.96859)
+                       maxy=38.9686)
   else: # Baltimore
     polygon_area = Point(-76.6305,39.3362).buffer(0.0001)
 
