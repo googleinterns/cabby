@@ -38,534 +38,529 @@ _Geo_DataFrame_Driver = "GPKG"
 OSM_CRS = 32633  # UTM Zones (North).
 
 
-def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
-          nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
-  '''Returns the shortest path between a starting and end point.
-  Arguments:
-  start_point(Point): The lat-lng point of the origin point.
-  end_point(Point): The lat-lng point of the destination point.
-  graph(nx.MultiDiGraph): The directed graph class that stores multiedges.
-  nodes(GeoDataFrame): The GeoDataFrame of graph nodes.
-  Returns:
-  A sequence of Points which construct the geometry of the path.
-  '''
+class Walker:
+  def __init__(rand_sample: bool):
+    self.rand_sample = rand_sample
 
-  # Get closest nodes to points.
-  orig = ox.get_nearest_node(graph, util.tuple_from_point(start_point))
-  dest = ox.get_nearest_node(graph, util.tuple_from_point(end_point))
+  def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
+            nodes: GeoDataFrame
+  ) -> Optional[GeoDataFrame]:
+    '''Returns the shortest path between a starting and end point.
+    Arguments:
+    start_point(Point): The lat-lng point of the origin point.
+    end_point(Point): The lat-lng point of the destination point.
+    graph(nx.MultiDiGraph): The directed graph class that stores multiedges.
+    nodes(GeoDataFrame): The GeoDataFrame of graph nodes.
+    Returns:
+    A sequence of Points which construct the geometry of the path.
+    '''
 
-  # Get shortest route.
-  try:
-    route = nx.shortest_path(graph, orig, dest, 'length')
-  except nx.exception.NetworkXNoPath:
-    print("No route found for the start and end points.")
-    return None
-  route_nodes = nodes[nodes['osmid'].isin(route)]
+    # Get closest nodes to points.
+    orig = ox.get_nearest_node(graph, util.tuple_from_point(start_point))
+    dest = ox.get_nearest_node(graph, util.tuple_from_point(end_point))
 
-  # Create the dictionary that defines the order for sorting according to
-  # route order.
-  sorterIndex = dict(zip(route, range(len(route))))
+    # Get shortest route.
+    try:
+      route = nx.shortest_path(graph, orig, dest, 'length')
+    except nx.exception.NetworkXNoPath:
+      print("No route found for the start and end points.")
+      return None
+    route_nodes = nodes[nodes['osmid'].isin(route)]
 
-  # Generate a rank column that will be used to sort
-  # the dataframe numerically
-  route_nodes['sort'] = route_nodes['osmid'].map(sorterIndex)
+    # Create the dictionary that defines the order for sorting according to
+    # route order.
+    sorterIndex = dict(zip(route, range(len(route))))
 
-  route_nodes = route_nodes.sort_values(['sort'])
+    # Generate a rank column that will be used to sort
+    # the dataframe numerically
+    route_nodes['sort'] = route_nodes['osmid'].map(sorterIndex)
 
-  return route_nodes
+    route_nodes = route_nodes.sort_values(['sort'])
 
-
-def get_end_poi(map: map_structure.Map, 
-                rand_sample: bool = False
-                ) -> Optional[GeoSeries]:
-  '''Returns a random POI.
-  Arguments:
-    map: The map of a specific region.
-    rand_sample: whether to sample randomly.
-  Returns:
-    A single POI.
-  '''
-
-  # Filter large POI.
-  small_poi = map.poi[map.poi['s2cellids'].str.len() <= 4]
-
-  if small_poi.shape[0] == 0:
-    return None
-
-  # Pick random POI.
-
-  poi = get_random_sample(small_poi, rand_sample)
-  poi['geometry'] = poi.centroid
-
-  return poi
+    return route_nodes
 
 
-def get_random_sample(
-    df: gpd.GeoDataFrame, rand_sample: bool = False) -> GeoSeries:
-  '''Returns a random\non random 1 sample.
-  Arguments:
-    df: data to sample.
-    rand_sample: whether to sample randomly.
-  Returns:
-    A single sample.
-  '''
-  if rand_sample:
-    return df.sample(1).iloc[0]
-  return df.sample(1, random_state=1).iloc[0]
+  def get_end_poi(map: map_structure.Map
+  ) -> Optional[GeoSeries]:
+    '''Returns a random POI.
+    Arguments:
+      map: The map of a specific region.
+    Returns:
+      A single POI.
+    '''
+
+    # Filter large POI.
+    small_poi = map.poi[map.poi['s2cellids'].str.len() <= 4]
+
+    if small_poi.shape[0] == 0:
+      return None
+
+    # Pick random POI.
+
+    poi = sample_point(small_poi)
+    poi['geometry'] = poi.centroid
+
+    return poi
 
 
-def get_start_poi(
-                  map: map_structure.Map, 
-                  end_point: Dict, 
-                  rand_sample: bool = False
-                  ) -> Optional[GeoSeries]:
-  '''Returns the a random POI within distance of a given POI.
-  Arguments:
-    map: The map of a specific region.
-    end_point: The POI to which the picked POI should be within distance
-    range.
-    rand_sample: whether to sample randomly.
-  Returns:
-    A single POI.
-  '''
-
-  dist = map.poi['centroid'].apply(
-    lambda x: util.get_distance_km(end_point['geometry'], x))
-
-  # Get closest nodes to points.
-  dest = ox.get_nearest_node(
-    map.nx_graph, util.tuple_from_point(end_point['centroid']))
-
-  # Find nodes whithin 2000 meter path distance.
-  outer_circle_graph = ox.truncate.truncate_graph_dist(
-    map.nx_graph, dest, max_dist=2000, weight='length')
-
-  outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
-
-  try:
-    # Get graph that is too close (less than 400 meter path distance)
-    inner_circle_graph = ox.truncate.truncate_graph_dist(
-      map.nx_graph, dest, max_dist=400, weight='length')
-    inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
-
-  except ValueError:  # GeoDataFrame returned empty
-    inner_circle_graph_osmid = []
-
-  osmid_in_range = [
-    osmid for osmid in outer_circle_graph_osmid if osmid not in
-    inner_circle_graph_osmid]
-
-  poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
-
-  # Filter large POI.
-  small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= 4]
-
-  if small_poi.shape[0] == 0:
-    return None
-
-  # Pick random POI.
-  start_point = get_random_sample(small_poi, rand_sample)
-  start_point['geometry'] = start_point.centroid
-  return start_point
+  def sample_point(
+      df: gpd.GeoDataFrame
+  ) -> GeoSeries:
+    '''Returns a random\non random 1 sample of a POI.
+    Arguments:
+      df: data to sample.
+    Returns:
+      A single sample of a POI.
+    '''
+    if self.rand_sample:
+      return df.sample(1).iloc[0]
+    return df.sample(1, random_state=1).iloc[0]
 
 
-def get_landmark_if_tag_exists(gdf: GeoDataFrame, 
-                              tag: Text, main_tag:Text, 
-                              alt_main_tag: Text, 
-                              rand_sample: bool = False
-                              ) -> GeoSeries:
-  '''Check if tag exists, set main tag name and choose pivot.
-  Arguments:
-    gdf: The set of landmarks.
-    tag: tag to check if exists.
-    main_tag: the tag that should be set as the main tag.
-    rand_sample: whether to sample randomly.
-  Returns:
-    A single landmark.
-  '''
-  candidate_landmarks = gdf.columns
-  if tag in candidate_landmarks:
-    pivots = gdf[gdf[tag].notnull()]
-    if pivots.shape[0]:
-      pivots = gdf[gdf[main_tag].notnull()]
-      if main_tag in candidate_landmarks and pivots.shape[0]:
-        pivots = pivots.assign(main_tag=pivots[main_tag])
-        return get_random_sample(pivots, rand_sample)
-      pivots = gdf[gdf[alt_main_tag].notnull()]
-      if alt_main_tag in candidate_landmarks and pivots.shape[0]:
-        pivots = pivots.assign(main_tag=pivots[alt_main_tag])
-        return get_random_sample(pivots, rand_sample)
-  return None
+  def get_start_poi(
+                    map: map_structure.Map, 
+                    end_point: Dict  
+  ) -> Optional[GeoSeries]:
+    '''Returns the a random POI within distance of a given POI.
+    Arguments:
+      map: The map of a specific region.
+      end_point: The POI to which the picked POI should be within distance
+      range.
+    Returns:
+      A single POI.
+    '''
+
+    dist = map.poi['centroid'].apply(
+      lambda x: util.get_distance_km(end_point['geometry'], x))
+
+    # Get closest nodes to points.
+    dest = ox.get_nearest_node(
+      map.nx_graph, util.tuple_from_point(end_point['centroid']))
+
+    # Find nodes whithin 2000 meter path distance.
+    outer_circle_graph = ox.truncate.truncate_graph_dist(
+      map.nx_graph, dest, max_dist=2000, weight='length')
+
+    outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
+
+    try:
+      # Get graph that is too close (less than 400 meter path distance)
+      inner_circle_graph = ox.truncate.truncate_graph_dist(
+        map.nx_graph, dest, max_dist=400, weight='length')
+      inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
+
+    except ValueError:  # GeoDataFrame returned empty
+      inner_circle_graph_osmid = []
+
+    osmid_in_range = [
+      osmid for osmid in outer_circle_graph_osmid if osmid not in
+      inner_circle_graph_osmid]
+
+    poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
+
+    # Filter large POI.
+    small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= 4]
+
+    if small_poi.shape[0] == 0:
+      return None
+
+    # Pick random POI.
+    start_point = sample_point(small_poi)
+    start_point['geometry'] = start_point.centroid
+    return start_point
 
 
-def pick_prominent_pivot(df_pivots: GeoDataFrame) -> Optional[GeoSeries]:
-  '''Select a landmark from a set of landmarks by priority.
-  Arguments:
-    df_pivots: The set of landmarks.
-  Returns:
-    A single landmark.
-  '''
-
-  tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'),
-         ('brand', 'brand'), ('tourism', 'tourism'),
-         ('tourism', 'tourism'), ('amenity', 'amenity'), ('shop', 'shop')
-         ]
-
-  pivot = None
-
-  for main_tag, named_tag in tag_pairs:
-    pivot = get_landmark_if_tag_exists(df_pivots, main_tag, 'name',
-                       named_tag)
-    if pivot is not None:
-      if not isinstance(pivot['geometry'], Point):
-        pivot['geometry'] = pivot['geometry'].centroid
-      return pivot
-
-  return pivot
-
-
-def get_pivot_near_goal(map: map_structure.Map, 
-                        end_point: GeoSeries, 
-                        rand_sample: bool = False
-                        ) -> Optional[GeoSeries]:
-  '''Return a picked landmark near the end_point.
-  Arguments:
-    map: The map of a specific region.
-    end_point: The goal location.
-    rand_sample: whether to sample randomly.
-  Returns:
-    A single landmark near the goal location.
-  '''
-
-  tags = {'name': True, 'wikidata': True,
-      'amenity': True, 'shop': True, 'tourism': True}
-  try:
-    poi = ox.pois.pois_from_point(util.tuple_from_point(
-      end_point['centroid']), tags=tags, dist=40)
-
-  except ValueError:  # GeoDataFrame returned empty
+  def get_landmark_if_tag_exists(gdf: GeoDataFrame, 
+                                tag: Text, main_tag:Text, 
+                                alt_main_tag: Text
+  ) -> GeoSeries:
+    '''Check if tag exists, set main tag name and choose pivot.
+    Arguments:
+      gdf: The set of landmarks.
+      tag: tag to check if exists.
+      main_tag: the tag that should be set as the main tag.
+    Returns:
+      A single landmark.
+    '''
+    candidate_landmarks = gdf.columns
+    if tag in candidate_landmarks:
+      pivots = gdf[gdf[tag].notnull()]
+      if pivots.shape[0]:
+        pivots = gdf[gdf[main_tag].notnull()]
+        if main_tag in candidate_landmarks and pivots.shape[0]:
+          pivots = pivots.assign(main_tag=pivots[main_tag])
+          return sample_point(pivots)
+        pivots = gdf[gdf[alt_main_tag].notnull()]
+        if alt_main_tag in candidate_landmarks and pivots.shape[0]:
+          pivots = pivots.assign(main_tag=pivots[alt_main_tag])
+          return sample_point(pivots)
     return None
 
-  # Remove streets and roads.
-  if 'highway' in poi.columns:
-    poi = poi[poi['highway'].isnull()]
 
-  # Remove the endpoint.
-  nearby_poi = poi[poi['osmid'] != end_point['osmid']]
+  def pick_prominent_pivot(df_pivots: GeoDataFrame
+  ) -> Optional[GeoSeries]:
+    '''Select a landmark from a set of landmarks by priority.
+    Arguments:
+      df_pivots: The set of landmarks.
+    Returns:
+      A single landmark.
+    '''
 
-  prominent_poi = pick_prominent_pivot(nearby_poi)
+    tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'),
+          ('brand', 'brand'), ('tourism', 'tourism'),
+          ('tourism', 'tourism'), ('amenity', 'amenity'), ('shop', 'shop')
+          ]
 
-  return prominent_poi
+    pivot = None
 
+    for main_tag, named_tag in tag_pairs:
+      pivot = get_landmark_if_tag_exists(df_pivots, main_tag, 'name',
+                        named_tag)
+      if pivot is not None:
+        if not isinstance(pivot['geometry'], Point):
+          pivot['geometry'] = pivot['geometry'].centroid
+        return pivot
 
-def get_pivot_along_route(
-    route: GeoDataFrame, map: map_structure.Map, rand_sample: bool = False) -> \
-    Optional[GeoSeries]:
-  '''Return a picked landmark on a given route.
-  Arguments:
-    route: The route along which a landmark will be chosen.
-    map: The map of a specific region.
-    rand_sample: whether to sample randomly.
-  Returns:
-    A single landmark. '''
-
-  # Get POI along the route.
-  points_route = route['geometry'].tolist()
-
-  poly = Polygon(points_route).buffer(0.0001)
-  bounds = poly.bounds
-  bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
-  tags = {'wikipedia': True, 'wikidata': True, 'brand': True,
-      'tourism': True, 'amenity': True, 'shop': True, 'name': True}
-  try:
-    df_pivots = ox.pois.pois_from_polygon(bounding_box, tags=tags)
-  except ValueError:  # GeoDataFrame returned empty
-    return None
-
-  # Polygon along the route.
-  df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
-
-  # Remove streets.
-  if 'highway' in df_pivots.columns:
-    df_pivots = df_pivots[(df_pivots['highway'].isnull())]
-
-  main_pivot = pick_prominent_pivot(df_pivots)
-  return main_pivot
+    return pivot
 
 
-def get_pivot_beyond_goal(map: map_structure.Map, 
-                          end_point: GeoSeries,
-                          route: GeoDataFrame, 
-                          rand_sample: bool = False
-                          ) -> Optional[GeoSeries]:
-  '''Return a picked landmark on a given route.
-  Arguments:
-    map: The map of a specific region.
-    end_point: The goal location.
-    route: The route along which a landmark will be chosen.
-    rand_sample: whether to sample randomly.
-  Returns:
-    A single landmark. '''
+  def get_pivot_near_goal(map: map_structure.Map, 
+                          end_point: GeoSeries
+  ) -> Optional[GeoSeries]:
+    '''Return a picked landmark near the end_point.
+    Arguments:
+      map: The map of a specific region.
+      end_point: The goal location.
+    Returns:
+      A single landmark near the goal location.
+    '''
 
-  if route.shape[0] < 2:
-    # Return Empty.
-    return GeoDataFrame(index=[0], columns=map.nodes.columns).iloc[0]
+    tags = {'name': True, 'wikidata': True,
+        'amenity': True, 'shop': True, 'tourism': True}
+    try:
+      poi = ox.pois.pois_from_point(util.tuple_from_point(
+        end_point['centroid']), tags=tags, dist=40)
 
-  last_node_in_route = route.iloc[-1]
-  before_last_node_in_route = route.iloc[-2]
+    except ValueError:  # GeoDataFrame returned empty
+      return None
 
-  street_beyond_route = map.edges[
-    (map.edges['u'] == last_node_in_route['osmid'])
-    & (map.edges['v'] == before_last_node_in_route['osmid'])
-  ]
-  if street_beyond_route.shape[0] == 0:
-    # Return Empty.
-    return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+    # Remove streets and roads.
+    if 'highway' in poi.columns:
+      poi = poi[poi['highway'].isnull()]
 
-  street_beyond_osmid = street_beyond_route['osmid'].iloc[0]
+    # Remove the endpoint.
+    nearby_poi = poi[poi['osmid'] != end_point['osmid']]
 
-  # Change OSMID to key
-  segment_beyond_path = ((last_node_in_route['osmid'] == map.edges['u'])
-               & (before_last_node_in_route['osmid'] !=
-                map.edges['v']))
-  condition_street_id = map.edges['osmid'].apply(
-    lambda x: x == street_beyond_osmid)
-  last_line = map.edges[condition_street_id
-              & segment_beyond_path]
+    prominent_poi = pick_prominent_pivot(nearby_poi)
 
-  if last_line.shape[0] == 0:
-    # Return Empty.
-    return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
-
-  last_line_max = last_line[last_line['length'] ==
-                last_line['length'].max()].iloc[0]
-
-  poly = last_line_max['geometry'].buffer(0.0001)
-  bounds = poly.bounds
-  bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
-  try:
-
-    df_pivots = ox.pois.pois_from_polygon(
-      bounding_box, tags={"name": True})
-
-  except ValueError:  # GeoDataFrame returned empty
-    # Return Empty.
-    return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
-
-  df_pivots = df_pivots.set_crs(epsg=OSM_CRS, allow_override=True)
-  # Remove streets.
-  if 'highway' in df_pivots.columns:
-    df_pivots = df_pivots[(df_pivots['highway'].isnull())]
-
-  # Remove invalid geometry.
-  df_pivots = df_pivots[(df_pivots['geometry'].is_valid)]
-  if df_pivots.shape[0] == 0:
-    # Return Empty.
-    return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
-
-  # Remove the route area.
-
-  points_route = route['geometry'].tolist()
-
-  poly_route = Polygon(points_route).buffer(0.0001)
-
-  route_endpoint_points = [last_node_in_route["geometry"],
-               end_point['centroid'],
-               last_node_in_route["geometry"]]
-  route_to_endpoint = Polygon(route_endpoint_points).buffer(0.0001)
-
-  poly_route_with_end = poly_route.union(route_to_endpoint)
-
-  df_pivots = df_pivots[df_pivots.apply(lambda x:
-                      not util.check_if_geometry_in_polygon(
-                        x, poly_route_with_end),
-                      axis=1)]
-
-  if df_pivots.shape[0] == 0:
-    # Return Empty.
-    return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
-
-  # Remove the end_point.
-  df_pivots = df_pivots[df_pivots['geometry'] != end_point['geometry']]
-  beyond_pivot = pick_prominent_pivot(df_pivots)
-
-  if beyond_pivot is None:
-    # Return Empty.
-    return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
-
-  return beyond_pivot
+    return prominent_poi
 
 
-def get_pivots(route: GeoDataFrame,
-         map: map_structure.Map,
-         end_point: Dict,
-         rand_sample: bool = False
-         ) -> Optional[Tuple[GeoSeries, GeoSeries, GeoSeries]]:
-  '''Return a picked landmark on a given route.
-  Arguments:
-    route: The route along which a landmark will be chosen.
-    map: The map of a specific region.
-    end_point: The goal location.
-    rand_sample: whether to sample randomly.
-  Returns:
-    A single landmark.
-  '''
+  def get_pivot_along_route(
+      route: GeoDataFrame, map: map_structure.Map
+  ) -> Optional[GeoSeries]:
+    '''Return a picked landmark on a given route.
+    Arguments:
+      route: The route along which a landmark will be chosen.
+      map: The map of a specific region.
+    Returns:
+      A single landmark. '''
 
-  # Get pivot along the goal location.
-  main_pivot = get_pivot_along_route(route, map, rand_sample)
-  if main_pivot is None:
-    return None
+    # Get POI along the route.
+    points_route = route['geometry'].tolist()
 
-  # Get pivot near the goal location.
-  near_pivot = get_pivot_near_goal(map, end_point, rand_sample)
+    poly = Polygon(points_route).buffer(0.0001)
+    bounds = poly.bounds
+    bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
+    tags = {'wikipedia': True, 'wikidata': True, 'brand': True,
+        'tourism': True, 'amenity': True, 'shop': True, 'name': True}
+    try:
+      df_pivots = ox.pois.pois_from_polygon(bounding_box, tags=tags)
+    except ValueError:  # GeoDataFrame returned empty
+      return None
 
-  if near_pivot is None:
-    return None
+    # Polygon along the route.
+    df_pivots = df_pivots[df_pivots['geometry'].intersects(poly)]
 
-  # Get pivot located past the goal location and beyond the route.
-  beyond_pivot = get_pivot_beyond_goal(map, end_point, route, rand_sample)
+    # Remove streets.
+    if 'highway' in df_pivots.columns:
+      df_pivots = df_pivots[(df_pivots['highway'].isnull())]
 
-  return main_pivot, near_pivot, beyond_pivot
-
-
-def get_cardinal_direction(start_point: Point, end_point: Point) -> Text:
-  '''Calculate the cardinal direction between start and and points.
-  Arguments:
-    start_point: The starting point.
-    end_point: The end point.
-  Returns:
-    A cardinal direction.
-  '''
-  azim = util.get_bearing(start_point, end_point)
-  if azim < 10 or azim > 350:
-    cardinal = 'North'
-  elif azim < 80:
-    cardinal = 'North-East'
-  elif azim > 280:
-    cardinal = 'North-West'
-  elif azim < 100:
-    cardinal = 'West'
-  elif azim < 170:
-    cardinal = 'South-East'
-  elif azim < 190:
-    cardinal = 'South'
-  elif azim < 260:
-    cardinal = 'South-West'
-  else:  # azim < 280:
-    cardinal = 'West'
-  return cardinal
+    main_pivot = pick_prominent_pivot(df_pivots)
+    return main_pivot
 
 
-def get_number_intersections_past(main_pivot: GeoSeries, route: GeoDataFrame,
-                  map: map_structure.Map, end_point: Point) -> int:
-  '''Return the number of intersections between the main_pivot and goal. 
-  Arguments:
-    main_pivot: The pivot along the route.
-    route: The route along which a landmark will be chosen.
-    map: The map of a specific region.
-    end_point: The goal location.
-  Returns:
-    The number of intersections between the main_pivot and goal. 
-    If the main_pivot and goal are on different streets return -1.
-  '''
-  dist = route['geometry'].apply(
-    lambda x: x.distance(main_pivot['geometry']))
-  pivot_idx = dist.idxmin().tolist()
-  pivot_goal_route = route.loc[pivot_idx:]
+  def get_pivot_beyond_goal(map: map_structure.Map, 
+                            end_point: GeoSeries,
+                            route: GeoDataFrame, 
+  ) -> Optional[GeoSeries]:
+    '''Return a picked landmark on a given route.
+    Arguments:
+      map: The map of a specific region.
+      end_point: The goal location.
+      route: The route along which a landmark will be chosen.
+    Returns:
+      A single landmark. '''
 
-  if pivot_goal_route.shape[0] <= 1:
-    return -1
+    if route.shape[0] < 2:
+      # Return Empty.
+      return GeoDataFrame(index=[0], columns=map.nodes.columns).iloc[0]
 
-  # Check if main pivot is in the pivot_goal_route segment.
-  segment_pivot = LineString(pivot_goal_route['geometry'].iloc[0:2].values)
-  number_intersection = -util.project_point_in_segment(
-    segment_pivot, main_pivot['geometry'])
+    last_node_in_route = route.iloc[-1]
+    before_last_node_in_route = route.iloc[-2]
 
-  # Check if main end point is in the pivot_goal_route segment.
-  segment_goal = LineString(pivot_goal_route['geometry'].iloc[-2:].values)
-  number_intersection -= util.project_point_in_segment(
-    segment_goal, end_point['centroid'])
+    street_beyond_route = map.edges[
+      (map.edges['u'] == last_node_in_route['osmid'])
+      & (map.edges['v'] == before_last_node_in_route['osmid'])
+    ]
+    if street_beyond_route.shape[0] == 0:
+      # Return Empty.
+      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
-  # Check if goal and pivot are on the same street.
-  edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(
-    lambda x: set(map.edges[map.edges['u'] == x]['osmid'].tolist()))
+    street_beyond_osmid = street_beyond_route['osmid'].iloc[0]
 
-  pivot_streets = edges_in_pivot_goal_route.iloc[0]
-  goal_streets = edges_in_pivot_goal_route.iloc[-1]
-  common_streets = pivot_streets & goal_streets
-  if not common_streets:
-    return -1
+    # Change OSMID to key
+    segment_beyond_path = ((last_node_in_route['osmid'] == map.edges['u'])
+                & (before_last_node_in_route['osmid'] !=
+                  map.edges['v']))
+    condition_street_id = map.edges['osmid'].apply(
+      lambda x: x == street_beyond_osmid)
+    last_line = map.edges[condition_street_id
+                & segment_beyond_path]
 
-  number_intersection += edges_in_pivot_goal_route.apply(
-    lambda x: len(x - common_streets) > 0).count()
+    if last_line.shape[0] == 0:
+      # Return Empty.
+      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
-  if number_intersection <= 0:
-    return -1
+    last_line_max = last_line[last_line['length'] ==
+                  last_line['length'].max()].iloc[0]
 
-  return number_intersection
+    poly = last_line_max['geometry'].buffer(0.0001)
+    bounds = poly.bounds
+    bounding_box = box(bounds[0], bounds[1], bounds[2], bounds[3])
+    try:
+
+      df_pivots = ox.pois.pois_from_polygon(
+        bounding_box, tags={"name": True})
+
+    except ValueError:  # GeoDataFrame returned empty
+      # Return Empty.
+      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+
+    df_pivots = df_pivots.set_crs(epsg=OSM_CRS, allow_override=True)
+    # Remove streets.
+    if 'highway' in df_pivots.columns:
+      df_pivots = df_pivots[(df_pivots['highway'].isnull())]
+
+    # Remove invalid geometry.
+    df_pivots = df_pivots[(df_pivots['geometry'].is_valid)]
+    if df_pivots.shape[0] == 0:
+      # Return Empty.
+      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+
+    # Remove the route area.
+
+    points_route = route['geometry'].tolist()
+
+    poly_route = Polygon(points_route).buffer(0.0001)
+
+    route_endpoint_points = [last_node_in_route["geometry"],
+                end_point['centroid'],
+                last_node_in_route["geometry"]]
+    route_to_endpoint = Polygon(route_endpoint_points).buffer(0.0001)
+
+    poly_route_with_end = poly_route.union(route_to_endpoint)
+
+    df_pivots = df_pivots[df_pivots.apply(lambda x:
+                        not util.check_if_geometry_in_polygon(
+                          x, poly_route_with_end),
+                        axis=1)]
+
+    if df_pivots.shape[0] == 0:
+      # Return Empty.
+      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+
+    # Remove the end_point.
+    df_pivots = df_pivots[df_pivots['geometry'] != end_point['geometry']]
+    beyond_pivot = pick_prominent_pivot(df_pivots)
+
+    if beyond_pivot is None:
+      # Return Empty.
+      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+
+    return beyond_pivot
 
 
-def get_single_sample(map: map_structure.Map, 
-                      rand_sample: bool = False
-                      ) -> Optional[item.RVSPath]:
-  '''Sample start and end point, a pivot landmark and route.
-  Arguments:
-    map: The map of a specific region.
-    rand_sample: whether to sample randomly.
-  Returns:
-    A start and end point, a pivot landmark and route.
-  '''
+  def get_pivots(route: GeoDataFrame,
+          map: map_structure.Map,
+          end_point: Dict,
+  ) -> Optional[Tuple[GeoSeries, GeoSeries, GeoSeries]]:
+    '''Return a picked landmark on a given route.
+    Arguments:
+      route: The route along which a landmark will be chosen.
+      map: The map of a specific region.
+      end_point: The goal location.
+    Returns:
+      A single landmark.
+    '''
 
-  # Select end point.
-  end_point = get_end_poi(map, rand_sample)
-  if end_point is None:
-    return None
+    # Get pivot along the goal location.
+    main_pivot = get_pivot_along_route(route, map)
+    if main_pivot is None:
+      return None
 
-  # Select start point.
-  start_point = get_start_poi(map, end_point, rand_sample)
-  if start_point is None:
-    return None
+    # Get pivot near the goal location.
+    near_pivot = get_pivot_near_goal(map, end_point)
 
-  # Compute route between start and end points.
-  route = compute_route(
-    start_point['geometry'], end_point['geometry'], map.nx_graph, map.nodes)
-  if route is None:
-    return None
+    if near_pivot is None:
+      return None
 
-  # Select pivots.
-  result = get_pivots(route, map, end_point, rand_sample)
-  if result is None:
-    return None
-  main_pivot, near_pivot, beyond_pivot = result
+    # Get pivot located past the goal location and beyond the route.
+    beyond_pivot = get_pivot_beyond_goal(map, end_point, route)
 
-  # Get cardinal direction.
-  cardinal_direction = get_cardinal_direction(
-    start_point['geometry'], end_point['geometry'])
+    return main_pivot, near_pivot, beyond_pivot
 
-  # Get number of intersections between main pivot and goal location.
-  intersections = get_number_intersections_past(
-    main_pivot, route, map, end_point)
 
-  rvs_path_entity = item.RVSPath.from_points_route_pivots(start_point,
-                              end_point,
-                              route,
-                              main_pivot,
-                              near_pivot,
-                              beyond_pivot,
-                              cardinal_direction,
-                              intersections)
+  def get_cardinal_direction(start_point: Point, end_point: Point
+  ) -> Text:
+    '''Calculate the cardinal direction between start and and points.
+    Arguments:
+      start_point: The starting point.
+      end_point: The end point.
+    Returns:
+      A cardinal direction.
+    '''
+    azim = util.get_bearing(start_point, end_point)
+    if azim < 10 or azim > 350:
+      cardinal = 'North'
+    elif azim < 80:
+      cardinal = 'North-East'
+    elif azim > 280:
+      cardinal = 'North-West'
+    elif azim < 100:
+      cardinal = 'West'
+    elif azim < 170:
+      cardinal = 'South-East'
+    elif azim < 190:
+      cardinal = 'South'
+    elif azim < 260:
+      cardinal = 'South-West'
+    else:  # azim < 280:
+      cardinal = 'West'
+    return cardinal
 
-  return rvs_path_entity
+
+  def get_number_intersections_past(main_pivot: GeoSeries, route: GeoDataFrame,
+                    map: map_structure.Map, end_point: Point
+  ) -> int:
+    '''Return the number of intersections between the main_pivot and goal. 
+    Arguments:
+      main_pivot: The pivot along the route.
+      route: The route along which a landmark will be chosen.
+      map: The map of a specific region.
+      end_point: The goal location.
+    Returns:
+      The number of intersections between the main_pivot and goal. 
+      If the main_pivot and goal are on different streets return -1.
+    '''
+    dist = route['geometry'].apply(
+      lambda x: x.distance(main_pivot['geometry']))
+    pivot_idx = dist.idxmin().tolist()
+    pivot_goal_route = route.loc[pivot_idx:]
+
+    if pivot_goal_route.shape[0] <= 1:
+      return -1
+
+    # Check if main pivot is in the pivot_goal_route segment.
+    segment_pivot = LineString(pivot_goal_route['geometry'].iloc[0:2].values)
+    number_intersection = -util.project_point_in_segment(
+      segment_pivot, main_pivot['geometry'])
+
+    # Check if main end point is in the pivot_goal_route segment.
+    segment_goal = LineString(pivot_goal_route['geometry'].iloc[-2:].values)
+    number_intersection -= util.project_point_in_segment(
+      segment_goal, end_point['centroid'])
+
+    # Check if goal and pivot are on the same street.
+    edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(
+      lambda x: set(map.edges[map.edges['u'] == x]['osmid'].tolist()))
+
+    pivot_streets = edges_in_pivot_goal_route.iloc[0]
+    goal_streets = edges_in_pivot_goal_route.iloc[-1]
+    common_streets = pivot_streets & goal_streets
+    if not common_streets:
+      return -1
+
+    number_intersection += edges_in_pivot_goal_route.apply(
+      lambda x: len(x - common_streets) > 0).count()
+
+    if number_intersection <= 0:
+      return -1
+
+    return number_intersection
+
+
+  def get_single_sample(map: map_structure.Map, 
+  ) -> Optional[item.RVSPath]:
+    '''Sample start and end point, a pivot landmark and route.
+    Arguments:
+      map: The map of a specific region.
+    Returns:
+      A start and end point, a pivot landmark and route.
+    '''
+
+    # Select end point.
+    end_point = get_end_poi(map)
+    if end_point is None:
+      return None
+
+    # Select start point.
+    start_point = get_start_poi(map, end_point)
+    if start_point is None:
+      return None
+
+    # Compute route between start and end points.
+    route = compute_route(
+      start_point['geometry'], end_point['geometry'], map.nx_graph, map.nodes)
+    if route is None:
+      return None
+
+    # Select pivots.
+    result = get_pivots(route, map, end_point)
+    if result is None:
+      return None
+    main_pivot, near_pivot, beyond_pivot = result
+
+    # Get cardinal direction.
+    cardinal_direction = get_cardinal_direction(
+      start_point['geometry'], end_point['geometry'])
+
+    # Get number of intersections between main pivot and goal location.
+    intersections = get_number_intersections_past(
+      main_pivot, route, map, end_point)
+
+    rvs_path_entity = item.RVSPath.from_points_route_pivots(start_point,
+                                end_point,
+                                route,
+                                main_pivot,
+                                near_pivot,
+                                beyond_pivot,
+                                cardinal_direction,
+                                intersections)
+
+    return rvs_path_entity
 
 
 def generate_and_save_rvs_routes(path: Text, 
                                 map: map_structure.Map, 
-                                n_samples:int):
+                                n_samples: int,
+                                sample_rand: bool = True):
   '''Sample start and end point, a pivot landmark and route and save to file.
   Arguments:
     path: The path to which the data will be appended.
     map: The map of a specific region.
     n_samples: the max number of samples to generate.
+    rand_sample: whether to sample randomly.
   '''
   gdf_start_list = gpd.GeoDataFrame(
     columns=['osmid', 'geometry', 'main_tag'])
@@ -581,10 +576,9 @@ def generate_and_save_rvs_routes(path: Text,
     columns=['osmid', 'geometry', 'main_tag'])
 
   counter = 0
-  if n_samples > 1:
-    sample_rand = True
+  walker = Walker(sample_rand)
   while counter < n_samples:
-    entity = get_single_sample(map, sample_rand)
+    entity = walker.get_single_sample(map)
     if entity is None:
       continue
     counter += 1
