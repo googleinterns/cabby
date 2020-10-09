@@ -25,7 +25,7 @@ class WikipediaTest(unittest.TestCase):
     output = query.get_wikipedia_items(
       ['New_York_Stock_Exchange', 'Empire_State_Building'])
     expected = 'The New York Stock Exchange'
-    self.assertIn(expected, output[0]['21560']['extract'])
+    self.assertIn(expected, output[0][0]['extract'])
 
   def testBacklinksItems(self):
     # Test backlinks Wikipedia query for items.

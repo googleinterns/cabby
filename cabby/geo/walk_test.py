@@ -21,7 +21,6 @@ import unittest
 from shapely.geometry.point import Point
 import sys
 
-
 class WalkTest(unittest.TestCase):
 
   @classmethod
@@ -29,11 +28,13 @@ class WalkTest(unittest.TestCase):
 
     # Load map from disk.
     cls.map = map_structure.Map("DC", 18)
+    cls.walker = walk.Walker(rand_sample = True)
+
 
   def testRouteCalculation(self):
     start_point = Point(-77.03994, 38.90842)
     end_point = Point(-77.03958, 38.90830)
-    route = walk.compute_route(start_point, end_point, self.map.
+    route = self.walker.compute_route(start_point, end_point, self.map.
                    nx_graph, self.map.nodes)
 
     # Check the size of the route.
@@ -46,13 +47,13 @@ class WalkTest(unittest.TestCase):
     self.assertEqual(second_point, (38.90839802058633, -77.03951285220246))
 
   def testPointsSelection(self):
-    geo_entity = walk.get_single_sample(self.map)
+    geo_entity = self.walker.get_single_sample(self.map)
     if geo_entity is None:
       return
 
-    self.assertEqual(geo_entity.start_point['osmid'], 4696835894)
+    self.assertEqual(geo_entity.start_point['osmid'], 4807313221)
     self.assertEqual(geo_entity.end_point['osmid'], 1685776652)
-    self.assertEqual(geo_entity.main_pivot['osmid'], 148753535)
+    self.assertEqual(geo_entity.main_pivot['osmid'], 5552755847)
     self.assertEqual(geo_entity.near_pivot['osmid'], 1685776628)
     self.assertEqual(geo_entity.beyond_pivot['osmid'], 1704264322)
 
