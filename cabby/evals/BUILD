@@ -27,5 +27,7 @@ py_binary(
     srcs = ['eval_geo_model.py'],
     deps = [
         ":utils",
+        "//cabby:logger",
+        "//cabby/model/text/s2cellid_prediction:train",
     ],
 )
