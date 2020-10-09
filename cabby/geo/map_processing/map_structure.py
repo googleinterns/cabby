@@ -103,10 +103,10 @@ class Map:
     '''
 
     tags = {'name': True,
-        'building': True,
-        'amenity': True,
-        'wikidata': True,
-        'wikipedia': True}
+            'building': True,
+            'amenity': True,
+            'wikidata': True,
+            'wikipedia': True}
 
     osm_poi = ox.pois.pois_from_polygon(self.polygon_area, tags=tags)
     osm_poi = osm_poi.set_crs(epsg=OSM_CRS, allow_override=True)

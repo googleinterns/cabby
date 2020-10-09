@@ -36,6 +36,7 @@ import sys
 
 _Geo_DataFrame_Driver = "GPKG"
 OSM_CRS = 32633  # UTM Zones (North).
+SMALL_POI = 4 # Less than 4 S2Cellids.
 
 
 def compute_route(start_point: Point, end_point: Point, graph: nx.MultiDiGraph,
@@ -86,7 +87,7 @@ def get_end_poi(map: map_structure.Map) -> Optional[GeoSeries]:
   named_poi = map.poi[map.poi['name'].notnull()]
 
   # Filter large POI.
-  small_poi = named_poi[named_poi['s2cellids'].str.len() <= 4]
+  small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
 
   if small_poi.shape[0] == 0:
     return None
@@ -141,7 +142,7 @@ def get_start_poi(
   named_poi = poi_in_ring[poi_in_ring['name'].notnull()]
 
   # Filter large POI.
-  small_poi = named_poi[named_poi['s2cellids'].str.len() <= 4]
+  small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
 
   if small_poi.shape[0] == 0:
     return None
