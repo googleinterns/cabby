@@ -24,6 +24,10 @@ from cabby import logger
 EvalDataTuple = collections.namedtuple(
   "EvalDataTuple",
   ["example_id", "true_lat", "true_lng", "predicted_lat", "predicted_lng"])
+# Object for evaluation metrics.
+EvalMetrics = collections.namedtuple(
+  "EvalMetrics",
+  ["accuracy", "mean_distance", "median_distance", "max_error", "norm_auc"])
 # 20039 kms is half of earth's circumference (max. great circle distance)
 _MAX_LOG_HAVERSINE_DIST = np.log(20039 * 1000)  # in meters.
 _EPSILON = 1e-5
@@ -40,13 +44,13 @@ class Evaluator:
   def get_error_distances(self, input_file):
     """Compute error distance in meters between true and predicted coordinates.
 
-              Args:
-                  input_file: TSV file containing example_id and true and
-                      predicted co-ordinates. One example per line.
-                  eval_logger: Logger object.
+        Args:
+        input_file: TSV file containing example_id and true and
+          predicted co-ordinates. One example per line.
+        eval_logger: Logger object.
 
-              Returns:
-                  Array of distance error - one per example.
+        Returns:
+        Array of distance error - one per example.
     """
     error_distances = []
     total_examples = 0
@@ -70,16 +74,17 @@ class Evaluator:
   def compute_metrics(self, error_distances):
     """Compute distance error metrics given an array of error distances.
 
-              Args:
-                  error_distances: Array of distance errors.
-                  eval_logger: Logger object.
+        Args:
+        error_distances: Array of distance errors.
+        eval_logger: Logger object.
     """
     num_examples = len(error_distances)
     if num_examples == 0:
       self.eval_logger.error("No examples to be evaluated.")
-    accuracy = len(np.where(error_distances == 0.)[0]) / num_examples
-    mean_distance, median_distance = np.mean(error_distances), np.median(
-      error_distances)
+    accuracy = float(
+      len(np.where(np.array(error_distances) == 0.)[0])) / num_examples
+    mean_distance, median_distance, max_error = np.mean(error_distances), np.median(
+      error_distances), np.max(error_distances)
     log_distance = np.sort(
       np.log(error_distances + np.ones_like(error_distances) * _EPSILON))
     # AUC for the distance errors curve. Smaller the better.
@@ -90,5 +95,8 @@ class Evaluator:
 
     self.eval_logger.info(
       "Metrics: \nExact accuracy : [%.2f]\nmean error [%.2f], " +
-      "\nmedian error [%.2f]\nAUC of error curve [%.2f]", accuracy,
-      mean_distance, median_distance, norm_auc)
+      "\nmedian error [%.2f]\nmax error [%.2f]\n" +
+      "AUC of error curve [%.2f]", accuracy,
+      mean_distance, median_distance, max_error, norm_auc)
+    return EvalMetrics(accuracy,
+               mean_distance, median_distance, max_error, norm_auc)

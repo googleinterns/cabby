@@ -39,7 +39,7 @@ def main(argv):
   del argv  # Unused.
   evaluator = utils.Evaluator()
   error_distances = evaluator.get_error_distances(FLAGS.input_file)
-  evaluator.compute_metrics(error_distances)
+  _ = evaluator.compute_metrics(error_distances)
 
 
 if __name__ == "__main__":

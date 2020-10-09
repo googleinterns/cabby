@@ -15,6 +15,7 @@ py_test(
     name = 'utils_test',
     srcs = ['utils_test.py'],
     python_version = 'PY3',
+    data = glob(["testdata/**"])
     deps = [
         ":utils",
     ],

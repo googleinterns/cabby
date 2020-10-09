@@ -22,12 +22,26 @@ class UtilsTest(unittest.TestCase):
 
   def setUp(self):
     self.evaluator = utils.Evaluator()
-    self.test_eval_input = "testdata/sample_test_evals.tsv"
+    self.test_eval_input = "cabby/evals/testdata/sample_test_evals.tsv"
+
+  def assertListAlmostEqual(self, list1, list2, tol=2):
+    self.assertEqual(len(list1), len(list2))
+    for a, b in zip(list1, list2):
+      self.assertAlmostEqual(a, b, tol)
 
   def testErrorDistances(self):
     actual_errors = self.evaluator.get_error_distances(
       self.test_eval_input)
-    self.assertEqual(actual_errors, [0, 0, 0, 0, 0])
+    self.assertListAlmostEqual(
+      actual_errors, [62259.67, 58923.88, 0.0, 1854892.25, 69314.61])
+
+  def testComputeMetrics(self):
+    actual_metrics = self.evaluator.compute_metrics([10, 50, 20, 0, 30])
+    self.assertAlmostEqual(actual_metrics.accuracy, 0.2, 2)
+    self.assertAlmostEqual(actual_metrics.mean_distance, 22.0, 2)
+    self.assertAlmostEqual(actual_metrics.median_distance, 20.0, 2)
+    self.assertAlmostEqual(actual_metrics.max_error, 50.0, 2)
+    self.assertAlmostEqual(actual_metrics.norm_auc, 0.07, 2)
 
 
 if __name__ == "__main__":
