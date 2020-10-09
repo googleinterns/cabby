@@ -18,7 +18,7 @@ py_binary(
     main = 'train.py',
     srcs = ['train.py'],
     deps = [
-
+          "//cabby/geo:util",
     ],
 )
 

@@ -37,6 +37,10 @@ flags.mark_flag_as_required("input_file")
 
 def main(argv):
   del argv  # Unused.
+
+  # First load the evaluation output from .pt file
+  # Generate intermediate TSV file.
+  
   evaluator = utils.Evaluator()
   error_distances = evaluator.get_error_distances(FLAGS.input_file)
   _ = evaluator.compute_metrics(error_distances)
