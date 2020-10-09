@@ -29,7 +29,6 @@ from cabby.data import extract
 from cabby.geo import regions
 
 
-FLAGS = flags.FLAGSs
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
   "region", None, regions.ALLOWED_REGIONS,
