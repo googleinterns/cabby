@@ -69,9 +69,9 @@ py_binary(
 
 
 py_binary(
-    name = 'extract_wikigeo_contexts_expansive',
-    main = 'extract_wikigeo_contexts_expansive.py',
-    srcs = ['extract_wikigeo_contexts_expansive.py'],
+    name = 'extract_wikigeo_contexts_with_osm',
+    main = 'extract_wikigeo_contexts_with_osm.py',
+    srcs = ['extract_wikigeo_contexts_with_osm.py'],
     deps = [
         ':extract',
          ":osm_item",

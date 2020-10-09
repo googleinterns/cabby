@@ -82,11 +82,11 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> List:
 
 
 def get_data_by_qid(qid: Text) -> Sequence:
-  '''Get data from Wikipedia and Wikidata by region" 
+  '''Get data from Wikipedia and Wikidata by region. 
   Arguments:
     qid(Text): The qid of the Wikidata to extract items from.
   Returns:
-    The Wikipedia (text,title) and Wikidata (location) data found.
+    The Wikipedia (text, title) and Wikidata (location) data found.
   '''
 
   # Get Wikidata items by region.
@@ -113,7 +113,7 @@ def get_data_by_region(region: Text) -> Sequence:
   return get_wikigeo_data(wikidata_items)
 
 
-def get_data_by_region_expansive(region: Text, path_osm: Text) -> Sequence:
+def get_data_by_region_with_osm(region: Text, path_osm: Text) -> Sequence:
   '''Get three types of samples by region: (1) samples from Wikipedia(text,title) and Wikidata(location); (2) Concatenation of Wikidata tags; (3) Concatenation of OSM tags. 
   Arguments:
     region(Text): The region to extract items from.
@@ -165,7 +165,7 @@ def get_data_by_region_expansive(region: Text, path_osm: Text) -> Sequence:
 def split_dataset(
     dataset: Sequence, percentage_train: float, percentage_dev: float):
   '''Splits the dataset into train-set, dev-set, test-set according to the 
-  ref_qid" 
+  ref_qid." 
   Arguments:
     percentage_train(float in [0,1]): percentage of the train-set.
     percentage_dev(float in [0,1]): percentage of the dev-set.

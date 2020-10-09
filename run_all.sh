@@ -19,4 +19,4 @@ bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles=New_York_Stock_E
 
 # Wikigeo
 bazel-bin/cabby/data/extract_wikigeo_contexts --region DC --path dc.json
-bazel-bin/cabby/data/extract_wikigeo_contexts_expansive --region DC --save_path dc.json --osm_path  "./cabby/geo/map_processing/poiTestData/dc_poi.pkl"
+bazel-bin/cabby/data/extract_wikigeo_contexts_with_osm --region DC --save_path dc.json --osm_path  "./cabby/geo/map_processing/poiTestData/dc_poi.pkl"
