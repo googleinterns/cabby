@@ -23,6 +23,15 @@ The input_file is expected to be a tab-separated file with:
   predicted_latitude
   predicted_longitude
 Any lines which do not comply to this format will be skipped.
+
+Alternately it can read from a pytorch state dictionaries with:
+  true_points_list
+  pred_points_list
+
+$ bazel run -- cabby/evals/eval_geo_model \
+  --input_file /mnt/hackney/data/cabby/evals/metrics.pt \
+  --preprocess_pytorch_output=true
+
 """
 
 from absl import app, flags

@@ -68,7 +68,6 @@ class Evaluator:
       total_examples += 1
       if total_examples % 100 == 0:
         self.eval_logger.info("Processed [%d]", total_examples)
-    self.eval_logger.debug(error_distances)
     return error_distances
 
   def compute_metrics(self, error_distances):
