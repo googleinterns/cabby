@@ -22,6 +22,12 @@
 {"start_point": [40.44286309999999, -79.9982288], "start_osmid": "5166276676", "end_point": [40.45183391371109, -80.00076508360901], "end_osmid": "5166276676", "distance": 570, "instructions": "Head North-West and past Morgan at North Shore and meet at Elks Lodge. It will be near parking.", "id": 0, "version": 0.1}
 =======
 {"start_point": [40.44286309999999, -79.9982288], "start_osmid": "5166276676", "end_point": [40.45183391371109, -80.00076508360901], "end_osmid": "5166276676", "distance": 570, "instructions": "Walk past Morgan at North Shore and meet at Elks Lodge. It will be near parking.", "id": 0, "version": 0.1}
+<<<<<<< HEAD
+{"start_point": [40.44286309999999, -79.9982288], "start_osmid": "5166276676", "end_point": [40.45183391371109, -80.00076508360901], "end_osmid": "5166276676", "distance": 570, "instructions": "Head to the Elks Lodge North-West and past Morgan at North Shore. It will be near parking.", "id": 0, "version": 0.1}
+{"start_point": [40.44286309999999, -79.9982288], "start_osmid": "5166276676", "end_point": [40.45183391371109, -80.00076508360901], "end_osmid": "5166276676", "distance": 570, "instructions": "Meet at Elks Lodge. Walk North-West and past Morgan at North Shore. Elks Lodge will be near parking.", "id": 0, "version": 0.1}
+{"start_point": [40.44286309999999, -79.9982288], "start_osmid": "5166276676", "end_point": [40.45183391371109, -80.00076508360901], "end_osmid": "5166276676", "distance": 570, "instructions": "Come to Elks Lodge. Walk past Morgan at North Shore. It will be near parking.", "id": 0, "version": 0.1}
+{"start_point": [40.44286309999999, -79.9982288], "start_osmid": "5166276676", "end_point": [40.45183391371109, -80.00076508360901], "end_osmid": "5166276676", "distance": 570, "instructions": "Meet at Elks Lodge. Walk North-West and past Morgan at North Shore. It will be near parking.", "id": 0, "version": 0.1}
+=======
 >>>>>>> master
 {"start_point": [40.44286309999999, -79.9982288], "start_osmid": "5166276676", "end_point": [40.45183391371109, -80.00076508360901], "end_osmid": "5166276676", "distance": 570, "instructions": "Come to Elks Lodge. Head North-West and past Morgan at North Shore. It will be near parking.", "id": 0, "version": 0.1}
 {"start_point": [40.44286309999999, -79.9982288], "start_osmid": "5166276676", "end_point": [40.45183391371109, -80.00076508360901], "end_osmid": "5166276676", "distance": 570, "instructions": "Head North-West and past Morgan at North Shore. Elks Lodge will be near parking.", "id": 0, "version": 0.1}
@@ -43,4 +49,10 @@
 >>>>>>> master
 {"start_point": [40.447346800000005, -79.96743840000002], "start_osmid": "357377287", "end_point": [40.428079626239466, -79.97291107853101], "end_osmid": "357377287", "distance": 1899, "instructions": "Head to the White Eagle Inn past City Vets and continue to the next intersection. It will be near The Library.", "id": 0, "version": 0.1}
 >>>>>>> master
+<<<<<<< HEAD
 {"start_point": [40.4397969, -79.95891060000001], "start_osmid": "312632784", "end_point": [40.444865699999994, -79.9485927], "end_osmid": "312632784", "distance": 1197, "instructions": "Walk past Phantom of the Attic Comics. Phantom of the Attic Comics will be near Union Grill.", "id": 0, "version": 0.1}
+=======
+{"start_point": [40.447346800000005, -79.96743840000002], "start_osmid": "357377287", "end_point": [40.428079626239466, -79.97291107853101], "end_osmid": "357377287", "distance": 1899, "instructions": "Meet at White Eagle Inn. Walk past City Vets and continue to the next intersection. White Eagle Inn will be near The Library.", "id": 0, "version": 0.1}
+>>>>>>> master
+{"start_point": [40.43550288232743, -79.99670132302651], "start_osmid": "557541519", "end_point": [40.43737954999999, -80.00067115000002], "end_osmid": "557541519", "distance": 487, "instructions": "Come to The Chiurazzi Law Group. Walk North-West and past Fairfield Inn & Suites. The Chiurazzi Law Group will be near Urban League of Pittsburgh.", "id": 0, "version": 0.1}
+{"start_point": [40.448409500000004, -79.9999128], "start_osmid": "6492367797", "end_point": [40.4509211, -79.9849423], "end_osmid": "6492367797", "distance": 1810, "instructions": "Go North-East and past Downtown Dog Park and meet at East End Brewery Tap Room. It will be near Stan's Market.", "id": 0, "version": 0.1}
