@@ -39,10 +39,9 @@ tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
 CELLID_DIM = 64
 
-class CabbyDataset(torch.utils.data.Dataset):
-  def __init__(self, data: pd.DataFrame, s2level: int,
-         cellid_to_label: Dict[int, int] = None):
-
+class CabbyDatasetTrain(torch.utils.data.Dataset):
+  def __init__(self, data: pd.DataFrame, s2level: int, cells: int):
+    
     # Tokenize instructions.
     self.encodings = tokenizer(
       data.text.tolist(), truncation=True,
@@ -57,7 +56,11 @@ class CabbyDataset(torch.utils.data.Dataset):
 
     data['neighbor_cells'] =data.cellid.apply(lambda x: gutil.neighbor_cellid(x))
     
-    data['far_cells'] =  data.cellid.apply(lambda x: gutil.far_cellid(x))
+    far_cellids =  data.point.apply(lambda x: gutil.far_cellid(x, cells))
+    if far_cellids is None:
+      sys.exit("Far cellid was not found.")
+    data['far_cells'] = far_cellids
+
 
     cellids_array = np.array(data.cellid.tolist())
     neighbor_cells_array = np.array(data.neighbor_cells.tolist())
@@ -103,15 +106,15 @@ def create_dataset(data_dir: Text,
   # Get lables.
   get_region = regions.get_region(region)
   unique_cellid = gutil.cellids_from_polygon(get_region, s2level)
-  label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
-  cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
+  points = gutil.get_cell_center_point_from_s2cellids(unique_cellid)
+  cells = pd.DataFrame({'point': points, 'cellid': unique_cellid})
 
   # Create Cabby dataset.
-  train_dataset = CabbyDataset(train_ds, s2level, cellid_to_label)
-  val_dataset = CabbyDataset(valid_ds, s2level, cellid_to_label)
-  test_dataset = CabbyDataset(test_ds, s2level, cellid_to_label)
+  train_dataset = CabbyDataset(train_ds, s2level, cells)
+  val_dataset = CabbyDataset(valid_ds, s2level, cells)
+  test_dataset = CabbyDataset(test_ds, s2level, cells)
 
-  return train_dataset, val_dataset, test_dataset, label_to_cellid
+  return train_dataset, val_dataset, test_dataset, np.array(unique_cellid)
 
 # region = "Pittsburgh"
 # dataset_dir = "~/data/wikigeo/pittsburgh"

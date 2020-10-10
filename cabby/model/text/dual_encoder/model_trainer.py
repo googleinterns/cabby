@@ -35,7 +35,6 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
-import sys
 sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 
@@ -107,29 +106,29 @@ def temp():
   dataset_path = os.path.join(FLAGS.dataset_dir, str(FLAGS.s2_level))
   train_path_dataset = os.path.join(dataset_path,'train.pth')
   valid_path_dataset = os.path.join(dataset_path,'valid.pth')
-  lables_dictionary = os.path.join(dataset_path,"label_to_cellid.npy")
+  unique_cellid_path = os.path.join(dataset_path,"unique_cellid.npy")
 
 
   if os.path.exists(dataset_path):
     logging.info("Loading dataset from <== {}.".format(dataset_path))
     train_dataset = torch.load(train_path_dataset)
     valid_dataset = torch.load(valid_path_dataset)
-    label_to_cellid = np.load(lables_dictionary, allow_pickle='TRUE').item()
-    n_lables = len(label_to_cellid)
+    unique_cellid = np.load(unique_cellid_path, allow_pickle='TRUE')
+    n_cells = len(unique_cellid)
 
   else:
     logging.info("Preparing data.")
-    train_dataset, valid_dataset, test_dataset, label_to_cellid = dataset.create_dataset(
+    train_dataset, valid_dataset, test_dataset, unique_cellid = dataset.create_dataset(
       FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
-    n_lables = len(label_to_cellid)
-    logging.info("Number of lables: {}".format(n_lables))
+    n_cells = len(unique_cellid)
+    logging.info("Number of unique cells: {}".format(n_cells))
 
     
     # Save to dataloaders and lables to cells dictionary.
     os.mkdir(dataset_path)
     torch.save(train_dataset, train_path_dataset)
     torch.save(valid_dataset, valid_path_dataset)
-    np.save(lables_dictionary, label_to_cellid) 
+    np.save(unique_cellid_path, unique_cellid) 
     logging.info("Saved data to ==> {}.".format(dataset_path))
 
   train_loader = DataLoader(
@@ -148,6 +147,8 @@ def temp():
   dual_encoder.to(device)
 
   optimizer = torch.optim.Adam(dual_encoder.parameters(), lr=FLAGS.learning_rate)
+  
+  logging.info("Starting to train model.")
 
   train.train_model(
     model=dual_encoder,
@@ -156,7 +157,7 @@ def temp():
     optimizer=optimizer,
     train_loader=train_loader,
     valid_loader=valid_loader,
-    label_to_cellid = label_to_cellid,
+    unique_cells = unique_cellid,
     file_path=FLAGS.output_dir, 
     )
 

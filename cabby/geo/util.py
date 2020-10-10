@@ -19,6 +19,8 @@ import geographiclib
 from geopy.distance import geodesic
 import numpy as np
 from numpy import int64
+import osmnx as ox
+import pandas as pd
 import pyproj
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
@@ -31,7 +33,7 @@ import webbrowser
 
 UTM_CRS = 32633  # UTM Zones (North).
 WGS84_CRS = 4326  # WGS84 Latitude/Longitude.
-FAR_CELL = 100 # Number of cell away
+FAR_CELL = 2000 # Minimum distance between far cells in meters.
 
 
 from collections import namedtuple
@@ -39,17 +41,37 @@ CoordsYX = namedtuple('CoordsYX', ('y x'))
 CoordsXY = namedtuple('CoordsXY', ('x y'))
 
 
-def far_cellid(cellid: int) -> int:
-  '''Get a cell id far from the given cell. 
+
+def get_distance_between_points(point_1: Point, point_2: Point) -> int:
+  '''Calculate the line length in meters.
   Arguments:
-    cellid: The cellid of the cell to return a far cellid for.
+    point_1: The point to calculate the distance from.
+    point_2: The point to calculate the distance to.
+  Returns:
+    Distance length in meters.
+  '''
+  
+  dist = ox.distance.great_circle_vec(
+    point_1.y, point_1.x, point_2.y, point_2.x)
+  
+  return dist
+
+def far_cellid(point: Point, cells: pd.DataFrame) -> int:
+  '''Get a cell id far from the given cell point. 
+  Arguments:
+    point: The center point of the cell.
   Returns:
     A cellid of a far cell.
   '''
-  cell = s2.S2CellId(cellid)
-  for i in range(FAR_CELL):
-    cell = cell.next()
-  return cell.id()
+  far_cells_con = cells.apply(lambda x: get_distance_between_points(
+    point, x.point) > FAR_CELL, axis=1)
+
+  far_cells = cells[far_cells_con]
+
+  if far_cells.shape[0]==0:
+    return None
+
+  return far_cells.sample(1).cellid.iloc[0]
 
 def neighbor_cellid(cellid: int) -> int:
   '''Get a neghbor cell id. 
@@ -122,9 +144,7 @@ def s2polygon_from_shapely_point(shapely_point: Point) -> s2.S2Polygon:
   return s2.S2Polygon(s2.S2Cell(s2.S2CellId(latlng)))
 
 
-
-
-def s2cellid_from_point(point: Point) -> int:
+def cellid_from_point(point: Point) -> int:
   '''Converts point to the S2CellId.
   Arguments:
     point: The point to be converted to S2CellId.
@@ -225,7 +245,7 @@ def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
   webbrowser.open(filepath, new=2)
 
 
-def s2cellid_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
+def cellid_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
   '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
   Arguments:
     point(Point): a Shapely Point to which S2Cells.
@@ -453,13 +473,31 @@ def coords_from_str_coord(coord_str: Text) -> CoordsYX:
   return CoordsYX(coord[0], coord[1])
 
 
+def get_cell_center_point_from_s2cellids(
+    s2cell_ids: Sequence[int64]) -> Sequence[Point]:
+  """Returns the center latitude and longitude of s2 cells.
+  Arguments:
+    s2cell_ids: array of valid s2 cell ids. 1D array
+  Returns:
+    a list of shapely points of shape the size of the cellids list.
+
+  """
+  prediction_coords = []
+  for s2cellid in s2cell_ids:
+    s2_latlng = s2.S2CellId(int(s2cellid)).ToLatLng()
+    lat = s2_latlng.lat().degrees()
+    lng = s2_latlng.lng().degrees()
+    prediction_coords.append(Point(lng, lat))
+  return prediction_coords
+
+
 def get_cell_center_from_s2cellids(
     s2cell_ids: Sequence[int64]) -> Sequence[CoordsYX]:
   """Returns the center latitude and longitude of s2 cells.
   Arguments:
     s2cell_ids: array of valid s2 cell ids. 1D array
   Returns:
-    a list of shapely points of shape the size of the cellids list.
+    a list of coords of shape the size of the cellids list.
 
   """
   prediction_coords = []

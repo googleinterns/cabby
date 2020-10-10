@@ -30,13 +30,56 @@ from cabby.model.text import util
 criterion  = torch.nn.CosineEmbeddingLoss
 
 
+
+
+def evaluate(model: torch.nn.Module,
+       valid_loader: DataLoader,
+       device: torch.device,
+       label_to_cellid: Dict
+       ) -> Tuple[float, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+  '''Validate the modal.'''
+
+  model.eval()
+
+  loss_val_total = 0
+
+  # Validation loop.
+  true_points_list, pred_points_list, predictions, true_vals = [], [], [], []
+  for batch, points in valid_loader:
+    input_ids = batch['input_ids'].to(device)
+    attention_mask = batch['attention_mask'].to(device)
+    labels = batch['labels'].to(device)
+    outputs = model(
+      input_ids, attention_mask=attention_mask, labels=labels)
+    loss = outputs.loss
+    loss_val_total += loss.mean().item()
+    label_ids = labels.cpu().numpy()
+    true_vals.append(label_ids)
+    logits = outputs.logits.detach().cpu().numpy()
+    predictions.append(logits)
+    points = points.cpu().numpy()
+    true_points_list.append(points)
+    pred_points = util.predictions_to_points(logits, label_to_cellid)
+    pred_points_list.append(pred_points)
+
+  # Evaluation.
+  pred_points_list = np.concatenate(pred_points_list, axis=0)
+  true_points_list = np.concatenate(true_points_list, axis=0)
+  predictions = np.concatenate(predictions, axis=0)
+  true_vals = np.concatenate(true_vals, axis=0)
+  average_valid_loss = loss_val_total / len(valid_loader)
+
+  return (average_valid_loss, predictions, true_vals, true_points_list,
+      pred_points_list)
+
+
 def train_model(model:  torch.nn.Module,
         device: torch.device,
         optimizer: AdamW,
         file_path: Text,
         train_loader: DataLoader,
         valid_loader: DataLoader,
-        label_to_cellid: Dict[int, int],
+        unique_cells: np.array,
         num_epochs: int,
         best_valid_loss: float = float("Inf"),
         ):
@@ -74,7 +117,6 @@ def train_model(model:  torch.nn.Module,
       loss_far = criterion(text_embedding, cellid_embedding, target)
 
       loss = loss_cellid + loss_neighbor + loss_far
-
       loss.mean().backward()
       optimizer.step()
 
@@ -86,7 +128,8 @@ def train_model(model:  torch.nn.Module,
     # valid_loss, predictions, true_vals, true_points, pred_points = evaluate(
     #   model, valid_loader, device, label_to_cellid)
 
-    # average_train_loss = running_loss / labels.shape[0]
+    average_train_loss = running_loss / target.shape[0]
+    print (average_train_loss)
     # accuracy = accuracy_cells(true_vals, predictions)
     # train_loss_list.append(average_train_loss)
     # valid_loss_list.append(valid_loss)
