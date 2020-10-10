@@ -39,7 +39,7 @@ tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
 CELLID_DIM = 64
 
-class CabbyDatasetTrain(torch.utils.data.Dataset):
+class CabbyDataset(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, cells: int):
     
     # Tokenize instructions.
