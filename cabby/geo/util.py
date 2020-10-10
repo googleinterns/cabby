@@ -31,6 +31,7 @@ import webbrowser
 
 UTM_CRS = 32633  # UTM Zones (North).
 WGS84_CRS = 4326  # WGS84 Latitude/Longitude.
+FAR_CELL = 100 # Number of cell away
 
 
 from collections import namedtuple
@@ -38,7 +39,31 @@ CoordsYX = namedtuple('CoordsYX', ('y x'))
 CoordsXY = namedtuple('CoordsXY', ('x y'))
 
 
-def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]:
+def far_cellid(cellid: int) -> int:
+  '''Get a cell id far from the given cell. 
+  Arguments:
+    cellid: The cellid of the cell to return a far cellid for.
+  Returns:
+    A cellid of a far cell.
+  '''
+  cell = s2.S2CellId(cellid)
+  for i in range(FAR_CELL):
+    cell = cell.next()
+  return cell.id()
+
+def neighbor_cellid(cellid: int) -> int:
+  '''Get a neghbor cell id. 
+  Arguments:
+    cellid: The cellid of the cell to return a neghbor cellid for.
+  Returns:
+    A cellid of a neghbor cell.
+  '''
+
+  cell = s2.S2CellId(cellid)
+  return cell.next().id()
+
+def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]
+) -> Sequence[int]:
   '''Converts a sequence of S2CellIds to a sequence of ids of the S2CellIds. 
   Arguments:
     list_s2cells(S2CellIds): The list of S2CellIds to be converted to ids.

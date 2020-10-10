@@ -25,77 +25,7 @@ import torch.nn as nn
 from transformers import AdamW
 from torch.utils.data import DataLoader
 
-from cabby.geo import util
-
-
-def save_checkpoint(save_path: Text, model:  torch.nn.Module,
-          valid_loss: float):
-  '''Funcion for saving model.'''
-
-  if save_path == None:
-    return
-
-  state_dict = {'model_state_dict': model.state_dict(),
-          'valid_loss': valid_loss}
-
-  torch.save(state_dict, save_path)
-  logging.info(f'Model saved to ==> {save_path}')
-
-
-def load_checkpoint(load_path: Text, model:  torch.nn.Module,
-          device: torch.device) -> Dict[Text, Sequence]:
-  '''Funcion for loading model.'''
-
-  if load_path == None:
-    return
-
-  state_dict = torch.load(load_path, map_location=device)
-  logging.info(f'Model loaded from <== {load_path}')
-
-  model.load_state_dict(state_dict['model_state_dict'])
-  return state_dict
-
-
-def save_metrics(save_path: Text,
-         train_loss_list: Sequence[float],
-         valid_loss_list: Sequence[float],
-         global_steps_list: Sequence[int],
-         valid_accuracy_list:  Sequence[float],
-         true_points_list: Sequence[Sequence[Tuple[float, float]]],
-         pred_points_list: Sequence[Sequence[Tuple[float, float]]]):
-  '''Funcion for saving results.'''
-
-  if save_path == None:
-    return
-  state_dict = {'train_loss_list': train_loss_list,
-          'valid_loss_list': valid_loss_list,
-          'global_steps_list': global_steps_list,
-          'valid_accuracy_list': valid_accuracy_list,
-          'true_points_list': true_points_list,
-          'pred_points_list': pred_points_list}
-
-  torch.save(state_dict, save_path)
-  logging.info(f'Results saved to ==> {save_path}')
-
-
-def load_metrics(load_path: Text, device: torch.device) -> Dict[Text, float]:
-  '''Funcion for loading results.'''
-
-  if load_path == None:
-    return
-
-  state_dict = torch.load(load_path, map_location=device)
-  logging.info(f'Results loaded from <== {load_path}')
-
-  return state_dict
-
-
-def predictions_to_points(preds: np.ndarray,
-              label_to_cellid: Dict[int, int]) -> Sequence[Tuple[float, float]]:
-  preds_flat = np.argmax(preds, axis=1).flatten().tolist()
-  cellids = [label_to_cellid[label] for label in preds_flat]
-  coords = util.get_cell_center_from_s2cellids(cellids)
-  return coords
+from cabby.model.text import util
 
 
 def evaluate(model: torch.nn.Module,
@@ -125,7 +55,7 @@ def evaluate(model: torch.nn.Module,
     predictions.append(logits)
     points = points.cpu().numpy()
     true_points_list.append(points)
-    pred_points = predictions_to_points(logits, label_to_cellid)
+    pred_points = util.predictions_to_points(logits, label_to_cellid)
     pred_points_list.append(pred_points)
 
   # Evaluation.
@@ -206,9 +136,9 @@ def train_model(model:  torch.nn.Module,
     # Save model and results in checkpoint.
     if best_valid_loss > valid_loss:
       best_valid_loss = valid_loss
-      save_checkpoint(file_path + '/' + 'model.pt',
+      util.save_checkpoint(file_path + '/' + 'model.pt',
               model, best_valid_loss)
-      save_metrics(file_path + '/' + 'metrics.pt', train_loss_list,
+      util.save_metrics(file_path + '/' + 'metrics.pt', train_loss_list,
              valid_loss_list, global_steps_list, valid_accuracy_list, true_points_list, pred_points_list)
 
       model.train()

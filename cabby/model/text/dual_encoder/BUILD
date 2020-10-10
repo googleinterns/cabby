@@ -1,6 +1,13 @@
+# Cabby: Geographic vision-and-language navigation
+
+licenses(["notice"])
+
+exports_files(["LICENSE"])
+
 package(
     default_visibility = ["//visibility:public"],
 )
+
 
 
 py_library(
@@ -14,6 +21,14 @@ py_library(
 )
 
 
+py_library(
+    name = 'model',
+    srcs = ['model.py'],
+    deps = [
+
+
+    ],
+)
 
 py_binary(
     name = 'train',
@@ -32,6 +47,7 @@ py_binary(
     deps = [
         ':train',
         ':dataset',
+        ':model',
         "//cabby/model/text:util",
 
     ],
