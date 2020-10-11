@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from transformers import BertModel
+from transformers import DistilBertModel
 
 
 class DualEncoder(nn.Module):
@@ -11,8 +11,8 @@ class DualEncoder(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
         self.tanh = nn.Tanh()
         self.relu = nn.ReLU()
-        self.bert = BertModel.from_pretrained(
-          "bert-base-uncased", return_dict=True)
+        self.bert = DistilBertModel.from_pretrained(
+          "distilbert-base-uncased", return_dict=True)
         self.text_main = torch.nn.Sequential(
                 torch.nn.Linear(text_dim, hidden_dim),
                 torch.nn.ReLU(),

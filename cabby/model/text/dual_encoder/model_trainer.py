@@ -37,6 +37,8 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from transformers import AdamW
+
 
 
 from cabby.model.text.dual_encoder import train
@@ -62,11 +64,11 @@ flags.DEFINE_float(
   help=('The learning rate for the Adam optimizer.'))
 
 flags.DEFINE_integer(
-  'train_batch_size', default=2,
+  'train_batch_size', default=4,
   help=('Batch size for training.'))
 
 flags.DEFINE_integer(
-  'test_batch_size', default=2,
+  'test_batch_size', default=4,
   help=('Batch size for testing and validating.'))
 
 flags.DEFINE_integer(

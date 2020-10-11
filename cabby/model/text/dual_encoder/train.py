@@ -95,6 +95,7 @@ def train_model(model: torch.nn.Module,
 
 
   for epoch in range(num_epochs):
+    running_loss = 0.0
     logging.info("Epoch number: {}".format(epoch))
     for batch_idx, batch in enumerate(train_loader):
       optimizer.zero_grad()
