@@ -56,7 +56,7 @@ def get_distance_between_points(point_1: Point, point_2: Point) -> int:
   
   return dist
 
-def far_cellid(point: Point, cells: pd.DataFrame) -> int:
+def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[int]:
   '''Get a cell id far from the given cell point. 
   Arguments:
     point: The center point of the cell.
@@ -245,7 +245,7 @@ def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
   webbrowser.open(filepath, new=2)
 
 
-def cellid_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
+def cellids_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
   '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
   Arguments:
     point(Point): a Shapely Point to which S2Cells.

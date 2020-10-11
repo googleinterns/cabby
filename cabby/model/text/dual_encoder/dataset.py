@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
@@ -21,6 +19,7 @@ from absl import logging
 import numpy as np
 import os
 import pandas as pd
+import sys
 from torchtext import data
 import torch
 import transformers
@@ -40,7 +39,7 @@ tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 CELLID_DIM = 64
 
 class CabbyDataset(torch.utils.data.Dataset):
-  def __init__(self, data: pd.DataFrame, s2level: int, cells: int):
+  def __init__(self, data: pd.DataFrame, s2level: int, cells: int, cellid_to_label: Dict[int, int]):
     
     # Tokenize instructions.
     self.encodings = tokenizer(
@@ -53,6 +52,8 @@ class CabbyDataset(torch.utils.data.Dataset):
       lambda x: gutil.coords_from_str_coord(x)).tolist()
     data['cellid'] = data.point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
+    self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
+
 
     data['neighbor_cells'] =data.cellid.apply(lambda x: gutil.neighbor_cellid(x))
     
@@ -81,15 +82,17 @@ class CabbyDataset(torch.utils.data.Dataset):
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
     points = torch.tensor(self.points[idx])
-    return text, cellids, neighbor_cells, far_cells, points
+    labels = torch.tensor(self.labels[idx])
+
+    return text, cellids, neighbor_cells, far_cells, points, labels
 
   def __len__(self):
     return len(self.cellids)
 
 
 def create_dataset(data_dir: Text,
-           region: Text, s2level) -> Tuple[CabbyDataset, CabbyDataset,
-                           CabbyDataset, Dict[int, int]]:
+           region: Text, s2level: int) -> Tuple[CabbyDataset, CabbyDataset,
+                           CabbyDataset, np.ndarray, Any]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.
@@ -106,18 +109,17 @@ def create_dataset(data_dir: Text,
   # Get lables.
   get_region = regions.get_region(region)
   unique_cellid = gutil.cellids_from_polygon(get_region, s2level)
+  label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
+  cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
+
   points = gutil.get_cell_center_point_from_s2cellids(unique_cellid)
   cells = pd.DataFrame({'point': points, 'cellid': unique_cellid})
+  vec_cellls = util.binary_representation(cells.cellid.to_numpy(), dim = CELLID_DIM)
+  tens_cells = torch.tensor(vec_cellls)
 
   # Create Cabby dataset.
-  train_dataset = CabbyDataset(train_ds, s2level, cells)
-  val_dataset = CabbyDataset(valid_ds, s2level, cells)
-  test_dataset = CabbyDataset(test_ds, s2level, cells)
+  train_dataset = CabbyDataset(train_ds, s2level, cells, cellid_to_label)
+  val_dataset = CabbyDataset(valid_ds, s2level, cells, cellid_to_label)
+  test_dataset = CabbyDataset(test_ds, s2level, cells, cellid_to_label)
 
-  return train_dataset, val_dataset, test_dataset, np.array(unique_cellid)
-
-# region = "Pittsburgh"
-# dataset_dir = "~/data/wikigeo/pittsburgh"
-# s2_level =12
-
-# train_dataset, valid_dataset, test_dataset, label_to_cellid = create_dataset(dataset_dir, region, s2_level)
+  return train_dataset, val_dataset, test_dataset, np.array(unique_cellid), tens_cells

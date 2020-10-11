@@ -305,7 +305,7 @@ class Map:
     '''
     ""
     if isinstance(geometry, Point):
-      return util.cellid_from_point(geometry, self.level)
+      return util.cellids_from_point(geometry, self.level)
     else:
       return util.s2cellids_from_polygon(geometry, self.level)
 

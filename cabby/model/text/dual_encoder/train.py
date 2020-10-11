@@ -35,52 +35,51 @@ criterion  = torch.nn.CosineEmbeddingLoss
 def evaluate(model: torch.nn.Module,
        valid_loader: DataLoader,
        device: torch.device,
-       label_to_cellid: Dict
-       ) -> Tuple[float, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+       tensor_cells: torch.tensor
+       ):
   '''Validate the modal.'''
 
   model.eval()
 
   loss_val_total = 0
 
+  cos = nn.CosineSimilarity(dim=2)
+
   # Validation loop.
+  logging.info("Starting evaluation.")
   true_points_list, pred_points_list, predictions, true_vals = [], [], [], []
-  for batch, points in valid_loader:
-    input_ids = batch['input_ids'].to(device)
-    attention_mask = batch['attention_mask'].to(device)
-    labels = batch['labels'].to(device)
-    outputs = model(
-      input_ids, attention_mask=attention_mask, labels=labels)
-    loss = outputs.loss
-    loss_val_total += loss.mean().item()
-    label_ids = labels.cpu().numpy()
-    true_vals.append(label_ids)
-    logits = outputs.logits.detach().cpu().numpy()
-    predictions.append(logits)
-    points = points.cpu().numpy()
-    true_points_list.append(points)
-    pred_points = util.predictions_to_points(logits, label_to_cellid)
-    pred_points_list.append(pred_points)
+  correct = 0
+  total = 0
+  for batch in valid_loader:
+    text, _, _, _, _, labels = batch
+    text = {key: val.to(device) for key, val in text.items()}
+    tensor_cells = tensor_cells.float().to(device)
+    text_embedding, cellid_embedding = model(text, tensor_cells)
+    batch_dim = text_embedding.shape[0]
+    cell_dim = cellid_embedding.shape[0]
+    output_dim  = cellid_embedding.shape[1]
+    cellid_embedding_exp = cellid_embedding.expand(batch_dim,cell_dim,output_dim)
+    text_embedding_exp = text_embedding.unsqueeze(1)
+    output = cos(cellid_embedding_exp,text_embedding_exp)
+    output = output.detach().cpu().numpy()
+    predictions = np.argmax(output, axis=1)
+    lables = labels.numpy()
+    correct += (lables==predictions).sum()
+    total += lables.shape[0]
+  logging.info("Accuracy: {}, number examples: {}, correct: {}".format(round(100*correct/total, 3), total, correct))
 
-  # Evaluation.
-  pred_points_list = np.concatenate(pred_points_list, axis=0)
-  true_points_list = np.concatenate(true_points_list, axis=0)
-  predictions = np.concatenate(predictions, axis=0)
-  true_vals = np.concatenate(true_vals, axis=0)
-  average_valid_loss = loss_val_total / len(valid_loader)
-
-  return (average_valid_loss, predictions, true_vals, true_points_list,
-      pred_points_list)
+  return
 
 
-def train_model(model:  torch.nn.Module,
+def train_model(model: torch.nn.Module,
         device: torch.device,
-        optimizer: AdamW,
+        optimizer: Any,
         file_path: Text,
         train_loader: DataLoader,
         valid_loader: DataLoader,
-        unique_cells: np.array,
+        unique_cells: Any,
         num_epochs: int,
+        tens_cells: torch.tensor,
         best_valid_loss: float = float("Inf"),
         ):
   '''Main funcion for training model.'''
@@ -96,9 +95,10 @@ def train_model(model:  torch.nn.Module,
 
 
   for epoch in range(num_epochs):
-    for batch in train_loader:
+    logging.info("Epoch number: {}".format(epoch))
+    for batch_idx, batch in enumerate(train_loader):
       optimizer.zero_grad()
-      text, cellids, neighbor_cells, far_cells, points = batch
+      text, cellids, neighbor_cells, far_cells, points, labels = batch
       text = {key: val.to(device) for key, val in text.items()}
       cellids, neighbor_cells, far_cells = cellids.float().to(device), neighbor_cells.float().to(device), far_cells.float().to(device)
 
@@ -124,37 +124,13 @@ def train_model(model:  torch.nn.Module,
       running_loss += loss.mean().item()
       global_step += 1
 
-    # # Evaluation step.
-    # valid_loss, predictions, true_vals, true_points, pred_points = evaluate(
-    #   model, valid_loader, device, label_to_cellid)
 
-    average_train_loss = running_loss / target.shape[0]
-    print (average_train_loss)
-    # accuracy = accuracy_cells(true_vals, predictions)
-    # train_loss_list.append(average_train_loss)
-    # valid_loss_list.append(valid_loss)
-    # global_steps_list.append(global_step)
-    # valid_accuracy_list.append(accuracy)
-    # true_points_list.append(true_points)
-    # pred_points_list.append(pred_points)
+    # Evaluation step.
 
-    # # Resetting running values.
-    # running_loss = 0.0
+    average_train_loss = running_loss / len(train_loader)
+    logging.info("Loss: {}".format(average_train_loss))
+    evaluate(model= model, valid_loader=valid_loader,device=device, tensor_cells=tens_cells)
 
-    # logging.info('Epoch [{}/{}], Step [{}/{}], \
-    #     Accuracy: {:.4f},Train Loss: {:.4f}, Valid Loss: {:.4f}'
-    #        .format(epoch+1, num_epochs, global_step,
-    #            num_epochs*len(train_loader), accuracy,
-    #            average_train_loss, valid_loss))
-
-    # # Save model and results in checkpoint.
-    # if best_valid_loss > valid_loss:
-    #   best_valid_loss = valid_loss
-    #   util.save_checkpoint(file_path + '/' + 'model.pt',
-    #           model, best_valid_loss)
-    #   util.save_metrics(file_path + '/' + 'metrics.pt', train_loss_list,
-    #          valid_loss_list, global_steps_list, valid_accuracy_list, true_points_list, pred_points_list)
-
-    #   model.train()
+    model.train()
 
   logging.info('Finished Training.')

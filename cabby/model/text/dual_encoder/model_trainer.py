@@ -20,7 +20,9 @@ $ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
   --dataset_dir ~/model/dual_encoder/dataset/pittsburgh \
   --region Pittsburgh \ 
   --s2_level 12 \
-  --output_dir ~/tmp/output\
+  --output_dir ~/tmp/output/dual\
+  --train_batch_size 128 \
+  --test_batch_size 128
 
 """
 
@@ -35,70 +37,50 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
-sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 
 from cabby.model.text.dual_encoder import train
 from cabby.model.text.dual_encoder import dataset
 from cabby.model.text.dual_encoder import model
 
-# FLAGS = flags.FLAGS
+FLAGS = flags.FLAGS
 
 
-# flags.DEFINE_string("data_dir", None,
-#           "The directory from which to load the dataset.")
-# flags.DEFINE_string("dataset_dir", None,
-#           "The directory to save\load dataloader.")
-# flags.DEFINE_enum(
-#   "region", None, ['Pittsburgh', 'Manhattan'],
-#   "Map areas: Manhattan or Pittsburgh.")
-# flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
-# flags.DEFINE_string("output_dir", None,
-#           "The directory where the model and results will be save to.")
+flags.DEFINE_string("data_dir", None,
+          "The directory from which to load the dataset.")
+flags.DEFINE_string("dataset_dir", None,
+          "The directory to save\load dataloader.")
+flags.DEFINE_enum(
+  "region", None, ['Pittsburgh', 'Manhattan'],
+  "Map areas: Manhattan or Pittsburgh.")
+flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
+flags.DEFINE_string("output_dir", None,
+          "The directory where the model and results will be save to.")
 
-# flags.DEFINE_float(
-#   'learning_rate', default=5e-5,
-#   help=('The learning rate for the Adam optimizer.'))
+flags.DEFINE_float(
+  'learning_rate', default=5e-5,
+  help=('The learning rate for the Adam optimizer.'))
 
-# flags.DEFINE_integer(
-#   'train_batch_size', default=16,
-#   help=('Batch size for training.'))
+flags.DEFINE_integer(
+  'train_batch_size', default=2,
+  help=('Batch size for training.'))
 
-# flags.DEFINE_integer(
-#   'test_batch_size', default=16,
-#   help=('Batch size for testing and validating.'))
+flags.DEFINE_integer(
+  'test_batch_size', default=2,
+  help=('Batch size for testing and validating.'))
 
-# flags.DEFINE_integer(
-#   'num_epochs', default=5,
-#   help=('Number of training epochs.'))
+flags.DEFINE_integer(
+  'num_epochs', default=5,
+  help=('Number of training epochs.'))
 
-# flags.DEFINE_integer(
-#   'eval_every', None,
-#   help=('Evaluation after a number of trained samples.'))
+# Required flags.
+flags.mark_flag_as_required("data_dir")
+flags.mark_flag_as_required("dataset_dir")
+flags.mark_flag_as_required("region")
+flags.mark_flag_as_required("s2_level")
+flags.mark_flag_as_required("output_dir")
 
-# # Required flags.
-# flags.mark_flag_as_required("data_dir")
-# flags.mark_flag_as_required("dataset_dir")
-# flags.mark_flag_as_required("region")
-# flags.mark_flag_as_required("s2_level")
-# flags.mark_flag_as_required("output_dir")
-
-class FLAGS1:
-  def __init__(self):
-    self.data_dir = "/home/tzuf_google_com/data/wikigeo/pittsburgh"
-    self.dataset_dir = "/home/tzuf_google_com/model/dual_encoder/dataset/pittsburgh"
-    self.region = "Pittsburgh"
-    self.s2_level = 12 
-    self.output_dir =  "/home/tzuf_google_com/tmp/output/dual"
-    self.learning_rate = 5e-5
-    self.test_batch_size = 4
-    self.train_batch_size = 4
-    self.num_epochs = 2
-
-
-FLAGS= FLAGS1()
-# def main(argv):
-def temp():
+def main(argv):
 
   if not os.path.exists(FLAGS.dataset_dir):
     sys.exit("Dataset path doesn't exsist: {}.".format(FLAGS.dataset_dir))
@@ -107,6 +89,7 @@ def temp():
   train_path_dataset = os.path.join(dataset_path,'train.pth')
   valid_path_dataset = os.path.join(dataset_path,'valid.pth')
   unique_cellid_path = os.path.join(dataset_path,"unique_cellid.npy")
+  tesnor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
 
 
   if os.path.exists(dataset_path):
@@ -114,11 +97,12 @@ def temp():
     train_dataset = torch.load(train_path_dataset)
     valid_dataset = torch.load(valid_path_dataset)
     unique_cellid = np.load(unique_cellid_path, allow_pickle='TRUE')
+    tens_cells = torch.load(tesnor_cellid_path)
     n_cells = len(unique_cellid)
 
   else:
     logging.info("Preparing data.")
-    train_dataset, valid_dataset, test_dataset, unique_cellid = dataset.create_dataset(
+    train_dataset, valid_dataset, test_dataset, unique_cellid, tens_cells = dataset.create_dataset(
       FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
     n_cells = len(unique_cellid)
     logging.info("Number of unique cells: {}".format(n_cells))
@@ -129,6 +113,7 @@ def temp():
     torch.save(train_dataset, train_path_dataset)
     torch.save(valid_dataset, valid_path_dataset)
     np.save(unique_cellid_path, unique_cellid) 
+    torch.save(tens_cells, tesnor_cellid_path)
     logging.info("Saved data to ==> {}.".format(dataset_path))
 
   train_loader = DataLoader(
@@ -159,12 +144,11 @@ def temp():
     valid_loader=valid_loader,
     unique_cells = unique_cellid,
     file_path=FLAGS.output_dir, 
+    tens_cells = tens_cells
     )
 
-temp()
-
-# if __name__ == '__main__':
-#   app.run(main)
+if __name__ == '__main__':
+  app.run(main)
 
 
 
