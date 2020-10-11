@@ -90,10 +90,9 @@ def load_metrics(load_path: Text, device: torch.device) -> Dict[Text, float]:
   return state_dict
 
 
-def predictions_to_points(preds: np.ndarray,
+def predictions_to_points(preds: Sequence,
               label_to_cellid: Dict[int, int]) -> Sequence[Tuple[float, float]]:
-  preds_flat = np.argmax(preds, axis=1).flatten().tolist()
-  cellids = [label_to_cellid[label] for label in preds_flat]
+  cellids = [label_to_cellid[label] for label in preds]
   coords = util.get_cell_center_from_s2cellids(cellids)
   return coords
 
@@ -102,7 +101,7 @@ def evaluate(model: torch.nn.Module,
        valid_loader: DataLoader,
        device: torch.device,
        label_to_cellid: Dict
-       ) -> Tuple[float, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+       ) -> Tuple[Any, Any, Any, Any, Sequence[Tuple[float, float]]]:
   '''Validate the modal.'''
 
   model.eval()
@@ -110,7 +109,7 @@ def evaluate(model: torch.nn.Module,
   loss_val_total = 0
 
   # Validation loop.
-  true_points_list, pred_points_list, predictions, true_vals = [], [], [], []
+  true_points_list, pred_points_list, logits_list, true_vals = [], [], [], []
   for batch, points in valid_loader:
     input_ids = batch['input_ids'].to(device)
     attention_mask = batch['attention_mask'].to(device)
@@ -122,16 +121,17 @@ def evaluate(model: torch.nn.Module,
     label_ids = labels.cpu().numpy()
     true_vals.append(label_ids)
     logits = outputs.logits.detach().cpu().numpy()
-    predictions.append(logits)
+    logits_list.append(logits)
     points = points.cpu().numpy()
     true_points_list.append(points)
-    pred_points = predictions_to_points(logits, label_to_cellid)
-    pred_points_list.append(pred_points)
 
   # Evaluation.
-  pred_points_list = np.concatenate(pred_points_list, axis=0)
   true_points_list = np.concatenate(true_points_list, axis=0)
-  predictions = np.concatenate(predictions, axis=0)
+  logits_list = np.concatenate(logits_list, axis=0)
+  predictions = np.argmax(logits_list, axis=1).flatten().tolist()
+  pred_points_list = predictions_to_points(predictions, label_to_cellid)
+
+
   true_vals = np.concatenate(true_vals, axis=0)
   average_valid_loss = loss_val_total / len(valid_loader)
 
@@ -139,11 +139,10 @@ def evaluate(model: torch.nn.Module,
       pred_points_list)
 
 
-def accuracy_cells(labels: np.ndarray, preds: np.ndarray) -> float:
+def accuracy_cells(labels: np.ndarray, preds: Sequence) -> float:
   '''Accuracy classification score.'''
-  preds_flat = np.argmax(preds, axis=1).flatten()
   labels_flat = labels.flatten()
-  return accuracy_score(labels_flat, preds_flat)
+  return 100*accuracy_score(labels_flat, preds)
 
 
 def train_model(model:  torch.nn.Module,
@@ -199,9 +198,9 @@ def train_model(model:  torch.nn.Module,
 
     logging.info('Epoch [{}/{}], Step [{}/{}], \
         Accuracy: {:.4f},Train Loss: {:.4f}, Valid Loss: {:.4f}'
-           .format(epoch+1, num_epochs, global_step,
-               num_epochs*len(train_loader), accuracy,
-               average_train_loss, valid_loss))
+          .format(epoch+1, num_epochs, global_step,
+              num_epochs*len(train_loader), accuracy,
+              average_train_loss, valid_loss))
 
     # Save model and results in checkpoint.
     if best_valid_loss > valid_loss:
@@ -209,7 +208,7 @@ def train_model(model:  torch.nn.Module,
       save_checkpoint(file_path + '/' + 'model.pt',
               model, best_valid_loss)
       save_metrics(file_path + '/' + 'metrics.pt', train_loss_list,
-             valid_loss_list, global_steps_list, valid_accuracy_list, true_points_list, pred_points_list)
+            valid_loss_list, global_steps_list, valid_accuracy_list, true_points_list, pred_points_list)
 
       model.train()
 
