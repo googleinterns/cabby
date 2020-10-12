@@ -70,10 +70,6 @@ def evaluate(model: torch.nn.Module,
     loss = loss_cellid.mean() + loss_neighbor.mean() + loss_far.mean()
     loss_val_total += loss.item()
 
-
-
-
-
     tensor_cells = tensor_cells.float().to(device)
     text_embedding, cellid_embedding = model(text, tensor_cells)
     batch_dim = text_embedding.shape[0]

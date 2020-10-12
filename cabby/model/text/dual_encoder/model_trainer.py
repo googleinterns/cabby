@@ -21,8 +21,8 @@ $ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
   --region Pittsburgh \ 
   --s2_level 12 \
   --output_dir ~/tmp/output/dual\
-  --train_batch_size 128 \
-  --test_batch_size 128
+  --train_batch_size 32 \
+  --test_batch_size 32
 
 """
 

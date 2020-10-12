@@ -4,7 +4,8 @@ from transformers import DistilBertModel
 
 
 class DualEncoder(nn.Module):
-    def __init__(self, text_dim=768, hidden_dim=200,s2cell_dim=64, output_dim= 100):
+    def __init__(self, text_dim=768, hidden_dim=200, s2cell_dim=64, 
+    output_dim= 100):
         super(DualEncoder, self).__init__()
 
         self.hidden_layer = nn.Linear(text_dim, hidden_dim)
