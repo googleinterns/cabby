@@ -92,6 +92,7 @@ def main(argv):
   valid_path_dataset = os.path.join(dataset_path,'valid.pth')
   unique_cellid_path = os.path.join(dataset_path,"unique_cellid.npy")
   tesnor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
+  label_to_cellid_path = os.path.join(dataset_path,"label_to_cellid.npy")
 
 
   if os.path.exists(dataset_path):
@@ -99,12 +100,13 @@ def main(argv):
     train_dataset = torch.load(train_path_dataset)
     valid_dataset = torch.load(valid_path_dataset)
     unique_cellid = np.load(unique_cellid_path, allow_pickle='TRUE')
+    label_to_cellid = np.load(label_to_cellid_path, allow_pickle='TRUE').item()
     tens_cells = torch.load(tesnor_cellid_path)
     n_cells = len(unique_cellid)
 
   else:
     logging.info("Preparing data.")
-    train_dataset, valid_dataset, test_dataset, unique_cellid, tens_cells = dataset.create_dataset(
+    train_dataset, valid_dataset, test_dataset, unique_cellid, tens_cells, label_to_cellid = dataset.create_dataset(
       FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
     n_cells = len(unique_cellid)
     logging.info("Number of unique cells: {}".format(n_cells))
@@ -116,6 +118,8 @@ def main(argv):
     torch.save(valid_dataset, valid_path_dataset)
     np.save(unique_cellid_path, unique_cellid) 
     torch.save(tens_cells, tesnor_cellid_path)
+    np.save(label_to_cellid_path, label_to_cellid) 
+
     logging.info("Saved data to ==> {}.".format(dataset_path))
 
   train_loader = DataLoader(
@@ -146,7 +150,8 @@ def main(argv):
     valid_loader=valid_loader,
     unique_cells = unique_cellid,
     file_path=FLAGS.output_dir, 
-    tens_cells = tens_cells
+    tens_cells = tens_cells,
+    label_to_cellid = label_to_cellid
     )
 
 if __name__ == '__main__':
