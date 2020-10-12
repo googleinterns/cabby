@@ -38,15 +38,21 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> Sequence:
 
     # Get Wikipedia pages.
     wikipedia_pages = wpq.get_wikipedia_items(titles)
-    wikipedia_items = [wpi.WikipediaEntity.from_api_result(
-        result) for result in wikipedia_pages]
-
-    # # Get Wikipedia titles.
-    wikipedia_titles = [entity.title for entity in wikipedia_items]
+    wikipedia_items = []
+    wikipedia_titles =[]
+    for wikipedia_page in wikipedia_pages:
+      wikipedia_page_items=[]
+      for item in wikipedia_page:
+        wikipedia_item = wpi.WikipediaEntity.from_api_result(item)
+        wikipedia_page_items.append(wikipedia_item)
+        if wikipedia_item.title not in wikipedia_titles:
+          wikipedia_titles.append(wikipedia_item.title)
+      wikipedia_items.append(wikipedia_page_items)
 
     # # Change to Geodata dataset foramt.
     geo_data = []
-    for wikipedia, wikidata in zip(wikipedia_items, wikidata_items):
+    for wikipedia_page_items, wikidata in zip(wikipedia_items, wikidata_items):
+      for wikipedia in wikipedia_page_items:
         geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
             wikipedia, wikipedia, wikidata).sample)
 
@@ -56,15 +62,15 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> Sequence:
     backlinks_items = []
     for list_backlinks in backlinks_pages:
         backlinks_items.append(
-            [wpi.WikipediaEntity.from_backlinks_api_result(result) for \
+            [wpi.WikipediaEntity.from_api_result(result) for \
                 result in list_backlinks])
 
     # Change backlinks pages to Geodata dataset format.
-    for list_backlinks, original_wikipedia, original_wikidata in \
+    for list_backlinks, original_wikipedia_items, original_wikidata in \
         zip(backlinks_items, wikipedia_items, wikidata_items):
         for backlink in list_backlinks:
             wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
-                backlink, original_wikipedia, original_wikidata).sample
+                backlink, original_wikipedia_items[0], original_wikidata).sample
             
             sample_text = wikigeo_sample['text']
             if any(dict['text'] == sample_text for dict in geo_data):

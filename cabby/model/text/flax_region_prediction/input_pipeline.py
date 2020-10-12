@@ -60,20 +60,16 @@ def get_shuffled_batches(dataset: tf.data.Dataset,
                          seed: int = 0,
                          batch_size: int = 64) -> tf.data.Dataset:
   """Returns a Dataset that consists of padded batches when iterated over.
-
   This shuffles the examples randomly each epoch. The random order is
   deterministic and controlled by the seed.
-
   Batches are padded because sentences have different lengths.
   Sentences that are shorter in a batch will get 0s added at the end, until
   all sentences in the batch have the same length.
-
   Args:
     dataset: A TF Dataset with examples to be shuffled and batched.
     seed: The seed that determines the shuffling order, with a different order
       each epoch.
     batch_size: The size of each batch. The remainder is dropped.
-
   Returns:
     A TF Dataset containing padded batches.
   """

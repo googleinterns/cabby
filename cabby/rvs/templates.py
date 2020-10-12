@@ -54,14 +54,12 @@ def add_rules(nonterminal_name: Text,
         list_terminals: Sequence[Text]) -> Sequence[Production]:
   """Create the production rules for a givn nonterminal and a
    list of terminals corresponding to it.
-
   Args:
     nonterminal_name: The name of the nonterminal.
     list_terminals: The list of terminals that for each one a rule with 
     the nonterminal will be produced.
   Returns:
     A sequence of productions rules.
-
   """
   prods = []
   for phrase in list_terminals:
