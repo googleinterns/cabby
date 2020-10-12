@@ -36,6 +36,7 @@ from cabby.rvs import item
 
 _Geo_DataFrame_Driver = "GPKG"
 OSM_CRS = 32633  # UTM Zones (North).
+SMALL_POI = 4 # Less than 4 S2Cellids.
 
 
 class Walker:
@@ -92,9 +93,12 @@ class Walker:
     Returns:
       A single POI.
     '''
+    
+    # Filter with name.
+    named_poi = map.poi[map.poi['name'].notnull()]
 
     # Filter large POI.
-    small_poi = map.poi[map.poi['s2cellids'].str.len() <= 4]
+    small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
 
     if small_poi.shape[0] == 0:
       return None
@@ -162,8 +166,11 @@ class Walker:
 
     poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
 
-    # Filter large POI.
-    small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= 4]
+    # Filter with name.
+    named_poi = poi_in_ring[poi_in_ring['name'].notnull()]
+
+    # Filter large POI.	  # Filter large POI.
+    small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
 
     if small_poi.shape[0] == 0:
       return None
