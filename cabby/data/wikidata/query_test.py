@@ -37,6 +37,11 @@ class WikidataTest(unittest.TestCase):
     poi_by_value = [x['placeLabel']['value'] for x in output]
     self.assertIn(expected_place_label, poi_by_value)
 
+  def testRelationsQuery(self):
+    wd_relations = query.get_geofenced_wikidata_relations(
+      "Pittsburgh", extract_qids=True)
+    qid_set = set(list(wd_relations.place))
+    self.assertIn("Q4915", qid_set)
 
 
 if __name__ == "__main__":
