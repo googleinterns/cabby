@@ -176,30 +176,18 @@ _PITTSBURGH_RELATION_QUERY = """SELECT ?place ?placeLabel ?p ?propLabel ?instanc
           }
         """
 
-_BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
-           ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
+_BY_QID_QUERY = """SELECT ?place
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
           WHERE 
           {
           {
             VALUES ?place {wd:%s}
-            ?place wdt:P31 ?instance.
+            ?place wdt:P625 ?location .
             ?wikipediaUrl schema:about ?place. 
             ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
-            SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-                        ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
-            SERVICE wikibase:box {
-            ?place wdt:P625 ?location .
-            bd:serviceParam wikibase:cornerWest "Point(-80.035,40.425)"^^geo:wktLiteral .
-            bd:serviceParam wikibase:cornerEast "Point(-72.963,41.752)"^^geo:wktLiteral .
-            }
           }
-          FILTER (?instance  not in
-          (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
-          wd:Q25917154,  wd:Q1243306, wd:Q1570262, wd:Q811683,
-          wd:Q744913, wd:Q186117, wd:Q3298291) )
           }
-          GROUP BY ?place ?placeLabel ?wikipediaUrl 
+          GROUP BY ?place
         """
 
 _PITTSBURGH_LOCATION_QUERY = """SELECT ?place ?location
@@ -328,15 +316,15 @@ def get_geofenced_wikidata_relations(region: Text,
     result_df[extract_cols] = result_df[extract_cols].apply(extract_qid)
   return result_df
 
-def get_geofenced_wikidata_items_by_qid(qid: Text) -> Sequence[Dict[Text, Any]]:
-  '''Get Wikidata items for a specific area. 
+def get_place_location_points_from_qid(qid: Text) -> Sequence[Dict[Text, Any]]:
+  '''Get lat/long point for a particular QID.
   Arguments:
-    qid(Text): The qid to query the Wikidata items.
+    qid(Text): The qid to return point of.
   Returns:
-    The Wikidata items found in the area.
+    SPARQLWrapper return dict with 'place' and 'point' keys, values as
+    dicts, each dict with a 'value' key giving QID and Point (respectively).
   '''
   query = _BY_QID_QUERY % qid
-
   return query_api(query)
 
 
