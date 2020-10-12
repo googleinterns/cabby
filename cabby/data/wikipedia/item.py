@@ -39,16 +39,6 @@ class WikipediaEntity:
   def from_api_result(cls, result):
     """Construct an Entity from the results of the Wikimedia API query."""
     return WikipediaEntity(
-        int(list(result.keys())[0]),
-        list(result.values())[0]['title'],
-        list(result.values())[0]['extract']
-        
-    )
-
-  @classmethod
-  def from_backlinks_api_result(cls, result):
-    """Construct an Entity from the results of the Wikimedia API query."""
-    return WikipediaEntity(
         result['pageid'],
         result['title'],
         result['extract']

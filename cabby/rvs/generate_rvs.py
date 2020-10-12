@@ -122,12 +122,12 @@ def main(argv):
     )
     gen_samples.append(rvs_entity.sample)
 
-    # Save to file.
-    with open(FLAGS.save_instruction_path, 'a') as outfile:
-      for sample in gen_samples:
-        json.dump(sample, outfile, default=lambda o: o.__dict__)
-        outfile.write('\n')
-        outfile.flush()
+  # Save to file.
+  with open(FLAGS.save_instruction_path, 'a') as outfile:
+    for sample in gen_samples:
+      json.dump(sample, outfile, default=lambda o: o.__dict__)
+      outfile.write('\n')
+      outfile.flush()
 
 
 if __name__ == '__main__':
