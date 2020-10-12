@@ -75,24 +75,20 @@ def update_osm_map(osm_map: Map,
   # For each missing QID, add the place to the osm_map data.
   print("In update_osm_map: Adding new QIDs to osm_map data.")
   print("In update_osm_map: POI table has %d rows before" % osm_map.poi.shape[0])
-  count = 0
+  already_added = set()
   for _, row in wd_relations.iterrows():
-    count += 1
-    print("In update_osm_map: -- poi add loop %d" % count)
-    if row.place not in missing_qids:
-      print("In update_osm_map: ---- qid %s not in missing_qids" % row.place)
-      continue
-    osmid = hash(''.join(list(row.values)))
-    print("In update_osm_map: ---- adding item %s with row:" % row.place)
-    print(row)
-    wd_query = query.get_geofenced_wikidata_items_by_qid(row.place)
-    new_df = pd.DataFrame(data={
-      'name': [wd_query[0]['placeLabel']['value']],
-      'geometry': [util.point_str_to_shapely_point(wd_query[0]['point']['value'])],
-      'osmid': [osmid]
-    }, index=[osmid])
-    new_df.index.rename('osmid', inplace=True)
-    osm_map.poi = osm_map.poi.append(new_df)
+      if row.place not in missing_qids or row.place in already_added:
+          continue
+      already_added.add(row.place)
+      osmid = hash(''.join(list(row.values)))
+      wd_query = query.get_geofenced_wikidata_items_by_qid(row.place)
+      new_df = pd.DataFrame(data={
+          'name': row.placeLabel,
+          'geometry': [util.point_str_to_shapely_point(wd_query[0]['point']['value'])],
+          'osmid': [osmid]
+      }, index=[osmid])
+      new_df.index.rename('osmid', inplace=True)
+      osm_map.poi = osm_map.poi.append(new_df)
   print("In update_osm_map: POI table has %d rows after" % osm_map.poi.shape[0])
 
   # Update osm_map.
