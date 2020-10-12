@@ -21,6 +21,7 @@ json
 
 from absl import app
 from absl import flags
+from absl import logging
 import json
 import os
 
@@ -28,7 +29,6 @@ from cabby.data import extract
 from cabby.geo import regions
 
 
-FLAGS = flags.FLAGS
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
   "region", None, regions.ALLOWED_REGIONS,
@@ -43,9 +43,10 @@ flags.mark_flag_as_required("path")
 
 def main(argv):
   del argv  # Unused.
-
+  
+  logging.info("Starting extracting Wikigeo samples")
   results = extract.get_data_by_region(FLAGS.region)
-  print('The number of results items found is: {}'.format(
+  logging.info('The number of results items found is: {}'.format(
     len(results)))
   
   extract.write_files(FLAGS.path, results)
@@ -53,11 +54,11 @@ def main(argv):
   # Create train, dev, and test sets.
   train_set, dev_set, test_set = extract.split_dataset(results, 0.8, 0.1)
 
-  print('The size of the train-set is: {}'.format(
+  logging.info('The size of the train-set is: {}'.format(
     len(train_set)))
-  print('The size of the dev-set is: {}'.format(
+  logging.info('The size of the dev-set is: {}'.format(
     len(dev_set)))    
-  print('The size of the test-set is: {}'.format(
+  logging.info('The size of the test-set is: {}'.format(
     len(test_set)))
 
   # Create paths for the train, dev, and test sets.
