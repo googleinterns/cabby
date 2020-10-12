@@ -29,6 +29,7 @@ import sys
 from typing import Dict, Tuple, Sequence, Text, Optional, List, Any
 
 
+
 from cabby.geo import util
 from cabby.geo.map_processing import graph
 from cabby.geo.map_processing import edge
@@ -54,6 +55,8 @@ class Map:
       logging.info("Preparing map.")
       logging.info("Extracting POI.")
       self.poi, self.streets = self.get_poi()
+      logging.info("{} POI found.".format(self.poi.shape[0]))
+
       logging.info("Constructing graph.")
       self.nx_graph = ox.graph_from_polygon(
         self.polygon_area, network_type='walk')
@@ -103,10 +106,12 @@ class Map:
     '''
 
     tags = {'name': True,
-            'building': True,
             'amenity': True,
             'wikidata': True,
-            'wikipedia': True}
+            'wikipedia': True,
+            'shop': True,
+            'brand': True,
+            'tourism': True}
 
     osm_poi = ox.pois.pois_from_polygon(self.polygon_area, tags=tags)
     osm_poi = osm_poi.set_crs(epsg=OSM_CRS, allow_override=True)
@@ -189,7 +194,7 @@ class Map:
           self.nx_graph, util.tuple_from_point(point), return_geom=True)
 
     except Exception as e:
-      print(e)
+      logging.info(e)
       return []
 
     edge_id = (near_edge_u, near_edge_v, near_edge_key)
@@ -268,9 +273,6 @@ class Map:
     assert edge_add.u_for_edge is not None
     assert edge_add.v_for_edge is not None
 
-    logging.info("Adding U {} => V {}".format(
-      edge_add.u_for_edge, edge_add.v_for_edge))
-
     self.nx_graph.add_edge(
       u_for_edge=edge_add.u_for_edge,
       v_for_edge=edge_add.v_for_edge,
@@ -293,7 +295,8 @@ class Map:
 
   def add_poi_to_graph(self):
     '''Add all POI to nx_graph(currently contains only the roads).'''
-    eges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
+    eges_to_add_list = self.poi.apply(
+      self.add_single_poi_to_graph, axis=1)
 
     eges_to_add_list.swifter.apply(
       lambda edges_list: [self.add_two_ways_edges(edge) for edge in edges_list])

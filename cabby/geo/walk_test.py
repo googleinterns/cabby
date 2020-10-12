@@ -38,13 +38,13 @@ class WalkTest(unittest.TestCase):
                    nx_graph, self.map.nodes)
 
     # Check the size of the route.
-    self.assertEqual(route['geometry'].shape[0], 23)
+    self.assertEqual(route['geometry'].shape[0], 6)
 
     # Check that the correct points are in the route.
     first_point = util.tuple_from_point(route.iloc[0]['geometry'])
     second_point = util.tuple_from_point(route.iloc[1]['geometry'])
     self.assertEqual(first_point, (38.908494204353836, -77.03979751967637))
-    self.assertEqual(second_point, (38.90910590000001, -77.0395916))
+    self.assertEqual(second_point, (38.9084898001156, -77.03978443664614))
 
   def testPointsSelection(self):
     geo_entity = self.walker.get_single_sample(self.map)
