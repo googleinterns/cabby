@@ -19,6 +19,10 @@ import pandas as pd
 
 from typing import Dict, Tuple, Sequence, Text, Any
 
+from cabby.geo.map_processing.map_structure import Map
+import cabby.geo.util as util
+from cabby.data.wikidata import query
+
 def convert_pandas_df_to_metagraph(
   df:Any, source_column: Text, target_column: Text,
   source_metadata_columns: Dict[Text, Text],
@@ -49,3 +53,61 @@ def convert_pandas_df_to_metagraph(
       attribute_dict = dict(zip(df[target_column], df[metadata_column]))
       nx.set_node_attributes(g, attribute_dict, metadata_name)
   return g
+
+def update_osm_map(osm_map: Map,
+                   wd_relations: pd.DataFrame):
+  """Adds new POIs found in wikidata_relations to osm_map.
+
+  Arguments:
+    osm_map: map class containing all info about a region.
+    wd_relations: dataframe of wikidata items in the region.
+  Returns: (nothing)
+  """
+  # Compute QIDs present in wikidata_relations but not in osm_map.
+  osm_qids = set(
+    [qid for qid in osm_map.poi['wikidata'] if isinstance(qid, str)])
+  wd_qids = set(wd_relations.place)
+  missing_qids = wd_qids - osm_qids
+  print("In update_osm_map: Found %d missing qids." % len(missing_qids))
+  if len(missing_qids) == 0:
+    return
+
+  # For each missing QID, add the place to the osm_map data.
+  print("In update_osm_map: Adding new QIDs to osm_map data.")
+  print("In update_osm_map: POI table has %d rows before" % osm_map.poi.shape[0])
+  count = 0
+  for _, row in wd_relations.iterrows():
+    count += 1
+    print("In update_osm_map: -- poi add loop %d" % count)
+    if row.place not in missing_qids:
+      print("In update_osm_map: ---- qid %s not in missing_qids" % row.place)
+      continue
+    osmid = hash(''.join(list(row.values)))
+    print("In update_osm_map: ---- adding item %s with row:" % row.place)
+    print(row)
+    wd_query = query.get_geofenced_wikidata_items_by_qid(row.place)
+    new_df = pd.DataFrame(data={
+      'name': [wd_query[0]['placeLabel']['value']],
+      'geometry': [util.point_str_to_shapely_point(wd_query[0]['point']['value'])],
+      'osmid': [osmid]
+    }, index=[osmid])
+    new_df.index.rename('osmid', inplace=True)
+    osm_map.poi = osm_map.poi.append(new_df)
+  print("In update_osm_map: POI table has %d rows after" % osm_map.poi.shape[0])
+
+  # Update osm_map.
+  print("In update_osm_map: Adding new POIs to graph (could take a while).")
+  print("In update_osm_map: %d nodes in graph before adding." % (
+    osm_map.nx_graph.number_of_nodes()))
+  osm_map.add_poi_to_graph()
+  print("In update_osm_map: %d nodes in graph after adding." % (
+    osm_map.nx_graph.number_of_nodes()))
+
+def construct_metagraph(region: Text,
+                        s2_level: int,
+                        base_osm_map_filepath: Text):
+  wd_relations = query.get_geofenced_wikidata_relations(region,
+                                                        extract_qids=True)
+  osm_map = Map(region, s2_level, base_osm_map_filepath)
+  update_osm_map(osm_map, wd_relations)
+  return osm_map, wd_relations
