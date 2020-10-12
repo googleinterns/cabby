@@ -23,7 +23,10 @@ import pandas as pd
 from shapely.geometry import box
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
+from shapely.geometry import box, mapping, LineString
 from shapely import wkt
+from shapely.ops import split
+
 import swifter
 import sys
 from typing import Dict, Tuple, Sequence, Text, Optional, List, Any
@@ -90,15 +93,20 @@ class Map:
       (1) The POI that are not roads; and (2) the roads POI.
     '''
 
-    tags = {'name': True, 'building': True, 'amenity': True}
+    tags = {'name': True,
+            'amenity': True,
+            'wikidata': True,
+            'wikipedia': True,
+            'shop': True,
+            'brand': True,
+            'tourism': True}
 
     osm_poi = ox.pois.pois_from_polygon(self.polygon_area, tags=tags)
     osm_poi = osm_poi.set_crs(epsg=OSM_CRS, allow_override=True)
 
-    osm_poi_named_entities = osm_poi[osm_poi['name'].notnull()]
-    osm_highway = osm_poi_named_entities['highway']
-    osm_poi_no_streets = osm_poi_named_entities[osm_highway.isnull()]
-    osm_poi_streets = osm_poi_named_entities[osm_highway.notnull()]
+    osm_highway = osm_poi['highway']
+    osm_poi_no_streets = osm_poi[osm_highway.isnull()]
+    osm_poi_streets = osm_poi[osm_highway.notnull()]
 
     # Get centroid for POI.
     osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
@@ -156,6 +164,7 @@ class Map:
 
     return edges_to_add
 
+
   def add_single_point_edge(self, point: Point,
                 list_edges_connected_ids: List, 
                 poi_osmid: int) -> Optional[Sequence[edge.Edge]]:
@@ -178,10 +187,10 @@ class Map:
 
     try:
       
-      near_edge_u, near_edge_v, near_edge_key, line, dist = \
+      near_edge_u, near_edge_v, near_edge_key, line = \
         ox.distance.get_nearest_edge(
           self.nx_graph, util.tuple_from_point(point), return_geom=True, 
-          return_dist=True)
+          )
 
     except Exception as e:
       print(e)
@@ -192,17 +201,50 @@ class Map:
     if edge_id in list_edges_connected_ids:  # Edge already connected
       return []
 
+    # Get nearest points - u and v.
+    u_node = self.nx_graph.nodes[near_edge_u]
+    u_point = Point(u_node['x'], u_node['y'])
+
+    v_node = self.nx_graph.nodes[near_edge_v]
+    v_point = Point(v_node['x'], v_node['y'])
+
     # Add to connected edges.
     list_edges_connected_ids.append(edge_id)
 
     near_edge = self.nx_graph.edges[edge_id]
 
+    dist_projected = line.project(point)
     projected_point = line.interpolate(line.project(point))
 
-    projected_point_osmid = util.concat_numbers(
+    cut_geometry = util.cut(line,dist_projected)
+
+    n_lines = len(cut_geometry) 
+    assert n_lines<=2
+    
+    line_1 = cut_geometry[0]
+    dist_1 = util.get_line_length(line_1)
+
+    if n_lines==2:
+      assert projected_point==Point(line_1.coords[-1])
+      line_2 = cut_geometry[1]
+      dist_2 = util.get_line_length(line_2)
+
+      projected_point_osmid = util.concat_numbers(
       len(list_edges_connected_ids), poi_osmid)
 
-    assert projected_point_osmid not in self.poi['osmid'].tolist(), (
+    else: # Projected point is exactly on the end of the line (U or V).
+      dist_u_p = util.get_distance_between_points(u_point, projected_point)
+      dist_v_p = util.get_distance_between_points(v_point, projected_point)
+      assert dist_u_p==0 or dist_v_p==0
+      if dist_u_p==0:
+        projected_point_osmid = near_edge_u
+      else:
+        projected_point_osmid = near_edge_v
+
+    projected_line = LineString([projected_point,point])
+    projected_line_dist = util.get_linestring_distance(projected_line)
+
+    assert n_lines==1 or projected_point_osmid not in self.poi['osmid'].tolist(), (
       projected_point_osmid)
 
     if isinstance(near_edge['highway'], list):
@@ -223,34 +265,43 @@ class Map:
       u_for_edge=poi_osmid,
       v_for_edge=projected_point_osmid,
       osmid=near_edge['osmid'],
-      length=dist
+      geometry=projected_line,
+      length = 0.1
     )
     edges_list.append(edge_to_add)
 
-    # Get nearest points - u and v.
-    u_node = self.nx_graph.nodes[near_edge_u]
-    u_point = Point(u_node['x'], u_node['y'])
+    if n_lines==1:
+      return edges_list
 
-    v_node = self.nx_graph.nodes[near_edge_v]
-    v_point = Point(v_node['x'], v_node['y'])
+    line_1_point_end = Point(line_1.coords[0])
+    dist_u_1 = util.get_distance_between_points(u_point, line_1_point_end)
+    dist_v_1 = util.get_distance_between_points(v_point, line_1_point_end)
+    
 
-    # Calculate distance between projected point and u and v.
-    dist_u = util.get_distance_between_points(u_point, projected_point)
-    dist_v = util.get_distance_between_points(v_point, projected_point)
+    if dist_u_1 < dist_v_1:
+      dist_u = dist_1
+      line_u = line_1 
+      dist_v = dist_2
+      line_v = line_2
+    else:
+      dist_u = dist_2
+      line_u = line_2 
+      dist_v = dist_1
+      line_v = line_1
 
     # Add edges between projected point and u and v, on the street segment.
-
     street_name = near_edge['name'] if 'name' in near_edge else ""
+
     if not projected_point_osmid == near_edge_u:
       edge_to_add = edge.Edge.from_projected(
         near_edge_u, projected_point_osmid, dist_u, near_edge['highway'],
-        near_edge['osmid'], street_name)
+        near_edge['osmid'], street_name, line_u)
       self.add_two_ways_edges(edge_to_add)
 
     if not projected_point_osmid == near_edge_v:
       edge_to_add = edge.Edge.from_projected(
         near_edge_v, projected_point_osmid, dist_v, near_edge['highway'],
-        near_edge['osmid'], street_name)
+        near_edge['osmid'], street_name, line_v)
       self.add_two_ways_edges(edge_to_add)
 
     # Remove u-v edge.
@@ -271,7 +322,8 @@ class Map:
       osmid=edge_add.osmid,
       name=edge_add.name,
       highway=edge_add.highway,
-      oneway=edge_add.oneway
+      oneway=edge_add.oneway,
+      geometry=edge_add.geometry 
     )
 
     self.nx_graph.add_edge(
@@ -281,7 +333,8 @@ class Map:
       osmid=edge_add.osmid,
       name=edge_add.name,
       highway=edge_add.highway,
-      oneway=edge_add.oneway
+      oneway=edge_add.oneway,
+      geometry=edge_add.geometry 
     )
 
   def add_poi_to_graph(self):
@@ -302,9 +355,9 @@ class Map:
     '''
     ""
     if isinstance(geometry, Point):
-      return util.cellid_from_point(geometry, self.level)
+      return util.s2cellids_from_point(geometry, self.level)
     else:
-      return util.cellid_from_polygon(geometry, self.level)
+      return util.s2cellids_from_polygon(geometry, self.level)
 
   def create_S2Graph(self, level: int):
     '''Helper funcion for creating S2Graph.'''
@@ -329,7 +382,7 @@ class Map:
     Arguments:
       dir_name: The directory of the path.
       name_ending: the end of the name  of the file
-      (_graph\_node\_poi\_streets).
+      (_graph or _node or_poi or_streets).
       file_ending: the type of the file.
     Returns:
       The valid path.
@@ -446,4 +499,3 @@ def convert_string_to_list(string_list: Text) -> Sequence:
   string_list = string_list.split(",")
   map_object = map(int, string_list)
   return list(map_object)
-

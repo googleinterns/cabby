@@ -16,7 +16,7 @@
 from geopandas import GeoDataFrame
 import re
 from shapely.geometry.point import Point
-from typing import Text, Dict
+from typing import Text, Dict, Any
 
 import attr
 
@@ -28,7 +28,10 @@ class Edge:
   `v_for_edge` is the other side of the segment.
   `length` is the length of the segment.
   `oneway` whether it is directional.
-  `highway` is always poi.
+  `highway` is highway (if connecting a POI it will be `poi`).
+  `osmid` is the osmid of the street.
+  `name` is the name of the street (if connecting a POI it will be `poi`).
+  `geometry` is always poi.  
   """
   u_for_edge: int = attr.ib()
   v_for_edge: int = attr.ib()
@@ -37,9 +40,10 @@ class Edge:
   highway: Text = attr.ib()
   osmid: int = attr.ib()
   name: Text = attr.ib()
+  geometry: Any = attr.ib()
 
   @classmethod
-  def from_projected(cls, u_for_edge, v_for_edge, length, highway, osmid, name):
+  def from_projected(cls, u_for_edge, v_for_edge, length, highway, osmid, name, geometry):
     """Construct an edge entity to connect the projected point of POI.
     Arguments:
       u_for_edge: The u endside of the edge.
@@ -54,15 +58,16 @@ class Edge:
     return Edge(
       u_for_edge,
       v_for_edge,
-      length,
+      max(0.001, length),
       False,
       highway,
       osmid,
-      name
+      name,
+      geometry
     )
 
   @classmethod
-  def from_poi(cls, u_for_edge, v_for_edge, osmid, length):
+  def from_poi(cls, u_for_edge, v_for_edge, osmid, length, geometry):
     """Construct an edge entity to connect a POI.
     Arguments:
       u_for_edge: The u endside of the edge.
@@ -75,10 +80,10 @@ class Edge:
     return Edge(
       u_for_edge,
       v_for_edge,
-      length,
+      max(0.001, length),
       False,
       "poi",
       osmid,
-      "poi"
-
+      "poi",
+      geometry
     )
