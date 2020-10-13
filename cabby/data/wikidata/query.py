@@ -237,7 +237,7 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
       filtered_results.append(result)
   return filtered_results
 
-def get_filter_string(place_filter: [Sequence[Text]],
+def get_filter_string(place_filter: Sequence[Text],
                       place_param: Text = "place"):
   """Get an appropriate FILTER sparql command for the input sequence.
   Arguments:
