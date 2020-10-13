@@ -55,11 +55,11 @@ def evaluate(model: torch.nn.Module,
     cellids = cellids.float().to(device)
     target = target.to(device)
 
-    # Neighbor cellid.
     text_embedding, cellid_embedding = model(text, cellids)
     loss = criterion(text_embedding, cellid_embedding, target)
 
     loss_val_total += loss.mean().item()
+    
 
     tensor_cells = tensor_cells.float().to(device)
     text_embedding, cellid_embedding = model(text, tensor_cells)
