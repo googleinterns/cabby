@@ -28,57 +28,63 @@ from cabby.data.wikidata import item as wdi
 from cabby.data.wikipedia import item as wpi
 from cabby.data.wikidata import info_item as wdqi
 from cabby.data import wikigeo
+
 from cabby.data import osm_item
 from cabby.geo.map_processing import map_structure
 
-
 def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> List:
-  '''Get data from Wikipedia based on Wikidata items.
-  Arguments:
-    wikidata_items: The Wikidata items to which corresponding Wikigeo  
-    items will be extracted.
-  Returns:
-    The Wikigeo items found (composed of Wikipedia (text,title) and 
-    Wikidata (location) data).
-  '''
-  # Get Wikipedia titles.
-  titles = [entity.wikipedia_title for entity in wikidata_items]
+    '''Get data from Wikipedia based on Wikidata items" 
+    Arguments:
+        wikidata_items: The Wikidata items to which corresponding Wikigeo  
+        items will be extracted.
+    Returns:
+        The Wikigeo items found (composed of Wikipedia (text,title) and 
+        Wikidata (location) data).
+    '''
+    # Get Wikipedia titles.
+    titles = [entity.wikipedia_title for entity in wikidata_items]
 
-  # Get Wikipedia pages.
-  wikipedia_pages = wpq.get_wikipedia_items(titles)
-  wikipedia_items = [wpi.WikipediaEntity.from_api_result(
-    result) for result in wikipedia_pages]
+    # Get Wikipedia pages.
+    wikipedia_pages = wpq.get_wikipedia_items(titles)
+    wikipedia_items = []
+    wikipedia_titles =[]
+    for wikipedia_page in wikipedia_pages:
+      wikipedia_page_items=[]
+      for item in wikipedia_page:
+        wikipedia_item = wpi.WikipediaEntity.from_api_result(item)
+        wikipedia_page_items.append(wikipedia_item)
+        if wikipedia_item.title not in wikipedia_titles:
+          wikipedia_titles.append(wikipedia_item.title)
+      wikipedia_items.append(wikipedia_page_items)
 
-  # Get Wikipedia titles.
-  wikipedia_titles = [entity.title for entity in wikipedia_items]
+    # # Change to Geodata dataset foramt.
+    geo_data = []
+    for wikipedia_page_items, wikidata in zip(wikipedia_items, wikidata_items):
+      for wikipedia in wikipedia_page_items:
+        geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
+            wikipedia, wikipedia, wikidata, "Wikipedia_page").sample)
 
-  # Change to Geodata dataset foramt.
-  geo_data = []
-  for wikipedia, wikidata in zip(wikipedia_items, wikidata_items):
-    geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
-      wikipedia, wikipedia, wikidata).sample)
+    # # Get backlinks for Wikipedia pages.
+    backlinks_pages = wpq.get_backlinks_items_from_wikipedia_titles(
+        wikipedia_titles)
+    backlinks_items = []
+    for list_backlinks in backlinks_pages:
+        backlinks_items.append(
+            [wpi.WikipediaEntity.from_api_result(result) for \
+                result in list_backlinks])
 
-  # Get backlinks for Wikipedia pages.
-  backlinks_pages = wpq.get_backlinks_items_from_wikipedia_titles(
-    wikipedia_titles)
-  backlinks_items = []
-  for list_backlinks in backlinks_pages:
-    backlinks_items.append(
-      [wpi.WikipediaEntity.from_backlinks_api_result(result) for
-        result in list_backlinks])
-
-  # Change backlinks pages to Geodata dataset format.
-  for backlinks, original_wikipedia, original_wikidata in \
-      zip(backlinks_items, wikipedia_items, wikidata_items):
-    for backlink in backlinks:
-      wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
-        backlink, original_wikipedia, original_wikidata).sample
-
-      sample_text = wikigeo_sample['text']
-      if any(dict['text'] == sample_text for dict in geo_data):
-        continue
-      geo_data.append(wikigeo_sample)
-  return geo_data
+    # Change backlinks pages to Geodata dataset format.
+    for list_backlinks, original_wikipedia_items, original_wikidata in \
+        zip(backlinks_items, wikipedia_items, wikidata_items):
+        for backlink in list_backlinks:
+            wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
+                backlink, original_wikipedia_items[0], original_wikidata, "Wikipedia_backlink").sample
+            
+            sample_text = wikigeo_sample['text']
+            if any(dict['text'] == sample_text for dict in geo_data):
+                continue
+            geo_data.append(wikigeo_sample)
+    return geo_data
 
 
 def get_data_by_qid(qid: Text) -> Sequence:
@@ -113,7 +119,8 @@ def get_data_by_region(region: Text) -> Sequence:
   return get_wikigeo_data(wikidata_items)
 
 
-def get_data_by_region_with_osm(region: Text, path_osm: Text) -> Sequence:
+def get_data_by_region_with_osm(region: Text, path_osm: Text = None
+) -> Sequence:
   '''Get three types of samples by region: (1) samples from Wikipedia(text,title) and Wikidata(location); (2) Concatenation of Wikidata tags; (3) Concatenation of OSM tags. 
   Arguments:
     region(Text): The region to extract items from.
@@ -144,7 +151,11 @@ def get_data_by_region_with_osm(region: Text, path_osm: Text) -> Sequence:
     'Created {} samples with Wikidata additional data.'.format(len(samples)))
 
   # Add sample from OSM only.
-  poi = map_structure.load_poi(path_osm)
+  if path_osm is None:
+    map = map_structure.Map(region)
+    poi = map.poi
+  else:
+    poi = map_structure.load_poi(path_osm)
   num_cells_large_entities = 10
   # Remove large entities.
   poi = poi[poi['s2cellids'].str.len() <= num_cells_large_entities]  

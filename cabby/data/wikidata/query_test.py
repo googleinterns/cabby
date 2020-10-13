@@ -55,7 +55,7 @@ class WikidataTest(unittest.TestCase):
     places = [x['place']['value'] for x in items]
     places_set = set(places)
     self.assertEqual(len(places),len(places_set))
-
+    
 
 if __name__ == "__main__":
   unittest.main()

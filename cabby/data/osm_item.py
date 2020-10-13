@@ -45,7 +45,10 @@ class OSMEntity:
     self.qid = self.raw['wikidata'] if 'wikidata' in self.raw else str(
       self.osmid)
 
-    wanted_col = ['name', 'amenity', 'colour', 'brand', 'tourism', 'leisure', 'historic', 'building', 'description', 'building:colour', 'building:material', 'roof:material', 'roof:shape', 'roof:colour']
+    wanted_col = ['name', 'amenity', 'colour', 'brand', 'tourism', 'leisure', 
+    'historic', 'building', 'description', 'building:colour', 
+    'building:material', 'roof:material', 'roof:shape', 'roof:colour', 'office', 
+    'addr:street', 'diplomatic']
     col_included = [col for col in wanted_col if col in self.raw]
     self.raw = self.raw[col_included]
     self.text = concat_dictionary(self.raw.to_dict())
@@ -67,8 +70,12 @@ def concat_dictionary(dictionary: Dict) -> Text:
         v = get_colour_name(v)
       k = k.replace("_", " ")
       v = v.replace("_", " ")
-      if k in ['building','historic']:  
+      if k in ['building','historic', 'diplomatic']:  
         tag_list.append(k)
+      elif v in ['yes']:
+        tag_list.append(k)
+      elif v in ['no']:
+        continue
       else:
         tag_list.append(v)      
 
