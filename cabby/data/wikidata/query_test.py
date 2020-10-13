@@ -43,6 +43,17 @@ class WikidataTest(unittest.TestCase):
     qid_set = set(list(wd_relations.place))
     self.assertIn("Q4915", qid_set)
 
+  def testGetPlaceLocationPointsFromQidNonenglishFail(self):
+    # Q6745471 is the Mamaux building in Pittsburgh.
+    result = query.get_place_location_points_from_qid(qid="Q6745471")
+    self.assertEqual(len(result), 0)
+
+  def testGetPlaceLocationPointsFromQidNonenglishSuccess(self):
+    # Q6745471 is the Mamaux building in Pittsburgh.
+    result = query.get_place_location_points_from_qid(qid="Q6745471",
+                                                      location_only=True)
+    self.assertEqual(result[0]['place']['value'], 'http://www.wikidata.org/entity/Q6745471')
+    self.assertEqual(result[0]['point']['value'], 'Point(-80.0047 40.4389)')
 
 if __name__ == "__main__":
   unittest.main()

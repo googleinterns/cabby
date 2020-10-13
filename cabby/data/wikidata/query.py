@@ -176,7 +176,7 @@ _PITTSBURGH_RELATION_QUERY = """SELECT ?place ?placeLabel ?p ?propLabel ?instanc
           }
         """
 
-_BY_QID_QUERY = """SELECT ?place
+_BY_QID_QUERY_LOCATION_ONLY = """SELECT ?place
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
           WHERE 
           {
@@ -188,6 +188,24 @@ _BY_QID_QUERY = """SELECT ?place
           }
           }
           GROUP BY ?place
+        """
+
+_BY_QID_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
+           ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
+          (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
+          WHERE 
+          {
+          {
+            VALUES ?place {wd:%s}
+            ?place wdt:P31 ?instance.
+            ?place wdt:P625 ?location .
+            ?wikipediaUrl schema:about ?place. 
+            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
+            SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+                        ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
+          }
+          }
+          GROUP BY ?place ?placeLabel ?wikipediaUrl
         """
 
 _PITTSBURGH_LOCATION_QUERY = """SELECT ?place ?location
@@ -316,15 +334,21 @@ def get_geofenced_wikidata_relations(region: Text,
     result_df[extract_cols] = result_df[extract_cols].apply(extract_qid)
   return result_df
 
-def get_place_location_points_from_qid(qid: Text) -> Sequence[Dict[Text, Any]]:
+def get_place_location_points_from_qid(qid: Text,
+                                       location_only: bool = False) -> Sequence[Dict[Text, Any]]:
   '''Get lat/long point for a particular QID.
   Arguments:
     qid(Text): The qid to return point of.
+    location_only: if True, the return list will only include two dicts: one for QID ('place')
+      and one for the string version of a Point ('point'). Note that if False, this may return
+      null results for certain places that have non-English place/instance labels.
   Returns:
-    SPARQLWrapper return dict with 'place' and 'point' keys, values as
-    dicts, each dict with a 'value' key giving QID and Point (respectively).
+    list of SPARQLWrapper return dicts giving wikidata fields and values.
   '''
-  query = _BY_QID_QUERY % qid
+  if location_only:
+    query = _BY_QID_QUERY_LOCATION_ONLY % qid
+  else:
+    query = _BY_QID_QUERY % qid
   return query_api(query)
 
 
