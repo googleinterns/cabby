@@ -95,10 +95,10 @@ def get_data_by_qid(qid: Text) -> Sequence:
     The Wikipedia (text, title) and Wikidata (location) data found.
   '''
 
-    # Get Wikidata items by region.
-    wikidata_results = wdq.get_place_location_points_from_qid(qid)
-    wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
-                      for result in wikidata_results]
+  # Get Wikidata items by region.
+  wikidata_results = wdq.get_place_location_points_from_qid(qid)
+  wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
+                    for result in wikidata_results]
 
   return get_wikigeo_data(wikidata_items)
 

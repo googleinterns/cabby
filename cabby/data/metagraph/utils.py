@@ -81,7 +81,8 @@ def update_osm_map(osm_map: Map,
           continue
       already_added.add(row.place)
       osmid = hash(''.join(list(row.values)))
-      wd_query = query.get_place_location_points_from_qid(row.place)
+      wd_query = query.get_place_location_points_from_qid(
+        row.place, location_only=True)
       new_df = pd.DataFrame(data={
           'name': row.placeLabel,
           'geometry': [util.point_str_to_shapely_point(wd_query[0]['point']['value'])],
