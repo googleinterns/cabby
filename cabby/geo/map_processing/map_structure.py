@@ -45,7 +45,7 @@ OSM_CRS = 32633
 
 class Map:
 
-  def __init__(self, map_name: Text, level: int, load_directory: Text = None):
+  def __init__(self, map_name: Text, level: int = 18, load_directory: Text = None):
     self.map_name = map_name
     self.s2_graph = None
     self.level = level
@@ -409,20 +409,11 @@ class Map:
 
     # Load POI.
     path = self.get_valid_path(dir_name, '_poi', '.pkl')
-    assert os.path.exists(
-      path), "path {0} doesn't exist.".format(path)
-    poi_pandas = pd.read_pickle(path)
-    if 'cellids' in poi_pandas.columns:
-      poi_pandas['s2cellids'] = poi_pandas['cellids'].apply(
-        lambda x: util.s2cellids_from_cellids(x))
-    self.poi = poi_pandas
+    self.poi = load_poi(path)
 
     # Load streets.
     path = self.get_valid_path(dir_name, '_streets', '.pkl')
-    assert os.path.exists(
-      path), "path {0} doesn't exist.".format(path)
-    streets_pandas = pd.read_pickle(path)
-    self.streets = streets_pandas
+    self.streets = load_poi(path)
 
     # Load graph.
     path = self.get_valid_path(dir_name, '_graph', '.gpickle')
@@ -444,6 +435,17 @@ class Map:
     self.edges['osmid_list'] = self.edges['osmid'].apply(
       lambda x: convert_string_to_list(x))
 
+def load_poi(path: Text):
+    '''Load POI from disk.'''
+    assert os.path.exists(
+      path), "Path {0} doesn't exist.".format(path)
+    poi_pandas = pd.read_pickle(path)
+    if 'cellids' in poi_pandas:
+      poi_pandas['s2cellids'] = poi_pandas['cellids'].apply(
+        lambda x: util.s2cellids_from_cellids(x))
+      poi_pandas.drop(['cellids'], 1, inplace=True)
+
+    return poi_pandas
 
 def convert_string_to_list(string_list: Text) -> Sequence:
   '''Splitting a string into integers and creates a new list of the integers. 

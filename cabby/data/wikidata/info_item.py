@@ -14,7 +14,7 @@
 '''Basic classes and functions for Wikidata items.'''
 
 import re
-from typing import Text
+from typing import Text, Dict
 
 import attr
 from shapely.geometry.point import Point
@@ -33,29 +33,29 @@ class WikidataEntity:
   `title` is the name of the entity.
   `location` is a Point representing the geo-location of the entity.
   `instance` is the Wikidata instance property.    
-  'wikipedia_url' is the URL of the corresponding Wikipedia entity.
-  'wikipedia_title' is the name of the corresponding Wikipedia entity.
   `qid` is the Wikidata id assigned to this entity (which can be recovered from
     the URL, but is pulled out for convenience).
+  `tags` is the tags of the entity.
+  `text` is created from a concatenation of the entity's tags.
+
   """
   url: Text = attr.ib()
   title: Text = attr.ib()
   location: Point = attr.ib()
   instance: Text = attr.ib()
-  wikipedia_url: Text = attr.ib()
-  wikipedia_title: Text = attr.ib(init=False)
   qid: Text = attr.ib(init=False)
+  tags: Dict = attr.ib()
+  text: Text = attr.ib(init=False)
 
   def __attrs_post_init__(self):
     # The QID is the part of the URL that comes after the last / character.
     self.qid = self.url[self.url.rindex('/')+1:]
 
-    # The Wikipedia title is part of the URL.
-    self.wikipedia_title = self.wikipedia_url.split("wiki/")[-1]
+    self.text = create_sample_from_tags(self.tags)
   
 
   @classmethod
-  def from_sparql_result(cls, result):
+  def from_sparql_result_info(cls, result):
     """Construct an Entity from the results of a SPARQL query."""
     point_match = _POINT_RE.match(result['point']['value'])
     return WikidataEntity(
@@ -63,8 +63,21 @@ class WikidataEntity:
         result['placeLabel']['value'],
         Point(float(point_match.group(1)), float(point_match.group(2))),
         result['instance']['value'],
-        result['wikipediaUrl']['value'],
+        result
         
     )
-
+def create_sample_from_tags(item: Dict) -> Text:
+  '''Get a Wikidata item and return a sample based on tags." 
+  Arguments:
+      item: The Wikidata item to create a description of the entity.
+  Returns:
+      A description.
+  '''
+  unwanted_tags = ['place', 'point']
+  list_tags = []
+  for k, v in item.items():
+    if k not in unwanted_tags:
+      list_tags.append(v['value'])
+  
+  return ' and '.join(list_tags) + "."
 
