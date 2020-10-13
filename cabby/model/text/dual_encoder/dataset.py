@@ -84,9 +84,8 @@ class CabbyDataset(torch.utils.data.Dataset):
 
     pick = random.randint(0,2)
 
-
     if self.rand==False or pick==0:
-      logging.info("picked correct")
+      logging.info("picked correct {}".format(self.rand, pick))
       cell = torch.tensor(self.cellids[idx])
       target = torch.ones(1)
     elif pick==1:
