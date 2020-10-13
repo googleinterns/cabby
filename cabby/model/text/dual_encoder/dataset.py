@@ -84,7 +84,7 @@ class CabbyDataset(torch.utils.data.Dataset):
     points = torch.tensor(self.points[idx])
     labels = torch.tensor(self.labels[idx])
 
-    return text, cellids, neighbor_cells, far_cells, points, labels
+    return text, cellids, far_cells, points, labels
 
   def __len__(self):
     return len(self.cellids)

@@ -50,24 +50,19 @@ def evaluate(model: torch.nn.Module,
   loss_val_total = 0
 
   for batch in valid_loader:
-    text, cellids, neighbor_cells, far_cells, points, labels = batch
-    cellids, neighbor_cells, far_cells = cellids.float().to(device), neighbor_cells.float().to(device), far_cells.float().to(device)
+    text, cellids, far_cells, points, labels = batch
+    cellids, far_cells = cellids.float().to(device), far_cells.float().to(device)
     text = {key: val.to(device) for key, val in text.items()}
     # Correct cellid.
     target = torch.ones(cellids.shape[0]).to(device)
     text_embedding, cellid_embedding = model(text, cellids)
     loss_cellid = criterion(text_embedding, cellid_embedding, target)
 
-    # Neighbor cellid.
-    target = -1*torch.ones(cellids.shape[0]).to(device)
-    text_embedding, cellid_embedding = model(text, neighbor_cells)
-    loss_neighbor = criterion(text_embedding, cellid_embedding, target)
-
     # Far cellid.
     text_embedding, cellid_embedding = model(text, far_cells)
     loss_far = criterion(text_embedding, cellid_embedding, target)
 
-    loss = loss_cellid.mean() + loss_neighbor.mean() + loss_far.mean()
+    loss = loss_cellid.mean()  + loss_far.mean()
     loss_val_total += loss.item()
 
     tensor_cells = tensor_cells.float().to(device)
@@ -122,25 +117,21 @@ def train_model(model: torch.nn.Module,
     logging.info("Epoch number: {}".format(epoch))
     for batch_idx, batch in enumerate(train_loader):
       optimizer.zero_grad()
-      text, cellids, neighbor_cells, far_cells, points, labels = batch
+      text, cellids, far_cells, points, labels = batch
       text = {key: val.to(device) for key, val in text.items()}
-      cellids, neighbor_cells, far_cells = cellids.float().to(device), neighbor_cells.float().to(device), far_cells.float().to(device)
+      cellids, far_cells = cellids.float().to(device), far_cells.float().to(device)
 
       # Correct cellid.
       target = torch.ones(cellids.shape[0]).to(device)
       text_embedding, cellid_embedding = model(text, cellids)
       loss_cellid = criterion(text_embedding, cellid_embedding, target)
 
-      # Neighbor cellid.
-      target = -1*torch.ones(cellids.shape[0]).to(device)
-      text_embedding, cellid_embedding = model(text, neighbor_cells)
-      loss_neighbor = criterion(text_embedding, cellid_embedding, target)
 
       # Far cellid.
       text_embedding, cellid_embedding = model(text, far_cells)
       loss_far = criterion(text_embedding, cellid_embedding, target)
 
-      loss = loss_cellid + loss_neighbor + loss_far
+      loss = loss_cellid  + loss_far
       loss.mean().backward()
       optimizer.step()
 
