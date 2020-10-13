@@ -20,6 +20,7 @@ import geographiclib
 from geopy.distance import geodesic
 import numpy as np
 from numpy import int64
+import operator
 import osmnx as ox
 import pyproj
 from s2geometry import pywraps2 as s2
@@ -164,8 +165,8 @@ def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> s2.S2Polygon:
 
   return line
 
-def cut(line: LineString, distance: float):
-  '''Function from shapely manual to cut line in two at a distance from its 
+def cut(line: LineString, distance: float) -> Sequence[LineString]:
+  '''Cut line in two at a distance from its 
   starting point. 
   Arguments:
     line: The to to be cut.
@@ -187,6 +188,14 @@ def cut(line: LineString, distance: float):
           return [
               LineString(coords[:i] + [(cp.x, cp.y)]),
               LineString([(cp.x, cp.y)] + coords[i:])]
+  
+  if coords[0]==coords[-1]: # It is a loop.
+    cp = line.interpolate(distance)
+    return [
+            LineString(coords[:-1] + [(cp.x, cp.y)]),
+            LineString([(cp.x, cp.y)] + coords[-1:])]
+
+  return [LineString(line)] 
 
 def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
   '''Plot the S2Cell covering.'''

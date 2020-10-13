@@ -122,7 +122,6 @@ class Map:
     Returns:
       The new osmid.
     '''
-
     # Project POI on to the closest edge in graph.
     geometry = single_poi['geometry']
     if isinstance(geometry, Point):
@@ -219,7 +218,6 @@ class Map:
     cut_geometry = util.cut(line,dist_projected)
 
     n_lines = len(cut_geometry) 
-    assert n_lines<=2
     
     line_1 = cut_geometry[0]
     dist_1 = util.get_line_length(line_1)

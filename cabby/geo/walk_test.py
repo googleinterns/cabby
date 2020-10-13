@@ -13,8 +13,6 @@
 # limitations under the License.
 '''Tests for walk.py'''
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from cabby.geo.map_processing import map_structure
 from cabby.geo import util
