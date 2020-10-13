@@ -39,6 +39,30 @@ class WikidataTest(unittest.TestCase):
     self.assertNotIn(not_expected, poi_by_value)
     self.assertNotIn('', poi_by_value)
 
+  def testSingleOutputWithoutInstance(self):
+    output = query.get_geofenced_wikidata_items('Pittsburgh')
+    expected_place_label = 'Arrott Building'
+    poi_by_value = [x['placeLabel']['value'] for x in output]
+    self.assertIn(expected_place_label, poi_by_value)
+
+  def testRelationsQuery(self):
+    wd_relations = query.get_geofenced_wikidata_relations(
+      "Pittsburgh", extract_qids=True)
+    qid_set = set(list(wd_relations.place))
+    self.assertIn("Q4915", qid_set)
+
+  def testGetPlaceLocationPointsFromQidNonenglishFail(self):
+    # Q6745471 is the Mamaux building in Pittsburgh.
+    result = query.get_place_location_points_from_qid(qid="Q6745471")
+    self.assertEqual(len(result), 0)
+
+  def testGetPlaceLocationPointsFromQidNonenglishSuccess(self):
+    # Q6745471 is the Mamaux building in Pittsburgh.
+    result = query.get_place_location_points_from_qid(qid="Q6745471",
+                                                      location_only=True)
+    self.assertEqual(result[0]['place']['value'], 'http://www.wikidata.org/entity/Q6745471')
+    self.assertEqual(result[0]['point']['value'], 'Point(-80.0047 40.4389)')
+
   def testExtensiveInfoQuery(self):
     items = self.items_info
     place_label = 'New York Stock Exchange'
@@ -48,14 +72,12 @@ class WikidataTest(unittest.TestCase):
     description = poi_by_value['placeDescription']['value']
     self.assertEqual(description, 'American stock exchange')
   
-
   def testLeanQueryDuplicates(self):
     # Test for duplicate items.
     items = self.items_lean
     places = [x['place']['value'] for x in items]
     places_set = set(places)
     self.assertEqual(len(places),len(places_set))
-    
 
 if __name__ == "__main__":
   unittest.main()
