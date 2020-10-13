@@ -180,12 +180,9 @@ _BY_QID_QUERY_LOCATION_ONLY = """SELECT ?place
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
           WHERE 
           {
-          {
             VALUES ?place {wd:%s}
             ?place wdt:P625 ?location .
-            ?wikipediaUrl schema:about ?place. 
-            ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
-          }
+            ?wikipediaUrl schema:about ?place.
           }
           GROUP BY ?place
         """
@@ -296,7 +293,7 @@ def get_locations_by_qid(region: Text,
 
 def get_geofenced_wikidata_relations(region: Text,
                                      place_filter: Sequence[Text] = [],
-                                     extract_qids = False) -> Sequence[Dict[Text, Any]]:
+                                     extract_qids = False) -> pd.DataFrame:
   '''Get Wikidata relations for a specific area.
   Arguments:
     region(Text): The area to query the Wikidata items.
