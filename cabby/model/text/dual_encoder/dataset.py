@@ -82,7 +82,7 @@ class CabbyDataset(torch.utils.data.Dataset):
     text = {key: torch.tensor(val[idx])
         for key, val in self.encodings.items()}
 
-    pick = random.randint(0,2)
+    pick = np.random.randint(3)
 
     if self.rand==False or pick==0:
       logging.info("picked correct {}, {}".format(self.rand, pick))
