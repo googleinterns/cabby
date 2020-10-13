@@ -80,7 +80,7 @@ class CabbyDataset(torch.utils.data.Dataset):
         for key, val in self.encodings.items()}
     cellids = torch.tensor(self.cellids[idx])
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
-    far_cells = torch.tensor(self.far_cells[idx])
+    far_cells = torch.tensor(self.neighbor_cells[idx])
     points = torch.tensor(self.points[idx])
     labels = torch.tensor(self.labels[idx])
 
