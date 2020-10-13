@@ -83,13 +83,13 @@ class CabbyDataset(torch.utils.data.Dataset):
     pick = random.randint(0,2)
     if pick==0:
       cell = torch.tensor(self.cellids[idx])
-      target = torch.ones(cell.shape[0])
+      target = torch.ones(1)
     elif pick==1:
       cell = torch.tensor(self.neighbor_cells[idx])
-      target = torch.ones(cell.shape[0])*-1
+      target = torch.ones(1)*-1
     else:
       cell = torch.tensor(self.far_cells[idx])
-      target = torch.ones(cell.shape[0])*-1
+      target = torch.ones(1)*-1
 
     points = torch.tensor(self.points[idx])
     labels = torch.tensor(self.labels[idx])
