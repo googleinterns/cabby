@@ -40,8 +40,10 @@ tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 CELLID_DIM = 64
 
 class CabbyDataset(torch.utils.data.Dataset):
-  def __init__(self, data: pd.DataFrame, s2level: int, cells: int, cellid_to_label: Dict[int, int]):
-    
+  def __init__(self, data: pd.DataFrame, s2level: int, cells: int, cellid_to_label: Dict[int, int], rand: bool = True):
+
+
+    self.rand = rand
     # Tokenize instructions.
     self.encodings = tokenizer(
       data.text.tolist(), truncation=True,
@@ -81,7 +83,8 @@ class CabbyDataset(torch.utils.data.Dataset):
         for key, val in self.encodings.items()}
 
     pick = random.randint(0,2)
-    if pick==0:
+
+    if self.rand==False or pick==0:
       cell = torch.tensor(self.cellids[idx])
       target = torch.ones(1)
     elif pick==1:
@@ -130,7 +133,7 @@ def create_dataset(data_dir: Text,
 
   # Create Cabby dataset.
   train_dataset = CabbyDataset(train_ds, s2level, cells, cellid_to_label)
-  val_dataset = CabbyDataset(valid_ds, s2level, cells, cellid_to_label)
-  test_dataset = CabbyDataset(test_ds, s2level, cells, cellid_to_label)
+  val_dataset = CabbyDataset(valid_ds, s2level, cells, cellid_to_label, rand = False)
+  test_dataset = CabbyDataset(test_ds, s2level, cells, cellid_to_label, rand = False)
 
   return train_dataset, val_dataset, test_dataset, np.array(unique_cellid), tens_cells, label_to_cellid
