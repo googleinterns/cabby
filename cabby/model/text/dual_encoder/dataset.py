@@ -19,6 +19,7 @@ from absl import logging
 import numpy as np
 import os
 import pandas as pd
+import random
 import sys
 from torchtext import data
 import torch
@@ -78,13 +79,23 @@ class CabbyDataset(torch.utils.data.Dataset):
   def __getitem__(self, idx: int):
     text = {key: torch.tensor(val[idx])
         for key, val in self.encodings.items()}
-    cellids = torch.tensor(self.cellids[idx])
-    neighbor_cells = torch.tensor(self.neighbor_cells[idx])
-    far_cells = torch.tensor(self.far_cells[idx])
+
+    pick = random.randint(0,2)
+    if pick==0:
+      cell = torch.tensor(self.cellids[idx])
+      target = torch.ones(cellids.shape[0]).to(device)
+    elif pick==1:
+      cell = torch.tensor(self.neighbor_cells[idx])
+      target = torch.ones(cellids.shape[0]).to(device)*-1
+    else:
+      cell = torch.tensor(self.far_cells[idx])
+      target = torch.ones(cellids.shape[0]).to(device)*-1
+
     points = torch.tensor(self.points[idx])
     labels = torch.tensor(self.labels[idx])
+    
 
-    return text, cellids, neighbor_cells, far_cells, points, labels
+    return text, cell, target, points, labels
 
   def __len__(self):
     return len(self.cellids)
