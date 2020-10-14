@@ -15,12 +15,18 @@ The graph we construct is a directional graph with multiple edges between two no
 The edges also have tags, e.g., key=highway and value=residential.
 
 
+
+
 Example of case where there are parallel paths between two nodes (U and V).
 ![image](images/parallel_paths.png)
 
 
+
+
 Example of case where there is a loop in th graph.
 ![image](images/loop.png)
+
+
 
 
 Example of graph -
