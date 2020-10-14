@@ -16,19 +16,23 @@
 along the path and near the goal.'''
 
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
+
+import geopandas as gpd
+from geopandas import GeoDataFrame, GeoSeries
+import networkx as nx
+import sys
+from random import sample
+import os
+import osmnx as ox
+import pandas as pd
+import json
+from random import sample
 from shapely import geometry
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon, LinearRing
 from shapely.geometry import box, mapping, LineString
 import sys
-from random import sample
-import os
-import osmnx as ox
-import networkx as nx
-import pandas as pd
-import json
-import geopandas as gpd
-from geopandas import GeoDataFrame, GeoSeries
+
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 from cabby.rvs import item
@@ -36,6 +40,7 @@ from cabby.rvs import item
 
 _Geo_DataFrame_Driver = "GPKG"
 OSM_CRS = 32633  # UTM Zones (North).
+SMALL_POI = 4 # Less than 4 S2Cellids.
 
 
 class Walker:
@@ -92,9 +97,12 @@ class Walker:
     Returns:
       A single POI.
     '''
+    
+    # Filter with name.
+    named_poi = map.poi[map.poi['name'].notnull()]
 
     # Filter large POI.
-    small_poi = map.poi[map.poi['s2cellids'].str.len() <= 4]
+    small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
 
     if small_poi.shape[0] == 0:
       return None
@@ -162,8 +170,11 @@ class Walker:
 
     poi_in_ring = map.poi[map.poi['node'].isin(osmid_in_range)]
 
-    # Filter large POI.
-    small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= 4]
+    # Filter with name.
+    named_poi = poi_in_ring[poi_in_ring['name'].notnull()]
+
+    # Filter large POI.	  # Filter large POI.
+    small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
 
     if small_poi.shape[0] == 0:
       return None

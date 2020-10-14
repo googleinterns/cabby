@@ -11,7 +11,6 @@ bazel build cabby/rvs:*
 bazel query cabby/rvs:* | xargs bazel test
 bazel-bin/cabby/rvs/generate_rvs --rvs_data_path "./cabby/geo/pathData/pittsburgh_geo_paths.gpkg" --save_instruction_path "./cabby/rvs/data/pittsburgh_instructions.json" 
 
-
 # Wikidata
 bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items --region Pittsburgh
 
@@ -19,4 +18,5 @@ bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items --region Pittsbur
 bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles=New_York_Stock_Exchange,Empire_State_Building
 
 # Wikigeo
-bazel-bin/cabby/data/extract_wikigeo_contexts --region "DC" --path dc.json
+bazel-bin/cabby/data/extract_wikigeo_contexts --region DC --path dc.json
+bazel-bin/cabby/data/extract_wikigeo_contexts_with_osm --region DC --save_path dc.json --osm_path  "./cabby/geo/map_processing/poiTestData/dc_poi.pkl"
