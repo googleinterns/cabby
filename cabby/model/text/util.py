@@ -24,17 +24,27 @@ import torch
 from cabby.geo import util
 
 
-def binary_representation(array_int, dim):
-  binary_range = 2**np.arange(dim, dtype=np.uint64)
+def binary_representation(array_int: np.ndarray, dim: int
+) -> np.ndarray:
+  '''Converts an aray of integers to their binary vector with specific 
+  dimension.
+  Arguments:
+    array_int: Array of integers to be converted to binary vectors.
+    dim: The dimension of the vctor to output.
+  Returns:
+    An array of binary vectors.
+  '''
+
+  binary_range = 2**np.arange(dim, dtype=array_int.dtype)
   vector = array_int.reshape(-1,1)
 
   bin_rep = ((vector & binary_range) != 0).astype(int)
   return bin_rep
 
 
-def save_checkpoint(save_path: Text, model:  torch.nn.Module,
-          valid_loss: float):
-  '''Funcion for saving model.'''
+def save_checkpoint(save_path: Text, model:  torch.nn.Module, 
+  valid_loss: float):
+  '''Function for saving model.'''
 
   if save_path == None:
     return
@@ -47,8 +57,8 @@ def save_checkpoint(save_path: Text, model:  torch.nn.Module,
 
 
 def load_checkpoint(load_path: Text, model:  torch.nn.Module,
-          device: torch.device) -> Dict[Text, Sequence]:
-  '''Funcion for loading model.'''
+  device: torch.device) -> Dict[Text, Sequence]:
+  '''Function for loading model.'''
 
   if load_path == None:
     return
@@ -67,7 +77,7 @@ def save_metrics(save_path: Text,
          valid_accuracy_list:  Sequence[float],
          true_points_list: Sequence[Sequence[Tuple[float, float]]],
          pred_points_list: Sequence[Sequence[Tuple[float, float]]]):
-  '''Funcion for saving results.'''
+  '''Function for saving results.'''
 
   if save_path == None:
     return
@@ -83,7 +93,7 @@ def save_metrics(save_path: Text,
 
 
 def load_metrics(load_path: Text, device: torch.device) -> Dict[Text, float]:
-  '''Funcion for loading results.'''
+  '''Function for loading results.'''
 
   if load_path == None:
     return
@@ -95,7 +105,7 @@ def load_metrics(load_path: Text, device: torch.device) -> Dict[Text, float]:
 
 
 def predictions_to_points(preds: Sequence,
-              label_to_cellid: Dict[int, int]) -> Sequence[Tuple[float, float]]:
+  label_to_cellid: Dict[int, int]) -> Sequence[Tuple[float, float]]:
   cellids = [label_to_cellid[label] for label in preds]
   coords = util.get_center_from_s2cellids(cellids)
   return coords

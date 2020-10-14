@@ -14,6 +14,7 @@ py_library(
     name = 'dataset',
     srcs = ['dataset.py'],
     deps = [
+          ":dataset_item",
           "//cabby/geo:util",
           "//cabby/geo:regions",
 
@@ -22,12 +23,15 @@ py_library(
 
 
 py_library(
+    name = 'dataset_item',
+    srcs = ['dataset_item.py'],
+
+)
+
+py_library(
     name = 'model',
     srcs = ['model.py'],
-    deps = [
 
-
-    ],
 )
 
 py_binary(
@@ -47,6 +51,7 @@ py_binary(
     deps = [
         ':train',
         ':dataset',
+        ':dataset_item',
         ':model',
         "//cabby/model/text:util",
 

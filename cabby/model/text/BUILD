@@ -19,3 +19,15 @@ py_binary(
     ],
 
 )
+
+
+py_test(
+    name = "util_test",
+    srcs = ["util_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":util",
+
+    ],
+		
+)

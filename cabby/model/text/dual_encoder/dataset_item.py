@@ -13,95 +13,81 @@
 # limitations under the License.
 '''Basic classes and functions for Wikigeo items.'''
 
+from absl import logging
 import geopandas as gpd
 from geopandas import GeoDataFrame, GeoSeries
+import numpy as np
+import os
 import pandas as pd
 import re
 from shapely.geometry.point import Point
 from shapely.geometry import box, mapping, LineString
-from typing import Text, Dict
+import sys
+from typing import Text, Dict, Any
+import torch
 
 import attr
-
 
 @attr.s
 class TextGeoDataset:
   """Construct a RVSPath sample.
-  `start_point` is the beginning location.
-  `end_point` is the goal location.
-  `route` is route between the start and end points.
-  `main_pivot` is pivot along the route.
-  `near_pivot` is the pivot near the goal location.
-  `beyond_pivot` is the pivot beyond the goal location.
-  `cardinal_direction` is the cardinal direction betweeen main pivot and 
-  goal. Possible cardinal directions: North, South, East, West, North-East, 
-  North-West, South-East, South-West. 
-  `intersections` is the number of intersections between the pivot along the 
-  route and the goal.
-  `from_file` should the entity be processed from file.
-  `instructions` is a basic template that includes the points, pivots and route 
-  features.
+  `train` is the train split.
+  `valid` is the valid split.
+  `test` is the test split.
+  `unique_cellids` is the unique S2Cells.
+  `unique_cellids_binary`  is the binary tensor of the unique S2Cells.
+  `label_to_cellid` is the dictionary mapping labels to cellids.
   """
-  start_point: GeoSeries = attr.ib()
-  train: ,
-  valid,
-  test,
-  unique_cellids,
-  unique_cellids_tensors,
-  label_to_cellid,
+  train: Any = attr.ib()
+  valid: Any = attr.ib()
+  test: Any = attr.ib()
+  unique_cellids: np.ndarray = attr.ib()
+  unique_cellids_binary: torch.tensor = attr.ib()
+  label_to_cellid: Dict[int, int] = attr.ib()
 
-  def __attrs_post_init__(self):
-    if not self.process:
-      return
-    # Creat basic template instruction.
-    if "main_tag" in self.beyond_pivot:
-      avoid_instruction = "If you reached {0}, you have gone too far.".format(
-        self.beyond_pivot['main_tag'])
-
-    else:
-      avoid_instruction = ""
-      self.beyond_pivot['main_tag'] = ""
-
-    if self.intersections == 1:
-      intersection_instruction = ("and walk straight to the next intersection, "
-                    .format(self.intersections))
-    elif self.intersections > 1:
-      intersection_instruction = ("and walk straight for {0} intersections, "
-                    .format(self.intersections))
-    else:
-      intersection_instruction = ""
-
-    self.instructions = (
-      "Starting at {0} walk {1} past {2} {3}and your goal is {4}, near {5}. "
-      .format(self.start_point['name'], self.cardinal_direction,
-          self.main_pivot['main_tag'], intersection_instruction,
-          self.end_point['name'],
-          self.near_pivot['main_tag']) + avoid_instruction
-    )
-
-    # Create centroid point.
-    if self.beyond_pivot['geometry'] is None:
-      self.beyond_pivot['geometry'] = Point()
-
-    prune_columns(self.start_point)
-    prune_columns(self.end_point)
-    prune_columns(self.main_pivot)
-    prune_columns(self.near_pivot)
-    prune_columns(self.beyond_pivot)
-
-    self.route['cardinal_direction'] = self.cardinal_direction
-    self.route['instructions'] = self.instructions
-    self.route['intersections'] = self.intersections
 
   @classmethod
   def from_TextGeoSplit(cls, train, valid, test, unique_cellids,
-                              unique_cellids_tensors, label_to_cellid):
+                              unique_cellids_binary, label_to_cellid):
     """Construct a TextGeoDataset."""
     return TextGeoDataset(
       train,
       valid,
       test,
       unique_cellids,
-      unique_cellids_tensors,
+      unique_cellids_binary,
       label_to_cellid,
     )
+
+  @classmethod
+  def load(cls, dataset_path: Text, train_path_dataset: Text,
+    valid_path_dataset: Text, unique_cellid_path: Text, 
+    tensor_cellid_path: Text, label_to_cellid_path: Text):
+    
+
+    logging.info("Loading dataset from <== {}.".format(dataset_path))
+    train_dataset = torch.load(train_path_dataset)
+    valid_dataset = torch.load(valid_path_dataset)
+    unique_cellid = np.load(unique_cellid_path, allow_pickle='TRUE')
+    label_to_cellid = np.load(
+      label_to_cellid_path, allow_pickle='TRUE').item()
+    tens_cells = torch.load(tensor_cellid_path)
+    n_cells = len(unique_cellid)
+    dataset_text = TextGeoDataset(train_dataset, valid_dataset, None, unique_cellid, tens_cells, label_to_cellid)
+
+    return dataset_text
+  
+  @classmethod
+  def save(cls, dataset_text: Any, dataset_path: Text,     
+    train_path_dataset: Text, valid_path_dataset: Text, 
+    unique_cellid_path: Text, tensor_cellid_path: Text,
+    label_to_cellid_path: Text):
+
+    os.mkdir(dataset_path)
+    torch.save(dataset_text.train, train_path_dataset)
+    torch.save(dataset_text.valid, valid_path_dataset)
+    np.save(unique_cellid_path, dataset_text.unique_cellid) 
+    torch.save(dataset_text.tens_cells, tensor_cellid_path)
+    np.save(label_to_cellid_path, dataset_text.label_to_cellid) 
+
+    logging.info("Saved data to ==> {}.".format(dataset_path))

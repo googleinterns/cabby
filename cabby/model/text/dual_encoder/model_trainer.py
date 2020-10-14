@@ -1,5 +1,5 @@
-# Copyright 2020 The Flax Authors.
-#
+# coding=utf-8
+# Copyright 2020 Google LLC
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -39,14 +39,13 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from transformers import AdamW
 
-
-
 from cabby.model.text.dual_encoder import train
 from cabby.model.text.dual_encoder import dataset
 from cabby.model.text.dual_encoder import model
+from cabby.model.text.dual_encoder import dataset_item
+
 
 FLAGS = flags.FLAGS
-
 
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
@@ -85,47 +84,45 @@ flags.mark_flag_as_required("output_dir")
 def main(argv):
 
   if not os.path.exists(FLAGS.dataset_dir):
-    sys.exit("Dataset path doesn't exsist: {}.".format(FLAGS.dataset_dir))
+    sys.exit("Dataset path doesn't exist: {}.".format(FLAGS.dataset_dir))
 
   dataset_path = os.path.join(FLAGS.dataset_dir, str(FLAGS.s2_level))
   train_path_dataset = os.path.join(dataset_path,'train.pth')
   valid_path_dataset = os.path.join(dataset_path,'valid.pth')
   unique_cellid_path = os.path.join(dataset_path,"unique_cellid.npy")
-  tesnor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
+  tensor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
   label_to_cellid_path = os.path.join(dataset_path,"label_to_cellid.npy")
 
-
   if os.path.exists(dataset_path):
-    logging.info("Loading dataset from <== {}.".format(dataset_path))
-    train_dataset = torch.load(train_path_dataset)
-    valid_dataset = torch.load(valid_path_dataset)
-    unique_cellid = np.load(unique_cellid_path, allow_pickle='TRUE')
-    label_to_cellid = np.load(label_to_cellid_path, allow_pickle='TRUE').item()
-    tens_cells = torch.load(tesnor_cellid_path)
-    n_cells = len(unique_cellid)
+    datast_text = dataset_item.TextGeoDataset.load(
+      dataset_path = dataset_path, 
+      train_path_dataset = train_path_dataset, 
+      valid_path_dataset = valid_path_dataset, 
+      label_to_cellid_path = label_to_cellid_path, 
+      unique_cellid_path = unique_cellid_path, 
+      tensor_cellid_path = tensor_cellid_path)
 
   else:
     logging.info("Preparing data.")
-    train_dataset, valid_dataset, test_dataset, unique_cellid, tens_cells, label_to_cellid = dataset.create_dataset(
+    datast_text = dataset.create_dataset(
       FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
-    n_cells = len(unique_cellid)
-    logging.info("Number of unique cells: {}".format(n_cells))
 
-    
-    # Save to dataloaders and lables to cells dictionary.
-    os.mkdir(dataset_path)
-    torch.save(train_dataset, train_path_dataset)
-    torch.save(valid_dataset, valid_path_dataset)
-    np.save(unique_cellid_path, unique_cellid) 
-    torch.save(tens_cells, tesnor_cellid_path)
-    np.save(label_to_cellid_path, label_to_cellid) 
-
-    logging.info("Saved data to ==> {}.".format(dataset_path))
+    dataset_item.TextGeoDataset.save(
+      dataset_text = datast_text,
+      dataset_path = dataset_path, 
+      train_path_dataset = train_path_dataset, 
+      valid_path_dataset = valid_path_dataset, 
+      label_to_cellid_path = label_to_cellid_path, 
+      unique_cellid_path = unique_cellid_path, 
+      tensor_cellid_path = tensor_cellid_path)
+  
+  logging.info("Number of unique cells: {}".format(
+  len(datast_text.unique_cellids)))
 
   train_loader = DataLoader(
-  train_dataset, batch_size=FLAGS.train_batch_size, shuffle=True)
+    datast_text.train, batch_size=FLAGS.train_batch_size, shuffle=True)
   valid_loader = DataLoader(
-  valid_dataset, batch_size=FLAGS.test_batch_size, shuffle=False)
+    datast_text.valid, batch_size=FLAGS.test_batch_size, shuffle=False)
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -148,10 +145,10 @@ def main(argv):
     optimizer=optimizer,
     train_loader=train_loader,
     valid_loader=valid_loader,
-    unique_cells = unique_cellid,
+    unique_cells = datast_text.unique_cellids,
     file_path=FLAGS.output_dir, 
-    tens_cells = tens_cells,
-    label_to_cellid = label_to_cellid
+    cells_tensor = datast_text.unique_cellids_binary,
+    label_to_cellid = datast_text.label_to_cellid
     )
 
 if __name__ == '__main__':

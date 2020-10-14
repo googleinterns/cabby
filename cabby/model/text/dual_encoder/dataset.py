@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
 from absl import logging
@@ -32,6 +31,7 @@ from cabby.geo import util as gutil
 from cabby.model.text import util 
 
 from cabby.geo import regions
+from cabby.model.text.dual_encoder import dataset_item
 
 
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
@@ -99,7 +99,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
       'far_cells': far_cells, 'point': point, 'label': label}
 
-
     return sample
 
   def __len__(self):
@@ -107,8 +106,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 
 def create_dataset(data_dir: Text, region: Text, s2level: int
-) -> Tuple[TextGeoSplit, TextGeoSplit, TextGeoSplit, np.ndarray, 
-  Any, Dict[int, int]]:
+) -> dataset_item.TextGeoDataset:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.
@@ -118,11 +116,11 @@ def create_dataset(data_dir: Text, region: Text, s2level: int
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
 
-  train_ds = pd.read_json(os.path.join(data_dir,'train.json'))
-  valid_ds = pd.read_json(os.path.join(data_dir,'dev.json'))
-  test_ds = pd.read_json(os.path.join(data_dir,'test.json'))
+  train_ds = pd.read_json(os.path.join(data_dir, 'train.json'))
+  valid_ds = pd.read_json(os.path.join(data_dir, 'dev.json'))
+  test_ds = pd.read_json(os.path.join(data_dir, 'test.json'))
 
-  # Get lables.
+  # Get labels.
   get_region = regions.get_region(region)
   unique_cellid = gutil.cellids_from_polygon(get_region, s2level)
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
@@ -130,15 +128,18 @@ def create_dataset(data_dir: Text, region: Text, s2level: int
 
   points = gutil.get_centers_from_s2cellids(unique_cellid)
   cells = pd.DataFrame({'point': points, 'cellid': unique_cellid})
-  vec_cellls = util.binary_representation(cells.cellid.to_numpy(), 
+  vec_cells = util.binary_representation(cells.cellid.to_numpy(), 
   dim = CELLID_DIM)
-  tens_cells = torch.tensor(vec_cellls)
+  tens_cells = torch.tensor(vec_cells)
 
   # Create Cabby dataset.
   train_dataset = TextGeoSplit(train_ds, s2level, cells, cellid_to_label)
   val_dataset = TextGeoSplit(valid_ds, s2level, cells, cellid_to_label)
   test_dataset = TextGeoSplit(test_ds, s2level, cells, cellid_to_label)
 
-  return (train_dataset, val_dataset, test_dataset, 
-    np.array(unique_cellid), tens_cells, label_to_cellid)
+  return dataset_item.TextGeoDataset.from_TextGeoSplit(
+    train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
+    tens_cells, label_to_cellid)
 
+
+result = create_dataset( "/home/tzuf_google_com/data/wikigeo/pittsburgh/", "Pittsburgh", 12)
