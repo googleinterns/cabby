@@ -87,7 +87,7 @@ class TextGeoDataset:
     torch.save(dataset_text.train, train_path_dataset)
     torch.save(dataset_text.valid, valid_path_dataset)
     np.save(unique_cellid_path, dataset_text.unique_cellids) 
-    torch.save(dataset_text.tens_cells, tensor_cellid_path)
+    torch.save(dataset_text.unique_cellids_binary, tensor_cellid_path)
     np.save(label_to_cellid_path, dataset_text.label_to_cellid) 
 
     logging.info("Saved data to ==> {}.".format(dataset_path))
