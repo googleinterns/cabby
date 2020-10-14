@@ -31,7 +31,7 @@ The edges also have tags, e.g., key=highway and value=residential.
 
 | ![](images/graph.png) | 
 |:--:| 
-| *An example of graph.*|
+| *An example of a graph.*|
 
 
 
