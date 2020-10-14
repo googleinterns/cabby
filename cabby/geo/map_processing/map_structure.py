@@ -122,6 +122,10 @@ class Map:
     Returns:
       The new osmid.
     '''
+    # If the POI is already in the graph, do not add it.
+    if single_poi['osmid'] in self.nx_graph:
+      return single_poi['osmid']
+
     # Project POI on to the closest edge in graph.
     geometry = single_poi['geometry']
     if isinstance(geometry, Point):
