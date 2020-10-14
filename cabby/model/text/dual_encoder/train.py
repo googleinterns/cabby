@@ -50,7 +50,12 @@ def evaluate(model: torch.nn.Module,
   loss_val_total = 0
 
   for batch in valid_loader:
-    text, cellids, neighbor_cells, far_cells, points, labels = batch
+    text = {key: val.to(device) for key, val in batch['text'].items()}
+    cellids = batch['cellid'].float().to(device)
+    neighbor_cells = batch['neighbor_cells'].float().to(device) 
+    far_cells = batch['far_cells'].float().to(device)
+
+    # text, cellids, neighbor_cells, far_cells, points, labels = batch
     cellids, neighbor_cells, far_cells = cellids.float().to(device), neighbor_cells.float().to(device), far_cells.float().to(device)
     text = {key: val.to(device) for key, val in text.items()}
     # Correct cellid.
@@ -81,9 +86,9 @@ def evaluate(model: torch.nn.Module,
     output = output.detach().cpu().numpy()
     predictions = np.argmax(output, axis=1)
     predictions_list.append(predictions)
-    lables = labels.numpy()
+    lables = batch['label'].numpy()
     true_vals.append(lables)
-    true_points_list.append(points)
+    true_points_list.append(batch['point'])
 
 
   true_points_list = np.concatenate(true_points_list, axis=0)
@@ -122,9 +127,10 @@ def train_model(model: torch.nn.Module,
     logging.info("Epoch number: {}".format(epoch))
     for batch_idx, batch in enumerate(train_loader):
       optimizer.zero_grad()
-      text, cellids, neighbor_cells, far_cells, points, labels = batch
-      text = {key: val.to(device) for key, val in text.items()}
-      cellids, neighbor_cells, far_cells = cellids.float().to(device), neighbor_cells.float().to(device), far_cells.float().to(device)
+      text = {key: val.to(device) for key, val in batch['text'].items()}
+      cellids = batch['cellid'].float().to(device)
+      neighbor_cells = batch['neighbor_cells'].float().to(device) 
+      far_cells = batch['far_cells'].float().to(device)
 
       # Correct cellid.
       target = torch.ones(cellids.shape[0]).to(device)
@@ -152,7 +158,7 @@ def train_model(model: torch.nn.Module,
     # Evaluation step.
     valid_loss, predictions, true_vals, true_points, pred_points =  evaluate(model= model, valid_loader=valid_loader,device=device, tensor_cells=tens_cells, label_to_cellid=label_to_cellid)
 
-    average_train_loss = running_loss / labels.shape[0]
+    average_train_loss = running_loss / batch_idx
     accuracy = accuracy_score(true_vals, predictions)
     train_loss_list.append(average_train_loss)
     global_steps_list.append(global_step)

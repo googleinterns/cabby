@@ -97,5 +97,5 @@ def load_metrics(load_path: Text, device: torch.device) -> Dict[Text, float]:
 def predictions_to_points(preds: Sequence,
               label_to_cellid: Dict[int, int]) -> Sequence[Tuple[float, float]]:
   cellids = [label_to_cellid[label] for label in preds]
-  coords = util.get_cell_center_from_s2cellids(cellids)
+  coords = util.get_center_from_s2cellids(cellids)
   return coords

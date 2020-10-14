@@ -38,8 +38,11 @@ tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
 CELLID_DIM = 64
 
-class CabbyDataset(torch.utils.data.Dataset):
-  def __init__(self, data: pd.DataFrame, s2level: int, cells: int, cellid_to_label: Dict[int, int]):
+
+
+class TextGeoSplit(torch.utils.data.Dataset):
+  def __init__(self, data: pd.DataFrame, s2level: int, 
+    cells: int, cellid_to_label: Dict[int, int]):
     
     # Tokenize instructions.
     self.encodings = tokenizer(
@@ -55,9 +58,10 @@ class CabbyDataset(torch.utils.data.Dataset):
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
 
 
-    data['neighbor_cells'] =data.cellid.apply(lambda x: gutil.neighbor_cellid(x))
+    data['neighbor_cells'] = data.cellid.apply(
+      lambda x: gutil.neighbor_cellid(x))
     
-    far_cellids =  data.point.apply(lambda x: gutil.far_cellid(x, cells))
+    far_cellids = data.point.apply(lambda x: gutil.far_cellid(x, cells))
     if far_cellids is None:
       sys.exit("Far cellid was not found.")
     data['far_cells'] = far_cellids
@@ -76,23 +80,35 @@ class CabbyDataset(torch.utils.data.Dataset):
 
     
   def __getitem__(self, idx: int):
+    '''Supports indexing such that TextGeoDataset[i] can be used to get 
+    i-th sample. 
+    Arguments:
+      idx: The index for which a sample from the dataset will be returned.
+    Returns:
+      A single sample including text, the correct cellid, a neighbor cellid, 
+      a far cellid, a point of the cellid and the label of the cellid.
+    '''
     text = {key: torch.tensor(val[idx])
         for key, val in self.encodings.items()}
-    cellids = torch.tensor(self.cellids[idx])
+    cellid = torch.tensor(self.cellids[idx])
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
-    points = torch.tensor(self.points[idx])
-    labels = torch.tensor(self.labels[idx])
+    point = torch.tensor(self.points[idx])
+    label = torch.tensor(self.labels[idx])
+    
+    sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
+      'far_cells': far_cells, 'point': point, 'label': label}
 
-    return text, cellids, neighbor_cells, far_cells, points, labels
+
+    return sample
 
   def __len__(self):
     return len(self.cellids)
 
 
-def create_dataset(data_dir: Text,
-           region: Text, s2level: int) -> Tuple[CabbyDataset, CabbyDataset,
-                           CabbyDataset, np.ndarray, Any, Dict[int, int]]:
+def create_dataset(data_dir: Text, region: Text, s2level: int
+) -> Tuple[TextGeoSplit, TextGeoSplit, TextGeoSplit, np.ndarray, 
+  Any, Dict[int, int]]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.
@@ -112,14 +128,17 @@ def create_dataset(data_dir: Text,
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
-  points = gutil.get_cell_center_point_from_s2cellids(unique_cellid)
+  points = gutil.get_centers_from_s2cellids(unique_cellid)
   cells = pd.DataFrame({'point': points, 'cellid': unique_cellid})
-  vec_cellls = util.binary_representation(cells.cellid.to_numpy(), dim = CELLID_DIM)
+  vec_cellls = util.binary_representation(cells.cellid.to_numpy(), 
+  dim = CELLID_DIM)
   tens_cells = torch.tensor(vec_cellls)
 
   # Create Cabby dataset.
-  train_dataset = CabbyDataset(train_ds, s2level, cells, cellid_to_label)
-  val_dataset = CabbyDataset(valid_ds, s2level, cells, cellid_to_label)
-  test_dataset = CabbyDataset(test_ds, s2level, cells, cellid_to_label)
+  train_dataset = TextGeoSplit(train_ds, s2level, cells, cellid_to_label)
+  val_dataset = TextGeoSplit(valid_ds, s2level, cells, cellid_to_label)
+  test_dataset = TextGeoSplit(test_ds, s2level, cells, cellid_to_label)
 
-  return train_dataset, val_dataset, test_dataset, np.array(unique_cellid), tens_cells, label_to_cellid
+  return (train_dataset, val_dataset, test_dataset, 
+    np.array(unique_cellid), tens_cells, label_to_cellid)
+

@@ -33,7 +33,7 @@ import webbrowser
 
 UTM_CRS = 32633  # UTM Zones (North).
 WGS84_CRS = 4326  # WGS84 Latitude/Longitude.
-FAR_CELL = 2000 # Minimum distance between far cells in meters.
+FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
 
 
 from collections import namedtuple
@@ -42,31 +42,29 @@ CoordsXY = namedtuple('CoordsXY', ('x y'))
 
 
 
-def get_distance_between_points(point_1: Point, point_2: Point) -> int:
+def get_distance_between_points(start_point: Point, end_point: Point) -> float:
   '''Calculate the line length in meters.
   Arguments:
-    point_1: The point to calculate the distance from.
-    point_2: The point to calculate the distance to.
+    start_point: The point to calculate the distance from.
+    end_point: The point to calculate the distance to.
   Returns:
     Distance length in meters.
   '''
   
-  dist = ox.distance.great_circle_vec(
-    point_1.y, point_1.x, point_2.y, point_2.x)
-  
-  return dist
+  return ox.distance.great_circle_vec(
+    start_point.y, start_point.x, end_point.y, end_point.x)
 
-def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[int]:
+def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
   '''Get a cell id far from the given cell point. 
   Arguments:
     point: The center point of the cell.
   Returns:
     A cellid of a far cell.
   '''
-  far_cells_con = cells.apply(lambda x: get_distance_between_points(
-    point, x.point) > FAR_CELL, axis=1)
+  far_cells_condition = cells.apply(lambda x: get_distance_between_points(
+    point, x.point) > FAR_DISTANCE_THRESHOLD, axis=1)
 
-  far_cells = cells[far_cells_con]
+  far_cells = cells[far_cells_condition]
 
   if far_cells.shape[0]==0:
     return None
@@ -74,11 +72,11 @@ def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[int]:
   return far_cells.sample(1).cellid.iloc[0]
 
 def neighbor_cellid(cellid: int) -> int:
-  '''Get a neghbor cell id. 
+  '''Get a neighbor cell id. 
   Arguments:
-    cellid: The cellid of the cell to return a neghbor cellid for.
+    cellid: The cellid of the cell to return a neighbor cellid for.
   Returns:
-    A cellid of a neghbor cell.
+    A cellid of a neighbor cell.
   '''
 
   cell = s2.S2CellId(cellid)
@@ -473,7 +471,7 @@ def coords_from_str_coord(coord_str: Text) -> CoordsYX:
   return CoordsYX(coord[0], coord[1])
 
 
-def get_cell_center_point_from_s2cellids(
+def get_centers_from_s2cellids(
     s2cell_ids: Sequence[int64]) -> Sequence[Point]:
   """Returns the center latitude and longitude of s2 cells.
   Arguments:
@@ -491,7 +489,7 @@ def get_cell_center_point_from_s2cellids(
   return prediction_coords
 
 
-def get_cell_center_from_s2cellids(
+def get_center_from_s2cellids(
     s2cell_ids: Sequence[int64]) -> Sequence[CoordsYX]:
   """Returns the center latitude and longitude of s2 cells.
   Arguments:
