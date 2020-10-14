@@ -57,7 +57,7 @@ def main(argv):
 
   geo_logger.info(f"Computing route between {origin} and {destination}.")
   walker = walk.Walker()
-  route = walker.compute_route(origin, destination, graph, nodes)
+  route = walker.compute_route_from_points(origin, destination, graph, nodes)
 
   geo_logger.info("Points obtained for the route.")
   for point in route['geometry'].values:

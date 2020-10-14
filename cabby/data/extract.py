@@ -96,9 +96,9 @@ def get_data_by_qid(qid: Text) -> Sequence:
   '''
 
   # Get Wikidata items by region.
-  wikidata_results = wdq.get_geofenced_wikidata_items_by_qid(qid)
+  wikidata_results = wdq.get_place_location_points_from_qid(qid)
   wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
-            for result in wikidata_results]
+                    for result in wikidata_results]
 
   return get_wikigeo_data(wikidata_items)
 

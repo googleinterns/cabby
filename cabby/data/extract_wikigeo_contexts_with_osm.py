@@ -17,9 +17,9 @@
 to file.
 Example:
 $ bazel-bin/cabby/data/extract_wikigeo_contexts_with_osm \
---region DC \
---save_path dc.json \
---osm_path  "./cabby/geo/map_processing/poiTestData/dc_poi.pkl"
+--region Pittsburgh-small \
+--save_path pittsburgh_small.json \
+--osm_path  "./cabby/geo/map_processing/poiTestData/pittsburgh_small_poi.pkl"
 '''
 from absl import logging
 from absl import app
@@ -34,7 +34,7 @@ from cabby.geo import regions
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
   "region", None, regions.ALLOWED_REGIONS,
-  "Map areas: Manhattan, Pittsburgh or DC.")
+  "Map areas: Manhattan, Pittsburgh or Pittsburgh_small.")
 flags.DEFINE_string("save_path", None,
           "The path where the data will be saved.")
 flags.DEFINE_string(

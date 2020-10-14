@@ -15,6 +15,7 @@
 '''Tests for wikidata.py'''
 
 
+
 from cabby.data import extract
 import unittest
 
@@ -36,16 +37,15 @@ class GeoSetTest(unittest.TestCase):
     self.assertEqual(two_pnc_plazza['ref_instance'], 'skyscraper')
   
   def testQueryWithOSM(self):
-    samples = extract.get_data_by_region_with_osm("DC")
+    samples = extract.get_data_by_region_with_osm("Pittsburgh_small")
     self.assertEqual(samples[0]['sample_type'], 'Wikipedia_page')
-    self.assertEqual(samples[70]['sample_type'], 'Wikipedia_backlink')
-    osm_sample = samples[-2]
+    osm_sample = samples[6]
     self.assertEqual(osm_sample['sample_type'], 'OSM')
-    text_osm = 'Johns Hopkins University of Advanced International Studies and university and Massachusetts Avenue Northwest.'
+    text_osm = 'Figleaf and building and East Carson Street.'
     self.assertEqual(osm_sample['text'], text_osm)
-    wikidata_sample = samples[-5]
+    wikidata_sample = samples[4]
     self.assertEqual(wikidata_sample['sample_type'], 'Wikidata')
-    text_wikidata = 'Zanvyl Krieger School of Arts and Sciences and academic enviroment and Johns Hopkins University School of Arts and Sciences and academic institution.'
+    text_wikidata = 'Birmingham Public School and building in Pennsylvania, United States and Renaissance Revival architecture and  and building.'
     self.assertEqual(wikidata_sample['text'], text_wikidata)
 
 

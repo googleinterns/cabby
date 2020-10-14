@@ -13,15 +13,17 @@
 # limitations under the License.
 '''Library to support map geographical computations.'''
 
+from collections import namedtuple
 import folium
 from functools import partial
 import geographiclib
 from geopy.distance import geodesic
 import numpy as np
 from numpy import int64
+import operator
 import osmnx as ox
-import pandas as pd
 import pyproj
+import pandas as pd
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
@@ -31,16 +33,10 @@ import sys
 from typing import Optional, Tuple, Sequence, Any, Text
 import webbrowser
 
-UTM_CRS = 32633  # UTM Zones (North).
-WGS84_CRS = 4326  # WGS84 Latitude/Longitude.
 FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
 
-
-from collections import namedtuple
 CoordsYX = namedtuple('CoordsYX', ('y x'))
 CoordsXY = namedtuple('CoordsXY', ('x y'))
-
-
 
 def get_distance_between_points(start_point: Point, end_point: Point) -> float:
   '''Calculate the line length in meters.
@@ -50,7 +46,7 @@ def get_distance_between_points(start_point: Point, end_point: Point) -> float:
   Returns:
     Distance length in meters.
   '''
-  
+
   return ox.distance.great_circle_vec(
     start_point.y, start_point.x, end_point.y, end_point.x)
 
@@ -82,8 +78,7 @@ def neighbor_cellid(cellid: int) -> int:
   cell = s2.S2CellId(cellid)
   return cell.next().id()
 
-def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]
-) -> Sequence[int]:
+def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]:
   '''Converts a sequence of S2CellIds to a sequence of ids of the S2CellIds. 
   Arguments:
     list_s2cells(S2CellIds): The list of S2CellIds to be converted to ids.
@@ -142,7 +137,8 @@ def s2polygon_from_shapely_point(shapely_point: Point) -> s2.S2Polygon:
   return s2.S2Polygon(s2.S2Cell(s2.S2CellId(latlng)))
 
 
-def cellid_from_point(point: Point) -> int:
+
+def s2cellid_from_point(point: Point) -> int:
   '''Converts point to the S2CellId.
   Arguments:
     point: The point to be converted to S2CellId.
@@ -211,6 +207,37 @@ def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> s2.S2Polygon:
 
   return line
 
+def cut(line: LineString, distance: float) -> Sequence[LineString]:
+  '''Cut line in two at a distance from its 
+  starting point. 
+  Arguments:
+    line: The to to be cut.
+    distance: distance between line and its starting point.
+  Returns:
+    A list of lines.
+  '''
+  if distance <= 0.0 or distance >= line.length:
+      return [LineString(line)] 
+  coords = list(line.coords)
+  for i, p in enumerate(coords):
+      pd = line.project(Point(p))
+      if pd == distance:
+          return [
+              LineString(coords[:i+1]),
+              LineString(coords[i:])]
+      if pd > distance:
+          cp = line.interpolate(distance)
+          return [
+              LineString(coords[:i] + [(cp.x, cp.y)]),
+              LineString([(cp.x, cp.y)] + coords[i:])]
+  
+  if coords[0]==coords[-1]: # It is a loop.
+    cp = line.interpolate(distance)
+    return [
+            LineString(coords[:-1] + [(cp.x, cp.y)]),
+            LineString([(cp.x, cp.y)] + coords[-1:])]
+
+  return [LineString(line)] 
 
 def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
   '''Plot the S2Cell covering.'''
@@ -243,7 +270,7 @@ def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
   webbrowser.open(filepath, new=2)
 
 
-def cellids_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
+def s2cellids_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
   '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
   Arguments:
     point(Point): a Shapely Point to which S2Cells.
@@ -313,32 +340,6 @@ def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
 
   s2polygon = s2polygon_from_shapely_polyline(polyline)
   return get_s2cover_for_s2polygon(s2polygon, level)
-
-
-def project_point_in_segment(line_segment: LineString, point: Point) -> bool:
-  """Projects point to line and check if the point projected is in a segment. 
-  Arguments:
-    line_segment: The line segment.
-    point: The point to be projected on the line.
-  Returns:
-    True if the projected point is in the segment and False if inot.
-  """
-
-  point = np.array(point.coords[0])
-
-  # The line_segment has two ends - u and v. 
-  u = np.array(line_segment.coords[0])
-  v = np.array(line_segment.coords[len(line_segment.coords)-1])
-
-  diff = v - u
-  diff_norm = diff/np.linalg.norm(diff, 2)
-
-  projected_point = u + diff_norm * \
-    np.dot(point - u, diff_norm)
-
-  projected_point = Point(projected_point)
-
-  return (line_segment.distance(projected_point) < 1e-8)
 
 
 def get_bearing(start: Point, goal: Point) -> float:
@@ -441,6 +442,52 @@ def check_if_geometry_in_polygon(geometry: Any, poly: Polygon) -> Polygon:
   else:
     geometry['geometry'].intersects(poly)
 
+def get_distance_between_geometries(geometry: Any, point: Point) -> float:
+  '''Calculate the distance between point and polygon in meters.
+  Arguments:
+    route: The line that length calculation will be performed on.
+    point: point to measure distance from polygon.
+  Returns:
+    The distance between point and polygon in meters.
+  '''
+  if isinstance(geometry, Point):
+    return get_distance_between_points(geometry, point)
+  else:
+    return get_polygon_distance_from_point(geometry, point)
+
+def get_polygon_distance_from_point(poly: Polygon, point: Point) -> float:
+  '''Calculate the distance between point and polygon in meters.
+  Arguments:
+    route: The line that length calculation will be performed on.
+    point: point to measure distance from polygon.
+  Returns:
+    The distance between point and polygon in meters.
+  '''
+  dist_min = float("Inf")
+  for coord in poly.exterior.coords:
+    point_current = Point(coord)
+    dist = get_distance_between_points(point, point_current)
+    if dist_min > dist:
+      dist_min = dist
+  return dist_min
+
+
+def get_line_length(line: LineString) -> float:
+  '''Calculate the length of a line in meters.
+  Arguments:
+    line: The line to calculate its length.
+  Returns:
+    The length of the line in meters
+  '''
+  dist = 0
+  point_1 = Point(line.coords[0])
+  for coord in line.coords[1:]:
+    point_2 = Point(coord)
+    dist += get_distance_between_points(point_1, point_2)
+    point_1 = point_2
+
+  return dist
+
 
 def point_from_str_coord(coord_str: Text) -> Point:
   '''Converts coordinates in string format (latitude and longtitude) to Point. 
@@ -470,7 +517,6 @@ def coords_from_str_coord(coord_str: Text) -> CoordsYX:
 
   return CoordsYX(coord[0], coord[1])
 
-
 def get_centers_from_s2cellids(
     s2cell_ids: Sequence[int64]) -> Sequence[Point]:
   """Returns the center latitude and longitude of s2 cells.
@@ -478,7 +524,6 @@ def get_centers_from_s2cellids(
     s2cell_ids: array of valid s2 cell ids. 1D array
   Returns:
     a list of shapely points of shape the size of the cellids list.
-
   """
   prediction_coords = []
   for s2cellid in s2cell_ids:
@@ -488,15 +533,13 @@ def get_centers_from_s2cellids(
     prediction_coords.append(Point(lng, lat))
   return prediction_coords
 
-
 def get_center_from_s2cellids(
     s2cell_ids: Sequence[int64]) -> Sequence[CoordsYX]:
   """Returns the center latitude and longitude of s2 cells.
   Arguments:
     s2cell_ids: array of valid s2 cell ids. 1D array
   Returns:
-    a list of coords of shape the size of the cellids list.
-
+    a list of shapely points of shape the size of the cellids list.
   """
   prediction_coords = []
   for s2cellid in s2cell_ids:
@@ -505,7 +548,7 @@ def get_center_from_s2cellids(
     lng = s2_latlng.lng().degrees()
     prediction_coords.append([lat, lng])
   return np.array(prediction_coords)
-
+  
 def get_linestring_distance(line: LineString) -> int:
   '''Calculate the line length in meters.
   Arguments:
@@ -513,19 +556,35 @@ def get_linestring_distance(line: LineString) -> int:
   Returns:
     Line length in meters.
   '''
-  project = partial(
-    pyproj.transform,
-    pyproj.Proj(WGS84_CRS),
-    pyproj.Proj(UTM_CRS))
+  dist = 0
+  point_1 =  Point(line.coords[0])
+  for coord in line.coords[1:]:
+    point_2 = Point(coord)
+    dist += get_distance_between_points(point_1, point_2)
+    point_1 = point_2
 
-  trans_line = transform(project, line)
+  return dist
 
-  return round(trans_line.length)
+def get_distance_between_points(point_1: Point, point_2: Point) -> int:
+  '''Calculate the line length in meters.
+  Arguments:
+    point_1: The point to calculate the distance from.
+    point_2: The point to calculate the distance to.
+  Returns:
+    Distance length in meters.
+  '''
+  
+  dist = ox.distance.great_circle_vec(
+    point_1.y, point_1.x, point_2.y, point_2.x)
+  
+  return dist
+
 
 def point_str_to_shapely_point(point_str: Text) -> Point:
   '''Converts point string to shapely point. 
   Arguments:
-    point_str: The point string to be converted to shapely point. E.g, of string 'Point(-74.037258 40.715865)'.
+    point_str: The point string to be converted to shapely point. E.g, of 
+    string 'Point(-74.037258 40.715865)'.
   Returns:
     A Point.
   '''
