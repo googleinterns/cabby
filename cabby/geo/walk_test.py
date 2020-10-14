@@ -52,8 +52,8 @@ class WalkTest(unittest.TestCase):
 
   def testPointsSelection(self):
     geo_entity = self.walker.get_single_sample(self.map)
-    # if geo_entity is None:
-    #   return
+    if geo_entity is None:
+      return
       
     self.assertIsNotNone(geo_entity)
     self.assertEqual(geo_entity.start_point['osmid'], 9992984603460)

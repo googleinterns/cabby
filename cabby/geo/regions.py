@@ -22,7 +22,8 @@ from shapely import wkt
 from shapely.geometry.point import Point
 
 
-ALLOWED_REGIONS = ["Manhattan", "Pittsburgh", "DC", "Baltimore"]
+ALLOWED_REGIONS = ["Manhattan", "Pittsburgh", "DC", "Pittsburgh_small"]
+TEXT_ALLOWED_REGIONS = "Map areas: Manhattan, Pittsburgh, DC. or Pittsburgh-small."
 
 def get_region(region: Text):
   assert (region in ALLOWED_REGIONS)
@@ -39,8 +40,8 @@ def get_region(region: Text):
                        miny=38.96608, 
                        maxx=-77.02704, 
                        maxy=38.9686)
-  else: # Baltimore
-    polygon_area = Point(-76.6305,39.3362).buffer(0.0001)
+  else: # Pittsburgh_small
+    polygon_area = Point(-79.9837,40.4273).buffer(0.0015)
 
   return polygon_area  
 
