@@ -141,5 +141,3 @@ def create_dataset(data_dir: Text, region: Text, s2level: int
     train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
     tens_cells, label_to_cellid)
 
-
-result = create_dataset( "/home/tzuf_google_com/data/wikigeo/pittsburgh/", "Pittsburgh", 12)
