@@ -23,6 +23,7 @@ from numpy import int64
 import operator
 import osmnx as ox
 import pyproj
+import pandas as pd
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
@@ -32,9 +33,50 @@ import sys
 from typing import Optional, Tuple, Sequence, Any, Text
 import webbrowser
 
+FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
+
 CoordsYX = namedtuple('CoordsYX', ('y x'))
 CoordsXY = namedtuple('CoordsXY', ('x y'))
 
+def get_distance_between_points(start_point: Point, end_point: Point) -> float:
+  '''Calculate the line length in meters.
+  Arguments:
+    start_point: The point to calculate the distance from.
+    end_point: The point to calculate the distance to.
+  Returns:
+    Distance length in meters.
+  '''
+
+  return ox.distance.great_circle_vec(
+    start_point.y, start_point.x, end_point.y, end_point.x)
+
+def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
+  '''Get a cell id far from the given cell point. 
+  Arguments:
+    point: The center point of the cell.
+  Returns:
+    A cellid of a far cell.
+  '''
+  far_cells_condition = cells.apply(lambda x: get_distance_between_points(
+    point, x.point) > FAR_DISTANCE_THRESHOLD, axis=1)
+
+  far_cells = cells[far_cells_condition]
+
+  if far_cells.shape[0]==0:
+    return None
+
+  return far_cells.sample(1).cellid.iloc[0]
+
+def neighbor_cellid(cellid: int) -> int:
+  '''Get a neighbor cell id. 
+  Arguments:
+    cellid: The cellid of the cell to return a neighbor cellid for.
+  Returns:
+    A cellid of a neighbor cell.
+  '''
+
+  cell = s2.S2CellId(cellid)
+  return cell.next().id()
 
 def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]:
   '''Converts a sequence of S2CellIds to a sequence of ids of the S2CellIds. 
@@ -475,15 +517,29 @@ def coords_from_str_coord(coord_str: Text) -> CoordsYX:
 
   return CoordsYX(coord[0], coord[1])
 
+def get_centers_from_s2cellids(
+    s2cell_ids: Sequence[int64]) -> Sequence[Point]:
+  """Returns the center latitude and longitude of s2 cells.
+  Arguments:
+    s2cell_ids: array of valid s2 cell ids. 1D array
+  Returns:
+    a list of shapely points of shape the size of the cellids list.
+  """
+  prediction_coords = []
+  for s2cellid in s2cell_ids:
+    s2_latlng = s2.S2CellId(int(s2cellid)).ToLatLng()
+    lat = s2_latlng.lat().degrees()
+    lng = s2_latlng.lng().degrees()
+    prediction_coords.append(Point(lng, lat))
+  return prediction_coords
 
-def get_cell_center_from_s2cellids(
+def get_center_from_s2cellids(
     s2cell_ids: Sequence[int64]) -> Sequence[CoordsYX]:
   """Returns the center latitude and longitude of s2 cells.
   Arguments:
     s2cell_ids: array of valid s2 cell ids. 1D array
   Returns:
     a list of shapely points of shape the size of the cellids list.
-
   """
   prediction_coords = []
   for s2cellid in s2cell_ids:
