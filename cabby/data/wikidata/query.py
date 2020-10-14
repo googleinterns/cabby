@@ -89,10 +89,7 @@ _MANHATTAN_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
             }
           }
           SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-
           }
-
-
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
@@ -159,13 +156,11 @@ _PITTSBURGH_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
             }
           }
           SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-
           }
-
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
-_DC_INFO_QUERY = """
+_PITTSBURGH_SMALL_INFO_QUERY = """
           SELECT ?place ?placeLabel 
           ?placeDescription ?architecturalStyleLabel ?subsidiaryLabel ?useLabel ?hasPartLabel
           ( GROUP_CONCAT ( DISTINCT ?altLabel; separator="; " ) AS ?altLabelList )
@@ -186,8 +181,8 @@ _DC_INFO_QUERY = """
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
-            bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
-            bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerWest "Point(-79.9837,40.4273)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-79.9837,40.4273)"^^geo:wktLiteral .
             }
            FILTER (?instance  not in
           (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
@@ -205,19 +200,16 @@ _DC_INFO_QUERY = """
             ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
-            bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
-            bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerWest "Point(-79.9837,40.4273)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-79.9837,40.4273)"^^geo:wktLiteral .
             }
           }
           SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-
           }
-
-
           GROUP BY ?place ?placeLabel ?wikipediaUrl ?placeDescription ?architecturalStyleLabel ?subsidiaryLabel ?useLabel ?hasPartLabel
         """
 
-_DC_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
+_PITTSBURGH_SMALL_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
            ( GROUP_CONCAT ( DISTINCT ?instanceLabel; separator="; " ) AS ?instance )
           (GROUP_CONCAT(DISTINCT?location;separator=", ") AS ?point)
           WHERE 
@@ -229,8 +221,8 @@ _DC_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
                         ?instance rdfs:label ?instanceLabel.  filter(lang(?instanceLabel) = "en").
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
-            bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
-            bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerWest "Point(-79.9837,40.4273)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-79.9837,40.4273)"^^geo:wktLiteral .
             }
            FILTER (?instance  not in
           (wd:Q34442,wd:Q12042110,wd:Q124757,wd:Q79007,wd:Q18340514,wd:Q537127,wd:Q1311958,wd:Q124757,
@@ -243,15 +235,12 @@ _DC_QUERY = """SELECT ?place ?placeLabel ?wikipediaUrl
             ?wikipediaUrl schema:isPartOf <https://en.wikipedia.org/>. 
             SERVICE wikibase:box {
             ?place wdt:P625 ?location .
-            bd:serviceParam wikibase:cornerWest "Point(-77.04053,38.90821)"^^geo:wktLiteral .
-            bd:serviceParam wikibase:cornerEast "Point(-77.03937,38.90922)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerWest "Point(-79.953274,40.444565)"^^geo:wktLiteral .
+            bd:serviceParam wikibase:cornerEast "Point(-79.953274,40.444565)"^^geo:wktLiteral .
             }
           }
           SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
-
           }
-
-
           GROUP BY ?place ?placeLabel ?wikipediaUrl 
         """
 
@@ -353,8 +342,8 @@ def get_geofenced_info_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]
   elif region == "Manhattan":
     query = _MANHATTAN_INFO_QUERY
   
-  elif region == "DC":
-    query = _DC_INFO_QUERY
+  elif region == "Pittsburgh_small":
+    query = _PITTSBURGH_SMALL_INFO_QUERY
     
   else:
     raise ValueError(f"{region} is not a supported region.")
@@ -388,8 +377,8 @@ def get_geofenced_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
   elif region == "Manhattan":
     query = _MANHATTAN_QUERY
   
-  elif region == "DC":
-    query = _DC_QUERY
+  elif region == "Pittsburgh_small":
+    query = _PITTSBURGH_SMALL_QUERY
     
   else:
     raise ValueError(f"{region} is not a supported region.")
@@ -471,7 +460,7 @@ def get_geofenced_wikidata_relations(region: Text,
   elif region == "Manhattan":
     raise NotImplementedError(f"{region} is not an implemented region.")
   
-  elif region == "D.C":
+  elif region == "DC":
     raise NotImplementedError(f"{region} is not an implemented region.")
     
   else:
