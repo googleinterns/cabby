@@ -2,7 +2,7 @@
 
 For each region we construct an OSM-based graph. 
 
-To construct the graph we first extract OSM points of interest (POI) and streets from the OSM API. OSM entities include various tags with a key and a value pair (e.g, key=name and value=Empire State Building). The POI extracted must include one or more of the following tag keys: name, brand, tourism, amenity, wikipedia, wikidata. 
+To construct the graph we first extract OSM points of interest (POI) and streets from the OSM API. OSM entities include various tags with a key and a value pair (e.g, key=name and value=Empire State Building). The POI extracted must include one or more of the following tag keys: name, shop, brand, tourism, amenity, wikipedia, wikidata. 
 
 Second, we then project the POI on the streets extracted. For each POI a node is added with a tag name 'poi'. In addition if the projected point splits the edge it is projected on then an additional node is added with tage name 'projected-poi'. An edge added between the two nodes (POI and the projected\end of edge) with tage name 'poi'. 
 
