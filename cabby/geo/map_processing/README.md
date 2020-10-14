@@ -8,7 +8,7 @@ Second, we then project the POI on the streets extracted. For each POI a node is
 
 | ![](images/projected_poi.png) | 
 |:--:| 
-| *Example of POI projection on edge.* |
+| *An example of POI projection on edge.* |
 
 
  Thus, the edges are the street and the nodes are elements of the street (e.g, intersection), a projected POI, or POI. The POI are only connected to the streets and not among themself. A POI can be one of the following geometries: point, line, polygon. The POI is connected to the closest streets. If it is a point geometry it can be only connected to one street - the closest one. If it is a line or a polygon then different parts of the geometry can be close to different streets and therefore it can be connected to multiple streets (up to 4 streets).  
@@ -19,19 +19,19 @@ The edges also have tags, e.g., key=highway and value=residential.
 
 | ![](images/parallel_paths.png) | 
 |:--:| 
-| *Example of case where there are parallel paths between two nodes (U and V).* |
+| *An example of a case where there are parallel paths between two nodes (U and V).* |
 
 
 
 | ![](images/loop.png) | 
 |:--:| 
-| *Example of case where there is a loop in the graph.*|
+| *An example of a case where there is a loop in the graph.*|
 
 
 
 | ![](images/graph.png) | 
 |:--:| 
-| *Example of graph.*|
+| *An example of graph.*|
 
 
 
