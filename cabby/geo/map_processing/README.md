@@ -7,7 +7,7 @@ To construct the graph we first extract OSM points of interest (POI) and streets
 Second, we then project the POI on the streets extracted. For each POI a node is added with a tag name 'poi'. In addition if the projected point splits the edge it is projected on then an additional node is added with tage name 'projected-poi'. An edge added between the two nodes (POI and the projected\end of edge) with tage name 'poi'. 
 
 Example of POI projection on edge.
-![image](https://drive.google.com/uc?export=view&id=1HL5bdVJC3P7b0732fmEbVQl4hAqHRil5)
+![image](images/projected_poi.png)
 
  Thus, the edges are the street and the nodes are elements of the street (e.g, intersection), a projected POI, or POI. The POI are only connected to the streets and not among themself. A POI can be one of the following geometries: point, line, polygon. The POI is connected to the closest streets. If it is a point geometry it can be only connected to one street - the closest one. If it is a line or a polygon then different parts of the geometry can be close to different streets and therefore it can be connected to multiple streets (up to 4 streets).  
 
@@ -16,15 +16,15 @@ The edges also have tags, e.g., key=highway and value=residential.
 
 
 Example of case where there are parallel paths between two nodes (U and V).
-![image](https://drive.google.com/uc?export=view&id=17g_xS5pjq9B8k8G-YyFQ0RHTctBmibbU)
+![image](images/parallel_paths.png)
 
 
 Example of case where there is a loop in th graph.
-![image](https://drive.google.com/uc?export=view&id=1YaQMkil4FW_Sb_ohtTViVIfWumyO4v7a)
+![image](images/loop.png)
 
 
 Example of graph -
-![image](https://drive.google.com/uc?export=view&id=1Gg2kWR-b57oBza5U7I7mMaYwyZ2issaN)
+![image](images/graph.png)
 
 
 
