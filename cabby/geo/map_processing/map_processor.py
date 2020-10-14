@@ -30,7 +30,7 @@ from cabby.geo.map_processing import map_structure
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
   "region", None, regions.ALLOWED_REGIONS, 
-  "Map areas: Manhattan, Pittsburgh or D.C.")
+  regions.TEXT_ALLOWED_REGIONS)
 flags.DEFINE_integer("min_s2_level", None, "Minimum S2 level of the map.")
 
 flags.DEFINE_string("directory", None,

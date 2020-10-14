@@ -13,12 +13,15 @@ py_library(
     ],
 )
 
+
+
 py_binary(
     name = 'train',
     main = 'train.py',
     srcs = ['train.py'],
     deps = [
-          "//cabby/geo:util",
+          "//cabby/model/text:util",
+
     ],
 )
 
@@ -29,5 +32,7 @@ py_binary(
     deps = [
         ':train',
         ':dataset',
+        "//cabby/model/text:util",
+
     ],
 )
