@@ -250,26 +250,27 @@ class Map:
     else:
       highway = near_edge['highway']
 
-    self.nx_graph.add_node(
-      projected_point_osmid,
-      highway=highway,
-      osmid=projected_point_osmid,
-      x=projected_point.x,
-      y=projected_point.y
-    )
-
     edges_list = []
     edge_to_add = edge.Edge.from_poi(
       u_for_edge=poi_osmid,
       v_for_edge=projected_point_osmid,
       osmid=near_edge['osmid'],
       geometry=projected_line,
-      length = 0.1
+      length = projected_line_dist
     )
     edges_list.append(edge_to_add)
 
     if n_lines==1:
       return edges_list
+    
+    self.nx_graph.add_node(
+      projected_point_osmid,
+      highway=highway,
+      osmid=projected_point_osmid,
+      x=projected_point.x,
+      y=projected_point.y,
+      name = 'projected-point'
+    )
 
     line_1_point_end = Point(line_1.coords[0])
     dist_u_1 = util.get_distance_between_points(u_point, line_1_point_end)
