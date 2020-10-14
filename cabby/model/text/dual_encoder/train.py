@@ -100,13 +100,14 @@ def compute_loss(device: torch.device, model: torch.nn.Module,
 
   # Neighbor cellid.
   target_neighbor = -1*torch.ones(cellids.shape[0]).to(device)
-  text_embedding, cellid_embedding = model(text, neighbor_cells)
-  loss_neighbor = criterion(text_embedding, cellid_embedding, target_neighbor)
+  text_embedding_neighbor, cellid_embedding = model(text, neighbor_cells)
+  loss_neighbor = criterion(text_embedding_neighbor, 
+  cellid_embedding, target_neighbor)
 
   # Far cellid.
   target_far = -1*torch.ones(cellids.shape[0]).to(device)
-  text_embedding, cellid_embedding = model(text, far_cells)
-  loss_far = criterion(text_embedding, cellid_embedding, target_far)
+  text_embedding_far, cellid_embedding = model(text, far_cells)
+  loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
 
   loss = loss_cellid + loss_neighbor + loss_far
 
