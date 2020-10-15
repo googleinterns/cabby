@@ -213,7 +213,7 @@ class Trainer:
     logging.info(f'Cell embedding saved to ==> {path_to_save}')
 
 def infer_text(model: torch.nn.Module, text: str):
-  return model.text_embed(text)
+  return model.module.text_embed(text)
     
   
 
