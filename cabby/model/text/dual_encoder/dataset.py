@@ -64,22 +64,19 @@ class TextGeoSplit(torch.utils.data.Dataset):
     
     self.neighbor_cells = data['neighbor_cells']
 
-    far_cellids = data.point.apply(lambda x: gutil.far_cellid(x, cells))
-    if far_cellids is None:
-      sys.exit("Far cellid was not found.")
-    data['far_cells'] = far_cellids
-
+    self.far_cells = data.point.apply(lambda x: gutil.far_cellids(x, cells))
+    
 
     cellids_array = np.array(data.cellid.tolist())
     # neighbor_cells_array = np.array(data.neighbor_cells.tolist())
-    far_cells_array = np.array(data.far_cells.tolist())
+    # far_cells_array = np.array(data.far_cells.tolist())
 
     self.cellids = util.binary_representation(cellids_array, dim = CELLID_DIM)
     # self.neighbor_cells =  util.binary_representation(
       # neighbor_cells_array, dim = CELLID_DIM)
 
-    self.far_cells =  util.binary_representation(
-      far_cells_array, dim = CELLID_DIM)
+    # self.far_cells =  util.binary_representation(
+    #   far_cells_array, dim = CELLID_DIM)
 
     
   def __getitem__(self, idx: int):
@@ -98,9 +95,15 @@ class TextGeoSplit(torch.utils.data.Dataset):
     neighbor_cell_array = np.array([cell_neighbor])
     neighbor_cells_binary =  util.binary_representation(
       neighbor_cell_array, dim = CELLID_DIM)
-
     neighbor_cells = torch.tensor(neighbor_cells_binary).squeeze(0)
-    far_cells = torch.tensor(self.far_cells[idx])
+
+
+    cell_far = random.choice(self.far_cells[idx])
+    far_cell_array = np.array([cell_far])
+    far_cells_binary =  util.binary_representation(
+      far_cell_array, dim = CELLID_DIM)
+    far_cells = torch.tensor(far_cells_binary).squeeze(0)
+
     point = torch.tensor(self.points[idx])
     label = torch.tensor(self.labels[idx])
     
