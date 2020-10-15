@@ -34,7 +34,7 @@ from cabby.geo import regions
 
 flags.DEFINE_enum(
   "region", None, regions.ALLOWED_REGIONS,
-  "Map areas: Manhattan, Pittsburgh or DC.")
+  regions.TEXT_ALLOWED_REGIONS)
 flags.DEFINE_string(
   "output_dir", None, "The path where the data will be saved.")
 flags.DEFINE_string(
