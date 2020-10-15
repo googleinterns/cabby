@@ -101,7 +101,6 @@ class Trainer:
       true_vals.append(labels)
       true_points_list.append(batch['point'])
 
-
     true_points_list = np.concatenate(true_points_list, axis=0)
     predictions_list = np.concatenate(predictions_list, axis=0)
     pred_points_list = util.predictions_to_points(
@@ -206,7 +205,7 @@ class Trainer:
     logging.info('Finished Training.')
 
   def save_cell_embed(self):
-    cell_embed = self.model.cellid_main(self.cells_tensor)
+    cell_embed = self.model.module.cellid_main(self.cells_tensor)
     path_to_save = os.path.join(self.file_path, 'cell_embedding.pt')
     torch.save(cell_embed, path_to_save)
     logging.info(f'Cell embedding saved to ==> {path_to_save}')

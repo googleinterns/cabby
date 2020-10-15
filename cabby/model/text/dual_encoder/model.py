@@ -18,8 +18,8 @@ from transformers import DistilBertModel
 
 
 class DualEncoder(nn.Module):
-  def __init__(self, text_dim=768, hidden_dim=200, s2cell_dim=64, 
-    output_dim= 100):
+  def __init__(
+    self, text_dim=768, hidden_dim=200, s2cell_dim=64, output_dim= 100):
     super(DualEncoder, self).__init__()
 
     self.hidden_layer = nn.Linear(text_dim, hidden_dim)
@@ -27,7 +27,7 @@ class DualEncoder(nn.Module):
     self.tanh = nn.Tanh()
     self.relu = nn.ReLU()
     self.bert = DistilBertModel.from_pretrained(
-      "distilbert-base-uncased", return_dict=True)
+            "distilbert-base-uncased", return_dict=True)
     self.text_main = nn.Sequential(
             nn.Linear(text_dim, hidden_dim),
             nn.ReLU(),
@@ -44,6 +44,7 @@ class DualEncoder(nn.Module):
     
     return text_embedding, cellid_embedding
   
+
   def text_embed(self, text):
     outputs = self.bert(**text)
     cls_token = outputs.last_hidden_state[:,-1,:]
