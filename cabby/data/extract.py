@@ -18,7 +18,7 @@ import json
 import os
 import pandas as pd
 import string
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, Optional, Sequence, Tuple, List
 
 from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
@@ -31,7 +31,7 @@ from cabby.geo.map_processing import map_structure
 
 def get_wikigeo_data(
     wikidata_items: Sequence[wdi.WikidataEntity]
-) -> Sequence[wikigeo.WikigeoEntity]:
+) -> List[Dict]:
     '''Get data from Wikipedia based on Wikidata items" 
     Arguments:
         wikidata_items: The Wikidata items to which corresponding Wikigeo  
@@ -86,7 +86,7 @@ def get_wikigeo_data(
     return geo_data
 
 
-def get_data_by_qid(qid: str) -> Sequence[wikigeo.WikigeoEntity]:
+def get_data_by_qid(qid: str) -> Sequence[Dict]:
   '''Get data from Wikipedia and Wikidata by region. 
   Arguments:
     qid(str): The qid of the Wikidata to extract items from.
@@ -102,7 +102,7 @@ def get_data_by_qid(qid: str) -> Sequence[wikigeo.WikigeoEntity]:
   return get_wikigeo_data(wikidata_items)
 
 
-def get_data_by_region(region: str) -> Sequence[wikigeo.WikigeoEntity]:
+def get_data_by_region(region: str) -> Sequence[Dict]:
   '''Get data from Wikipedia and Wikidata by region.
   Arguments:
     region(str): The region to extract items from.
@@ -119,7 +119,7 @@ def get_data_by_region(region: str) -> Sequence[wikigeo.WikigeoEntity]:
 
 
 def get_data_by_region_with_osm(
-    region: str, path_osm: str = None) -> Sequence[wikigeo.WikigeoEntity]:
+    region: str, path_osm: str = None) -> Sequence[Dict]:
   '''Get three types of samples by region: (1) samples from Wikipedia(text,title) and Wikidata(location); (2) Concatenation of Wikidata tags; (3) Concatenation of OSM tags. 
   Arguments:
     region(str): The region to extract items from.
@@ -173,10 +173,10 @@ def get_data_by_region_with_osm(
 
 
 def split_dataset(
-    dataset: Sequence[wikigeo.WikigeoEntity],
+    dataset: Sequence[Dict],
     percentage_train: float,
     percentage_dev: float
-) -> Dict[str, Sequence[wikigeo.WikigeoEntity]]:
+) -> Dict[str, Sequence[Dict]]:
   '''Splits the dataset into train-set, dev-set, test-set according to the 
   ref_qid." 
   Arguments:
