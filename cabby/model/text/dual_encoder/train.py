@@ -206,8 +206,10 @@ class Trainer:
 
   def save_cell_embed(self):
     cell_embed = self.model.module.cellid_main(self.cells_tensor)
-    path_to_save = os.path.join(self.file_path, 'cell_embedding.pt')
-    torch.save(cell_embed, path_to_save)
+    cellid_to_embed = {
+      cell: embed for cell, embed in zip(self.unique_cells, cell_embed)}
+    path_to_save = os.path.join(self.file_path, 'cellid_to_embedding.pt')
+    torch.save(cellid_to_embed, path_to_save)
     logging.info(f'Cell embedding saved to ==> {path_to_save}')
 
 def infer_text(model: torch.nn.Module, text: str):
