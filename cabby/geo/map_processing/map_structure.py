@@ -234,8 +234,7 @@ class Map:
     else: # Projected point is exactly on the end of the line (U or V).
       dist_u_p = util.get_distance_between_points(u_point, projected_point)
       dist_v_p = util.get_distance_between_points(v_point, projected_point)
-      assert dist_u_p==0 or dist_v_p==0
-      if dist_u_p==0:
+      if dist_u_p<dist_v_p:
         projected_point_osmid = near_edge_u
       else:
         projected_point_osmid = near_edge_v
