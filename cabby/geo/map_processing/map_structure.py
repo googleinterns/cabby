@@ -141,7 +141,7 @@ class Map:
       return single_poi['osmid']
 
     poi_osmid = single_poi['osmid']
-    poi_osmid = util.concat_numbers(999, poi_osmid)
+    poi_osmid = util.concat_numbers(9999999999999, poi_osmid)
     assert poi_osmid not in self.poi['osmid'].tolist(), poi_osmid
     self.poi.loc[self.poi['osmid'] ==
            single_poi['osmid'], 'osmid'] = poi_osmid
@@ -338,6 +338,7 @@ class Map:
 
   def add_poi_to_graph(self):
     '''Add all POI to nx_graph(currently contains only the roads).'''
+    logging.info("Number of POI to add to graph: {}".format(self.poi.shape[0]))
     eges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
     
     eges_to_add_list.swifter.apply(
