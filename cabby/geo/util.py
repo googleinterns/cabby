@@ -50,6 +50,34 @@ def get_distance_between_points(start_point: Point, end_point: Point) -> float:
   return ox.distance.great_circle_vec(
     start_point.y, start_point.x, end_point.y, end_point.x)
 
+def far_cellids_distribution(point: Point, cells: pd.DataFrame) -> Sequence[float]:
+  '''Get a cell id far from the given cell point. 
+  Arguments:
+    point: The center point of the cell.
+  Returns:
+    A cellid of a far cell.
+  '''
+  cells['distance'] = cells.apply(lambda x: get_distance_between_points(
+    point, x.point), axis=1)
+  
+
+  far_cells_condition = cells.apply(lambda x: x.distance > FAR_DISTANCE_THRESHOLD, axis=1)
+
+  far_cells = cells[far_cells_condition]
+
+  far_cells['num_km'] = far_cells.distance.apply(lambda x: round(x/1000))
+
+  cells_list = far_cells.cellid.tolist()
+  num_km = far_cells.num_km.tolist()
+
+  # list_candidates = far_cells.apply(lambda x: [x.cellid]*x.num_km, axis=1)
+
+  list_candidates = []
+  for dis, cellid in zip(num_km,cells_list):
+    cells = [cellid]*dis
+    list_candidates += cells
+
+  return list_candidates
 
 def far_cellids(point: Point, cells: pd.DataFrame) -> Sequence[float]:
   '''Get a cell id far from the given cell point. 
