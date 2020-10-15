@@ -11,16 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''Command line method to extract Wikipedia and Wikidata items and save to file.
+'''Extract and saves Wikigeo items from Wikipedia, Wikidata, and OSM.
 
 Example:
 $ bazel-bin/cabby/data/extract_wikigeo_contexts \
-  --region "DC" --output_dir wikigeo
+  --region "Pittsburgh_small" --output_dir wikigeo
 
 Example with Open Street Map items:
 $ bazel-bin/cabby/data/extract_wikigeo_contexts \
-  --region "DC" --output_dir wikigeo \
-  --osm_path cabby/geo/map_processing/poiTestData/dc_poi.pkl
+  --region "Pittsburgh_small" --output_dir wikigeo \
+  --osm_path cabby/geo/map_processing/poiTestData/pittsburgh_small_poi.pkl
 '''
 
 from absl import app

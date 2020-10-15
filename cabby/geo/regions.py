@@ -23,7 +23,7 @@ from shapely.geometry.point import Point
 
 
 ALLOWED_REGIONS = ["Manhattan", "Pittsburgh", "DC", "Pittsburgh_small"]
-TEXT_ALLOWED_REGIONS = "Map areas: Manhattan, Pittsburgh, DC. or Pittsburgh-small."
+TEXT_ALLOWED_REGIONS = "Map areas: Manhattan, Pittsburgh, DC. or Pittsburgh_small."
 
 def get_region(region: Text):
   assert (region in ALLOWED_REGIONS)
@@ -43,7 +43,4 @@ def get_region(region: Text):
   else: # Pittsburgh_small
     polygon_area = Point(-79.9837,40.4273).buffer(0.0015)
 
-  return polygon_area  
-
-
-    
+  return polygon_area
