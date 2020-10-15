@@ -57,7 +57,7 @@ SUPPORTED_REGIONS = [
 REGION_LOOKUP = dict(map(lambda r: (r.name, r), SUPPORTED_REGIONS))
 
 SUPPORTED_REGION_NAMES = sorted(list(REGION_LOOKUP.keys()))
-#ALLOWED_REGIONS = sorted(list(REGION_POLYGONS.keys()))
+
 REGION_SUPPORT_MESSAGE = (
   'Supported regions: ' + ', '.join(SUPPORTED_REGION_NAMES))
 
