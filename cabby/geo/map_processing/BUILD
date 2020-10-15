@@ -44,9 +44,9 @@ py_test(
 
 
 py_binary(
-    name = 'map_processor',
-    main = 'map_processor.py',
-    srcs = ['map_processor.py'],
+    name = 'get_geofenced_pois',
+    main = 'get_geofenced_pois.py',
+    srcs = ['get_geofenced_pois.py'],
     deps = [
         ':map_structure',
         ':graph',
