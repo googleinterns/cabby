@@ -18,6 +18,7 @@ from absl import logging
 import numpy as np
 import os
 import pandas as pd
+import random
 import sys
 from torchtext import data
 import torch
@@ -59,8 +60,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 
     data['neighbor_cells'] = data.cellid.apply(
-      lambda x: gutil.neighbor_cellid(x))
+      lambda x: gutil.get_cell_neighbors(x))
     
+    self.neighbor_cells = data['neighbor_cells']
+
     far_cellids = data.point.apply(lambda x: gutil.far_cellid(x, cells))
     if far_cellids is None:
       sys.exit("Far cellid was not found.")
@@ -68,12 +71,12 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 
     cellids_array = np.array(data.cellid.tolist())
-    neighbor_cells_array = np.array(data.neighbor_cells.tolist())
+    # neighbor_cells_array = np.array(data.neighbor_cells.tolist())
     far_cells_array = np.array(data.far_cells.tolist())
 
     self.cellids = util.binary_representation(cellids_array, dim = CELLID_DIM)
-    self.neighbor_cells =  util.binary_representation(
-      neighbor_cells_array, dim = CELLID_DIM)
+    # self.neighbor_cells =  util.binary_representation(
+      # neighbor_cells_array, dim = CELLID_DIM)
 
     self.far_cells =  util.binary_representation(
       far_cells_array, dim = CELLID_DIM)
@@ -91,11 +94,17 @@ class TextGeoSplit(torch.utils.data.Dataset):
     text = {key: torch.tensor(val[idx])
         for key, val in self.encodings.items()}
     cellid = torch.tensor(self.cellids[idx])
-    neighbor_cells = torch.tensor(self.neighbor_cells[idx])
+    cell_neighbor = random.choice(self.neighbor_cells[idx])
+    neighbor_cell_array = np.array([cell_neighbor])
+    neighbor_cells_binary =  util.binary_representation(
+      neighbor_cell_array, dim = CELLID_DIM)
+
+    neighbor_cells = torch.tensor(neighbor_cells_binary).squeeze(0)
     far_cells = torch.tensor(self.far_cells[idx])
     point = torch.tensor(self.points[idx])
     label = torch.tensor(self.labels[idx])
     
+    # print(far_cells.shape,neighbor_cells.shape)
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
       'far_cells': far_cells, 'point': point, 'label': label}
 

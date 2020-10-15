@@ -67,6 +67,24 @@ def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
 
   return far_cells.sample(1).cellid.iloc[0]
 
+
+def get_cell_neighbors(cellid: int) -> Sequence[int]:
+  '''Get eight S2Cell neighbors for a given cell. 
+  Arguments:
+    cell(S2Cell): The relative S2Cell to which the S2Cell neighbors will 
+    refer to.
+  Returns:
+    A sequence of eight S2Cell2 neighbors.
+  '''
+  cell = s2.S2CellId(cellid)
+  four_neighbors = cell.GetEdgeNeighbors()
+  eight_neighbors = four_neighbors + [
+    four_neighbors[0].next(), four_neighbors[3].next(),
+    four_neighbors[1].prev(), four_neighbors[3].prev()
+  ]
+
+  return [cell.id() for cell in eight_neighbors]
+
 def neighbor_cellid(cellid: int) -> int:
   '''Get a neighbor cell id. 
   Arguments:

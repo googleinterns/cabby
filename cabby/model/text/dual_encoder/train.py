@@ -109,7 +109,7 @@ def compute_loss(device: torch.device, model: torch.nn.Module,
   text_embedding_far, cellid_embedding = model(text, far_cells)
   loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
 
-  loss = 0.5*loss_cellid + 0.4*loss_neighbor + 0.1*loss_far
+  loss = loss_cellid + loss_neighbor + loss_far
 
   return loss.mean()
 
