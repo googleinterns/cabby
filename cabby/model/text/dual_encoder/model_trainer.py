@@ -138,7 +138,7 @@ def main(argv):
   
   logging.info("Starting to train model.")
 
-  train.train_model(
+  trainer = train.Trainer(
     model=dual_encoder,
     device=device,
     num_epochs=FLAGS.num_epochs,
@@ -150,6 +150,7 @@ def main(argv):
     cells_tensor = datast_text.unique_cellids_binary,
     label_to_cellid = datast_text.label_to_cellid
     )
+  trainer.train_model()
 
 if __name__ == '__main__':
   app.run(main)

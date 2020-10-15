@@ -42,6 +42,20 @@ def binary_representation(array_int: np.ndarray, dim: int
   return bin_rep
 
 
+def save_checkpoint_trainer(save_path: Text, model:  torch.nn.Module, 
+  valid_loss: float):
+  '''Function for saving model.'''
+
+  if save_path == None:
+    return
+
+  state_dict = {'model_state_dict': model.state_dict(),
+          'valid_loss': valid_loss}
+
+  torch.save(state_dict, save_path)
+  logging.info(f'Model saved to ==> {save_path}')
+
+
 def save_checkpoint(save_path: Text, model:  torch.nn.Module, 
   valid_loss: float):
   '''Function for saving model.'''

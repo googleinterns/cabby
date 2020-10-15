@@ -38,10 +38,13 @@ class DualEncoder(nn.Module):
             )
 
   def forward(self, text_feat, cellid):
-      
-    outputs = self.bert(**text_feat)
-    cls_token = outputs.last_hidden_state[:,-1,:]
-    text_embedding = self.text_main(cls_token)
+    
+    text_embedding = self.text_embed(text_feat)
     cellid_embedding = self.cellid_main(cellid)
     
     return text_embedding, cellid_embedding
+  
+  def text_embed(self, text):
+    outputs = self.bert(**text)
+    cls_token = outputs.last_hidden_state[:,-1,:]
+    return self.text_main(cls_token)
