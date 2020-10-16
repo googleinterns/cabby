@@ -61,7 +61,8 @@ def far_cellids_distribution(point: Point, cells: pd.DataFrame) -> Sequence[floa
     point, x.point), axis=1)
   
 
-  far_cells_condition = cells.apply(lambda x: x.distance > FAR_DISTANCE_THRESHOLD, axis=1)
+  far_cells_condition = cells.apply(
+    lambda x: x.distance > FAR_DISTANCE_THRESHOLD, axis=1)
 
   far_cells = cells[far_cells_condition]
 
@@ -149,6 +150,12 @@ def get_16_neighbors(cellid: s2.S2CellId) -> Sequence[s2.S2CellId]:
   '''
   
   eight_neighbors = get_8_neighbors(cellid)
+
+  first_neighbors = eight_neighbors[0].GetEdgeNeighbors()
+  second_neighbors = eight_neighbors[1].GetEdgeNeighbors()
+  third_neighbors = eight_neighbors[2].GetEdgeNeighbors()
+  forth_neighbors = eight_neighbors[3].GetEdgeNeighbors()
+
   sixteen_neighbors = [first_neighbors[0], first_neighbors[0].next(), 
     first_neighbors[1].prev(), first_neighbors[3].next(), second_neighbors[1], 
     second_neighbors[2].prev(), second_neighbors[3].next().next().next(), 
