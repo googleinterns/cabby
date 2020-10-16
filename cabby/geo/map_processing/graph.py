@@ -62,9 +62,8 @@ class MapGraph:
 
     four_neighbors = cell.GetEdgeNeighbors()
     eight_neighbors = four_neighbors + [
-      four_neighbors[0].next(), four_neighbors[3].next(),
-      four_neighbors[1].prev(), four_neighbors[3].prev()
-    ]
+    four_neighbors[0].prev(), four_neighbors[3].next(), four_neighbors[2].prev()
+    , four_neighbors[3].GetEdgeNeighbors()[0]] 
 
     eight_neighbors_nodes = [self.search(cell) for cell in eight_neighbors]
     return eight_neighbors_nodes

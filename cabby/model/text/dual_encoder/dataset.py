@@ -61,8 +61,12 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.get_cell_neighbors(x))
+
+    data['second_neighbor_cells'] = data.cellid.apply(
+      lambda x: gutil.get_cell_second_circle_neighbors(x))
     
     self.neighbor_cells = data['neighbor_cells']
+    self.second_neighbor_cells = data['second_neighbor_cells']
 
     self.far_cells = data.point.apply(lambda x: gutil.far_cellids_distribution(x, cells))
     
@@ -98,6 +102,14 @@ class TextGeoSplit(torch.utils.data.Dataset):
     neighbor_cells = torch.tensor(neighbor_cells_binary).squeeze(0)
 
 
+    second_cell_neighbor = random.choice(self.neighbor_cells[idx])
+    second_neighbor_cell_array = np.array([second_cell_neighbor])
+    second_neighbor_cells_binary =  util.binary_representation(
+      second_neighbor_cell_array, dim = CELLID_DIM)
+    second_neighbor_cells = torch.tensor(
+      second_neighbor_cells_binary).squeeze(0)
+
+
     cell_far = random.choice(self.far_cells[idx])
     far_cell_array = np.array([cell_far])
     far_cells_binary =  util.binary_representation(
@@ -109,6 +121,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     
     # print(far_cells.shape,neighbor_cells.shape)
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
+      'second_neighbor_cells': second_neighbor_cells,
       'far_cells': far_cells, 'point': point, 'label': label}
 
     return sample

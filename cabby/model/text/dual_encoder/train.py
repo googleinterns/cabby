@@ -53,14 +53,18 @@ def evaluate(model: torch.nn.Module,
     text = {key: val.to(device) for key, val in batch['text'].items()}
     cellids = batch['cellid'].float().to(device)
     neighbor_cells = batch['neighbor_cells'].float().to(device) 
+    second_neighbor_cells = batch['second_neighbor_cells'].float().to(device) 
     far_cells = batch['far_cells'].float().to(device)
 
     # text, cellids, neighbor_cells, far_cells, points, labels = batch
-    cellids, neighbor_cells, far_cells = cellids.float().to(device), neighbor_cells.float().to(device), far_cells.float().to(device)
+    cellids = cellids.float().to(device) 
+    neighbor_cells = neighbor_cells.float().to(device)
+    second_neighbor_cells = second_neighbor_cells.float().to(device)
+    far_cells =  far_cells.float().to(device)
     text = {key: val.to(device) for key, val in text.items()}
 
     loss = compute_loss(device, model, text, cellids, 
-      neighbor_cells, far_cells)
+      neighbor_cells, second_neighbor_cells, far_cells)
 
     loss_val_total += loss.item()
 
@@ -91,25 +95,35 @@ def evaluate(model: torch.nn.Module,
 
 def compute_loss(device: torch.device, model: torch.nn.Module, 
   text: Dict, cellids: torch.tensor, neighbor_cells: torch.tensor, 
-  far_cells: torch.tensor):
+  second_neighbor_cells: torch.tensor, far_cells: torch.tensor):
   
+  negative_target = -1*torch.ones(cellids.shape[0]).to(device)
+  positive_target = torch.ones(cellids.shape[0]).to(device)
+
   # Correct cellid.
-  target = torch.ones(cellids.shape[0]).to(device)
   text_embedding, cellid_embedding = model(text, cellids)
-  loss_cellid = criterion(text_embedding, cellid_embedding, target)
+  loss_cellid = criterion(text_embedding, cellid_embedding, positive_target)
 
   # Neighbor cellid.
-  target_neighbor = -1*torch.ones(cellids.shape[0]).to(device)
-  text_embedding_neighbor, cellid_embedding = model(text, neighbor_cells)
-  loss_neighbor = criterion(text_embedding_neighbor, 
-  cellid_embedding, target_neighbor)
+  text_embedding_neighbor, neighbor_cellid_embedding = model(
+    text, neighbor_cells)
+  loss_neighbor = criterion(
+    text_embedding_neighbor, neighbor_cellid_embedding, negative_target)
+
+  # Second neighbor cellid.
+  text_embedding_second_neighbor, sec_neighbor_cellid_embedding = model(
+    text, second_neighbor_cells)
+  loss_second_neighbor = criterion(
+    text_embedding_second_neighbor, 
+    sec_neighbor_cellid_embedding, 
+    negative_target)
 
   # Far cellid.
-  target_far = -1*torch.ones(cellids.shape[0]).to(device)
-  text_embedding_far, cellid_embedding = model(text, far_cells)
-  loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
+  text_embedding_far, far_cellid_embedding = model(text, far_cells)
+  loss_far = criterion(
+    text_embedding_far, far_cellid_embedding, negative_target)
 
-  loss = loss_cellid + loss_neighbor + loss_far
+  loss = loss_cellid + loss_neighbor + loss_far +loss_second_neighbor
 
   return loss.mean()
 

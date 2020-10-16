@@ -113,6 +113,52 @@ def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
   return far_cells.sample(1).cellid.iloc[0]
 
 
+def get_cell_second_circle_neighbors(cellid: int) -> Sequence[int]:
+  '''Get eight S2Cell neighbors for a given cell. 
+  Arguments:
+    cell(S2Cell): The relative S2Cell to which the S2Cell neighbors will 
+    refer to.
+  Returns:
+    A sequence of eight S2Cell2 neighbors.
+  '''
+  cell = s2.S2CellId(cellid)
+  neighbors = get_16_neighbors(cell)
+  return [cell.id() for cell in neighbors]
+
+def get_8_neighbors(cellid: s2.S2CellId) -> Sequence[s2.S2CellId]:
+  '''Get eight S2Cell neighbors for a given cell (first circle). 
+  Arguments:
+    cell(S2Cell): The relative S2Cell to which the S2Cell neighbors will 
+    refer to.
+  Returns:
+    A sequence of eight S2Cell2 neighbors.
+  '''
+  four_neighbors = cell.GetEdgeNeighbors()
+  eight_neighbors = four_neighbors + [
+    four_neighbors[0].prev(), four_neighbors[3].next(), 
+    four_neighbors[2].prev(), four_neighbors[3].GetEdgeNeighbors()[0]] 
+  return eight_neighbors
+
+def get_16_neighbors(cellid: s2.S2CellId) -> Sequence[s2.S2CellId]:
+  '''Get 16 S2Cell neighbors for a given cell (second circle). 
+  Arguments:
+    cell(S2Cell): The relative S2Cell to which the S2Cell neighbors will 
+    refer to.
+  Returns:
+    A sequence of eight S2Cell2 neighbors.
+  '''
+  
+  eight_neighbors = get_8_neighbors(cellid)
+  sixteen_neighbors = [first_neighbors[0], first_neighbors[0].next(), 
+    first_neighbors[1].prev(), first_neighbors[3].next(), second_neighbors[1], 
+    second_neighbors[2].prev(), second_neighbors[3].next().next().next(), 
+    first_neighbors[1].prev().prev(), first_neighbors[3].prev().prev(), 
+    third_neighbors[2], third_neighbors[3].next(), 
+    third_neighbors[3].next().next(), third_neighbors[3].next().next().next(), 
+    third_neighbors[2].prev().prev().prev().prev(), forth_neighbors[3], 
+    forth_neighbors[0].prev()]
+  return sixteen_neighbors
+
 def get_cell_neighbors(cellid: int) -> Sequence[int]:
   '''Get eight S2Cell neighbors for a given cell. 
   Arguments:
@@ -122,11 +168,7 @@ def get_cell_neighbors(cellid: int) -> Sequence[int]:
     A sequence of eight S2Cell2 neighbors.
   '''
   cell = s2.S2CellId(cellid)
-  four_neighbors = cell.GetEdgeNeighbors()
-  eight_neighbors = four_neighbors + [
-    four_neighbors[0].next(), four_neighbors[3].next(),
-    four_neighbors[1].prev(), four_neighbors[3].prev()
-  ]
+  four_neighbors = get_8_neighbors(cell)
 
   return [cell.id() for cell in eight_neighbors]
 
