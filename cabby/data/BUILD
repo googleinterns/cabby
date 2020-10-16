@@ -29,7 +29,6 @@ py_library(
     srcs = ['osm_item.py'],
 )
 
-
 py_test(
     name = "extract_test",
     srcs = ["extract_test.py"],
@@ -49,7 +48,6 @@ py_test(
     ],
 )
 
-
 py_binary(
     name = 'extract_wikigeo_contexts',
     main = 'extract_wikigeo_contexts.py',
@@ -62,28 +60,6 @@ py_binary(
         "//cabby/data/wikipedia:item",
         "//cabby/data/wikipedia:query",
         "//cabby/data:wikigeo"
-    ],
-
-)
-
-
-
-py_binary(
-    name = 'extract_wikigeo_contexts_with_osm',
-    main = 'extract_wikigeo_contexts_with_osm.py',
-    srcs = ['extract_wikigeo_contexts_with_osm.py'],
-    deps = [
-        ':extract',
-         ":osm_item",
-        "//cabby/data/wikidata:item",
-        "//cabby/data/wikidata:info_item",
-        "//cabby/data/wikidata:query",
-        "//cabby/data/wikipedia:item",
-        "//cabby/data/wikipedia:query",
-        "//cabby/data:wikigeo",
-        '//cabby/geo:regions',
-        '//cabby/geo/map_processing:map_structure'
-
     ],
 
 )
