@@ -158,10 +158,11 @@ def train_model(model: torch.nn.Module,
       text = {key: val.to(device) for key, val in batch['text'].items()}
       cellids = batch['cellid'].float().to(device)
       neighbor_cells = batch['neighbor_cells'].float().to(device) 
+      second_neighbor_cells = second_neighbor_cells.float().to(device)
       far_cells = batch['far_cells'].float().to(device)
 
       loss = compute_loss(device, model, text, cellids, 
-        neighbor_cells, far_cells)
+        neighbor_cells, second_neighbor_cells, far_cells)
 
       loss.backward()
       optimizer.step()
