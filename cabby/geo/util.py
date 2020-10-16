@@ -175,9 +175,9 @@ def get_cell_neighbors(cellid: int) -> Sequence[int]:
     A sequence of eight S2Cell2 neighbors.
   '''
   cell = s2.S2CellId(cellid)
-  four_neighbors = get_8_neighbors(cell)
+  neighbors = get_8_neighbors(cell)
 
-  return [cell.id() for cell in eight_neighbors]
+  return [cell.id() for cell in neighbors]
 
 def neighbor_cellid(cellid: int) -> int:
   '''Get a neighbor cell id. 
