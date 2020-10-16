@@ -101,8 +101,8 @@ def save_metrics_last_only(save_path: Text,
           'pred_points_lon': [lon for lon, lat in pred_points_list],
   }
 
-  logging.info(state_df.head(1))
   state_df = pd.DataFrame(state_dict)
+  logging.info(state_df.head(1))
   state_df.to_csv(save_path, sep = '\t', header=False)
   logging.info(f'Results saved to ==> {save_path}')
 
