@@ -1,5 +1,5 @@
 REGION_NAME="Pittsburgh_small"
-OUTPUT_DIR='./tmp/cabby_run'
+OUTPUT_DIR=$HOME/tmp/cabby_run
 
 echo "****************************************"
 echo "*                 Geo                  *"
@@ -12,7 +12,7 @@ mkdir -p $OUTPUT_DIR/poiTestData
 
 bazel-bin/cabby/geo/map_processing/map_processor --region $REGION_NAME --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData/
 bazel-bin/cabby/geo/map_processing/map_processor --region DC --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData
-bazel-bin/cabby/geo/sample_poi --region DC --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData --path $OUTPUT_DIR/pathData/dc_geo_paths.gpkg --n_samples 1
+bazel-bin/cabby/geo/sample_poi --region DC --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData --path $OUTPUT_DIR/poiTestData/dc_geo_paths.gpkg --n_samples 1
 
 echo "****************************************"
 echo "*              Wikidata                *"

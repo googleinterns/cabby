@@ -52,8 +52,8 @@ flags.mark_flag_as_required("n_samples")
 
 def main(argv):
   del argv  # Unused.
-  map_region = map_structure.Map(FLAGS.region, FLAGS.min_s2_level, FLAGS.
-  directory)
+  map_region = map_structure.Map(
+    FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
 
   # Create a file with multiple layers of data.
   walker = walk.Walker()
