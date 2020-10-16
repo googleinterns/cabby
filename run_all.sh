@@ -34,4 +34,4 @@ bazel-bin/cabby/data/extract_wikigeo_contexts --region $REGION_NAME --output_dir
 echo "****************************************"
 echo "*                 RVS                  *"
 echo "****************************************"
-bazel-bin/cabby/rvs/generate_rvs --rvs_data_path $OUTPUT_DIR/pittsburgh_small_geo_paths.gpkg --save_instruction_path $OUTPUT_DIR/pittsburgh_small_instructions.json
+bazel-bin/cabby/rvs/generate_rvs --rvs_data_path $OUTPUT_DIR/poiTestData/dc_geo_paths.gpkg --save_instruction_path $OUTPUT_DIR/dc_small_instructions.json
