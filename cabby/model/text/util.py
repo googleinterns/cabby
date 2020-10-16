@@ -18,6 +18,7 @@ from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
 from absl import logging
 import numpy as np
+import pandas as pd
 from sklearn.metrics import accuracy_score
 import torch
 
@@ -82,6 +83,28 @@ def load_checkpoint(load_path: Text, model:  torch.nn.Module,
 
   model.load_state_dict(state_dict['model_state_dict'])
   return state_dict
+
+
+
+def save_metrics_last_only(save_path: Text,
+         true_points_list: Sequence[Tuple[float, float]],
+         pred_points_list: Sequence[Tuple[float, float]]):
+  '''Function for saving results.'''
+
+  if save_path == None:
+    return
+  state_dict = {
+          # 'index': list(range(len(true_points_list))),
+          'true_points_lat': [lat for lon, lat in true_points_list],
+          'true_points_lon': [lon for lon, lat in true_points_list],
+          'pred_points_lat': [lat for lon, lat in pred_points_list],
+          'pred_points_lon': [lon for lon, lat in pred_points_list],
+  }
+
+  
+  state_df = pd.DataFrame(state_dict)
+  state_df.to_csv(save_path, sep = '\t', header=False)
+  logging.info(f'Results saved to ==> {save_path}')
 
 
 def save_metrics(save_path: Text,
