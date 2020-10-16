@@ -15,7 +15,7 @@ bazel-bin/cabby/geo/map_processing/map_processor --region REGION --min_s2_level 
 bazel-bin/cabby/geo/sample_poi --region REGION --min_s2_level LEVEL --directory DIRECTORY_TO_MAP --path PATH_TO_SPATIAL_ITEMS.gpkg --n_samples NUMBER_OF_SAMPLES_TO_GENERATE
 ```
 
-### (5) Generating RVS instructions
+### (3) Generating RVS instructions
 ```
 bazel-bin/cabby/rvs/generate_rvs --rvs_data_path PATH_TO_SPATIAL_ITEMS.gpkg --save_instruction_path PATH_TO_RVS.json 
 ```

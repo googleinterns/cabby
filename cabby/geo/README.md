@@ -5,8 +5,8 @@ To create spatial samples 3 steps should be taken: (1) pick a path (start and en
 
 ### (1) Picking a path
 To construct a path we first need to pick the start and end point. We start by selecting the end point. We randomly select a POI from the OSM-based  graph constructed, that is a small POI and has a tag key of a name. We define a small POI if its geometry covers 4 or less S2Cells of level 18 (no more than 152 meters long). We then pick the start point from the POI in the OSM-based graph based on the following conditions: 
-1. A small POI
-2. Within a path distance of 200-2000 meters from the end point
+1. A small POI.
+2. Within a path distance of 200-2000 meters from the end point.
 3. Has a tag key of name. 
 We then pick a route that is the shortest distance between start and end point.  
 

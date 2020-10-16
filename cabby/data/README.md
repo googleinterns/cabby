@@ -12,9 +12,9 @@ To create a Wikidata-based sample we query Wikidata by region and extract proper
 3. Architectural style 
 4. Use (e.g., hotel)
 5. Has part (e.g., Knoxville Branch Library is part of Carnegie Library of Pittsburgh) 
-6. Subsidiary (e.g., the subsidiary of CMU is Carnegie Mellon Silicon Valley) 
-7. Alternative name 
-8. Instance (e.g., Hillman Library is an instance of a  library). 
+6. Subsidiary (e.g., the subsidiary of CMU is Carnegie Mellon Silicon Valley)
+7. Alternative name
+8. Instance (e.g., Hillman Library is an instance of a  library)
 
 We concatenate all these tags into one semi-sentence which is one sample in the WikiGeo dataset.  E.g, “Heinz Field and American football stadium that is home to the Pittsburgh Steelers and Pittsburgh Panthers and Steelers Stadium and stadium.”
 
@@ -32,6 +32,6 @@ To create an OSM-based sample we query OSM and extract POI that are not large (s
 11. 'building:material'
 12. 'roof:material'
 13. 'roof:shape'
-14. 'roof:colour'.  
+14. 'roof:colour'
 
 Like the sample Wikidata-based samples, we concatenate the tag values into one semi-sentence. E.g,  “St. Paul Cathedral Rectory and building and Dithridge Street”.
