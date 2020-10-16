@@ -141,7 +141,7 @@ class Map:
       return single_poi['osmid']
 
     poi_osmid = single_poi['osmid']
-    poi_osmid = util.concat_numbers(9999999999999, poi_osmid)
+    poi_osmid = '#' + str(poi_osmid)
     assert poi_osmid not in self.poi['osmid'].tolist(), poi_osmid
     self.poi.loc[self.poi['osmid'] ==
            single_poi['osmid'], 'osmid'] = poi_osmid
@@ -228,8 +228,7 @@ class Map:
       line_2 = cut_geometry[1]
       dist_2 = util.get_line_length(line_2)
 
-      projected_point_osmid = util.concat_numbers(
-      len(list_edges_connected_ids), poi_osmid)
+      projected_point_osmid = str(len(list_edges_connected_ids)) + poi_osmid
 
     else: # Projected point is exactly on the end of the line (U or V).
       dist_u_p = util.get_distance_between_points(u_point, projected_point)
