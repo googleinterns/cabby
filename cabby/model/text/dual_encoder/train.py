@@ -198,7 +198,10 @@ class Trainer:
     logging.info('Finished Training.')
 
   def save_cell_embed(self):
-    cell_embed = self.model.module.cellid_main(self.cells_tensor)
+    if isinstance(self.model, nn.DataParallel):
+      cell_embed = self.model.module.cellid_main(self.cells_tensor)
+    else:
+      cell_embed = self.model.cellid_main(self.cells_tensor)
     cellid_to_embed = {
       cell: embed for cell, embed in zip(self.unique_cells, cell_embed)}
     path_to_save = os.path.join(self.file_path, 'cellid_to_embedding.pt')
@@ -206,7 +209,10 @@ class Trainer:
     logging.info(f'Cell embedding saved to ==> {path_to_save}')
 
 def infer_text(model: torch.nn.Module, text: str):
-  return model.module.text_embed(text)
+  if isinstance(self.model, nn.DataParallel):
+    return model.module.text_embed(text)
+  else:
+    return model.text_embed(text)
     
   
 

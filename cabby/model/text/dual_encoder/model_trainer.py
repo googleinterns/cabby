@@ -148,7 +148,7 @@ def main(argv):
     unique_cells = datast_text.unique_cellids,
     file_path=FLAGS.output_dir, 
     cells_tensor = datast_text.unique_cellids_binary,
-    label_to_cellid = datast_text.label_to_cellid
+    label_to_cellid = datast_text.label_to_cellid,
     )
   trainer.train_model()
 
