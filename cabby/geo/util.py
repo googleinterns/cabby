@@ -125,7 +125,7 @@ def get_cell_second_circle_neighbors(cellid: int) -> Sequence[int]:
   neighbors = get_16_neighbors(cell)
   return [cell.id() for cell in neighbors]
 
-def get_8_neighbors(cellid: s2.S2CellId) -> Sequence[s2.S2CellId]:
+def get_8_neighbors(cell: s2.S2CellId) -> Sequence[s2.S2CellId]:
   '''Get eight S2Cell neighbors for a given cell (first circle). 
   Arguments:
     cell(S2Cell): The relative S2Cell to which the S2Cell neighbors will 
