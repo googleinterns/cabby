@@ -95,14 +95,13 @@ def save_metrics_last_only(save_path: Text,
     return
   state_dict = {
           # 'index': list(range(len(true_points_list))),
-          'true_points_lat': [lat for lon, lat in true_points_list],
-          'true_points_lon': [lon for lon, lat in true_points_list],
-          'pred_points_lat': [lat for lon, lat in pred_points_list],
-          'pred_points_lon': [lon for lon, lat in pred_points_list],
+          'true_points_lat': [lat for lat, lon in true_points_list],
+          'true_points_lon': [lon for lat, lon in true_points_list],
+          'pred_points_lat': [lat for lat, lon in pred_points_list],
+          'pred_points_lon': [lon for lat, lon in pred_points_list],
   }
 
   state_df = pd.DataFrame(state_dict)
-  logging.info(state_df.head(1))
   state_df.to_csv(save_path, sep = '\t', header=False)
   logging.info(f'Results saved to ==> {save_path}')
 
