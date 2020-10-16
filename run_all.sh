@@ -19,6 +19,5 @@ bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items --region Pittsbur
 bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles=New_York_Stock_Exchange,Empire_State_Building
 
 # Wikigeo
-
-bazel-bin/cabby/data/extract_wikigeo_contexts --region Pittsburgh_small --path pittsburgh_small.json
-bazel-bin/cabby/data/extract_wikigeo_contexts_with_osm --region Pittsburgh_small --save_path pittsburgh_small_with_osm.json --osm_path  "./cabby/geo/map_processing/poiTestData/pittsburgh_small_poi.pkl"
+bazel-bin/cabby/data/extract_wikigeo_contexts --region "Pittsburgh_small" --output_dir "./cabby/data/dataExample"
+bazel-bin/cabby/data/extract_wikigeo_contexts --region "Pittsburgh_small" --output_dir "./cabby/data/dataExample" --osm_path "./cabby/geo/map_processing/poiTestData/pittsburgh_small_poi.pkl"

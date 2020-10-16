@@ -49,17 +49,7 @@ class WikigeoEntity:
 
   def __attrs_post_init__(self):
     # The QID is the part of the URL that comes after the last / character.
-    self.sample = {
-      'pageid': self.pageid, 
-      'text': self.text, 
-      'title': self.title, 
-      'ref_qid': str(self.ref_qid), 
-      'ref_pageid': self.ref_pageid, 
-      'ref_title': self.ref_title, 
-      'ref_point': text_from_point(self.ref_point), 
-      'ref_instance': self.ref_instance, 
-      'sample_type': self.sample_type
-    }
+    self.ref_point = text_from_point(self.ref_point)
 
   @classmethod
   def from_wiki_items(cls, wikipedia, wikipedia_ref, wikidata_ref, 
@@ -97,7 +87,7 @@ class WikigeoEntity:
       result.osmid,
       result.text,
       result.name,
-      result.qid,
+      str(result.qid),
       result.osmid,
       result.name,
       result.point,
