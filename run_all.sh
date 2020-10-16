@@ -9,7 +9,8 @@ mkdir -p /tmp/poiTestData
 # bazel-bin/cabby/geo/geo_computation --orig_lat 40.749102 --orig_lon -73.984076 -dest_lat 40.748432 --dest_lon -73.982473
 
 bazel-bin/cabby/geo/map_processing/map_processor --region $REGION_NAME --min_s2_level 18 --directory "/tmp/poiTestData/"
-bazel-bin/cabby/geo/sample_poi --region $REGION_NAME --min_s2_level 18 --directory "/tmp/poiTestData/" --path "/tmp/pathData/pittburgh_small_geo_paths.gpkg" --n_samples 1
+bazel-bin/cabby/geo/map_processing/map_processor --region DC --min_s2_level 18 --directory "/tmp/poiTestData/"
+bazel-bin/cabby/geo/sample_poi --region DC --min_s2_level 18 --directory "/tmp/poiTestData/" --path "/tmp/pathData/dc_geo_paths.gpkg" --n_samples 1
 
 echo "****************************************"
 echo "*              Wikidata                *"
