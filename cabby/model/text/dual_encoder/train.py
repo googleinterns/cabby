@@ -209,7 +209,7 @@ class Trainer:
     logging.info(f'Cell embedding saved to ==> {path_to_save}')
 
 def infer_text(model: torch.nn.Module, text: str):
-  if isinstance(self.model, nn.DataParallel):
+  if isinstance(model, nn.DataParallel):
     return model.module.text_embed(text)
   else:
     return model.text_embed(text)

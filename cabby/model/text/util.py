@@ -94,7 +94,6 @@ def save_metrics_last_only(save_path: Text,
   if save_path == None:
     return
   state_dict = {
-          # 'index': list(range(len(true_points_list))),
           'true_points_lat': [lat for lat, lon in true_points_list],
           'true_points_lon': [lon for lat, lon in true_points_list],
           'pred_points_lat': [lat for lat, lon in pred_points_list],
