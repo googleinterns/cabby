@@ -167,7 +167,7 @@ class Map:
 
   def add_single_point_edge(self, point: Point,
                 list_edges_connected_ids: List, 
-                poi_osmid: int) -> Optional[Sequence[edge.Edge]]:
+                poi_osmid: str) -> Optional[Sequence[edge.Edge]]:
     '''Connect a POI to the closest edge: (1) claculate the projected point to 
     the nearest edge; (2) add the projected node to the graph; (3) create an 
     edge between the point of the POI and the projcted point (add to the list 
