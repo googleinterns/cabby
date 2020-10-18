@@ -52,7 +52,9 @@ CELLID_DIM = 64
 class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
     cells: int, cellid_to_label: Dict[int, int], data_dir: str):
-        
+    
+    if not os.path.exists(data_dir):
+      os.makedirs(data_dir)
     for idx in range(data.text.shape[0]): 
       tokenization = tokenizer(data.text.iloc[idx], truncation=True, padding=True, add_special_tokens=True, return_tensors="pt") 
       logging.info("tokenization: {}".format(tokenization['input_ids'].shape))
