@@ -149,9 +149,12 @@ def create_dataset(data_dir: Text, region: Text, s2level: int
   tens_cells = torch.tensor(vec_cells)
 
   # Create Cabby dataset.
-  train_dataset = TextGeoSplit(train_ds, s2level, cells, cellid_to_label, os.path(data_dir, 'train'))
-  val_dataset = TextGeoSplit(valid_ds, s2level, cells, cellid_to_label, os.path(data_dir, 'valid'))
-  test_dataset = TextGeoSplit(test_ds, s2level, cells, cellid_to_label, os.path(data_dir, 'test'))
+  path = os.path(data_dir, 'train')
+  train_dataset = TextGeoSplit(train_ds, s2level, cells, cellid_to_label, path)
+  path = os.path(data_dir, 'valid')
+  val_dataset = TextGeoSplit(valid_ds, s2level, cells, cellid_to_label, path)
+  path = os.path(data_dir, 'test')
+  test_dataset = TextGeoSplit(test_ds, s2level, cells, cellid_to_label, path)
 
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
     train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
