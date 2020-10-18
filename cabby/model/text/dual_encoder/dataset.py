@@ -55,22 +55,19 @@ CELLID_DIM = 64
 
 class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
-    cells: int, cellid_to_label: Dict[int, int]):
-    
-    
-    batch_data_set = 50
-    current = 0
-    tokens_hidden_state = []
-    while current<data.text.shape[0]: 
+    cells: int, cellid_to_label: Dict[int, int], data_dir):
+        
+    for current in data.text.shape[0]: 
       last = batch_data_set+current 
-      tokenization = tokenizer( data.text.iloc[current:last].tolist(), truncation=True, padding=True, add_special_tokens=True, return_tensors="pt") 
+      tokenization = tokenizer( data.text.iloc[current].tolist(), truncation=True, padding=True, add_special_tokens=True, return_tensors="pt") 
       logging.info("tokenization: {}".format(tokenization['input_ids'].shape))
       logging.info(current) 
-      current += batch_data_set 
       encoding = bert(**tokenization) 
       logging.info("encoding.last_hidden_state: {}".format(
         encoding.last_hidden_state.shape))
-      tokens_hidden_state.append(encoding)
+      path = os.path(data_dir, 'embed_'+str(counter)+'.pt')
+      torch.save(encoding,path)
+
     
     tokens_hidden_state = torch.cat(tokens_hidden_state, dim=0)
     logging.info("tokens_hidden_state {}".format(tokens_hidden_state.shape))
@@ -161,9 +158,9 @@ def create_dataset(data_dir: Text, region: Text, s2level: int
   tens_cells = torch.tensor(vec_cells)
 
   # Create Cabby dataset.
-  train_dataset = TextGeoSplit(train_ds, s2level, cells, cellid_to_label)
-  val_dataset = TextGeoSplit(valid_ds, s2level, cells, cellid_to_label)
-  test_dataset = TextGeoSplit(test_ds, s2level, cells, cellid_to_label)
+  train_dataset = TextGeoSplit(train_ds, s2level, cells, cellid_to_label, os.path(data_dir, 'train'))
+  val_dataset = TextGeoSplit(valid_ds, s2level, cells, cellid_to_label, os.path(data_dir, 'valid'))
+  test_dataset = TextGeoSplit(test_ds, s2level, cells, cellid_to_label, os.path(data_dir, 'test'))
 
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
     train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
