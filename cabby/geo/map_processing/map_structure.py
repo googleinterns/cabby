@@ -112,6 +112,10 @@ class Map:
     Returns:
       The new osmid.
     '''
+    # If the POI is already in the graph, do not add it.
+    if single_poi['osmid'] in self.nx_graph:
+      return None
+
     # Project POI on to the closest edge in graph.
     geometry = single_poi['geometry']
     if isinstance(geometry, Point):
@@ -329,7 +333,7 @@ class Map:
     '''Add all POI to nx_graph(currently contains only the roads).'''
     logging.info("Number of POI to add to graph: {}".format(self.poi.shape[0]))
     eges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
-    
+    edges_to_add_list = edges_to_add_list.dropna()
     eges_to_add_list.swifter.apply(
       lambda edges_list: [self.add_two_ways_edges(edge) for edge in edges_list])
 
