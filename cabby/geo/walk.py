@@ -190,11 +190,14 @@ class Walker:
     # Get closest nodes to points.
     dest_osmid = end_point['osmid']
 
-    # Find nodes whithin 2000 meter path distance.
-    outer_circle_graph = ox.truncate.truncate_graph_dist(
-    map.nx_graph, dest_osmid, max_dist=MAX_PATH_DIST, weight='length')
+    try:
+      # Find nodes whithin 2000 meter path distance.
+      outer_circle_graph = ox.truncate.truncate_graph_dist(
+      map.nx_graph, dest_osmid, max_dist=MAX_PATH_DIST, weight='length')
 
-    outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
+      outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
+    except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
+      return None
 
     try:
       # Get graph that is too close (less than 200 meter path distance)
@@ -202,7 +205,7 @@ class Walker:
         map.nx_graph, dest_osmid, max_dist=MIN_PATH_DIST, weight='length')
       inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
-    except ValueError:  # GeoDataFrame returned empty
+    except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
       inner_circle_graph_osmid = []
 
     osmid_in_range = [
