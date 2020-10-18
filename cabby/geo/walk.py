@@ -39,10 +39,6 @@ from cabby.geo.map_processing import map_structure
 from cabby.rvs import item
 
 
-# Coordinate Reference Systems (CRS) - UTM Zones (North).
-# This variable is used (:map_structure.py; cabby.geo.walk.py) to project the 
-# geometries into this CRS for geo operations such as calculating the centroid.
-OSM_CRS = 32633  # UTM Zones (North).
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 4
 MAX_PATH_DIST = 2000
@@ -409,7 +405,6 @@ class Walker:
       # Return Empty.
       return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
-    df_pivots = df_pivots.set_crs(epsg=OSM_CRS, allow_override=True)
     # Remove streets.
     if 'highway' in df_pivots.columns:
       df_pivots = df_pivots[(df_pivots['highway'].isnull())]

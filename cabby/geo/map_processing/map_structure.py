@@ -105,7 +105,7 @@ class Map:
     return osm_poi_no_streets, osm_poi_streets
 
   def add_single_poi_to_graph(
-      self, single_poi: pd.Series) -> Sequence[edge.Edge]:
+      self, single_poi: pd.Series) -> Optional[Sequence[edge.Edge]]:
     '''Add single POI to nx_graph.
     Arguments:
       single_poi: a single POI to be added to graph.
@@ -332,9 +332,9 @@ class Map:
   def add_poi_to_graph(self):
     '''Add all POI to nx_graph(currently contains only the roads).'''
     logging.info("Number of POI to add to graph: {}".format(self.poi.shape[0]))
-    eges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
+    edges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
     edges_to_add_list = edges_to_add_list.dropna()
-    eges_to_add_list.swifter.apply(
+    edges_to_add_list.swifter.apply(
       lambda edges_list: [self.add_two_ways_edges(edge) for edge in edges_list])
 
     self.poi.set_index('osmid', inplace=True, drop=False)
