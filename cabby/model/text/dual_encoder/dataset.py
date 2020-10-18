@@ -51,21 +51,17 @@ CELLID_DIM = 64
 
 class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
-    cells: int, cellid_to_label: Dict[int, int], data_dir):
+    cells: int, cellid_to_label: Dict[int, int], data_dir: str):
         
-    for current in data.text.shape[0]: 
-      tokenization = tokenizer( data.text.iloc[current].tolist(), truncation=True, padding=True, add_special_tokens=True, return_tensors="pt") 
+    for idx in data.text.shape[0]: 
+      tokenization = tokenizer( data.text.iloc[idx].tolist(), truncation=True, padding=True, add_special_tokens=True, return_tensors="pt") 
       logging.info("tokenization: {}".format(tokenization['input_ids'].shape))
-      logging.info(current) 
+      logging.info(idx) 
       encoding = bert(**tokenization) 
       logging.info("encoding.last_hidden_state: {}".format(
         encoding.last_hidden_state.shape))
-      path = os.path(data_dir, 'embed_'+str(counter)+'.pt')
+      path = os.path(data_dir, 'embed_'+str(idx)+'.pt')
       torch.save(encoding,path)
-
-    
-    tokens_hidden_state = torch.cat(tokens_hidden_state, dim=0)
-    logging.info("tokens_hidden_state {}".format(tokens_hidden_state.shape))
 
 
     data['point'] = data.ref_point.apply(
