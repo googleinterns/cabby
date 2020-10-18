@@ -38,8 +38,6 @@ from cabby.geo.map_processing import edge
 from cabby.geo import regions
 
 
-
-
 class Map:
 
   def __init__(self, map_name: Text, level: int = 18, load_directory: Text = None):
