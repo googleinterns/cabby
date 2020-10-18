@@ -61,7 +61,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       encoding = bert(**tokenization) 
       logging.info("encoding.last_hidden_state: {}".format(
         encoding.last_hidden_state.shape))
-      path = os.path(data_dir, 'embed_'+str(idx)+'.pt')
+      path = os.path.join(data_dir, 'embed_'+str(idx)+'.pt')
       torch.save(encoding,path)
 
 
