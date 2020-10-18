@@ -38,10 +38,6 @@ from cabby.geo.map_processing import edge
 from cabby.geo import regions
 
 
-# Coordinate Reference Systems (CRS) - UTM Zones (North).
-# This variable is used (:map_structure.py; cabby.geo.walk.py) to project the 
-# geometries into this CRS for geo operations such as calculating the centroid.
-OSM_CRS = 4326
 
 
 class Map:
@@ -77,11 +73,6 @@ class Map:
   def process_param(self):
     '''Helper function for processing the class data objects.'''
 
-    # Set the coordinate system.
-    self.poi = self.poi.set_crs(epsg=OSM_CRS, allow_override=True)
-    self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
-    self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
-
     # Drop columns with list type.
     self.edges.drop(self.edges.columns.difference(
       ['osmid', 'length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
@@ -102,7 +93,6 @@ class Map:
             'tourism': True}
 
     osm_poi = ox.pois.pois_from_polygon(self.polygon_area, tags=tags)
-    osm_poi = osm_poi.set_crs(epsg=OSM_CRS, allow_override=True)
 
     osm_highway = osm_poi['highway']
     osm_poi_no_streets = osm_poi[osm_highway.isnull()]
