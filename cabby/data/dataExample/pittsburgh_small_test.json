@@ -1,4 +1,8 @@
 {"pageid": 28318433, "text": "It is currently an apartment building.", "title": "Birmingham Public School", "ref_qid": "Q4916784", "ref_pageid": 28318433, "ref_title": "Birmingham Public School", "ref_point": "(40.4273, -79.9837)", "ref_instance": "building", "sample_type": "Wikipedia_page"}
 {"pageid": 999203557558, "text": "Starbucks and cafe and Starbucks and building and East Carson Street.", "title": "Starbucks", "ref_qid": "nan", "ref_pageid": 999203557558, "ref_title": "Starbucks", "ref_point": "(40.428651844309336, -79.98402582300487)", "ref_instance": "", "sample_type": "OSM"}
 {"pageid": 28318433, "text": "It is currently an apartment building.", "title": "Birmingham Public School", "ref_qid": "Q4916784", "ref_pageid": 28318433, "ref_title": "Birmingham Public School", "ref_point": "(40.4273, -79.9837)", "ref_instance": "building", "sample_type": "Wikipedia_page"}
+<<<<<<< HEAD
+=======
+{"pageid": 28318433, "text": "It is currently an apartment building.", "title": "Birmingham Public School", "ref_qid": "Q4916784", "ref_pageid": 28318433, "ref_title": "Birmingham Public School", "ref_point": "(40.4273, -79.9837)", "ref_instance": "building", "sample_type": "Wikipedia_page"}
+>>>>>>> master
 {"pageid": 999203557558, "text": "Starbucks and cafe and Starbucks and building and East Carson Street.", "title": "Starbucks", "ref_qid": "nan", "ref_pageid": 999203557558, "ref_title": "Starbucks", "ref_point": "(40.428651844309336, -79.98402582300487)", "ref_instance": "", "sample_type": "OSM"}
