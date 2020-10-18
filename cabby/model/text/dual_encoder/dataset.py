@@ -42,10 +42,6 @@ bert = DistilBertModel.from_pretrained(
 device = torch.device(
   'cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-if torch.cuda.device_count() > 1:
-  logging.info("Using {} GPUs.".format(torch.cuda.device_count()))
-  bert = nn.DataParallel(bert)
-
 bert.to(device)
 
             
@@ -58,7 +54,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
     cells: int, cellid_to_label: Dict[int, int], data_dir):
         
     for current in data.text.shape[0]: 
-      last = batch_data_set+current 
       tokenization = tokenizer( data.text.iloc[current].tolist(), truncation=True, padding=True, add_special_tokens=True, return_tensors="pt") 
       logging.info("tokenization: {}".format(tokenization['input_ids'].shape))
       logging.info(current) 
