@@ -58,11 +58,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
       os.makedirs(data_dir)
     for idx in range(data.text.shape[0]): 
       tokenization = tokenizer(data.text.iloc[idx], truncation=True, padding=True, add_special_tokens=True, return_tensors="pt") 
-      logging.info("tokenization: {}".format(tokenization['input_ids'].shape))
-      logging.info(idx) 
       tokenization = tokenization.to(device)
       encoding = bert(**tokenization) 
-      logging.info("encoding.last_hidden_state: {}".format(
         encoding.last_hidden_state.shape))
       path = os.path.join(data_dir, 'embed_'+str(idx)+'.pt')
       torch.save(encoding,path)
