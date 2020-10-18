@@ -37,6 +37,18 @@ from cabby.model.text.dual_encoder import dataset_item
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 bert = DistilBertModel.from_pretrained(
             "distilbert-base-uncased", return_dict=True)
+
+
+device = torch.device(
+  'cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+if torch.cuda.device_count() > 1:
+  logging.info("Using {} GPUs.".format(torch.cuda.device_count()))
+  bert = nn.DataParallel(bert)
+
+bert.to(device)
+
+            
 CELLID_DIM = 64
 
 
