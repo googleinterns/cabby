@@ -53,6 +53,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
     cells: int, cellid_to_label: Dict[int, int], data_dir: str):
     
+    self.data_dir = data_dir
     if not os.path.exists(data_dir):
       os.makedirs(data_dir)
     for idx in range(data.text.shape[0]): 
@@ -106,9 +107,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
       A single sample including text, the correct cellid, a neighbor cellid, 
       a far cellid, a point of the cellid and the label of the cellid.
     '''
-    text = {key: torch.tensor(val[idx])
-        for key, val in self.encodings.items()}
-    
+    path = os.path.join(self.data_dir, 'embed_'+str(idx)+'.pt')
+    text = torch.load(path)
     cellid = torch.tensor(self.cellids[idx])
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
