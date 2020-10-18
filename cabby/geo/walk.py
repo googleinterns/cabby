@@ -17,6 +17,7 @@ along the path and near the goal.'''
 
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
+from absl import logging
 import geopandas as gpd
 from geopandas import GeoDataFrame, GeoSeries
 import networkx as nx
@@ -48,6 +49,7 @@ MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
 _Geo_DataFrame_Driver = "GPKG"
+MAX_NUM_FAILED = 10
 
 
 
@@ -86,7 +88,8 @@ class Walker:
 
     # Generate a rank column that will be used to sort
     # the dataframe numerically
-    route_nodes['sort'] = route_nodes['osmid'].map(sorterIndex)
+    sorted_nodes = route_nodes['osmid'].map(sorterIndex)
+    route_nodes = route_nodes.assign(sort=sorted_nodes)
 
     route_nodes = route_nodes.sort_values(['sort'])
 
@@ -532,10 +535,7 @@ class Walker:
   
     edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(
       lambda x: set(map.edges[map.edges['u'] == x]['osmid'].tolist()))
-
-    # Remove edges from pois to streets.
-    edges_in_pivot_goal_route = edges_in_pivot_goal_route[1:-1]
-
+    
     pivot_streets = edges_in_pivot_goal_route.iloc[0]
     goal_streets = edges_in_pivot_goal_route.iloc[-1]
     common_streets = pivot_streets & goal_streets
@@ -627,11 +627,17 @@ class Walker:
       columns=['osmid', 'geometry', 'main_tag'])
 
     counter = 0
+    attempt = 0
     while counter < n_samples:
       entity = self.get_single_sample(map)
       if entity is None:
+        attempt += 1
+        if attempt >= MAX_NUM_FAILED:
+          sys.exit("Reached max number of failed attempts.")
         continue
+      attempt = 0 
       counter += 1
+      logging.info("Created sample {}/{}".format(counter,n_samples))
 
       gdf_start_list = gdf_start_list.append(entity.start_point,
                           ignore_index=True)
