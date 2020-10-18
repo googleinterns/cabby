@@ -19,11 +19,11 @@ import numpy as np
 import os
 import pandas as pd
 import sys
-from torchtext import data
 import torch
 import transformers
 from transformers import DistilBertTokenizerFast
 from transformers.tokenization_utils_base import BatchEncoding
+from transformers import DistilBertModel
 
 from shapely.geometry.point import Point
 
@@ -35,7 +35,8 @@ from cabby.model.text.dual_encoder import dataset_item
 
 
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
-
+bert = DistilBertModel.from_pretrained(
+            "distilbert-base-uncased", return_dict=True)
 CELLID_DIM = 64
 
 
@@ -44,10 +45,24 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
     cells: int, cellid_to_label: Dict[int, int]):
     
-    # Tokenize instructions.
-    self.encodings = tokenizer(
-      data.text.tolist(), truncation=True,
-      padding=True, add_special_tokens=True)
+    
+    batch_data_set = 50
+    current = 0
+    tokens_hidden_state = []
+    while current<data.text.shape[0]: 
+      last = batch_data_set+current 
+      tokenization = tokenizer( data.text.iloc[current:last].tolist(), truncation=True, padding=True, add_special_tokens=True, return_tensors="pt") 
+      logging.info("tokenization: {}".format(tokenization['input_ids'].shape))
+      logging.info(current) 
+      current += batch_data_set 
+      encoding = bert(**tokenization) 
+      logging.info("encoding.last_hidden_state: {}".format(
+        encoding.last_hidden_state.shape))
+      tokens_hidden_state.append(encoding)
+    
+    tokens_hidden_state = torch.cat(tokens_hidden_state, dim=0)
+    logging.info("tokens_hidden_state {}".format(tokens_hidden_state.shape))
+
 
     data['point'] = data.ref_point.apply(
       lambda x: gutil.point_from_str_coord(x))
@@ -90,6 +105,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     '''
     text = {key: torch.tensor(val[idx])
         for key, val in self.encodings.items()}
+    
     cellid = torch.tensor(self.cellids[idx])
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
