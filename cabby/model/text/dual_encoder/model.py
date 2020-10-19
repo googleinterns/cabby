@@ -50,6 +50,7 @@ class DualEncoder(nn.Module):
 
   def text_embed(self, text):
     outputs = self.transformer(inputs_embeds=text)
-    last_hidden_state = outputs[1]
+    print (outputs)
+    last_hidden_state = outputs[0]
     cls_token = last_hidden_state[:,-1,:]
     return self.text_main(cls_token)
