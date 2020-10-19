@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 '''Extract and saves Wikigeo items from Wikipedia, Wikidata, and OSM.
-
 Example:
 $ bazel-bin/cabby/data/extract_wikigeo_contexts \
   --region "Pittsburgh_small" --output_dir wikigeo
-
 Example with Open Street Map items:
 $ bazel-bin/cabby/data/extract_wikigeo_contexts \
   --region "Pittsburgh_small" --output_dir wikigeo \
