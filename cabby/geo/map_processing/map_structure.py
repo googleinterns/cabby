@@ -122,6 +122,12 @@ class Map:
     Returns:
       The new osmid.
     '''
+    # If the POI is already in the graph, do not add it.
+    if single_poi['osmid'] in self.nx_graph:
+      return None
+
+    logging.info("processing new poi %d" % single_poi['osmid'])
+
     # Project POI on to the closest edge in graph.
     geometry = single_poi['geometry']
     if isinstance(geometry, Point):
@@ -234,8 +240,7 @@ class Map:
     else: # Projected point is exactly on the end of the line (U or V).
       dist_u_p = util.get_distance_between_points(u_point, projected_point)
       dist_v_p = util.get_distance_between_points(v_point, projected_point)
-      assert dist_u_p==0 or dist_v_p==0
-      if dist_u_p==0:
+      if dist_u_p<dist_v_p:
         projected_point_osmid = near_edge_u
       else:
         projected_point_osmid = near_edge_v
@@ -339,9 +344,9 @@ class Map:
 
   def add_poi_to_graph(self):
     '''Add all POI to nx_graph(currently contains only the roads).'''
-    eges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
-    
-    eges_to_add_list.swifter.apply(
+    edges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
+    edges_to_add_list = edges_to_add_list.dropna()
+    edges_to_add_list.swifter.apply(
       lambda edges_list: [self.add_two_ways_edges(edge) for edge in edges_list])
 
     self.poi.set_index('osmid', inplace=True, drop=False)
