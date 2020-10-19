@@ -39,10 +39,8 @@ class DualEncoder(nn.Module):
     self.transformer = DistilBertModel(configuration)
 
   def forward(self, text_feat, cellid):
-    print (text_feat.shape, cellid.shape)
     text_embedding = self.text_embed(text_feat)
     cellid = cellid.float()
-    print (cellid.type(), cellid.shape)
     cellid_embedding = self.cellid_main(cellid)
     
     return text_embedding, cellid_embedding
@@ -52,4 +50,5 @@ class DualEncoder(nn.Module):
     outputs = self.transformer(inputs_embeds=text)
     last_hidden_state = outputs[0]
     cls_token = last_hidden_state[-1,:,:]
+    print ('cls_token: ',cls_token.shape)
     return self.text_main(cls_token)
