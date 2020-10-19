@@ -33,9 +33,7 @@ class DualEncoder(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_dim, output_dim),
             )
-    self.cellid_main = nn.Sequential(
-            nn.Linear(s2cell_dim, output_dim),
-            )
+    self.cellid_main = nn.Linear(s2cell_dim, output_dim)
     config = configuration = DistilBertConfig()
     config.n_layers =3
     self.transformer = DistilBertModel(configuration)
