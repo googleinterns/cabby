@@ -142,15 +142,13 @@ class Trainer:
 
     '''Main function for training model.'''
     # Initialize running values.
-    running_loss = 0.0
     global_step = 0
-    valid_accuracy_list, train_loss_list, valid_loss_list = [], [], []
-    global_steps_list, true_points_list, pred_points_list = [], [], []
 
     # Training loop.
     self.model.train()
 
     for epoch in range(self.num_epochs):
+      running_loss = 0.0
       logging.info("Epoch number: {}".format(epoch))
       for batch_idx, batch in enumerate(self.train_loader):
         self.optimizer.zero_grad()
@@ -174,12 +172,6 @@ class Trainer:
 
       average_train_loss = running_loss / batch_idx
       accuracy = accuracy_score(true_vals, predictions)
-      train_loss_list.append(average_train_loss)
-      global_steps_list.append(global_step)
-      valid_accuracy_list.append(accuracy)
-      true_points_list.append(true_points)
-      pred_points_list.append(pred_points)
-      valid_loss_list.append(valid_loss)
 
       # Resetting running values.
       running_loss = 0.0
@@ -195,9 +187,10 @@ class Trainer:
         self.best_valid_loss = valid_loss
         util.save_checkpoint(os.path.join(self.file_path, 'model.pt'), 
           self.model, self.best_valid_loss)
-        util.save_metrics(os.path.join(self.file_path, 'metrics.pt'), train_loss_list,
-          valid_loss_list, global_steps_list, valid_accuracy_list, 
-          true_points_list, pred_points_list)
+        util.save_metrics_last_only(
+          os.path.join(self.file_path, 'metrics.tsv'), 
+          true_points, 
+          pred_points)
         self.save_cell_embed()
 
         self.model.train()
@@ -205,7 +198,10 @@ class Trainer:
     logging.info('Finished Training.')
 
   def save_cell_embed(self):
-    cell_embed = self.model.module.cellid_main(self.cells_tensor)
+    if isinstance(self.model, nn.DataParallel):
+      cell_embed = self.model.module.cellid_main(self.cells_tensor)
+    else:
+      cell_embed = self.model.cellid_main(self.cells_tensor)
     cellid_to_embed = {
       cell: embed for cell, embed in zip(self.unique_cells, cell_embed)}
     path_to_save = os.path.join(self.file_path, 'cellid_to_embedding.pt')
@@ -213,7 +209,10 @@ class Trainer:
     logging.info(f'Cell embedding saved to ==> {path_to_save}')
 
 def infer_text(model: torch.nn.Module, text: str):
-  return model.module.text_embed(text)
+  if isinstance(model, nn.DataParallel):
+    return model.module.text_embed(text)
+  else:
+    return model.text_embed(text)
     
   
 
