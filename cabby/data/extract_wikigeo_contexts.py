@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 '''Extract and saves Wikigeo items from Wikipedia, Wikidata, and OSM.
-
 Example:
 $ bazel-bin/cabby/data/extract_wikigeo_contexts \
   --region "Pittsburgh_small" --output_dir wikigeo
-
 Example with Open Street Map items:
 $ bazel-bin/cabby/data/extract_wikigeo_contexts \
   --region "Pittsburgh_small" --output_dir wikigeo \
@@ -33,8 +31,8 @@ from cabby.data import extract
 from cabby.geo import regions
 
 flags.DEFINE_enum(
-  "region", None, regions.ALLOWED_REGIONS,
-  regions.TEXT_ALLOWED_REGIONS)
+  "region", None, regions.SUPPORTED_REGION_NAMES,
+  regions.REGION_SUPPORT_MESSAGE)
 flags.DEFINE_string(
   "output_dir", None, "The path where the data will be saved.")
 flags.DEFINE_string(
@@ -54,8 +52,10 @@ def main(argv):
 
   # Extract items.
   if FLAGS.osm_path is not None:
+    output_prefix = FLAGS.region.lower() + '_osm'
     results = extract.get_data_by_region_with_osm(FLAGS.region, FLAGS.osm_path)
   else:
+    output_prefix = FLAGS.region.lower()
     results = extract.get_data_by_region(FLAGS.region)
   logging.info(f'Found {len(results)} items.')
   
@@ -66,7 +66,7 @@ def main(argv):
   if not os.path.exists(FLAGS.output_dir):
     os.makedirs(FLAGS.output_dir)
 
-  output_prefix = FLAGS.region.lower()
+
   for split_name, split_data in splits.items():
     logging.info(f'The size of the {split_name} set is {len(split_data)}.')
     output_path = os.path.join(

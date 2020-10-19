@@ -18,7 +18,7 @@ import json
 import os
 import pandas as pd
 import string
-from typing import Dict, Optional, Sequence, Tuple
+from typing import Dict, Optional, Sequence, Tuple, List
 
 from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
@@ -31,7 +31,7 @@ from cabby.geo.map_processing import map_structure
 
 def get_wikigeo_data(
     wikidata_items: Sequence[wdi.WikidataEntity]
-) -> Sequence[wikigeo.WikigeoEntity]:
+) -> List[wikigeo.WikigeoEntity]:
     '''Get data from Wikipedia based on Wikidata items" 
     Arguments:
         wikidata_items: The Wikidata items to which corresponding Wikigeo  
@@ -61,7 +61,7 @@ def get_wikigeo_data(
     for wikipedia_page_items, wikidata in zip(wikipedia_items, wikidata_items):
       for wikipedia in wikipedia_page_items:
         geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
-            wikipedia, wikipedia, wikidata, "Wikipedia_page").sample)
+            wikipedia, wikipedia, wikidata, "Wikipedia_page"))
 
     # # Get backlinks for Wikipedia pages.
     backlinks_pages = wpq.get_backlinks_items_from_wikipedia_titles(
@@ -77,10 +77,10 @@ def get_wikigeo_data(
         zip(backlinks_items, wikipedia_items, wikidata_items):
         for backlink in list_backlinks:
             wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
-                backlink, original_wikipedia_items[0], original_wikidata, "Wikipedia_backlink").sample
+                backlink, original_wikipedia_items[0], original_wikidata, "Wikipedia_backlink")
             
-            sample_text = wikigeo_sample['text']
-            if any(dict['text'] == sample_text for dict in geo_data):
+            sample_text = wikigeo_sample.text
+            if any(item.text == sample_text for item in geo_data):
                 continue
             geo_data.append(wikigeo_sample)
     return geo_data
@@ -119,8 +119,10 @@ def get_data_by_region(region: str) -> Sequence[wikigeo.WikigeoEntity]:
 
 
 def get_data_by_region_with_osm(
-    region: str, path_osm: str = None) -> Sequence[wikigeo.WikigeoEntity]:
-  '''Get three types of samples by region: (1) samples from Wikipedia(text,title) and Wikidata(location); (2) Concatenation of Wikidata tags; (3) Concatenation of OSM tags. 
+    region: str, path_osm: str = None) -> List[wikigeo.WikigeoEntity]:
+  '''Get three types of samples by region: (1) samples from Wikipedia(text,
+  title) and Wikidata(location); (2) Concatenation of Wikidata tags; (3) 
+  Concatenation of OSM tags. 
   Arguments:
     region(str): The region to extract items from.
   Returns:
@@ -143,7 +145,7 @@ def get_data_by_region_with_osm(
   wikidata_tags = wdq.get_geofenced_info_wikidata_items(region)
   for item in wikidata_tags:
     info_item = wdqi.WikidataEntity.from_sparql_result_info(item)
-    sample = wikigeo.WikigeoEntity.from_wikidata(info_item).sample
+    sample = wikigeo.WikigeoEntity.from_wikidata(info_item)
     samples.append(sample)
 
   logging.info(
@@ -162,9 +164,9 @@ def get_data_by_region_with_osm(
     lambda row: osm_item.OSMEntity.from_osm(row), axis=1).tolist()
   unique_texts = []
   for osm in osm_entities:
-    sample = wikigeo.WikigeoEntity.from_osm(osm).sample
-    if sample['text'] not in unique_texts:
-      unique_texts.append(sample['text'])
+    sample = wikigeo.WikigeoEntity.from_osm(osm)
+    if sample.text not in unique_texts:
+      unique_texts.append(sample.text)
       samples.append(sample)
       
   logging.info(
@@ -198,7 +200,7 @@ def split_dataset(
   # Change split by qid so that it will ensure qid isn't shared between sets
 
   # Sort the dataset by ref_qid.
-  sorted_dataset = sorted(dataset, key=lambda item: item['ref_qid'])
+  sorted_dataset = sorted(dataset, key=lambda item: item.ref_qid)
 
   # Get size of splits.
   size_dataset = len(dataset)
@@ -225,4 +227,3 @@ def write_files(path: str, items: Sequence):
       json.dump(item, outfile, default=lambda o: o.__dict__)
       outfile.write('\n')
       outfile.flush()
-

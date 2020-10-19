@@ -19,7 +19,7 @@ import sys
 
 import pandas as pd
 from SPARQLWrapper import SPARQLWrapper, JSON
-from typing import Dict, Tuple, Sequence, Text, Any
+from typing import Dict, Tuple, Sequence, Text, Any, List
 
 from cabby.geo import util
 from cabby.geo import regions
@@ -327,7 +327,7 @@ _PITTSBURGH_LOCATION_QUERY = """SELECT ?place ?location
         """
 
 
-def get_geofenced_info_wikidata_items(region: Text) -> Sequence[Dict[Text, Any]]:
+def get_geofenced_info_wikidata_items(region: Text) -> List[Dict[Text, Any]]:
 
   '''Get Wikidata items with extensive intformation for a specific area. 
   Arguments:
