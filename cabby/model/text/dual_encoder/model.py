@@ -43,7 +43,8 @@ class DualEncoder(nn.Module):
   def forward(self, text_feat, cellid):
     
     text_embedding = self.text_embed(text_feat)
-    cellid_embedding = self.cellid_main(cellid)
+    print (cellid.type())
+    cellid_embedding = self.cellid_main(cellid.long())
     
     return text_embedding, cellid_embedding
   
