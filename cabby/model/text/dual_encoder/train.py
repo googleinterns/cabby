@@ -153,9 +153,9 @@ class Trainer:
       for batch_idx, batch in enumerate(self.train_loader):
         self.optimizer.zero_grad()
         text = batch['text'].to(self.device)
-        cellids = torch.cat(batch['cellid']).long().to(self.device)
-        neighbor_cells = torch.cat(batch['neighbor_cells']).long().to(self.device) 
-        far_cells = torch.cat(batch['far_cells']).long().to(self.device)
+        cellids = torch.cat(batch['cellid']).to(self.device)
+        neighbor_cells = torch.cat(batch['neighbor_cells']).to(self.device) 
+        far_cells = torch.cat(batch['far_cells']).to(self.device)
         loss = self.compute_loss(text, cellids, 
           neighbor_cells, far_cells)
 

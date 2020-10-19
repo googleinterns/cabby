@@ -42,7 +42,7 @@ class DualEncoder(nn.Module):
     
     text_embedding = self.text_embed(text_feat)
     cellid = cellid.float()
-    print (cellid.type())
+    print (cellid.type()), cellid.shape
     cellid_embedding = self.cellid_main(cellid)
     
     return text_embedding, cellid_embedding
