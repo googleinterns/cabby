@@ -104,8 +104,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
       A single sample including text, the correct cellid, a neighbor cellid, 
       a far cellid, a point of the cellid and the label of the cellid.
     '''
+    print (idx)
     path = os.path.join(self.data_dir, 'embed_'+str(idx)+'.pt')
     text = torch.load(path)
+    print (text.shape)
     cellid = torch.tensor(self.cellids[idx])
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
@@ -119,6 +121,14 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
   def __len__(self):
     return len(self.cellids)
+
+class PadSequence:
+  def __call__(self, batch):
+    text = batch['text']
+    print (text)
+    text_pad = torch.nn.utils.rnn.pad_sequence(text, batch_first=True)
+
+
 
 
 def create_dataset(data_dir: Text, region: Text, s2level: int
