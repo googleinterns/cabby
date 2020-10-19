@@ -126,7 +126,9 @@ class PadSequence:
   def __call__(self, batch):
     text = batch['text']
     print (text)
-    text_pad = torch.nn.utils.rnn.pad_sequence(text, batch_first=True)
+    batch['text'] = torch.nn.utils.rnn.pad_sequence(text, batch_first=True)
+    return batch
+    
 
 
 

@@ -120,9 +120,11 @@ def main(argv):
   len(datast_text.unique_cellids)))
 
   train_loader = DataLoader(
-    datast_text.train, batch_size=FLAGS.train_batch_size, shuffle=True)
+    datast_text.train, batch_size=FLAGS.train_batch_size, shuffle=True, 
+    collate_fn=dataset.PadSequence())
   valid_loader = DataLoader(
-    datast_text.valid, batch_size=FLAGS.test_batch_size, shuffle=False)
+    datast_text.valid, batch_size=FLAGS.test_batch_size, shuffle=False, 
+    collate_fn=dataset.PadSequence())
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
