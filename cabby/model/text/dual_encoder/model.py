@@ -15,6 +15,8 @@
 import torch
 import torch.nn as nn
 from transformers import modeling_distilbert, DistilBertConfig
+from transformers import DistilBertModel
+
 
 class DualEncoder(nn.Module):
   def __init__(
@@ -35,7 +37,8 @@ class DualEncoder(nn.Module):
             nn.Linear(s2cell_dim, output_dim),
             )
     config = configuration = DistilBertConfig()
-    self.transformer = modeling_distilbert.Transformer(config)
+    config.n_layers =3
+    self.transformer = DistilBertModel(configuration)
 
   def forward(self, text_feat, cellid):
     
@@ -46,6 +49,6 @@ class DualEncoder(nn.Module):
   
 
   def text_embed(self, text):
-    outputs = self.transformer(text)
+    outputs = self.transformer(inputs_embeds=text)
     cls_token = outputs.last_hidden_state[:,-1,:]
     return self.text_main(cls_token)
