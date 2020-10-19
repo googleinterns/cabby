@@ -59,6 +59,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     for idx in range(data.text.shape[0]): 
       tokenization = tokenizer(data.text.iloc[idx], truncation=True, padding=True, add_special_tokens=True, return_tensors="pt") 
       tokenization = tokenization.to(device)
+      print (tokenization)
       encoding = bert(**tokenization) 
       encoding = { 
         'encoding': encoding.last_hidden_state, 
