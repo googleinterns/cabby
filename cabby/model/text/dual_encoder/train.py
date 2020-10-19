@@ -76,12 +76,7 @@ class Trainer:
       cellids = torch.cat(batch['cellid']).to(self.device)
       neighbor_cells = torch.cat(batch['neighbor_cells']).to(self.device) 
       far_cells = torch.cat(batch['far_cells']).to(self.device)
-
-      cellids = cellids.float().to(self.device) 
-      neighbor_cells = neighbor_cells.float().to(self.device) 
-      far_cells = far_cells.float().to(self.device)
-      text = {key: val.to(self.device) for key, val in text.items()}
-
+      
       loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
 
       loss_val_total += loss.item()
