@@ -92,8 +92,8 @@ class Trainer:
       output = output.detach().cpu().numpy()
       predictions = np.argmax(output, axis=1)
       predictions_list.append(predictions)
-      labels = batch['label'].numpy()
-      true_vals.append(labels)
+      labels = batch['label']
+      true_vals+=labels
       true_points_list.append(batch['point'])
 
     true_points_list = np.concatenate(true_points_list, axis=0)
