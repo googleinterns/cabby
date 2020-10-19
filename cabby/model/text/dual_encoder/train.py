@@ -131,7 +131,7 @@ class Trainer:
     target_far = -1*torch.ones(cellids.shape[0]).to(self.device)
     text_embedding_far, cellid_embedding = self.model(
       text, attention_mask, far_cells)
-    loss_far = criterion(text_embedding_far, attention_mask, cellid_embedding, target_far)
+    loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
 
     loss = loss_cellid + loss_neighbor + loss_far
 
