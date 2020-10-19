@@ -126,7 +126,7 @@ class Map:
     if single_poi['osmid'] in self.nx_graph:
       return None
 
-    print("processing new poi %d" % single_poi['osmid'])
+    logging.info("processing new poi %d" % single_poi['osmid'])
 
     # Project POI on to the closest edge in graph.
     geometry = single_poi['geometry']
