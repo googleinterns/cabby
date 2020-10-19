@@ -83,7 +83,7 @@ class Trainer:
 
       loss_val_total += loss.item()
 
-      text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
+      text_embedding, cellid_embedding = self.model(text, attention_mask, self.cells_tensor)
       batch_dim = text_embedding.shape[0]
       cell_dim = cellid_embedding.shape[0]
       output_dim  = cellid_embedding.shape[1]
