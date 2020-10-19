@@ -109,7 +109,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     cellid = torch.tensor(self.cellids[idx])
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
-    point = torch.tensor(self.points[idx])
+    point = self.points[idx]
     label = torch.tensor(self.labels[idx])
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
@@ -128,8 +128,6 @@ class PadSequence:
     text = batch_post['text']
     text = [t.squeeze() for t in text]
     batch_post['text'] = torch.nn.utils.rnn.pad_sequence(text, batch_first=True)
-    for k, v in batch[0].items():
-      batch_post[k] = torch.cat(batch_post[k])
     return batch_post
     
 
