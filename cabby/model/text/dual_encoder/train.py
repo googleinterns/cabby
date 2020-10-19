@@ -72,12 +72,15 @@ class Trainer:
     loss_val_total = 0
 
     for batch in self.valid_loader:
-      text = batch['text'].to(self.device)
+      text = batch['encoding'].to(self.device)
+      attention_mask = batch['attention_mask'].to(self.device)
+      head_mask = batch['head_mask'].to(self.device)
+
       cellids = torch.cat(batch['cellid']).to(self.device)
       neighbor_cells = torch.cat(batch['neighbor_cells']).to(self.device) 
       far_cells = torch.cat(batch['far_cells']).to(self.device)
       
-      loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
+      loss = self.compute_loss(text, attention_mask, head_mask, cellids, neighbor_cells, far_cells)
 
       loss_val_total += loss.item()
 
@@ -107,14 +110,16 @@ class Trainer:
 
   def compute_loss(
           self,
-          text: Dict, 
+          text: torch.tensor, 
+          attention_mask: torch.tensor,
+          head_mask: torch.tensor,  
           cellids: torch.tensor, 
           neighbor_cells: torch.tensor, 
           far_cells: torch.tensor):
     
     # Correct cellid.
     target = torch.ones(cellids.shape[0]).to(self.device)
-    text_embedding, cellid_embedding = self.model(text, cellids)
+    text_embedding, cellid_embedding = self.model(text, attention_mask, head_mask, cellids)
     loss_cellid = criterion(text_embedding, cellid_embedding, target)
 
     # Neighbor cellid.
@@ -125,8 +130,8 @@ class Trainer:
 
     # Far cellid.
     target_far = -1*torch.ones(cellids.shape[0]).to(self.device)
-    text_embedding_far, cellid_embedding = self.model(text, far_cells)
-    loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
+    text_embedding_far, cellid_embedding = self.model(text, attention_mask, head_mask, far_cells)
+    loss_far = criterion(text_embedding_far, attention_mask, head_mask, cellid_embedding, target_far)
 
     loss = loss_cellid + loss_neighbor + loss_far
 

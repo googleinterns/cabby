@@ -140,10 +140,6 @@ class PadSequence:
           list_value, batch_first=True)
     return batch_post
     
-
-
-
-
 def create_dataset(data_dir: Text, region: Text, s2level: int
 ) -> dataset_item.TextGeoDataset:
   '''Loads data and creates datasets and train, validate and test sets.
