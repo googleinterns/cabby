@@ -100,7 +100,6 @@ class Trainer:
     predictions_list = np.concatenate(predictions_list, axis=0)
     pred_points_list = util.predictions_to_points(
       predictions_list, self.label_to_cellid)
-    true_vals = np.concatenate(true_vals, axis=0)
     average_valid_loss = loss_val_total / len(self.valid_loader)
 
     return (average_valid_loss, predictions_list, true_vals, 
