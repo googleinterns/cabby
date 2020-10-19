@@ -39,7 +39,7 @@ class DualEncoder(nn.Module):
     self.transformer = DistilBertModel(configuration)
 
   def forward(self, text_feat, cellid):
-    
+    print (text_feat.shape, cellid.shape)
     text_embedding = self.text_embed(text_feat)
     cellid = cellid.float()
     print (cellid.type(), cellid.shape)
