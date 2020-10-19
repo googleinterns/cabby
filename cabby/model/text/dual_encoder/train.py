@@ -72,10 +72,10 @@ class Trainer:
     loss_val_total = 0
 
     for batch in self.valid_loader:
-      text = {key: val.to(self.device) for key, val in batch['text'].items()}
-      cellids = batch['cellid'].float().to(self.device)
-      neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
-      far_cells = batch['far_cells'].float().to(self.device)
+      text = batch['text'].to(self.device)
+      cellids = torch.cat(batch['cellid']).to(self.device)
+      neighbor_cells = torch.cat(batch['neighbor_cells']).to(self.device) 
+      far_cells = torch.cat(batch['far_cells']).to(self.device)
 
       cellids = cellids.float().to(self.device) 
       neighbor_cells = neighbor_cells.float().to(self.device) 
@@ -121,7 +121,6 @@ class Trainer:
     # Correct cellid.
     target = torch.ones(cellids.shape[0]).to(self.device)
     text_embedding, cellid_embedding = self.model(text, cellids)
-    print (text_embedding.shape, cellid_embedding.shape, target.shape)
     loss_cellid = criterion(text_embedding, cellid_embedding, target)
 
     # Neighbor cellid.

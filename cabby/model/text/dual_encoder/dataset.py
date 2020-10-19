@@ -128,7 +128,6 @@ class PadSequence:
     text = batch_post['text']
     text = [t.squeeze() for t in text]
     batch_post['text'] = torch.nn.utils.rnn.pad_sequence(text, batch_first=True)
-    print ("batch_post['text']",batch_post['text'].shape)
     return batch_post
     
 
