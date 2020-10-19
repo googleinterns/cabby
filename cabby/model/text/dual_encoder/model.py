@@ -35,7 +35,7 @@ class DualEncoder(nn.Module):
             )
     self.cellid_main = nn.Linear(s2cell_dim, output_dim)
     config = configuration = DistilBertConfig()
-    config.n_layers =4
+    config.n_layers =3
     self.transformer = DistilBertModel(configuration)
 
   def forward(self, text_feat, cellid):

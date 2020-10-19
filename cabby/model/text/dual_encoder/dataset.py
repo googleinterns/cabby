@@ -60,7 +60,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
       tokenization = tokenizer(data.text.iloc[idx], truncation=True, padding=True, add_special_tokens=True, return_tensors="pt") 
       tokenization = tokenization.to(device)
       encoding = bert(**tokenization) 
-      encoding = encoding.last_hidden_state
+      encoding = { 
+        'encoding': encoding.last_hidden_state, 
+        'attention_mask': tokenization['attention_mask'], 
+        'head_mask': tokenization['head_mask']}
       path = os.path.join(data_dir, 'embed_'+str(idx)+'.pt')
       torch.save(encoding,path)
 
@@ -104,16 +107,20 @@ class TextGeoSplit(torch.utils.data.Dataset):
       A single sample including text, the correct cellid, a neighbor cellid, 
       a far cellid, a point of the cellid and the label of the cellid.
     '''
-    path = os.path.join(self.data_dir, 'embed_'+str(idx)+'.pt')
-    text = torch.load(path)
+
     cellid = torch.tensor(self.cellids[idx])
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
     point = self.points[idx]
     label = self.labels[idx]
     
-    sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
+    path = os.path.join(self.data_dir, 'embed_'+str(idx)+'.pt')
+    encodings = torch.load(path)
+    sample = {'cellid': cellid, 'neighbor_cells': neighbor_cells, 
       'far_cells': far_cells, 'point': point, 'label': label}
+
+    for k, v in  encodings.items():
+        sample[k] = encodings[k]
 
     return sample
 
@@ -128,10 +135,9 @@ class PadSequence:
         batch_post[k] = [sample[k] for sample in batch]
       else:
         batch_post[k] = [sample[k].unsqueeze(0) for sample in batch]
-
-    text = batch_post['text']
-    text = [t.squeeze() for t in text]
-    batch_post['text'] = torch.nn.utils.rnn.pad_sequence(text, batch_first=True)
+        list_value = [t.squeeze() for t in batch_post[k]]
+        batch_post[k] = torch.nn.utils.rnn.pad_sequence(
+          list_value, batch_first=True)
     return batch_post
     
 
