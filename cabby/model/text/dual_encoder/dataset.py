@@ -135,6 +135,7 @@ class PadSequence:
         batch_post[k] = [sample[k] for sample in batch]
       else:
         batch_post[k] = [sample[k].unsqueeze(0) for sample in batch]
+      if k in ['encoding', 'attention_mask']:
         list_value = [t.squeeze() for t in batch_post[k]]
         batch_post[k] = torch.nn.utils.rnn.pad_sequence(
           list_value, batch_first=True)
