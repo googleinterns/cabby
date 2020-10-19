@@ -30,164 +30,194 @@ from cabby.model.text import util
 criterion = nn.CosineEmbeddingLoss()
 
 
-def evaluate(model: torch.nn.Module,
-       valid_loader: DataLoader,
-       device: torch.device,
-       tensor_cells: torch.tensor,
-       label_to_cellid: Dict[int, int]
-       ):
-  '''Validate the model.'''
+class Trainer:
+  def __init__(
+          self,
+          model: torch.nn.Module,
+          device: torch.device,
+          optimizer: torch.optim.Adam,
+          file_path: Text,
+          train_loader: DataLoader,
+          valid_loader: DataLoader,
+          unique_cells: Sequence[int],
+          num_epochs: int,
+          cells_tensor: torch.tensor,
+          label_to_cellid: Dict[int, int]):
 
-  model.eval()
+    self.model = model
+    self.device = device
+    self.optimizer = optimizer
+    self.file_path = file_path
+    self.train_loader = train_loader
+    self.valid_loader = valid_loader
+    self.unique_cells = unique_cells
+    self.num_epochs = num_epochs
+    self.cells_tensor = cells_tensor.float().to(self.device)
+    self.label_to_cellid = label_to_cellid
+    self.cos = nn.CosineSimilarity(dim=2)
+    self.best_valid_loss = float("Inf")
+        
 
-  cos = nn.CosineSimilarity(dim=2)
+  def evaluate(self):
+    '''Validate the model.'''
 
-  # Validation loop.
-  logging.info("Starting evaluation.")
-  true_points_list, pred_points_list, predictions_list, true_vals = [], [], [], []
-  correct = 0
-  total = 0
-  loss_val_total = 0
+    self.model.eval()
 
-  for batch in valid_loader:
-    text = {key: val.to(device) for key, val in batch['text'].items()}
-    cellids = batch['cellid'].float().to(device)
-    neighbor_cells = batch['neighbor_cells'].float().to(device) 
-    far_cells = batch['far_cells'].float().to(device)
+    # Validation loop.
+    logging.info("Starting evaluation.")
+    true_points_list, pred_points_list = [], []
+    predictions_list, true_vals  = [], []
+    correct = 0
+    total = 0
+    loss_val_total = 0
 
-    # text, cellids, neighbor_cells, far_cells, points, labels = batch
-    cellids, neighbor_cells, far_cells = cellids.float().to(device), neighbor_cells.float().to(device), far_cells.float().to(device)
-    text = {key: val.to(device) for key, val in text.items()}
+    for batch in self.valid_loader:
+      text = {key: val.to(self.device) for key, val in batch['text'].items()}
+      cellids = batch['cellid'].float().to(self.device)
+      neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
+      far_cells = batch['far_cells'].float().to(self.device)
 
-    loss = compute_loss(device, model, text, cellids, 
-      neighbor_cells, far_cells)
+      cellids = cellids.float().to(self.device) 
+      neighbor_cells = neighbor_cells.float().to(self.device) 
+      far_cells = far_cells.float().to(self.device)
+      text = {key: val.to(self.device) for key, val in text.items()}
 
-    loss_val_total += loss.item()
+      loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
 
-    tensor_cells = tensor_cells.float().to(device)
-    text_embedding, cellid_embedding = model(text, tensor_cells)
-    batch_dim = text_embedding.shape[0]
-    cell_dim = cellid_embedding.shape[0]
-    output_dim  = cellid_embedding.shape[1]
-    cellid_embedding_exp = cellid_embedding.expand(batch_dim,cell_dim,output_dim)
-    text_embedding_exp = text_embedding.unsqueeze(1)
-    output = cos(cellid_embedding_exp,text_embedding_exp)
-    output = output.detach().cpu().numpy()
-    predictions = np.argmax(output, axis=1)
-    predictions_list.append(predictions)
-    labels = batch['label'].numpy()
-    true_vals.append(labels)
-    true_points_list.append(batch['point'])
+      loss_val_total += loss.item()
 
+      text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
+      batch_dim = text_embedding.shape[0]
+      cell_dim = cellid_embedding.shape[0]
+      output_dim  = cellid_embedding.shape[1]
+      cellid_embedding_exp = cellid_embedding.expand(
+        batch_dim, cell_dim, output_dim)
+      text_embedding_exp = text_embedding.unsqueeze(1)
+      output = self.cos(cellid_embedding_exp,text_embedding_exp)
+      output = output.detach().cpu().numpy()
+      predictions = np.argmax(output, axis=1)
+      predictions_list.append(predictions)
+      labels = batch['label'].numpy()
+      true_vals.append(labels)
+      true_points_list.append(batch['point'])
 
-  true_points_list = np.concatenate(true_points_list, axis=0)
-  predictions_list = np.concatenate(predictions_list, axis=0)
-  pred_points_list = util.predictions_to_points(predictions_list, label_to_cellid)
-  true_vals = np.concatenate(true_vals, axis=0)
-  average_valid_loss = loss_val_total / len(valid_loader)
+    true_points_list = np.concatenate(true_points_list, axis=0)
+    predictions_list = np.concatenate(predictions_list, axis=0)
+    pred_points_list = util.predictions_to_points(
+      predictions_list, self.label_to_cellid)
+    true_vals = np.concatenate(true_vals, axis=0)
+    average_valid_loss = loss_val_total / len(self.valid_loader)
 
+    return (average_valid_loss, predictions_list, true_vals, 
+    true_points_list, pred_points_list)
 
-  return (loss_val_total, predictions_list, true_vals, true_points_list, pred_points_list)
+  def compute_loss(
+          self,
+          text: Dict, 
+          cellids: torch.tensor, 
+          neighbor_cells: torch.tensor, 
+          far_cells: torch.tensor):
+    
+    # Correct cellid.
+    target = torch.ones(cellids.shape[0]).to(self.device)
+    text_embedding, cellid_embedding = self.model(text, cellids)
+    loss_cellid = criterion(text_embedding, cellid_embedding, target)
 
-def compute_loss(device: torch.device, model: torch.nn.Module, 
-  text: Dict, cellids: torch.tensor, neighbor_cells: torch.tensor, 
-  far_cells: torch.tensor):
+    # Neighbor cellid.
+    target_neighbor = -1*torch.ones(cellids.shape[0]).to(self.device)
+    text_embedding_neighbor, cellid_embedding = self.model(text, neighbor_cells)
+    loss_neighbor = criterion(text_embedding_neighbor, 
+    cellid_embedding, target_neighbor)
+
+    # Far cellid.
+    target_far = -1*torch.ones(cellids.shape[0]).to(self.device)
+    text_embedding_far, cellid_embedding = self.model(text, far_cells)
+    loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
+
+    loss = loss_cellid + loss_neighbor + loss_far
+
+    return loss.mean()
+
+  def train_model(self):
+
+    '''Main function for training model.'''
+    # Initialize running values.
+    global_step = 0
+
+    # Training loop.
+    self.model.train()
+
+    for epoch in range(self.num_epochs):
+      running_loss = 0.0
+      logging.info("Epoch number: {}".format(epoch))
+      for batch_idx, batch in enumerate(self.train_loader):
+        self.optimizer.zero_grad()
+        text = {key: val.to(self.device) for key, val in batch['text'].items()}
+        cellids = batch['cellid'].float().to(self.device)
+        neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
+        far_cells = batch['far_cells'].float().to(self.device)
+
+        loss = self.compute_loss(text, cellids, 
+          neighbor_cells, far_cells)
+
+        loss.backward()
+        self.optimizer.step()
+
+        # Update running values.
+        running_loss += loss.item()
+        global_step += 1
+
+      # Evaluation step.
+      valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
+
+      average_train_loss = running_loss / batch_idx
+      accuracy = accuracy_score(true_vals, predictions)
+
+      # Resetting running values.
+      running_loss = 0.0
+
+      logging.info('Epoch [{}/{}], Step [{}/{}], \
+          Accuracy: {:.4f},Train Loss: {:.4f}, Valid Loss: {:.4f}'
+            .format(epoch+1, self.num_epochs, global_step,
+                self.num_epochs*len(self.train_loader), accuracy,
+                average_train_loss, valid_loss))
+
+      # Save model and results in checkpoint.
+      if self.best_valid_loss > valid_loss:
+        self.best_valid_loss = valid_loss
+        util.save_checkpoint(os.path.join(self.file_path, 'model.pt'), 
+          self.model, self.best_valid_loss)
+        util.save_metrics_last_only(
+          os.path.join(self.file_path, 'metrics.tsv'), 
+          true_points, 
+          pred_points)
+        self.save_cell_embed()
+
+        self.model.train()
+
+    logging.info('Finished Training.')
+
+  def save_cell_embed(self):
+    if isinstance(self.model, nn.DataParallel):
+      cell_embed = self.model.module.cellid_main(self.cells_tensor)
+    else:
+      cell_embed = self.model.cellid_main(self.cells_tensor)
+    cellid_to_embed = {
+      cell: embed for cell, embed in zip(self.unique_cells, cell_embed)}
+    path_to_save = os.path.join(self.file_path, 'cellid_to_embedding.pt')
+    torch.save(cellid_to_embed, path_to_save)
+    logging.info(f'Cell embedding saved to ==> {path_to_save}')
+
+def infer_text(model: torch.nn.Module, text: str):
+  if isinstance(model, nn.DataParallel):
+    return model.module.text_embed(text)
+  else:
+    return model.text_embed(text)
+    
   
-  # Correct cellid.
-  target = torch.ones(cellids.shape[0]).to(device)
-  text_embedding, cellid_embedding = model(text, cellids)
-  loss_cellid = criterion(text_embedding, cellid_embedding, target)
 
-  # Neighbor cellid.
-  target_neighbor = -1*torch.ones(cellids.shape[0]).to(device)
-  text_embedding_neighbor, cellid_embedding = model(text, neighbor_cells)
-  loss_neighbor = criterion(text_embedding_neighbor, 
-  cellid_embedding, target_neighbor)
 
-  # Far cellid.
-  target_far = -1*torch.ones(cellids.shape[0]).to(device)
-  text_embedding_far, cellid_embedding = model(text, far_cells)
-  loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
-
-  loss = loss_cellid + loss_neighbor + loss_far
-
-  return loss.mean()
+  
 
 
 
-def train_model(model: torch.nn.Module,
-        device: torch.device,
-        optimizer: torch.optim.Adam,
-        file_path: Text,
-        train_loader: DataLoader,
-        valid_loader: DataLoader,
-        unique_cells: Sequence[int],
-        num_epochs: int,
-        cells_tensor: torch.tensor,
-        label_to_cellid: Dict[int, int],
-        best_valid_loss: float = float("Inf")):
-
-  '''Main function for training model.'''
-  # Initialize running values.
-  running_loss = 0.0
-  global_step = 0
-  valid_accuracy_list, train_loss_list, valid_loss_list = [], [], []
-  global_steps_list, true_points_list, pred_points_list = [], [], []
-
-  # Training loop.
-  model.train()
-
-  for epoch in range(num_epochs):
-    logging.info("Epoch number: {}".format(epoch))
-    for batch_idx, batch in enumerate(train_loader):
-      optimizer.zero_grad()
-      text = {key: val.to(device) for key, val in batch['text'].items()}
-      cellids = batch['cellid'].float().to(device)
-      neighbor_cells = batch['neighbor_cells'].float().to(device) 
-      far_cells = batch['far_cells'].float().to(device)
-
-      loss = compute_loss(device, model, text, cellids, 
-        neighbor_cells, far_cells)
-
-      loss.backward()
-      optimizer.step()
-
-      # Update running values.
-      running_loss += loss.mean().item()
-      global_step += 1
-
-    # Evaluation step.
-    valid_loss, predictions, true_vals, true_points, pred_points = evaluate(
-      model= model, valid_loader=valid_loader,device=device, 
-      tensor_cells=cells_tensor, label_to_cellid=label_to_cellid)
-
-    average_train_loss = running_loss / batch_idx
-    accuracy = accuracy_score(true_vals, predictions)
-    train_loss_list.append(average_train_loss)
-    global_steps_list.append(global_step)
-    valid_accuracy_list.append(accuracy)
-    true_points_list.append(true_points)
-    pred_points_list.append(pred_points)
-    valid_loss_list.append(valid_loss)
-
-    # Resetting running values.
-    running_loss = 0.0
-
-    logging.info('Epoch [{}/{}], Step [{}/{}], \
-        Accuracy: {:.4f},Train Loss: {:.4f}, Valid Loss: {:.4f}'
-           .format(epoch+1, num_epochs, global_step,
-               num_epochs*len(train_loader), accuracy,
-               average_train_loss, valid_loss))
-
-    # Save model and results in checkpoint.
-    if best_valid_loss > valid_loss:
-      best_valid_loss = valid_loss
-      util.save_checkpoint(os.path.join(file_path, 'model.pt'), 
-        model, best_valid_loss)
-      util.save_metrics(os.path.join(file_path, 'metrics.pt'), train_loss_list,
-        valid_loss_list, global_steps_list, valid_accuracy_list, 
-        true_points_list, pred_points_list)
-
-      model.train()
-
-  logging.info('Finished Training.')
