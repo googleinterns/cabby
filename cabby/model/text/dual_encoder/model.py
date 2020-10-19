@@ -38,17 +38,17 @@ class DualEncoder(nn.Module):
     config.n_layers =3
     self.transformer = DistilBertModel(configuration)
 
-  def forward(self, text_feat, attention_mask, head_mask,  cellid):
-    text_embedding = self.text_embed(text_feat, attention_mask, head_mask, )
+  def forward(self, text_feat, attention_mask,  cellid):
+    text_embedding = self.text_embed(text_feat, attention_mask)
     cellid = cellid.float()
     cellid_embedding = self.cellid_main(cellid)
     
     return text_embedding, cellid_embedding
   
 
-  def text_embed(self, text, attention_mask, head_mask):
+  def text_embed(self, text, attention_mask):
     outputs = self.transformer(
-      inputs_embeds=text, attention_mask=attention_mask, head_mask=head_mask)
+      inputs_embeds=text, attention_mask=attention_mask)
     last_hidden_state = outputs[0]
     cls_token = last_hidden_state[:,-1,:]
     return self.text_main(cls_token)
