@@ -152,7 +152,7 @@ class Trainer:
       logging.info("Epoch number: {}".format(epoch))
       for batch_idx, batch in enumerate(self.train_loader):
         self.optimizer.zero_grad()
-        text = {key: val.to(self.device) for key, val in batch['text'].items()}
+        text = batch['text'].to(self.device)
         cellids = batch['cellid'].float().to(self.device)
         neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
         far_cells = batch['far_cells'].float().to(self.device)
