@@ -122,9 +122,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 class PadSequence:
   def __call__(self, batch):
-    text = [sample['text'] for sample in batch]
-    print (text)
-    batch['text'] = torch.nn.utils.rnn.pad_sequence(text, batch_first=True)
+    batch_post = {}
+    for k,v in batch[0].itmes()
+      batch_post[k] = [sample[k] for sample in batch]
+    text = batch_post['text']
+    batch_post['text'] = torch.nn.utils.rnn.pad_sequence(text, batch_first=True)
     return batch
     
 
