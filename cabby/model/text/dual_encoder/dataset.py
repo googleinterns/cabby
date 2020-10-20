@@ -19,7 +19,7 @@ import numpy as np
 import os
 import pandas as pd
 import sys
-from torchtext import data
+import swifter
 import torch
 import transformers
 from transformers import DistilBertTokenizerFast
@@ -43,7 +43,7 @@ CELLID_DIM = 64
 class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
     cells: int, cellid_to_label: Dict[int, int]):
-    
+    print (cellid_to_label)
     # Tokenize instructions.
     self.encodings = tokenizer(
       data.text.tolist(), truncation=True,
@@ -51,17 +51,21 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     data['point'] = data.ref_point.apply(
       lambda x: gutil.point_from_str_coord(x))
+
     self.points = data.ref_point.apply(
       lambda x: gutil.coords_from_str_coord(x)).tolist()
+
     data['cellid'] = data.point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
-    self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
 
+    self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
 
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.neighbor_cellid(x))
-    
-    far_cellids = data.point.apply(lambda x: gutil.far_cellid(x, cells))
+
+    far_cellids = data.point.swifter.apply(
+      lambda x: gutil.far_cellid(x, cells))
+
     if far_cellids is None:
       sys.exit("Far cellid was not found.")
     data['far_cells'] = far_cellids
