@@ -39,6 +39,7 @@ class Trainer:
           file_path: Text,
           train_loader: DataLoader,
           valid_loader: DataLoader,
+          test_loader: DataLoader,
           unique_cells: Sequence[int],
           num_epochs: int,
           cells_tensor: torch.tensor,
@@ -50,16 +51,24 @@ class Trainer:
     self.file_path = file_path
     self.train_loader = train_loader
     self.valid_loader = valid_loader
+    self.test_loader = test_loader
     self.unique_cells = unique_cells
     self.num_epochs = num_epochs
     self.cells_tensor = cells_tensor.float().to(self.device)
     self.label_to_cellid = label_to_cellid
     self.cos = nn.CosineSimilarity(dim=2)
     self.best_valid_loss = float("Inf")
+    self.model_path = os.path.join(self.file_path, 'model.pt')
+    self.metrics_path = os.path.join(self.file_path, 'metrics.tsv')
         
 
-  def evaluate(self):
+  def evaluate(self, validation_set: bool = True):
     '''Validate the model.'''
+
+    if validation_set:
+      data_loader = self.valid_loader
+    else:
+      data_loader = self.test_loader
 
     self.model.eval()
 
@@ -71,7 +80,7 @@ class Trainer:
     total = 0
     loss_val_total = 0
 
-    for batch in self.valid_loader:
+    for batch in data_loader:
       text = {key: val.to(self.device) for key, val in batch['text'].items()}
       cellids = batch['cellid'].float().to(self.device)
       neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
@@ -106,7 +115,7 @@ class Trainer:
     pred_points_list = util.predictions_to_points(
       predictions_list, self.label_to_cellid)
     true_vals = np.concatenate(true_vals, axis=0)
-    average_valid_loss = loss_val_total / len(self.valid_loader)
+    average_valid_loss = loss_val_total / len(data_loader)
 
     return (average_valid_loss, predictions_list, true_vals, 
     true_points_list, pred_points_list)
@@ -185,17 +194,32 @@ class Trainer:
       # Save model and results in checkpoint.
       if self.best_valid_loss > valid_loss:
         self.best_valid_loss = valid_loss
-        util.save_checkpoint(os.path.join(self.file_path, 'model.pt'), 
+        util.save_checkpoint(self.model_path 
           self.model, self.best_valid_loss)
-        util.save_metrics_last_only(
-          os.path.join(self.file_path, 'metrics.tsv'), 
-          true_points, 
-          pred_points)
-        self.save_cell_embed()
 
-        self.model.train()
+      self.model.train()
+
 
     logging.info('Finished Training.')
+
+    util.load_checkpoint(self.model_path, self.model, self.device)
+    
+    logging.info('Start testing.')
+
+    test_loss, predictions, true_vals, true_points, pred_points = self.evaluate(
+      validation_set = False)
+
+    accuracy = accuracy_score(true_vals, predictions)
+
+    logging.info(f'Test Accuracy: {accuracy}')
+
+    util.save_metrics_last_only(
+          self.metrics_path, 
+          true_points, 
+          pred_points)
+
+    self.save_cell_embed()
+
 
   def save_cell_embed(self):
     if isinstance(self.model, nn.DataParallel):

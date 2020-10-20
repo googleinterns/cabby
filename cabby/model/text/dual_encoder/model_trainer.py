@@ -74,6 +74,7 @@ flags.DEFINE_integer(
   'num_epochs', default=5,
   help=('Number of training epochs.'))
 
+
 # Required flags.
 flags.mark_flag_as_required("data_dir")
 flags.mark_flag_as_required("dataset_dir")
@@ -123,6 +124,8 @@ def main(argv):
     datast_text.train, batch_size=FLAGS.train_batch_size, shuffle=True)
   valid_loader = DataLoader(
     datast_text.valid, batch_size=FLAGS.test_batch_size, shuffle=False)
+  test_loader = DataLoader(
+    datast_text.test, batch_size=FLAGS.test_batch_size, shuffle=False)
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -145,6 +148,7 @@ def main(argv):
     optimizer=optimizer,
     train_loader=train_loader,
     valid_loader=valid_loader,
+    test_loader=test_loader,
     unique_cells = datast_text.unique_cellids,
     file_path=FLAGS.output_dir, 
     cells_tensor = datast_text.unique_cellids_binary,
