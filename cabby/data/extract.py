@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 '''Library to support data extraction from Wikipedia and Wikidata.'''
 
 from absl import logging
@@ -19,20 +18,20 @@ import json
 import os
 import pandas as pd
 import string
-from typing import Dict, Tuple, Sequence, Text, Optional, List
-
+from typing import Dict, Optional, Sequence, Tuple, List
 
 from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
 from cabby.data.wikidata import item as wdi
 from cabby.data.wikipedia import item as wpi
 from cabby.data.wikidata import info_item as wdqi
-from cabby.data import wikigeo
-
 from cabby.data import osm_item
+from cabby.data import wikigeo
 from cabby.geo.map_processing import map_structure
 
-def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> List:
+def get_wikigeo_data(
+    wikidata_items: Sequence[wdi.WikidataEntity]
+) -> List[wikigeo.WikigeoEntity]:
     '''Get data from Wikipedia based on Wikidata items" 
     Arguments:
         wikidata_items: The Wikidata items to which corresponding Wikigeo  
@@ -62,7 +61,7 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> List:
     for wikipedia_page_items, wikidata in zip(wikipedia_items, wikidata_items):
       for wikipedia in wikipedia_page_items:
         geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
-            wikipedia, wikipedia, wikidata, "Wikipedia_page").sample)
+            wikipedia, wikipedia, wikidata, "Wikipedia_page"))
 
     # # Get backlinks for Wikipedia pages.
     backlinks_pages = wpq.get_backlinks_items_from_wikipedia_titles(
@@ -78,19 +77,19 @@ def get_wikigeo_data(wikidata_items: Sequence[wdi.WikidataEntity]) -> List:
         zip(backlinks_items, wikipedia_items, wikidata_items):
         for backlink in list_backlinks:
             wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
-                backlink, original_wikipedia_items[0], original_wikidata, "Wikipedia_backlink").sample
+                backlink, original_wikipedia_items[0], original_wikidata, "Wikipedia_backlink")
             
-            sample_text = wikigeo_sample['text']
-            if any(dict['text'] == sample_text for dict in geo_data):
+            sample_text = wikigeo_sample.text
+            if any(item.text == sample_text for item in geo_data):
                 continue
             geo_data.append(wikigeo_sample)
     return geo_data
 
 
-def get_data_by_qid(qid: Text) -> Sequence:
+def get_data_by_qid(qid: str) -> Sequence[wikigeo.WikigeoEntity]:
   '''Get data from Wikipedia and Wikidata by region. 
   Arguments:
-    qid(Text): The qid of the Wikidata to extract items from.
+    qid(str): The qid of the Wikidata to extract items from.
   Returns:
     The Wikipedia (text, title) and Wikidata (location) data found.
   '''
@@ -103,10 +102,10 @@ def get_data_by_qid(qid: Text) -> Sequence:
   return get_wikigeo_data(wikidata_items)
 
 
-def get_data_by_region(region: Text) -> Sequence:
+def get_data_by_region(region: str) -> Sequence[wikigeo.WikigeoEntity]:
   '''Get data from Wikipedia and Wikidata by region.
   Arguments:
-    region(Text): The region to extract items from.
+    region(str): The region to extract items from.
   Returns:
     The Wikipedia (text,title) and Wikidata (location) data found.
   '''
@@ -119,11 +118,13 @@ def get_data_by_region(region: Text) -> Sequence:
   return get_wikigeo_data(wikidata_items)
 
 
-def get_data_by_region_with_osm(region: Text, path_osm: Text = None
-) -> Sequence:
-  '''Get three types of samples by region: (1) samples from Wikipedia(text,title) and Wikidata(location); (2) Concatenation of Wikidata tags; (3) Concatenation of OSM tags. 
+def get_data_by_region_with_osm(
+    region: str, path_osm: str = None) -> List[wikigeo.WikigeoEntity]:
+  '''Get three types of samples by region: (1) samples from Wikipedia(text,
+  title) and Wikidata(location); (2) Concatenation of Wikidata tags; (3) 
+  Concatenation of OSM tags. 
   Arguments:
-    region(Text): The region to extract items from.
+    region(str): The region to extract items from.
   Returns:
     The Wikipedia(text,title) and Wikidata(location) data found.
   '''
@@ -144,7 +145,7 @@ def get_data_by_region_with_osm(region: Text, path_osm: Text = None
   wikidata_tags = wdq.get_geofenced_info_wikidata_items(region)
   for item in wikidata_tags:
     info_item = wdqi.WikidataEntity.from_sparql_result_info(item)
-    sample = wikigeo.WikigeoEntity.from_wikidata(info_item).sample
+    sample = wikigeo.WikigeoEntity.from_wikidata(info_item)
     samples.append(sample)
 
   logging.info(
@@ -163,9 +164,9 @@ def get_data_by_region_with_osm(region: Text, path_osm: Text = None
     lambda row: osm_item.OSMEntity.from_osm(row), axis=1).tolist()
   unique_texts = []
   for osm in osm_entities:
-    sample = wikigeo.WikigeoEntity.from_osm(osm).sample
-    if sample['text'] not in unique_texts:
-      unique_texts.append(sample['text'])
+    sample = wikigeo.WikigeoEntity.from_osm(osm)
+    if sample.text not in unique_texts:
+      unique_texts.append(sample.text)
       samples.append(sample)
       
   logging.info(
@@ -174,7 +175,10 @@ def get_data_by_region_with_osm(region: Text, path_osm: Text = None
 
 
 def split_dataset(
-    dataset: Sequence, percentage_train: float, percentage_dev: float):
+    dataset: Sequence[wikigeo.WikigeoEntity],
+    percentage_train: float,
+    percentage_dev: float
+) -> Dict[str, Sequence[wikigeo.WikigeoEntity]]:
   '''Splits the dataset into train-set, dev-set, test-set according to the 
   ref_qid." 
   Arguments:
@@ -183,20 +187,20 @@ def split_dataset(
   Returns:
     The train-set, dev-set and test-set splits.
   '''
-  assert percentage_train >= 0 and percentage_train <= 1, \
-    "percentage_train is not in range 0-1."
+  assert percentage_train >= 0 and percentage_train <= 1, (
+    "percentage_train is not in range 0-1.")
 
-  assert percentage_dev >= 0 and percentage_dev <= 1, \
-    "percentage_dev is not in range 0-1."
+  assert percentage_dev >= 0 and percentage_dev <= 1, (
+    "percentage_dev is not in range 0-1.")
 
-  assert percentage_dev + \
-    percentage_train <= 1, "percentage_dev+percentage_train is more than 1."
+  assert percentage_dev + percentage_train <= 1, (
+    "percentage_dev+percentage_train is more than 1.")
 
   # TODO (https://github.com/googleinterns/cabby/issues/28#issue-695818890):
   # Change split by qid so that it will ensure qid isn't shared between sets
 
   # Sort the dataset by ref_qid.
-  sorted_dataset = sorted(dataset, key=lambda item: item['ref_qid'])
+  sorted_dataset = sorted(dataset, key=lambda item: item.ref_qid)
 
   # Get size of splits.
   size_dataset = len(dataset)
@@ -208,10 +212,14 @@ def split_dataset(
   dev_set = sorted_dataset[size_train:size_train+size_dev]
   test_set = sorted_dataset[size_train+size_dev:]
 
-  return train_set, dev_set, test_set
+  return {
+    'train': train_set, 
+    'dev': dev_set,
+    'test': test_set
+  }
 
 
-def write_files(path: Text, items: Sequence):
+def write_files(path: str, items: Sequence):
   '''Write items to disk.'''
 
   with open(path, 'a') as outfile:
@@ -219,4 +227,3 @@ def write_files(path: Text, items: Sequence):
       json.dump(item, outfile, default=lambda o: o.__dict__)
       outfile.write('\n')
       outfile.flush()
-

@@ -601,7 +601,7 @@ class Walker:
 
 
   def generate_and_save_rvs_routes(self,
-                                  path: Text, 
+                                  pathname: Text, 
                                   map: map_structure.Map, 
                                   n_samples: int,
                                   ):
@@ -654,6 +654,7 @@ class Walker:
     if gdf_start_list.shape[0] == 0:
       return None
 
+    path = os.path.abspath(pathname)
     gdf_start_list.to_file(path, layer='start', driver=_Geo_DataFrame_Driver)
     gdf_end_list.to_file(path, layer='end', driver=_Geo_DataFrame_Driver)
     gdf_route_list.to_file(path, layer='route', driver=_Geo_DataFrame_Driver)

@@ -18,6 +18,7 @@ from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
 from absl import logging
 import numpy as np
+import pandas as pd
 from sklearn.metrics import accuracy_score
 import torch
 
@@ -40,6 +41,20 @@ def binary_representation(array_int: np.ndarray, dim: int
 
   bin_rep = ((vector & binary_range) != 0).astype(int)
   return bin_rep
+
+
+def save_checkpoint_trainer(save_path: Text, model:  torch.nn.Module, 
+  valid_loss: float):
+  '''Function for saving model.'''
+
+  if save_path == None:
+    return
+
+  state_dict = {'model_state_dict': model.state_dict(),
+          'valid_loss': valid_loss}
+
+  torch.save(state_dict, save_path)
+  logging.info(f'Model saved to ==> {save_path}')
 
 
 def save_checkpoint(save_path: Text, model:  torch.nn.Module, 
@@ -68,6 +83,26 @@ def load_checkpoint(load_path: Text, model:  torch.nn.Module,
 
   model.load_state_dict(state_dict['model_state_dict'])
   return state_dict
+
+
+
+def save_metrics_last_only(save_path: Text,
+         true_points_list: Sequence[Tuple[float, float]],
+         pred_points_list: Sequence[Tuple[float, float]]):
+  '''Function for saving results.'''
+
+  if save_path == None:
+    return
+  state_dict = {
+          'true_points_lat': [lat for lat, lon in true_points_list],
+          'true_points_lon': [lon for lat, lon in true_points_list],
+          'pred_points_lat': [lat for lat, lon in pred_points_list],
+          'pred_points_lon': [lon for lat, lon in pred_points_list],
+  }
+
+  state_df = pd.DataFrame(state_dict)
+  state_df.to_csv(save_path, sep = '\t', header=False)
+  logging.info(f'Results saved to ==> {save_path}')
 
 
 def save_metrics(save_path: Text,

@@ -81,6 +81,8 @@ def update_osm_map(osm_map: Map,
           continue
       already_added.add(row.place)
       osmid = hash(''.join(list(row.values)))
+      if osmid < 0:
+        osmid *= -1
       wd_query = query.get_place_location_points_from_qid(
         row.place, location_only=True)
       new_df = pd.DataFrame(data={

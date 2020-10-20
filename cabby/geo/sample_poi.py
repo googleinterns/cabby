@@ -33,8 +33,8 @@ from cabby.geo.map_processing import map_structure
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(
-  "region", None, regions.ALLOWED_REGIONS,
-  "Map areas: Manhattan, Pittsburgh or DC.")
+  "region", None, regions.SUPPORTED_REGION_NAMES,
+  regions.REGION_SUPPORT_MESSAGE)
 flags.DEFINE_integer("min_s2_level", None, "Minimum S2 level of the map.")
 flags.DEFINE_string("directory", None,
           "The directory where the map will be loaded from.")
@@ -52,8 +52,8 @@ flags.mark_flag_as_required("n_samples")
 
 def main(argv):
   del argv  # Unused.
-  map_region = map_structure.Map(FLAGS.region, FLAGS.min_s2_level, FLAGS.
-  directory)
+  map_region = map_structure.Map(
+    FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
 
   # Create a file with multiple layers of data.
   walker = walk.Walker()

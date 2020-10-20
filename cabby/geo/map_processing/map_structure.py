@@ -38,6 +38,7 @@ from cabby.geo.map_processing import edge
 from cabby.geo import regions
 
 POI_PREFIX = '#'
+SHOW_PROGRESS_EVERY = 100
 
 class Map:
 
@@ -53,6 +54,7 @@ class Map:
       logging.info("Preparing map.")
       logging.info("Extracting POI.")
       self.poi, self.streets = self.get_poi()
+      self.num_poi = self.poi.shape[0]
       logging.info("Constructing graph.")
       self.nx_graph = ox.graph_from_polygon(
         self.polygon_area, network_type='walk')
@@ -117,9 +119,14 @@ class Map:
     '''
 
     self.num_generated += 1
-    if self.num_generated%100 == 0:
-      percentage_gen = round(100*self.num_generated/self.poi.shape[0])
+    if self.num_generated%SHOW_PROGRESS_EVERY == 0:
+      percentage_gen = round(100*self.num_generated/self.num_poi)
       logging.info(f"generated number {self.num_generated} that is {percentage_gen}%")
+
+    # If the POI is already in the graph, do not add it.
+    if single_poi['osmid'] in self.nx_graph:
+      return None
+
     # Project POI on to the closest edge in graph.
     geometry = single_poi['geometry']
     if isinstance(geometry, Point):
@@ -190,7 +197,7 @@ class Map:
       The OSM id of the projected POI.
     '''
     assert POI_PREFIX in poi_osmid
-    len_list_projected = len(list_projected)+1
+    len_list_projected = len(list_projected)
     return str(len_list_projected) + poi_osmid 
 
   def add_single_point_edge(self, point: Point,
@@ -367,7 +374,7 @@ class Map:
 
   def add_poi_to_graph(self):
     '''Add all POI to nx_graph(currently contains only the roads).'''
-    logging.info(f"Number of POI to add to graph: {self.poi.shape[0]}")
+    logging.info(f"Number of POI to add to graph: {self.num_poi}")
     edges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
     edges_to_add_list = edges_to_add_list.dropna()
     edges_to_add_list.swifter.apply(
