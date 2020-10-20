@@ -90,6 +90,7 @@ def main(argv):
   dataset_path = os.path.join(FLAGS.dataset_dir, str(FLAGS.s2_level))
   train_path_dataset = os.path.join(dataset_path,'train.pth')
   valid_path_dataset = os.path.join(dataset_path,'valid.pth')
+  test_path_dataset = os.path.join(dataset_path,'test.pth')
   unique_cellid_path = os.path.join(dataset_path,"unique_cellid.npy")
   tensor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
   label_to_cellid_path = os.path.join(dataset_path,"label_to_cellid.npy")
@@ -99,6 +100,7 @@ def main(argv):
       dataset_path = dataset_path, 
       train_path_dataset = train_path_dataset, 
       valid_path_dataset = valid_path_dataset, 
+      test_path_dataset = test_path_dataset, 
       label_to_cellid_path = label_to_cellid_path, 
       unique_cellid_path = unique_cellid_path, 
       tensor_cellid_path = tensor_cellid_path)
@@ -113,6 +115,7 @@ def main(argv):
       dataset_path = dataset_path, 
       train_path_dataset = train_path_dataset, 
       valid_path_dataset = valid_path_dataset, 
+      test_path_dataset = test_path_dataset, 
       label_to_cellid_path = label_to_cellid_path, 
       unique_cellid_path = unique_cellid_path, 
       tensor_cellid_path = tensor_cellid_path)

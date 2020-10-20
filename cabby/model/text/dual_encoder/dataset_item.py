@@ -61,31 +61,35 @@ class TextGeoDataset:
 
   @classmethod
   def load(cls, dataset_path: Text, train_path_dataset: Text,
-    valid_path_dataset: Text, unique_cellid_path: Text, 
-    tensor_cellid_path: Text, label_to_cellid_path: Text):
+    valid_path_dataset: Text, test_path_dataset: Text, 
+    unique_cellid_path: Text, tensor_cellid_path: Text, 
+    label_to_cellid_path: Text):
     
 
     logging.info("Loading dataset from <== {}.".format(dataset_path))
     train_dataset = torch.load(train_path_dataset)
     valid_dataset = torch.load(valid_path_dataset)
+    test_dataset = torch.load(test_path_dataset)
+
     unique_cellid = np.load(unique_cellid_path, allow_pickle='TRUE')
     label_to_cellid = np.load(
       label_to_cellid_path, allow_pickle='TRUE').item()
     tens_cells = torch.load(tensor_cellid_path)
     n_cells = len(unique_cellid)
-    dataset_text = TextGeoDataset(train_dataset, valid_dataset, None, unique_cellid, tens_cells, label_to_cellid)
+    dataset_text = TextGeoDataset(train_dataset, valid_dataset, test_dataset, unique_cellid, tens_cells, label_to_cellid)
 
     return dataset_text
   
   @classmethod
   def save(cls, dataset_text: Any, dataset_path: Text,     
-    train_path_dataset: Text, valid_path_dataset: Text, 
-    unique_cellid_path: Text, tensor_cellid_path: Text,
-    label_to_cellid_path: Text):
+    train_path_dataset: Text, valid_path_dataset: Text,
+    test_path_dataset: Text,  unique_cellid_path: Text, 
+    tensor_cellid_path: Text, label_to_cellid_path: Text):
 
     os.mkdir(dataset_path)
     torch.save(dataset_text.train, train_path_dataset)
     torch.save(dataset_text.valid, valid_path_dataset)
+    torch.save(dataset_text.test, test_path_dataset)
     np.save(unique_cellid_path, dataset_text.unique_cellids) 
     torch.save(dataset_text.unique_cellids_binary, tensor_cellid_path)
     np.save(label_to_cellid_path, dataset_text.label_to_cellid) 
