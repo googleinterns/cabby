@@ -48,7 +48,7 @@ class Map:
     self.s2_graph = None
     self.level = level
     self.polygon_area = regions.get_region(map_name)
-    self.num_generated = 0
+    self.num_poi_add = 0
 
     if load_directory is None:
       logging.info("Preparing map.")
@@ -118,10 +118,11 @@ class Map:
       The new osmid.
     '''
 
-    self.num_generated += 1
-    if self.num_generated%SHOW_PROGRESS_EVERY == 0:
-      percentage_gen = round(100*self.num_generated/self.num_poi)
-      logging.info(f"generated number {self.num_generated} that is {percentage_gen}%")
+    self.num_poi_add += 1
+    if self.num_poi_add%SHOW_PROGRESS_EVERY == 0:
+      percentage_gen = round(100*self.num_poi_add/self.num_poi)
+      logging.info(
+        f"Number of POI add to graph {self.num_poi_add}, that is {percentage_gen}% of the required POI addition.")
 
     # If the POI is already in the graph, do not add it.
     if single_poi['osmid'] in self.nx_graph:
