@@ -37,7 +37,6 @@ from cabby.geo.map_processing import graph
 from cabby.geo.map_processing import edge
 from cabby.geo import regions
 
-
 class Map:
 
   def __init__(self, map_name: Text, level: int = 18, load_directory: Text = None):
@@ -45,6 +44,7 @@ class Map:
     self.s2_graph = None
     self.level = level
     self.polygon_area = regions.get_region(map_name)
+    self.num_generated = 0
 
     if load_directory is None:
       logging.info("Preparing map.")
@@ -97,8 +97,10 @@ class Map:
     osm_poi_streets = osm_poi[osm_highway.notnull()]
 
     # Get centroid for POI.
-    osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
-      lambda x: x if isinstance(x, Point) else x.centroid)
+    centroid_list = osm_poi_no_streets['geometry'].apply(
+      lambda x: x if isinstance(x, Point) else x.centroid).tolist()
+    
+    osm_poi_no_streets = osm_poi_no_streets.assign(centroid=centroid_list)
 
     return osm_poi_no_streets, osm_poi_streets
 
@@ -111,6 +113,10 @@ class Map:
       The new osmid.
     '''
 
+    self.num_generated += 1
+    if self.num_generated%100 == 0:
+      logging.info("generated number {} that is {}%".format(
+        self.num_generated, round(100*self.num_generated/self.poi.shape[0])))
     # Project POI on to the closest edge in graph.
     geometry = single_poi['geometry']
     if isinstance(geometry, Point):
