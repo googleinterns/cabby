@@ -43,7 +43,6 @@ CELLID_DIM = 64
 class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
     cells: int, cellid_to_label: Dict[int, int]):
-    print (cellid_to_label)
     # Tokenize instructions.
     self.encodings = tokenizer(
       data.text.tolist(), truncation=True,
