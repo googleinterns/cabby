@@ -39,7 +39,8 @@ from cabby.geo import regions
 
 class Map:
 
-  def __init__(self, map_name: Text, level: int = 18, load_directory: Text = None):
+  def __init__(
+    self, map_name: Text, level: int = 18, load_directory: Text = None):
     self.map_name = map_name
     self.s2_graph = None
     self.level = level
