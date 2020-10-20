@@ -45,7 +45,8 @@ MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
 _Geo_DataFrame_Driver = "GPKG"
-MAX_NUM_FAILED = 10
+# The max number of failed tries to generate a single path entities.
+MAX_NUM_GEN_FAILED = 10 
 
 
 
@@ -187,7 +188,7 @@ class Walker:
     dest_osmid = end_point['osmid']
 
     try:
-      # Find nodes whithin 2000 meter path distance.
+      # Find nodes within 2000 meter path distance.
       outer_circle_graph = ox.truncate.truncate_graph_dist(
       map.nx_graph, dest_osmid, max_dist=MAX_PATH_DIST, weight='length')
 
@@ -630,12 +631,12 @@ class Walker:
       entity = self.get_single_sample(map)
       if entity is None:
         attempt += 1
-        if attempt >= MAX_NUM_FAILED:
+        if attempt >= MAX_NUM_GEN_FAILED:
           sys.exit("Reached max number of failed attempts.")
         continue
       attempt = 0 
       counter += 1
-      logging.info("Created sample {}/{}".format(counter,n_samples))
+      logging.info(f"Created sample {counter}/{n_samples}.")
 
       gdf_start_list = gdf_start_list.append(entity.start_point,
                           ignore_index=True)
