@@ -194,15 +194,18 @@ class Trainer:
       # Save model and results in checkpoint.
       if self.best_valid_loss > valid_loss:
         self.best_valid_loss = valid_loss
-        util.save_checkpoint(self.model_path 
-          self.model, self.best_valid_loss)
+        util.save_checkpoint(self.model_path, self.model, self.best_valid_loss)
 
       self.model.train()
 
 
     logging.info('Finished Training.')
 
-    util.load_checkpoint(self.model_path, self.model, self.device)
+    model_state = util.load_checkpoint(self.model_path, self.model, self.device)
+    valid_loss = model_state['valid_loss']
+
+    logging.info(
+      f'Loaded best model (with validation loss {valid_loss}) for testing.')
     
     logging.info('Start testing.')
 
