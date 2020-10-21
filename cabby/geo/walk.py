@@ -596,7 +596,7 @@ class Walker:
         sys.exit("Reached max number of failed attempts.")
     
     logging.info(f"Created sample {index}/{n_samples}.")
-    return_dict[index]=entity
+    #return_dict[index]=entity
     sema.release()
 
 
@@ -633,7 +633,7 @@ class Walker:
     manager = multiprocessing.Manager()
     return_dict = manager.dict()
     
-    concurrency = multiprocessing.cpu_count()
+    concurrency = multiprocessing.cpu_count()-1
     sema = Semaphore(concurrency)
 
     jobs = []
