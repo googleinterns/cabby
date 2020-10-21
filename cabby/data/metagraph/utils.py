@@ -102,6 +102,15 @@ def update_osm_map(osm_map: Map,
   print("In update_osm_map: %d nodes in graph after adding." % (
     osm_map.nx_graph.number_of_nodes()))
 
+
+def add_conceptual_nodes_and_edges(graph: nx.MultiDiGraph,
+                                   poi_map: Dict[Text, int],
+                                   wd_relations: pd.DataFrame):
+  for _, row in wd_relations.iterrows():
+    place_node_id = poi_map[row["place"]]
+    graph.add_edge(row["instanceLabel"], place_node_id)
+    graph.add_edge(place_node_id, row["instanceLabel"])
+
 def construct_metagraph(region: Text,
                         s2_level: int,
                         base_osm_map_filepath: Text):
