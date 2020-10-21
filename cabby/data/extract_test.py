@@ -37,15 +37,23 @@ class GeoSetTest(unittest.TestCase):
   def testQueryWithOSM(self):
     samples = extract.get_data_by_region_with_osm(
         regions.get_region('Pittsburgh_small'))
+    for s in samples:
+      print(s)
+      print()
     self.assertEqual(samples[0].sample_type, 'Wikipedia_page')
-    osm_sample = samples[6]
-    self.assertEqual(osm_sample.sample_type, 'OSM')
-    text_osm = 'Figleaf and building and East Carson Street.'
-    self.assertEqual(osm_sample.text, text_osm)
+
     wikidata_sample = samples[4]
     self.assertEqual(wikidata_sample.sample_type, 'Wikidata')
-    text_wikidata = 'Birmingham Public School and building in Pennsylvania, United States and Renaissance Revival architecture and  and building.'
-    self.assertEqual(wikidata_sample.text, text_wikidata)
+    self.assertEqual(
+        wikidata_sample.text,
+        ('Birmingham Public School and building in Pennsylvania, United States '
+        'and  and building and Renaissance Revival architecture.')
+    )
+
+    osm_sample = samples[6]
+    self.assertEqual(osm_sample.sample_type, 'OSM')
+    self.assertEqual(
+      osm_sample.text, 'Figleaf and building and East Carson Street.')
 
 
 if __name__ == "__main__":

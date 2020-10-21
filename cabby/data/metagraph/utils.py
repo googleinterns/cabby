@@ -108,6 +108,6 @@ def construct_metagraph(region: Region,
                         base_osm_map_filepath: Text):
   wd_relations = query.get_geofenced_wikidata_relations(region,
                                                         extract_qids=True)
-  osm_map = Map(region.name, s2_level, base_osm_map_filepath)
+  osm_map = Map(region, s2_level, base_osm_map_filepath)
   update_osm_map(osm_map, wd_relations)
   return osm_map, wd_relations

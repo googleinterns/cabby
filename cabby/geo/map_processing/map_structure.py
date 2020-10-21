@@ -43,11 +43,11 @@ SHOW_PROGRESS_EVERY = 100
 class Map:
 
   def __init__(
-    self, map_name: Text, level: int = 18, load_directory: Text = None):
-    self.map_name = map_name
+    self, region: regions.Region, level: int = 18, load_directory: Text = None):
+    self.map_name = region.name
     self.s2_graph = None
     self.level = level
-    self.polygon_area = regions.get_region(map_name)
+    self.polygon_area = region.polygon
     self.num_poi_add = 0
 
     if load_directory is None:
