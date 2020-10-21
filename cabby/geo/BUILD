@@ -57,20 +57,6 @@ py_library(
 
 
 py_binary(
-    name = 'geo_computation',
-    main = 'geo_computation.py',
-    srcs = ['geo_computation.py'],
-    deps = [
-        ':walk',
-        ':util',
-        '//cabby/rvs:item',
-        "//cabby:logger"
-        ],
-    
-)
-
-
-py_binary(
     name = 'sample_poi',
     main = 'sample_poi.py',
     srcs = ['sample_poi.py'],

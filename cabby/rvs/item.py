@@ -41,10 +41,11 @@ class RVSPath:
   `from_file` should the entity be processed from file.
   `instructions` is a basic template that includes the points, pivots and route 
   features.
+  `path_features` is a path features: cardinal directions, intersections, instructions and route geometry.
   """
   start_point: GeoSeries = attr.ib()
   end_point: GeoSeries = attr.ib()
-  route: GeoSeries = attr.ib()
+  route: LineString = attr.ib()
   main_pivot: GeoSeries = attr.ib()
   near_pivot: GeoSeries = attr.ib()
   beyond_pivot: GeoSeries = attr.ib()
@@ -52,49 +53,47 @@ class RVSPath:
   intersections: int = attr.ib()
   process: bool = attr.ib()
   instructions: Text = attr.ib(init=False)
+  path_features: Dict = attr.ib(init=False)
 
   def __attrs_post_init__(self):
-    if not self.process:
-      return
-    # Creat basic template instruction.
-    if "main_tag" in self.beyond_pivot:
-      avoid_instruction = "If you reached {0}, you have gone too far.".format(
-        self.beyond_pivot['main_tag'])
 
+    if "main_tag" in self.beyond_pivot:
+      avoid_instruction = (
+        f"If you reached {self.beyond_pivot['main_tag']}, you have gone too far.")
     else:
       avoid_instruction = ""
       self.beyond_pivot['main_tag'] = ""
 
     if self.intersections == 1:
-      intersection_instruction = ("and walk straight to the next intersection, "
-                    .format(self.intersections))
+      intersection_instruction = (
+        f"and walk straight to the next intersection, ")
     elif self.intersections > 1:
-      intersection_instruction = ("and walk straight for {0} intersections, "
-                    .format(self.intersections))
+      intersection_instruction = (
+        f"and walk straight for {self.intersections} intersections, ")
     else:
       intersection_instruction = ""
-
-    self.instructions = (
-      "Starting at {0} walk {1} past {2} {3}and your goal is {4}, near {5}. "
-      .format(self.start_point['name'], self.cardinal_direction,
-          self.main_pivot['main_tag'], intersection_instruction,
-          self.end_point['name'],
-          self.near_pivot['main_tag']) + avoid_instruction
-    )
-
-    # Create centroid point.
-    if self.beyond_pivot['geometry'] is None:
-      self.beyond_pivot['geometry'] = Point()
-
+    
     prune_columns(self.start_point)
     prune_columns(self.end_point)
     prune_columns(self.main_pivot)
     prune_columns(self.near_pivot)
     prune_columns(self.beyond_pivot)
 
-    self.route['cardinal_direction'] = self.cardinal_direction
-    self.route['instructions'] = self.instructions
-    self.route['intersections'] = self.intersections
+    self.instructions = (
+      "Starting at {0} walk {1} past {2} {3}and your goal is {4}, near {5}. "
+      .format(self.start_point['main_tag'], self.cardinal_direction,
+          self.main_pivot['main_tag'], intersection_instruction,
+          self.end_point['main_tag'],
+          self.near_pivot['main_tag']) + avoid_instruction
+    )
+
+    self.path_features = {
+          'cardinal_direction': self.cardinal_direction, 
+          'instructions': self.instructions,
+          'intersections': self.intersections,
+          'geometry': self.route
+          }
+
 
   @classmethod
   def from_points_route_pivots(cls, start, end, route, main_pivot,
@@ -105,8 +104,7 @@ class RVSPath:
     return RVSPath(
       start,
       end,
-      gpd.GeoSeries(
-        {'geometry': LineString(route['geometry'].tolist())}),
+      LineString(route['geometry'].tolist()),
       main_pivot,
       near_pivot,
       beyond_pivot,
@@ -133,10 +131,13 @@ class RVSPath:
       False,
     )
 
-
 def prune_columns(gds: GeoDataFrame):
   """Remove unneeded columns."""
+
   if 'main_tag' not in gds:
     gds['main_tag'] = gds['name']
-  gds.drop(gds.keys().difference(
-    ['osmid', 'geometry', 'main_tag']), inplace=True)
+
+  columns_remove = gds.keys().difference(['osmid', 'geometry', 'main_tag'])
+  if len(columns_remove) == 0:
+    return
+  gds.drop(columns_remove, inplace=True)

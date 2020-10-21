@@ -32,7 +32,7 @@ class WalkTest(unittest.TestCase):
 
     # Load map from disk.
     cls.map = map_structure.Map("DC", 18)
-    cls.walker = walk.Walker(rand_sample = False)
+    cls.walker = walk.Walker(rand_sample = False, map = cls.map)
 
 
   def testRouteCalculation(self):
@@ -51,7 +51,7 @@ class WalkTest(unittest.TestCase):
     self.assertEqual(second_point, (38.96803286410526, -77.02742946731615))
 
   def testPointsSelection(self):
-    geo_entity = self.walker.get_single_sample(self.map)
+    geo_entity = self.walker.get_sample()
     if geo_entity is None:
       return
       

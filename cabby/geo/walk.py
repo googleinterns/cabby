@@ -15,7 +15,7 @@
 '''Library to support sampling points, creating routes between them and pivots
 along the path and near the goal.'''
 
-from typing import Tuple, Sequence, Optional, Dict, Text, Any
+from typing import Tuple, Sequence, Optional, Dict, Text, Any, List
 
 from absl import logging
 import geopandas as gpd
@@ -26,12 +26,16 @@ import os
 import osmnx as ox
 import pandas as pd
 import json
+import multiprocessing 
+from multiprocessing import Pool
+from multiprocessing import Semaphore
 import random 
 from shapely import geometry
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon, LinearRing
 from shapely.geometry import box, mapping, LineString
 import sys
+    
 
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
@@ -40,6 +44,7 @@ from cabby.rvs import item
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 4
+MAX_BATCH_GEN = 1000
 MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
@@ -58,8 +63,8 @@ class Walker:
 
 
   def compute_route_from_nodes(self,
-                               origin_id: int, 
-                               goal_id: int, 
+                               origin_id: str, 
+                               goal_id: str, 
                                graph: nx.MultiDiGraph,
                                nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''Returns the shortest path between a starting and end point.
@@ -76,7 +81,7 @@ class Walker:
     try:
       route = nx.shortest_path(graph, origin_id, goal_id, 'length')
     except nx.exception.NetworkXNoPath:
-      print("No route found for the start and end points.")
+      logging.info("No route found for the start and end points.")
       return None
     route_nodes = nodes[nodes['osmid'].isin(route)]
 
@@ -116,7 +121,7 @@ class Walker:
     try:
       route = nx.shortest_path(graph, orig, dest, 'length')
     except nx.exception.NetworkXNoPath:
-      print("No route found for the start and end points.")
+      logging.info("No route found for the start and end points.")
       return None
     route_nodes = nodes[nodes['osmid'].isin(route)]
 
@@ -167,7 +172,6 @@ class Walker:
     '''
     if self.rand_sample:
       return df.sample(1, random_state = random.randint(0, MAX_SEED)).iloc[0]
-      print ("1")
     return df.sample(1, random_state=SEED).iloc[0]
 
 
@@ -537,7 +541,7 @@ class Walker:
 
     return number_intersection
 
-  def get_single_sample(self, 
+  def get_sample(self, 
   ) -> Optional[item.RVSPath]:
     '''Sample start and end point, a pivot landmark and route.
     Returns:
@@ -556,7 +560,10 @@ class Walker:
 
     # Compute route between start and end points.
     route = self.compute_route_from_nodes(
-      start_point['osmid'], end_point['osmid'], self.map.nx_graph, self.map.nodes)
+          start_point['osmid'], 
+          end_point['osmid'], 
+          self.map.nx_graph, 
+          self.map.nodes)
     if route is None:
       return None
 
@@ -585,32 +592,82 @@ class Walker:
 
     return rvs_path_entity
 
-  def get_single_sample_idx(self, index: int, sema: Any, n_samples: int, return_dict: Dict[int, item.RVSPath]):
+  def get_single_sample(
+            self, 
+            index: int, 
+            sema: Any, 
+            n_samples: int, 
+            return_dict: Dict[int, item.RVSPath]):
+    '''Sample exactly one RVS path sample.
+    Arguments:
+      index: index of sample.
+      sema: Semaphore Object.
+      n_samples: the total number of samples to generate.
+      return_dict: The dictionary of samples generated.
+    '''
     sema.acquire()
     entity = None
     attempt = 0
     while entity is None:
-      entity = self.get_single_sample()
+      entity = self.get_sample()
       attempt += 1
       if attempt >= MAX_NUM_GEN_FAILED:
         sys.exit("Reached max number of failed attempts.")
     
     logging.info(f"Created sample {index}/{n_samples}.")
-    #return_dict[index]=entity
+    return_dict[index]=entity
     sema.release()
 
 
   def generate_and_save_rvs_routes(self,
-                                  pathname: Text, 
+                                  path_rvs_path: Text, 
                                   n_samples: int,
                                   ):
     '''Sample start and end point, a pivot landmark and route and save to file.
     Arguments:
-      path: The path to which the data will be appended.
+      path_rvs_path: The path to which the data will be appended.
       map: The map of a specific region.
       n_samples: the max number of samples to generate.
     '''
+
+    manager = multiprocessing.Manager()
     
+    concurrency = multiprocessing.cpu_count()-1
+    sema = Semaphore(concurrency)
+
+    
+    lst = list(range(n_samples))
+    batches = [
+      lst[i:i + MAX_BATCH_GEN] for i in range(0, len(lst), MAX_BATCH_GEN)]
+    for batch in batches:
+      return_dict = manager.dict()
+      jobs = []
+      for i in batch:
+          p = multiprocessing.Process(
+            target=self.get_single_sample, 
+            args=(i, sema ,n_samples, 
+            return_dict))
+          jobs.append(p)
+          p.start()
+      
+      for proc in jobs:
+          proc.join()
+      
+      assert len(return_dict)==len(batch)
+
+      new_entities = [entity for idx_entity, entity in return_dict.items()]
+
+      entities = load_entities(path_rvs_path)
+
+      all_entities = new_entities+entities
+      self.save_entities(all_entities, path_rvs_path)
+    
+    logging.info(f"Saved {len(all_entities)} to  ==> {path_rvs_path}")
+
+
+  def save_entities(
+    self, entities: Sequence[item.RVSPath], path_rvs_path: Text
+  ):
     gdf_start_list = gpd.GeoDataFrame(
       columns=['osmid', 'geometry', 'main_tag'])
     gdf_end_list = gpd.GeoDataFrame(
@@ -624,39 +681,14 @@ class Walker:
       columns=['osmid', 'geometry', 'main_tag'])
     gdf_beyond_list = gpd.GeoDataFrame(
       columns=['osmid', 'geometry', 'main_tag'])
-
-
-    import multiprocessing 
-    from multiprocessing import Pool
-    from multiprocessing import Semaphore
-
-    manager = multiprocessing.Manager()
-    return_dict = manager.dict()
-    
-    concurrency = multiprocessing.cpu_count()-1
-    sema = Semaphore(concurrency)
-
-    jobs = []
-    
-    for i in range(n_samples):
-        p = multiprocessing.Process(
-          target=self.get_single_sample_idx, args=(i, sema ,n_samples, return_dict))
-        jobs.append(p)
-        p.start()
-    
-    for proc in jobs:
-        proc.join()
-
-
-    assert len(return_dict)==n_samples, len(return_dict)
-
-    for idx, entity in return_dict.items():
+      
+    for entity in entities:
 
       gdf_start_list = gdf_start_list.append(entity.start_point,
                           ignore_index=True)
       gdf_end_list = gdf_end_list.append(entity.end_point, ignore_index=True)
 
-      gdf_route_list = gdf_route_list.append(entity.route,
+      gdf_route_list = gdf_route_list.append(entity.path_features,
                           ignore_index=True)
       gdf_main_list = gdf_main_list.append(entity.main_pivot,
                         ignore_index=True)
@@ -668,19 +700,22 @@ class Walker:
     if gdf_start_list.shape[0] == 0:
       return None
 
-    path = os.path.abspath(pathname)
+    path = os.path.abspath(path_rvs_path)
     gdf_start_list.to_file(path, layer='start', driver=_Geo_DataFrame_Driver)
     gdf_end_list.to_file(path, layer='end', driver=_Geo_DataFrame_Driver)
     gdf_route_list.to_file(path, layer='route', driver=_Geo_DataFrame_Driver)
     gdf_main_list.to_file(path, layer='main', driver=_Geo_DataFrame_Driver)
     gdf_near_list.to_file(path, layer='near', driver=_Geo_DataFrame_Driver)
     gdf_beyond_list.to_file(path, layer='beyond', driver=_Geo_DataFrame_Driver)
+  
+    logging.info(f"Saved entities to => {path}")
 
 
-def get_path_entities(path: Text):
-  '''Read a geodata file and print instruction.'''
+
+
+def load_entities(path: Text) -> List[item.RVSPath]:
   if not os.path.exists(path):
-    return None
+    return []
   start = gpd.read_file(path, layer='start')
   end = gpd.read_file(path, layer='end')
   route = gpd.read_file(path, layer='route')
@@ -702,6 +737,7 @@ def get_path_entities(path: Text):
     )
     entities.append(entity)
 
+  logging.info(f"Loaded entities {len(entities)} from <= {path}")
   return entities
 
 
@@ -710,4 +746,4 @@ def print_instructions(path: Text):
   if not os.path.exists(path):
     sys.exit("The path to the RVS data was not found.")
   route = gpd.read_file(path, layer='route')
-  print('\n'.join(route['instructions'].values))
+  logging.info('\n'.join(route['instructions'].values))

@@ -7,9 +7,6 @@ echo "****************************************"
 rm -rf $OUTPUT_DIR
 mkdir -p $OUTPUT_DIR/poiTestData
 
-# Do we still need geo_computation?
-# bazel-bin/cabby/geo/geo_computation --orig_lat 40.749102 --orig_lon -73.984076 -dest_lat 40.748432 --dest_lon -73.982473
-
 bazel-bin/cabby/geo/map_processing/map_processor --region $REGION_NAME --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData/
 bazel-bin/cabby/geo/map_processing/map_processor --region DC --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData
 bazel-bin/cabby/geo/sample_poi --region DC --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData --path $OUTPUT_DIR/poiTestData/dc_geo_paths.gpkg --n_samples 1
@@ -19,7 +16,6 @@ echo "*              Wikidata                *"
 echo "****************************************"
 bazel-bin/cabby/data/wikidata/extract_geofenced_wikidata_items --region $REGION_NAME
 
-# Wikipedia
 echo "****************************************"
 echo "*              Wikipedia               *"
 echo "****************************************"
