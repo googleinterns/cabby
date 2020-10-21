@@ -17,6 +17,7 @@ along the path and near the goal.'''
 
 from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
+from absl import logging
 import geopandas as gpd
 from geopandas import GeoDataFrame, GeoSeries
 import networkx as nx
@@ -38,16 +39,14 @@ from cabby.geo.map_processing import map_structure
 from cabby.rvs import item
 
 
-# Coordinate Reference Systems (CRS) - UTM Zones (North).
-# This variable is used (:map_structure.py; cabby.geo.walk.py) to project the 
-# geometries into this CRS for geo operations such as calculating the centroid.
-OSM_CRS = 32633  # UTM Zones (North).
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 4
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
 _Geo_DataFrame_Driver = "GPKG"
+# The max number of failed tries to generate a single path entities.
+MAX_NUM_GEN_FAILED = 10 
 
 
 
@@ -86,7 +85,8 @@ class Walker:
 
     # Generate a rank column that will be used to sort
     # the dataframe numerically
-    route_nodes['sort'] = route_nodes['osmid'].map(sorterIndex)
+    sorted_nodes = route_nodes['osmid'].map(sorterIndex)
+    route_nodes = route_nodes.assign(sort=sorted_nodes)
 
     route_nodes = route_nodes.sort_values(['sort'])
 
@@ -187,11 +187,14 @@ class Walker:
     # Get closest nodes to points.
     dest_osmid = end_point['osmid']
 
-    # Find nodes whithin 2000 meter path distance.
-    outer_circle_graph = ox.truncate.truncate_graph_dist(
-    map.nx_graph, dest_osmid, max_dist=MAX_PATH_DIST, weight='length')
+    try:
+      # Find nodes within 2000 meter path distance.
+      outer_circle_graph = ox.truncate.truncate_graph_dist(
+      map.nx_graph, dest_osmid, max_dist=MAX_PATH_DIST, weight='length')
 
-    outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
+      outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
+    except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
+      return None
 
     try:
       # Get graph that is too close (less than 200 meter path distance)
@@ -199,7 +202,7 @@ class Walker:
         map.nx_graph, dest_osmid, max_dist=MIN_PATH_DIST, weight='length')
       inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
-    except ValueError:  # GeoDataFrame returned empty
+    except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
       inner_circle_graph_osmid = []
 
     osmid_in_range = [
@@ -403,7 +406,6 @@ class Walker:
       # Return Empty.
       return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
-    df_pivots = df_pivots.set_crs(epsg=OSM_CRS, allow_override=True)
     # Remove streets.
     if 'highway' in df_pivots.columns:
       df_pivots = df_pivots[(df_pivots['highway'].isnull())]
@@ -532,10 +534,7 @@ class Walker:
   
     edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(
       lambda x: set(map.edges[map.edges['u'] == x]['osmid'].tolist()))
-
-    # Remove edges from pois to streets.
-    edges_in_pivot_goal_route = edges_in_pivot_goal_route[1:-1]
-
+    
     pivot_streets = edges_in_pivot_goal_route.iloc[0]
     goal_streets = edges_in_pivot_goal_route.iloc[-1]
     common_streets = pivot_streets & goal_streets
@@ -627,11 +626,17 @@ class Walker:
       columns=['osmid', 'geometry', 'main_tag'])
 
     counter = 0
+    attempt = 0
     while counter < n_samples:
       entity = self.get_single_sample(map)
       if entity is None:
+        attempt += 1
+        if attempt >= MAX_NUM_GEN_FAILED:
+          sys.exit("Reached max number of failed attempts.")
         continue
+      attempt = 0 
       counter += 1
+      logging.info(f"Created sample {counter}/{n_samples}.")
 
       gdf_start_list = gdf_start_list.append(entity.start_point,
                           ignore_index=True)

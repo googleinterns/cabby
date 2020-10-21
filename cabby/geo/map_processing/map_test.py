@@ -40,8 +40,8 @@ class MapTest(unittest.TestCase):
       self.assertIn(osmid, self.map.nx_graph.nodes)
 
   def testAttributeInGraph(self):
-    self.assertIn(19991360050503, self.map.nx_graph.nodes)
-    node = self.map.nx_graph.nodes[19991360050503]
+    self.assertIn('1#1360050503', self.map.nx_graph.nodes)
+    node = self.map.nx_graph.nodes['1#1360050503']
     self.assertEqual('primary', node['highway'])
 
 
@@ -64,7 +64,7 @@ class MapTest(unittest.TestCase):
     # Check that the POI was added correctly to the graph.
     cell_to_search = list_cells[0]
     node = self.map.s2_graph.search(cell_to_search)
-    self.assertTrue(hasattr(node, 'poi') and 9992975908873 in node.poi)
+    self.assertTrue(hasattr(node, 'poi') and '#2975908873' in node.poi)
     
 
   
