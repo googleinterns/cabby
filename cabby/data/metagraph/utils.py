@@ -22,6 +22,7 @@ from typing import Dict, Tuple, Sequence, Text, Any
 from cabby.geo.map_processing.map_structure import Map
 import cabby.geo.util as util
 from cabby.data.wikidata import query
+from cabby.geo.regions import Region
 
 def convert_pandas_df_to_metagraph(
   df:Any, source_column: Text, target_column: Text,
@@ -100,11 +101,11 @@ def update_osm_map(osm_map: Map,
   print("In update_osm_map: %d nodes in graph after adding." % (
     osm_map.nx_graph.number_of_nodes()))
 
-def construct_metagraph(region: Text,
+def construct_metagraph(region: Region,
                         s2_level: int,
                         base_osm_map_filepath: Text):
   wd_relations = query.get_geofenced_wikidata_relations(region,
                                                         extract_qids=True)
-  osm_map = Map(region, s2_level, base_osm_map_filepath)
+  osm_map = Map(region.name, s2_level, base_osm_map_filepath)
   update_osm_map(osm_map, wd_relations)
   return osm_map, wd_relations

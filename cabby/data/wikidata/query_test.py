@@ -14,10 +14,10 @@
 
 '''Tests for query.py'''
 
-
-from cabby.data.wikidata import query
 import unittest
 
+from cabby.data.wikidata import query
+from cabby.geo import regions
 
 class WikidataTest(unittest.TestCase):
 
@@ -25,8 +25,11 @@ class WikidataTest(unittest.TestCase):
   def setUpClass(cls):
 
     # Load map from disk.
-    cls.items_lean = query.get_geofenced_wikidata_items('Manhattan')
-    cls.items_info = query.get_geofenced_info_wikidata_items('Manhattan')
+    cls.manhattan_region = regions.get_region('Manhattan')
+    cls.pittsburgh_region = regions.get_region('Pittsburgh')
+    cls.items_lean = query.get_geofenced_wikidata_items(cls.manhattan_region)
+    cls.items_info = query.get_geofenced_info_wikidata_items(
+      cls.manhattan_region)
 
   def testLeanQuery(self):
     items = self.items_lean
@@ -40,14 +43,14 @@ class WikidataTest(unittest.TestCase):
     self.assertNotIn('', poi_by_value)
 
   def testSingleOutputWithoutInstance(self):
-    output = query.get_geofenced_wikidata_items('Pittsburgh')
+    output = query.get_geofenced_wikidata_items(self.pittsburgh_region)
     expected_place_label = 'Arrott Building'
     poi_by_value = [x['placeLabel']['value'] for x in output]
     self.assertIn(expected_place_label, poi_by_value)
 
   def testRelationsQuery(self):
     wd_relations = query.get_geofenced_wikidata_relations(
-      "Pittsburgh", extract_qids=True)
+        self.pittsburgh_region, extract_qids=True)
     qid_set = set(list(wd_relations.place))
     self.assertIn("Q4915", qid_set)
 
@@ -66,6 +69,7 @@ class WikidataTest(unittest.TestCase):
   def testExtensiveInfoQuery(self):
     items = self.items_info
     place_label = 'New York Stock Exchange'
+    print(items)
     poi_by_value = [x for x in items if x['placeLabel']['value']==place_label][0]
     instance_of = poi_by_value['instance']['value']
     self.assertEqual(instance_of, 'stock exchange')

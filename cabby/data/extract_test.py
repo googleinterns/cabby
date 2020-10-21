@@ -14,14 +14,12 @@
 
 '''Tests for wikidata.py'''
 
-
-
-from cabby.data import extract
 import unittest
 
+from cabby.data import extract
+from cabby.geo import regions
 
 class GeoSetTest(unittest.TestCase):
-
 
   def testQueryItems(self):
     # Test plain Wikipedia query for items
@@ -37,7 +35,8 @@ class GeoSetTest(unittest.TestCase):
     self.assertEqual(two_pnc_plazza.ref_instance, 'skyscraper')
   
   def testQueryWithOSM(self):
-    samples = extract.get_data_by_region_with_osm("Pittsburgh_small")
+    samples = extract.get_data_by_region_with_osm(
+        regions.get_region('Pittsburgh_small'))
     self.assertEqual(samples[0].sample_type, 'Wikipedia_page')
     osm_sample = samples[6]
     self.assertEqual(osm_sample.sample_type, 'OSM')
