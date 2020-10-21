@@ -22,12 +22,11 @@ import geopandas as gpd
 from geopandas import GeoDataFrame, GeoSeries
 import networkx as nx
 import sys
-from random import sample
 import os
 import osmnx as ox
 import pandas as pd
 import json
-from random import sample
+import random 
 from shapely import geometry
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon, LinearRing
@@ -41,6 +40,7 @@ from cabby.rvs import item
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 4
+MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
@@ -51,9 +51,10 @@ MAX_NUM_GEN_FAILED = 10
 
 
 class Walker:
-  def __init__(self, rand_sample: bool = True):
+  def __init__(self, map: map_structure.Map, rand_sample: bool = True):
     #whether to sample randomly.
     self.rand_sample = rand_sample
+    self.map = map
 
 
   def compute_route_from_nodes(self,
@@ -131,17 +132,15 @@ class Walker:
 
     return route_nodes
 
-  def get_end_poi(self, map: map_structure.Map
+  def get_end_poi(self,
   ) -> Optional[GeoSeries]:
     '''Returns a random POI.
-    Arguments:
-      map: The map of a specific region.
     Returns:
       A single POI.
     '''
     
     # Filter with name.
-    named_poi = map.poi[map.poi['name'].notnull()]
+    named_poi = self.map.poi[self.map.poi['name'].notnull()]
 
     # Filter large POI.
     small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
@@ -167,17 +166,16 @@ class Walker:
       A single sample of a POI.
     '''
     if self.rand_sample:
-      return df.sample(1).iloc[0]
+      return df.sample(1, random_state = random.randint(0, MAX_SEED)).iloc[0]
+      print ("1")
     return df.sample(1, random_state=SEED).iloc[0]
 
 
   def get_start_poi(self,
-                    map: map_structure.Map, 
                     end_point: Dict  
   ) -> Optional[GeoSeries]:
     '''Returns the a random POI within distance of a given POI.
     Arguments:
-      map: The map of a specific region.
       end_point: The POI to which the picked POI should be within distance
       range.
     Returns:
@@ -190,7 +188,7 @@ class Walker:
     try:
       # Find nodes within 2000 meter path distance.
       outer_circle_graph = ox.truncate.truncate_graph_dist(
-      map.nx_graph, dest_osmid, max_dist=MAX_PATH_DIST, weight='length')
+      self.map.nx_graph, dest_osmid, max_dist=MAX_PATH_DIST, weight='length')
 
       outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
@@ -199,7 +197,7 @@ class Walker:
     try:
       # Get graph that is too close (less than 200 meter path distance)
       inner_circle_graph = ox.truncate.truncate_graph_dist(
-        map.nx_graph, dest_osmid, max_dist=MIN_PATH_DIST, weight='length')
+        self.map.nx_graph, dest_osmid, max_dist=MIN_PATH_DIST, weight='length')
       inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
@@ -209,7 +207,7 @@ class Walker:
       osmid for osmid in outer_circle_graph_osmid if osmid not in
       inner_circle_graph_osmid]
 
-    poi_in_ring = map.poi[map.poi['osmid'].isin(osmid_in_range)]
+    poi_in_ring = self.map.poi[self.map.poi['osmid'].isin(osmid_in_range)]
 
     # Filter with name.
     named_poi = poi_in_ring[poi_in_ring['name'].notnull()]
@@ -290,21 +288,19 @@ class Walker:
 
 
   def get_pivot_near_goal(self, 
-                          map: map_structure.Map, 
                           end_point: GeoSeries
   ) -> Optional[GeoSeries]:
     '''Return a picked landmark near the end_point.
     Arguments:
-      map: The map of a specific region.
       end_point: The goal location.
     Returns:
       A single landmark near the goal location.
     '''
 
-    near_poi_con = map.poi.apply(lambda x: util.get_distance_between_geometries(
+    near_poi_con = self.map.poi.apply(lambda x: util.get_distance_between_geometries(
       x.geometry, end_point['centroid']) < NEAR_PIVOT_DIST, axis=1)
 
-    poi = map.poi[near_poi_con]
+    poi = self.map.poi[near_poi_con]
     
     if poi.shape[0]==0:
       return None
@@ -322,13 +318,11 @@ class Walker:
 
   def get_pivot_along_route(self,
                             route: GeoDataFrame, 
-                            map: map_structure.Map,
                             end_point: Dict
   ) -> Optional[GeoSeries]:
     '''Return a picked landmark on a given route.
     Arguments:
       route: The route along which a landmark will be chosen.
-      map: The map of a specific region.
       end_point: The goal location.
     Returns:
       A single landmark. '''
@@ -338,7 +332,7 @@ class Walker:
 
     poly = LineString(points_route).buffer(0.0001)
 
-    df_pivots = map.poi[map.poi.apply(
+    df_pivots = self.map.poi[self.map.poi.apply(
       lambda x: poly.intersects(x['geometry']), axis=1)]
     if df_pivots.shape[0]==0:
       return None
@@ -351,13 +345,11 @@ class Walker:
     return main_pivot
 
   def get_pivot_beyond_goal(self, 
-                            map: map_structure.Map, 
                             end_point: GeoSeries,
                             route: GeoDataFrame, 
   ) -> Optional[GeoSeries]:
     '''Return a picked landmark on a given route.
     Arguments:
-      map: The map of a specific region.
       end_point: The goal location.
       route: The route along which a landmark will be chosen.
     Returns:
@@ -366,14 +358,14 @@ class Walker:
 
     if route.shape[0] < 2:
       # Return Empty.
-      return GeoDataFrame(index=[0], columns=map.nodes.columns).iloc[0]
+      return GeoDataFrame(index=[0], columns=self.map.nodes.columns).iloc[0]
 
     last_node_in_route = route.iloc[-1]
     before_last_node_in_route = route.iloc[-2]
 
-    street_beyond_route = map.edges[
-      (map.edges['u'] == last_node_in_route['osmid'])
-      & (map.edges['v'] == before_last_node_in_route['osmid'])
+    street_beyond_route = self.map.edges[
+      (self.map.edges['u'] == last_node_in_route['osmid'])
+      & (self.map.edges['v'] == before_last_node_in_route['osmid'])
     ]
     if street_beyond_route.shape[0] == 0:
       # Return Empty.
@@ -382,12 +374,12 @@ class Walker:
     street_beyond_osmid = street_beyond_route['osmid'].iloc[0]
 
     # Change OSMID to key
-    segment_beyond_path = ((last_node_in_route['osmid'] == map.edges['u'])
+    segment_beyond_path = ((last_node_in_route['osmid'] == self.map.edges['u'])
                 & (before_last_node_in_route['osmid'] !=
-                  map.edges['v']))
-    condition_street_id = map.edges['osmid'].apply(
+                  self.map.edges['v']))
+    condition_street_id = self.map.edges['osmid'].apply(
       lambda x: x == street_beyond_osmid)
-    last_line = map.edges[condition_street_id
+    last_line = self.map.edges[condition_street_id
                 & segment_beyond_path]
 
     if last_line.shape[0] == 0:
@@ -399,7 +391,7 @@ class Walker:
 
     poly = last_line_max['geometry'].buffer(0.0001)
 
-    df_pivots = map.poi[map.poi.apply(
+    df_pivots = self.map.poi[self.map.poi.apply(
       lambda x: poly.intersects(x['geometry']), axis=1)]
 
     if df_pivots.shape[0] == 0:
@@ -450,31 +442,29 @@ class Walker:
 
   def get_pivots(self, 
                 route: GeoDataFrame,
-                map: map_structure.Map,
                 end_point: Dict,
   ) -> Optional[Tuple[GeoSeries, GeoSeries, GeoSeries]]:
     '''Return a picked landmark on a given route.
     Arguments:
       route: The route along which a landmark will be chosen.
-      map: The map of a specific region.
       end_point: The goal location.
     Returns:
       A single landmark.
     '''
 
     # Get pivot along the goal location.
-    main_pivot = self.get_pivot_along_route(route, map, end_point)
+    main_pivot = self.get_pivot_along_route(route, end_point)
     if main_pivot is None:
       return None
 
     # Get pivot near the goal location.
-    near_pivot = self.get_pivot_near_goal(map, end_point)
+    near_pivot = self.get_pivot_near_goal(end_point)
 
     if near_pivot is None:
       return None
 
     # Get pivot located past the goal location and beyond the route.
-    beyond_pivot = self.get_pivot_beyond_goal(map, end_point, route)
+    beyond_pivot = self.get_pivot_beyond_goal(end_point, route)
 
     return main_pivot, near_pivot, beyond_pivot
 
@@ -511,14 +501,12 @@ class Walker:
   def get_number_intersections_past(self, 
                                     main_pivot: GeoSeries, 
                                     route: GeoDataFrame,
-                                    map: map_structure.Map, 
                                     end_point: Point
   ) -> int:
     '''Return the number of intersections between the main_pivot and goal. 
     Arguments:
       main_pivot: The pivot along the route.
       route: The route along which a landmark will be chosen.
-      map: The map of a specific region.
       end_point: The goal location.
     Returns:
       The number of intersections between the main_pivot and goal. 
@@ -528,12 +516,12 @@ class Walker:
     pivot_goal_route = self.compute_route_from_nodes(
             main_pivot['osmid'], 
             end_point['osmid'], 
-            map.nx_graph,
-            map.nodes)
+            self.map.nx_graph,
+            self.map.nodes)
 
   
     edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(
-      lambda x: set(map.edges[map.edges['u'] == x]['osmid'].tolist()))
+      lambda x: set(self.map.edges[self.map.edges['u'] == x]['osmid'].tolist()))
     
     pivot_streets = edges_in_pivot_goal_route.iloc[0]
     goal_streets = edges_in_pivot_goal_route.iloc[-1]
@@ -549,33 +537,31 @@ class Walker:
 
     return number_intersection
 
-  def get_single_sample(self, map: map_structure.Map, 
+  def get_single_sample(self, 
   ) -> Optional[item.RVSPath]:
     '''Sample start and end point, a pivot landmark and route.
-    Arguments:
-      map: The map of a specific region.
     Returns:
       A start and end point, a pivot landmark and route.
     '''
 
     # Select end point.
-    end_point = self.get_end_poi(map)
+    end_point = self.get_end_poi()
     if end_point is None:
       return None
 
     # Select start point.
-    start_point = self.get_start_poi(map, end_point)
+    start_point = self.get_start_poi(end_point)
     if start_point is None:
       return None
 
     # Compute route between start and end points.
     route = self.compute_route_from_nodes(
-      start_point['osmid'], end_point['osmid'], map.nx_graph, map.nodes)
+      start_point['osmid'], end_point['osmid'], self.map.nx_graph, self.map.nodes)
     if route is None:
       return None
 
     # Select pivots.
-    result = self.get_pivots(route, map, end_point)
+    result = self.get_pivots(route, end_point)
     if result is None:
       return None
     main_pivot, near_pivot, beyond_pivot = result
@@ -586,7 +572,7 @@ class Walker:
 
     # Get number of intersections between main pivot and goal location.
     intersections = self.get_number_intersections_past(
-      main_pivot, route, map, end_point)
+      main_pivot, route, end_point)
 
     rvs_path_entity = item.RVSPath.from_points_route_pivots(start_point,
                                 end_point,
@@ -599,10 +585,23 @@ class Walker:
 
     return rvs_path_entity
 
+  def get_single_sample_idx(self, index: int, sema: Any, n_samples: int, return_dict: Dict[int, item.RVSPath]):
+    sema.acquire()
+    entity = None
+    attempt = 0
+    while entity is None:
+      entity = self.get_single_sample()
+      attempt += 1
+      if attempt >= MAX_NUM_GEN_FAILED:
+        sys.exit("Reached max number of failed attempts.")
+    
+    logging.info(f"Created sample {index}/{n_samples}.")
+    return_dict[index]=entity
+    sema.release()
+
 
   def generate_and_save_rvs_routes(self,
                                   pathname: Text, 
-                                  map: map_structure.Map, 
                                   n_samples: int,
                                   ):
     '''Sample start and end point, a pivot landmark and route and save to file.
@@ -611,6 +610,7 @@ class Walker:
       map: The map of a specific region.
       n_samples: the max number of samples to generate.
     '''
+    
     gdf_start_list = gpd.GeoDataFrame(
       columns=['osmid', 'geometry', 'main_tag'])
     gdf_end_list = gpd.GeoDataFrame(
@@ -625,18 +625,32 @@ class Walker:
     gdf_beyond_list = gpd.GeoDataFrame(
       columns=['osmid', 'geometry', 'main_tag'])
 
-    counter = 0
-    attempt = 0
-    while counter < n_samples:
-      entity = self.get_single_sample(map)
-      if entity is None:
-        attempt += 1
-        if attempt >= MAX_NUM_GEN_FAILED:
-          sys.exit("Reached max number of failed attempts.")
-        continue
-      attempt = 0 
-      counter += 1
-      logging.info(f"Created sample {counter}/{n_samples}.")
+
+    import multiprocessing 
+    from multiprocessing import Pool
+    from multiprocessing import Semaphore
+
+    manager = multiprocessing.Manager()
+    return_dict = manager.dict()
+    
+    concurrency = multiprocessing.cpu_count()
+    sema = Semaphore(concurrency)
+
+    jobs = []
+    
+    for i in range(n_samples):
+        p = multiprocessing.Process(
+          target=self.get_single_sample_idx, args=(i, sema ,n_samples, return_dict))
+        jobs.append(p)
+        p.start()
+    
+    for proc in jobs:
+        proc.join()
+
+
+    assert len(return_dict)==n_samples, len(return_dict)
+
+    for idx, entity in return_dict.items():
 
       gdf_start_list = gdf_start_list.append(entity.start_point,
                           ignore_index=True)

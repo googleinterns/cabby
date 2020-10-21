@@ -56,8 +56,8 @@ def main(argv):
     FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
 
   # Create a file with multiple layers of data.
-  walker = walk.Walker()
-  walker.generate_and_save_rvs_routes(FLAGS.path, map_region, FLAGS.n_samples)
+  walker = walk.Walker(map_region)
+  walker.generate_and_save_rvs_routes(FLAGS.path, FLAGS.n_samples)
 
   # Read and print instruction.
   walk.print_instructions(FLAGS.path)
