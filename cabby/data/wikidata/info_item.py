@@ -66,6 +66,8 @@ class WikidataEntity:
         result
         
     )
+
+
 def create_sample_from_tags(item: Dict) -> Text:
   '''Get a Wikidata item and return a sample based on tags." 
   Arguments:
@@ -73,11 +75,8 @@ def create_sample_from_tags(item: Dict) -> Text:
   Returns:
       A description.
   '''
-  unwanted_tags = ['place', 'point']
-  list_tags = []
-  for k, v in item.items():
-    if k not in unwanted_tags:
-      list_tags.append(v['value'])
-  
-  return ' and '.join(list_tags) + "."
-
+  unwanted_tags = frozenset(['place', 'point'])
+  #tags = [str(item[k]) for k in sorted(item.keys()) if k not in unwanted_tags]
+  item_tags = [item[k]['value'] for k in sorted(item.keys())
+               if k not in unwanted_tags and item[k]['value']]
+  return ', '.join(item_tags) + "."
