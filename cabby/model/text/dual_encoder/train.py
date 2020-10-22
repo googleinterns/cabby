@@ -24,6 +24,7 @@ import torch.optim as optim
 import torch.nn as nn
 from transformers import AdamW
 from torch.utils.data import DataLoader
+from cabby.evals import utils as eu
 
 from cabby.model.text import util
 
@@ -214,7 +215,11 @@ class Trainer:
 
     accuracy = accuracy_score(true_vals, predictions)
 
-    logging.info(f'Test Accuracy: {accuracy}')
+    evaluator = eu.Evaluator()
+    error_distances = evaluator.get_error_distances(self.metrics_path)
+    _,mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
+
+    logging.info(f'Test Accuracy: {accuracy}, ')
 
     util.save_metrics_last_only(
           self.metrics_path, 
