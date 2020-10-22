@@ -623,6 +623,7 @@ class Walker:
   def generate_and_save_rvs_routes(self,
                                   path_rvs_path: Text, 
                                   n_samples: int,
+                                  n_cpu: int = multiprocessing.cpu_count()-1
                                   ):
     '''Sample start and end point, a pivot landmark and route and save to file.
     Arguments:
@@ -633,8 +634,7 @@ class Walker:
 
     manager = multiprocessing.Manager()
     
-    concurrency = multiprocessing.cpu_count()-1
-    sema = Semaphore(concurrency)
+    sema = Semaphore(n_cpu)
 
     
     lst = list(range(n_samples))
