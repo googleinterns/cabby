@@ -15,20 +15,17 @@
 
 from collections import namedtuple
 import folium
-from functools import partial
 import geographiclib
 from geopy.distance import geodesic
 import numpy as np
 from numpy import int64
 import operator
 import osmnx as ox
-import pyproj
 import pandas as pd
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import box, mapping, LineString
-from shapely.ops import transform
 import sys
 from typing import Optional, Tuple, Sequence, Any, Text
 import webbrowser

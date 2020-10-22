@@ -14,16 +14,18 @@
 '''Tests for walk.py'''
 
 
-from cabby.geo.map_processing import map_structure
-from cabby.geo import util
-from cabby.geo import walk
+import sys
+
 import networkx as nx
 import osmnx as ox
-import unittest
 from shapely.geometry.point import Point
-import sys
 from shapely.geometry import box
+import unittest
 
+from cabby.geo.map_processing import map_structure
+from cabby.geo import regions
+from cabby.geo import walk
+from cabby.geo import util
 
 class WalkTest(unittest.TestCase):
 
@@ -31,13 +33,13 @@ class WalkTest(unittest.TestCase):
   def setUpClass(cls):
 
     # Load map from disk.
-    cls.map = map_structure.Map("DC", 18)
+    cls.map = map_structure.Map(regions.get_region('DC'), 18)
     cls.walker = walk.Walker(rand_sample = False)
 
 
   def testRouteCalculation(self):
-    orig = 9991360050503
-    dest = 9992975872267
+    orig = '#1360050503'
+    dest = '#2975872267'
     route = self.walker.compute_route_from_nodes(orig, dest, self.map.
                    nx_graph, self.map.nodes)
 
@@ -56,10 +58,10 @@ class WalkTest(unittest.TestCase):
       return
       
     self.assertIsNotNone(geo_entity)
-    self.assertEqual(geo_entity.start_point['osmid'], 9992984603460)
-    self.assertEqual(geo_entity.end_point['osmid'], 9991362253177)
-    self.assertEqual(geo_entity.main_pivot['osmid'], 99991900570)
-    self.assertEqual(geo_entity.near_pivot['osmid'], 999751864718)
+    self.assertEqual(geo_entity.start_point['osmid'], '#2984603460')
+    self.assertEqual(geo_entity.end_point['osmid'], '#1362253177')
+    self.assertEqual(geo_entity.main_pivot['osmid'], '#91900570')
+    self.assertEqual(geo_entity.near_pivot['osmid'], '#751864718')
     self.assertEqual(geo_entity.intersections, 1)
 
 

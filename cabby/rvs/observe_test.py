@@ -21,6 +21,7 @@ from shapely.geometry.point import Point
 
 from cabby.data.wikidata import item
 from cabby.data.wikidata import query
+from cabby.geo import regions
 from cabby.rvs import observe
 
 
@@ -30,9 +31,10 @@ class ObserveTest(unittest.TestCase):
 
     # Get Pittsburgh items. Also tests cabby.geo.util.item and 
     # cabby.data.wikidata.query.
+    pittsburgh_region = regions.get_region('Pittsburgh')
     pittsburgh_items = [
       item.WikidataEntity.from_sparql_result(result) 
-      for result in query.get_geofenced_wikidata_items('Pittsburgh')
+      for result in query.get_geofenced_wikidata_items(pittsburgh_region)
     ]
     pittsburgh_index = {e.qid: e for e in pittsburgh_items}
 

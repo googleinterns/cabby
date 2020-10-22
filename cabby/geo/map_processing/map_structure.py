@@ -37,25 +37,24 @@ from cabby.geo.map_processing import graph
 from cabby.geo.map_processing import edge
 from cabby.geo import regions
 
-
-# Coordinate Reference Systems (CRS) - UTM Zones (North).
-# This variable is used (:map_structure.py; cabby.geo.walk.py) to project the 
-# geometries into this CRS for geo operations such as calculating the centroid.
-OSM_CRS = 4326
-
+POI_PREFIX = '#'
+SHOW_PROGRESS_EVERY = 100
 
 class Map:
 
-  def __init__(self, map_name: Text, level: int = 18, load_directory: Text = None):
-    self.map_name = map_name
+  def __init__(
+    self, region: regions.Region, level: int = 18, load_directory: Text = None):
+    self.map_name = region.name
     self.s2_graph = None
     self.level = level
-    self.polygon_area = regions.get_region(map_name)
+    self.polygon_area = region.polygon
+    self.num_poi_add = 0
 
     if load_directory is None:
       logging.info("Preparing map.")
       logging.info("Extracting POI.")
       self.poi, self.streets = self.get_poi()
+      self.num_poi = self.poi.shape[0]
       logging.info("Constructing graph.")
       self.nx_graph = ox.graph_from_polygon(
         self.polygon_area, network_type='walk')
@@ -77,11 +76,6 @@ class Map:
   def process_param(self):
     '''Helper function for processing the class data objects.'''
 
-    # Set the coordinate system.
-    self.poi = self.poi.set_crs(epsg=OSM_CRS, allow_override=True)
-    self.nodes = self.nodes.set_crs(epsg=OSM_CRS, allow_override=True)
-    self.edges = self.edges.set_crs(epsg=OSM_CRS, allow_override=True)
-
     # Drop columns with list type.
     self.edges.drop(self.edges.columns.difference(
       ['osmid', 'length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
@@ -102,31 +96,37 @@ class Map:
             'tourism': True}
 
     osm_poi = ox.pois.pois_from_polygon(self.polygon_area, tags=tags)
-    osm_poi = osm_poi.set_crs(epsg=OSM_CRS, allow_override=True)
 
     osm_highway = osm_poi['highway']
     osm_poi_no_streets = osm_poi[osm_highway.isnull()]
     osm_poi_streets = osm_poi[osm_highway.notnull()]
 
     # Get centroid for POI.
-    osm_poi_no_streets['centroid'] = osm_poi_no_streets['geometry'].apply(
-      lambda x: x if isinstance(x, Point) else x.centroid)
+    centroid_list = osm_poi_no_streets['geometry'].apply(
+      lambda x: x if isinstance(x, Point) else x.centroid).tolist()
+    
+    osm_poi_no_streets = osm_poi_no_streets.assign(centroid=centroid_list)
 
     return osm_poi_no_streets, osm_poi_streets
 
   def add_single_poi_to_graph(
-      self, single_poi: pd.Series) -> Sequence[edge.Edge]:
+      self, single_poi: pd.Series) -> Optional[Sequence[edge.Edge]]:
     '''Add single POI to nx_graph.
     Arguments:
       single_poi: a single POI to be added to graph.
     Returns:
       The new osmid.
     '''
+
+    self.num_poi_add += 1
+    if self.num_poi_add%SHOW_PROGRESS_EVERY == 0:
+      percentage_gen = round(100*self.num_poi_add/self.num_poi)
+      logging.info(
+        f"Number of POI add to graph {self.num_poi_add}, that is {percentage_gen}% of the required POI addition.")
+
     # If the POI is already in the graph, do not add it.
     if single_poi['osmid'] in self.nx_graph:
       return None
-
-    logging.info("processing new poi %d" % single_poi['osmid'])
 
     # Project POI on to the closest edge in graph.
     geometry = single_poi['geometry']
@@ -147,10 +147,15 @@ class Map:
       return single_poi['osmid']
 
     poi_osmid = single_poi['osmid']
-    poi_osmid = util.concat_numbers(999, poi_osmid)
+
+    # POI_PREFIX indicates a POI added to the graph. 
+    poi_osmid = self.create_poi_id(poi_osmid) 
+    
+    # If the POI is already in the graph, do not add it.
+    if poi_osmid in self.nx_graph:
+      return None
+    
     assert poi_osmid not in self.poi['osmid'].tolist(), poi_osmid
-    self.poi.loc[self.poi['osmid'] ==
-           single_poi['osmid'], 'osmid'] = poi_osmid
 
     list_edges_connected_ids = []
     edges_to_add = []
@@ -168,12 +173,37 @@ class Map:
       name="poi",
     )
 
+
+    self.poi.loc[self.poi['osmid'] ==
+           single_poi['osmid'], 'osmid'] = poi_osmid
+
     return edges_to_add
 
 
+  def create_poi_id(self, poi_osmid: int) -> str:
+    '''Create a new OSM id for an added POI to graph.
+    Arguments:
+      poi_osmid: the POI id to be added to graph.
+    Returns:
+      The new OSM id of the POI.
+    '''
+    return POI_PREFIX + str(poi_osmid)
+  
+  def create_projected_poi_id(self, poi_osmid: str, list_projected: Sequence) -> str:
+    '''Create a new OSM id for an added projected POI to graph.
+    Arguments:
+      poi_osmid: the POI id to be added to graph.
+      list_projected: The list of projected points from the POI.
+    Returns:
+      The OSM id of the projected POI.
+    '''
+    assert POI_PREFIX in poi_osmid
+    len_list_projected = len(list_projected)
+    return str(len_list_projected) + poi_osmid 
+
   def add_single_point_edge(self, point: Point,
                 list_edges_connected_ids: List, 
-                poi_osmid: int) -> Optional[Sequence[edge.Edge]]:
+                poi_osmid: str) -> Optional[Sequence[edge.Edge]]:
     '''Connect a POI to the closest edge: (1) claculate the projected point to 
     the nearest edge; (2) add the projected node to the graph; (3) create an 
     edge between the point of the POI and the projcted point (add to the list 
@@ -234,13 +264,14 @@ class Map:
       line_2 = cut_geometry[1]
       dist_2 = util.get_line_length(line_2)
 
-      projected_point_osmid = util.concat_numbers(
-      len(list_edges_connected_ids), poi_osmid)
+
+      projected_point_osmid = self.create_projected_poi_id(
+        poi_osmid, list_edges_connected_ids)
 
     else: # Projected point is exactly on the end of the line (U or V).
       dist_u_p = util.get_distance_between_points(u_point, projected_point)
       dist_v_p = util.get_distance_between_points(v_point, projected_point)
-      if dist_u_p<dist_v_p:
+      if dist_u_p < dist_v_p:
         projected_point_osmid = near_edge_u
       else:
         projected_point_osmid = near_edge_v
@@ -344,12 +375,11 @@ class Map:
 
   def add_poi_to_graph(self):
     '''Add all POI to nx_graph(currently contains only the roads).'''
+    logging.info(f"Number of POI to add to graph: {self.num_poi}")
     edges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
     edges_to_add_list = edges_to_add_list.dropna()
     edges_to_add_list.swifter.apply(
       lambda edges_list: [self.add_two_ways_edges(edge) for edge in edges_list])
-
-    self.poi.set_index('osmid', inplace=True, drop=False)
 
   def get_s2cellids_for_poi(self, geometry: Any) -> Optional[Sequence[int]]:
     '''get cellids for POI. 
@@ -419,7 +449,7 @@ class Map:
     if not os.path.exists(path):
       pd_poi.to_pickle(path)
     else:
-      logging.info("path {0} already exist.".format(path))
+      logging.info(f"path {path} already exist.")
 
     # Write streets.
     pd_streets = copy.deepcopy(self.streets)
@@ -428,7 +458,7 @@ class Map:
     if not os.path.exists(path):
       pd_streets.to_pickle(path)
     else:
-      logging.info("path {0} already exist.".format(path))
+      logging.info(f"path {path} already exist.")
 
     # Write graph.
     base_filename = self.map_name.lower() + "_graph"
@@ -436,21 +466,21 @@ class Map:
     if not os.path.exists(path):
       nx.write_gpickle(self.nx_graph, path)
     else:
-      logging.info("path {0} already exist.".format(path))
+      logging.info(f"path {path} already exist.")
 
     # Write nodes.
     path = self.get_valid_path(dir_name, '_nodes', '.geojson')
     if not os.path.exists(path):
       self.nodes.to_file(path, driver='GeoJSON')
     else:
-      logging.info("path {0} already exist.".format(path))
+      logging.info(f"path {path} already exist.")
 
     # Write edges.
     path = self.get_valid_path(dir_name, '_edges', '.geojson')
     if not os.path.exists(path):
       self.edges.to_file(path, driver='GeoJSON')
     else:
-      logging.info("path {0} already exist.".format(path))
+      logging.info(f"path {path} already exist.")
 
   def load_map(self, dir_name: Text):
     '''Load POI from disk.'''
@@ -466,19 +496,19 @@ class Map:
     # Load graph.
     path = self.get_valid_path(dir_name, '_graph', '.gpickle')
     assert os.path.exists(
-      path), "path {0} doesn't exists".format(path)
+      path), f"path {path} doesn't exists"
     self.nx_graph = nx.read_gpickle(path)
 
     # Load nodes.
     path = self.get_valid_path(dir_name, '_nodes', '.geojson')
     assert os.path.exists(
-      path), "path {0} doesn't exist.".format(path)
+      path), f"path {path} doesn't exist."
     self.nodes = gpd.read_file(path, driver='GeoJSON')
 
     # Load edges.
     path = self.get_valid_path(dir_name, '_edges', '.geojson')
     assert os.path.exists(
-      path), "path {0} doesn't exist.".format(path)
+      path), f"path {path} doesn't exist."
     self.edges = gpd.read_file(path, driver='GeoJSON')
     self.edges['osmid_list'] = self.edges['osmid'].apply(
       lambda x: convert_string_to_list(x))
@@ -486,7 +516,7 @@ class Map:
 def load_poi(path: Text):
     '''Load POI from disk.'''
     assert os.path.exists(
-      path), "Path {0} doesn't exist.".format(path)
+      path), f"Path {path} doesn't exist."
     poi_pandas = pd.read_pickle(path)
     if 'cellids' in poi_pandas:
       poi_pandas['s2cellids'] = poi_pandas['cellids'].apply(
