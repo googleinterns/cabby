@@ -670,7 +670,7 @@ class Walker:
       geo_file = load(path_rvs_path)
     else:
       geo_file = geo_item.GeoPath.empty()
-      
+    
     for entity in entities:
 
       geo_file.start_point = geo_file.start_point.append(
@@ -686,6 +686,8 @@ class Walker:
       geo_file.beyond_pivot = geo_file.beyond_pivot.append(
         entity.beyond_pivot, ignore_index=True)
 
+    if geo_file.start_point.shape[0] == 0:
+      return
     path = os.path.abspath(path_rvs_path)
     geo_file.start_point.to_file(
       path, layer='start', driver=_Geo_DataFrame_Driver)

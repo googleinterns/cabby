@@ -61,9 +61,6 @@ def main(argv):
   walker = walk.Walker(map_region)
   walker.generate_and_save_rvs_routes(FLAGS.path, FLAGS.n_samples, FLAGS.n_cpu)
 
-  # Read and print instruction.
-  walk.print_instructions(FLAGS.path)
-
 
 if __name__ == '__main__':
   app.run(main)
