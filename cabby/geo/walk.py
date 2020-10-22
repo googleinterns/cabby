@@ -713,7 +713,7 @@ def load(path: Text) -> geo_item.GeoPath:
   beyond = gpd.read_file(path, layer='beyond')
   return geo_item.GeoPath.from_file(start, end, route, main, near, beyond)
 
-def load_entities(path: Text): # -> List[item.RVSPath]:
+def load_entities(path: Text) -> List[item.RVSPath]:
   if not os.path.exists(path):
     return []
   
