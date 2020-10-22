@@ -19,7 +19,6 @@ import numpy as np
 import os
 import pandas as pd
 import sys
-from torchtext import data
 import torch
 import transformers
 from transformers import DistilBertTokenizerFast

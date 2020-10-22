@@ -1,0 +1,505 @@
+sentence
+"Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Meet at GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Meet at GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT."
+"Meet at GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Meet at GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Go past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Go. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Walk past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Walk. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Come to GOAL_LOCATION. Head past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Come to GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT."
+"Come to GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Come to GOAL_LOCATION. Head. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Go NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Go past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Go CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Go past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Go past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Walk NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Walk past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Walk CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Walk past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Walk past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Head NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head NUMBER_BLOCKS blocks past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Head past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Head CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head CARDINAL_DIRECTION and past MAIN_PIVOT and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Head past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head past MAIN_PIVOT and continue to the next intersection and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. It will be near NEAR_PIVOT.
+"Head past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head past MAIN_PIVOT and continue to the next block and meet at GOAL_LOCATION. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Go to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Go to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Go to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT."
+"Go to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Go to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Go to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Go to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT."
+"Go to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Go to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Walk to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Walk to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Walk to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Walk to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT."
+"Walk to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Walk to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Walk to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Walk to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT."
+"Walk to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Walk to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Head to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. It will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. It will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION NUMBER_BLOCKS blocks past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION NUMBER_INTERSECTIONS intersections past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. It will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION CARDINAL_DIRECTION and past MAIN_PIVOT. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. It will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION past MAIN_PIVOT and continue to the next intersection. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. It will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+Head to the GOAL_LOCATION past MAIN_PIVOT and continue to the next block. GOAL_LOCATION will be near NEAR_PIVOT.
+"Head to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Head to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. It will be near NEAR_PIVOT."
+"Head to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Head to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away. GOAL_LOCATION will be near NEAR_PIVOT."
+"Head to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Head to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. It will be near NEAR_PIVOT."
+"Head to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT. If you reach BEYOND_PIVOT, you have gone too far."
+"Head to the GOAL_LOCATION. When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away. GOAL_LOCATION will be near NEAR_PIVOT."

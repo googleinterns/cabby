@@ -653,8 +653,6 @@ class Walker:
       for proc in jobs:
           proc.join()
       
-      assert len(return_dict)==len(batch), (len(return_dict),len(batch))
-
       new_entities = [entity for idx_entity, entity in return_dict.items()]
 
       entities = load_entities(path_rvs_path)
