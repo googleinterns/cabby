@@ -18,7 +18,6 @@ py_library(
     deps = [
         "//cabby/geo:util",
         '//cabby/geo:regions',
-
     ]
 )
 

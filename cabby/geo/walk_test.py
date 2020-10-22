@@ -14,16 +14,18 @@
 '''Tests for walk.py'''
 
 
-from cabby.geo.map_processing import map_structure
-from cabby.geo import util
-from cabby.geo import walk
+import sys
+
 import networkx as nx
 import osmnx as ox
-import unittest
 from shapely.geometry.point import Point
-import sys
 from shapely.geometry import box
+import unittest
 
+from cabby.geo.map_processing import map_structure
+from cabby.geo import regions
+from cabby.geo import walk
+from cabby.geo import util
 
 class WalkTest(unittest.TestCase):
 
@@ -31,7 +33,7 @@ class WalkTest(unittest.TestCase):
   def setUpClass(cls):
 
     # Load map from disk.
-    cls.map = map_structure.Map("DC", 18)
+    cls.map = map_structure.Map(regions.get_region('DC'), 18)
     cls.walker = walk.Walker(rand_sample = False)
 
 

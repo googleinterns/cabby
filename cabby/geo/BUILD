@@ -34,12 +34,9 @@ py_test(
         ":walk",
         "//cabby/geo/map_processing:map_structure",
         '//cabby/geo:regions'
-
     ],
 		
 )
-
-
 
 py_library(
     name = 'directions',
@@ -49,12 +46,8 @@ py_library(
         ':util',
         "//cabby:logger",
         "//cabby/geo/map_processing:map_structure",
-
         ],
 )
-
-
-
 
 py_binary(
     name = 'geo_computation',
@@ -65,10 +58,8 @@ py_binary(
         ':util',
         '//cabby/rvs:item',
         "//cabby:logger"
-        ],
-    
+        ],   
 )
-
 
 py_binary(
     name = 'sample_poi',

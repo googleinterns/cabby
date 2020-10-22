@@ -46,7 +46,7 @@ def main(argv):
   logging.info(
     "Starting to build map of {} at level {}.".format(FLAGS.region, FLAGS.min_s2_level))
 
-  map = map_structure.Map(FLAGS.region, FLAGS.min_s2_level)
+  map = map_structure.Map(regions.get_region(FLAGS.region), FLAGS.min_s2_level)
   logging.info(
     "Created map of {} at level {}.".format(FLAGS.region, FLAGS.min_s2_level))
   
@@ -56,8 +56,9 @@ def main(argv):
     logging.info("Map written to => {}".format(FLAGS.directory))
 
     # Load from disk.
+    
     map_new = map_structure.Map(
-      FLAGS.region, FLAGS.min_s2_level, FLAGS.directory)
+      regions.get_region(FLAGS.region), FLAGS.min_s2_level, FLAGS.directory)
 
     logging.info('Number of POI found: {0}'.format(map_new.poi.shape[0]))
 
