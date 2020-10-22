@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Tests for wikidata.py'''
+'''Tests for extract.py'''
 
 import unittest
 
@@ -37,9 +37,6 @@ class GeoSetTest(unittest.TestCase):
   def testQueryWithOSM(self):
     samples = extract.get_data_by_region_with_osm(
         regions.get_region('Pittsburgh_small'))
-    for s in samples:
-      print(s)
-      print()
     self.assertEqual(samples[0].sample_type, 'Wikipedia_page')
 
     wikidata_sample = samples[4]
