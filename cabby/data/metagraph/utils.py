@@ -22,7 +22,7 @@ from typing import Dict, Tuple, Sequence, Text, Any
 from cabby.geo.map_processing.map_structure import Map
 import cabby.geo.util as util
 from cabby.data.wikidata import query
-from cabby.geo.regions import Region
+from cabby.geo.regions import Region, get_region
 
 def convert_pandas_df_to_metagraph(
   df:Any, source_column: Text, target_column: Text,
@@ -112,7 +112,7 @@ def add_conceptual_nodes_and_edges(graph: nx.MultiDiGraph,
     graph.add_edge(row["instanceLabel"], place_node_id)
     graph.add_edge(place_node_id, row["instanceLabel"])
 
-def construct_metagraph(region: Text,
+def construct_metagraph(region: Region,
                         s2_level: int,
                         base_osm_map_filepath: Text):
   wd_relations = query.get_geofenced_wikidata_relations(region,
