@@ -7,6 +7,7 @@ py_library(
     srcs = ['walk.py'],
     deps = [
         ':util',
+        'geo_item',
         '//cabby/rvs:item',
         '//cabby/geo/map_processing:map_structure',
         '//cabby/geo:regions'
@@ -14,6 +15,13 @@ py_library(
     ],
 
 )
+
+
+py_library(
+    name = 'geo_item',
+    srcs = ['geo_item.py'],
+)
+
 
 py_library(
     name = 'util',
@@ -32,6 +40,7 @@ py_test(
     deps = [
         '//cabby/rvs:item',
         ":walk",
+        ':geo_item',
         "//cabby/geo/map_processing:map_structure",
         '//cabby/geo:regions'
 
@@ -47,6 +56,7 @@ py_library(
     deps = [
         ':walk',
         ':util',
+        ':geo_item',
         "//cabby:logger",
         "//cabby/geo/map_processing:map_structure",
 

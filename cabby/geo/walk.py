@@ -39,6 +39,7 @@ import sys
 
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
+from cabby.geo import geo_item
 from cabby.rvs import item
 
 
@@ -645,93 +646,90 @@ class Walker:
       for i in batch:
           p = multiprocessing.Process(
             target=self.get_single_sample, 
-            args=(i, sema ,n_samples, 
+            args=(i+1, sema ,n_samples, 
             return_dict))
           jobs.append(p)
           p.start()
       
       for proc in jobs:
           proc.join()
-      
       new_entities = [entity for idx_entity, entity in return_dict.items()]
 
-      entities = load_entities(path_rvs_path)
-
-      all_entities = new_entities+entities
-      self.save_entities(all_entities, path_rvs_path)
+      self.save_entities(new_entities, path_rvs_path)
     
-    logging.info(f"Saved {len(all_entities)} to  ==> {path_rvs_path}")
-
-
   def save_entities(
     self, entities: Sequence[item.RVSPath], path_rvs_path: Text
   ):
-    gdf_start_list = gpd.GeoDataFrame(
-      columns=['osmid', 'geometry', 'main_tag'])
-    gdf_end_list = gpd.GeoDataFrame(
-      columns=['osmid', 'geometry', 'main_tag'])
-    gdf_route_list = gpd.GeoDataFrame(
-      columns=['instructions', 'geometry', 
-      'cardinal_direction', 'intersections'])
-    gdf_main_list = gpd.GeoDataFrame(
-      columns=['osmid', 'geometry', 'main_tag'])
-    gdf_near_list = gpd.GeoDataFrame(
-      columns=['osmid', 'geometry', 'main_tag'])
-    gdf_beyond_list = gpd.GeoDataFrame(
-      columns=['osmid', 'geometry', 'main_tag'])
+    '''Save entities to path. If the path already exists append.
+    Arguments:
+      entities: RVSPath entities to add to path
+      path_rvs_path: the path to add the entities too.
+    '''
+
+    if os.path.exists(path_rvs_path):
+      geo_file = load(path_rvs_path)
+    else:
+      geo_file = geo_item.GeoPath.empty()
       
     for entity in entities:
 
-      gdf_start_list = gdf_start_list.append(entity.start_point,
-                          ignore_index=True)
-      gdf_end_list = gdf_end_list.append(entity.end_point, ignore_index=True)
-
-      gdf_route_list = gdf_route_list.append(entity.path_features,
-                          ignore_index=True)
-      gdf_main_list = gdf_main_list.append(entity.main_pivot,
-                        ignore_index=True)
-      gdf_near_list = gdf_near_list.append(entity.near_pivot,
-                        ignore_index=True)
-      gdf_beyond_list = gdf_beyond_list.append(entity.beyond_pivot,
-                          ignore_index=True)
-
-    if gdf_start_list.shape[0] == 0:
-      return None
+      geo_file.start_point = geo_file.start_point.append(
+        entity.start_point, ignore_index=True)
+      geo_file.end_point = geo_file.end_point.append(
+        entity.end_point, ignore_index=True)
+      geo_file.path_features = geo_file.path_features.append(
+        entity.path_features, ignore_index=True)
+      geo_file.main_pivot = geo_file.main_pivot.append(
+        entity.main_pivot, ignore_index=True)
+      geo_file.near_pivot = geo_file.near_pivot.append(
+        entity.near_pivot, ignore_index=True)
+      geo_file.beyond_pivot = geo_file.beyond_pivot.append(
+        entity.beyond_pivot, ignore_index=True)
 
     path = os.path.abspath(path_rvs_path)
-    gdf_start_list.to_file(path, layer='start', driver=_Geo_DataFrame_Driver)
-    gdf_end_list.to_file(path, layer='end', driver=_Geo_DataFrame_Driver)
-    gdf_route_list.to_file(path, layer='route', driver=_Geo_DataFrame_Driver)
-    gdf_main_list.to_file(path, layer='main', driver=_Geo_DataFrame_Driver)
-    gdf_near_list.to_file(path, layer='near', driver=_Geo_DataFrame_Driver)
-    gdf_beyond_list.to_file(path, layer='beyond', driver=_Geo_DataFrame_Driver)
-  
-    logging.info(f"Saved entities to => {path}")
+    geo_file.start_point.to_file(
+      path, layer='start', driver=_Geo_DataFrame_Driver)
+    geo_file.end_point.to_file(path, layer='end', driver=_Geo_DataFrame_Driver)
+    geo_file.path_features.to_file(
+      path, layer='route', driver=_Geo_DataFrame_Driver)
+    geo_file.main_pivot.to_file(
+      path, layer='main', driver=_Geo_DataFrame_Driver)
+    geo_file.near_pivot.to_file(
+      path, layer='near', driver=_Geo_DataFrame_Driver)
+    geo_file.beyond_pivot.to_file(
+      path, layer='beyond', driver=_Geo_DataFrame_Driver)
+
+    geo_file.size = geo_file.beyond_pivot.shape[0]
+
+    logging.info(f"Saved {geo_file.size} entities to => {path}")
 
 
-
-
-def load_entities(path: Text) -> List[item.RVSPath]:
-  if not os.path.exists(path):
-    return []
+def load(path: Text) -> geo_item.GeoPath:
   start = gpd.read_file(path, layer='start')
   end = gpd.read_file(path, layer='end')
   route = gpd.read_file(path, layer='route')
   main = gpd.read_file(path, layer='main')
   near = gpd.read_file(path, layer='near')
   beyond = gpd.read_file(path, layer='beyond')
+  return geo_item.GeoPath.from_file(start, end, route, main, near, beyond)
+
+def load_entities(path: Text): # -> List[item.RVSPath]:
+  if not os.path.exists(path):
+    return []
+  
+  geo_file = load(path)
 
   entities = []
-  for index in range(beyond.shape[0]):
+  for index in range(geo_file.beyond_pivot.shape[0]):
     entity = item.RVSPath.from_file(
-      start=start.iloc[index],
-      end=end.iloc[index],
-      route=route.iloc[index].geometry,
-      main_pivot=main.iloc[index],
-      near_pivot=near.iloc[index],
-      beyond_pivot=beyond.iloc[index],
-      cardinal_direction=route.iloc[index].cardinal_direction,
-      intersections=route.iloc[index].intersections
+      start=geo_file.start_point.iloc[index],
+      end=geo_file.end_point.iloc[index],
+      route=geo_file.path_features.iloc[index].geometry,
+      main_pivot=geo_file.main_pivot.iloc[index],
+      near_pivot=geo_file.near_pivot.iloc[index],
+      beyond_pivot=geo_file.beyond_pivot.iloc[index],
+      cardinal_direction=geo_file.path_features.iloc[index].cardinal_direction,
+      intersections=geo_file.path_features.iloc[index].intersections
     )
     entities.append(entity)
 
@@ -742,6 +740,6 @@ def load_entities(path: Text) -> List[item.RVSPath]:
 def print_instructions(path: Text):
   '''Read a geodata file and print instruction.'''
   if not os.path.exists(path):
-    sys.exit("The path to the RVS data was not found.")
+    sys.exit(f"The path to the RVS data was not found {path}.")
   route = gpd.read_file(path, layer='route')
   logging.info('\n'.join(route['instructions'].values))
