@@ -22,6 +22,7 @@ from typing import Dict, Tuple, Sequence, Text, Any
 from cabby.geo.map_processing.map_structure import Map
 import cabby.geo.util as util
 from cabby.data.wikidata import query
+from cabby.geo.regions import Region
 
 def convert_pandas_df_to_metagraph(
   df:Any, source_column: Text, target_column: Text,

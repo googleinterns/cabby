@@ -57,8 +57,8 @@ class Walker:
 
 
   def compute_route_from_nodes(self,
-                               origin_id: int, 
-                               goal_id: int, 
+                               origin_id: str, 
+                               goal_id: str, 
                                graph: nx.MultiDiGraph,
                                nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''Returns the shortest path between a starting and end point.
