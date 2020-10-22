@@ -42,7 +42,7 @@ CELLID_DIM = 64
 
 class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
-    cells: int, cellid_to_label: Dict[int, int]):
+    unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int]):
     # Tokenize instructions.
     self.encodings = tokenizer(
       data.text.tolist(), truncation=True,
@@ -62,13 +62,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.neighbor_cellid(x))
 
-    far_cellids = data.point.swifter.apply(
-      lambda x: gutil.far_cellid(x, cells))
-
-    if far_cellids is None:
-      sys.exit("Far cellid was not found.")
-    data['far_cells'] = far_cellids
-
+    data['far_cells'] = data.cellid.apply(
+      lambda cellid: unique_cells_df[unique_cells_df['cellid']==cellid].far.iloc[0])
 
     cellids_array = np.array(data.cellid.tolist())
     neighbor_cells_array = np.array(data.neighbor_cells.tolist())
@@ -118,32 +113,34 @@ def create_dataset(data_dir: Text, region: Text, s2level: int
   Returns:
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
-  logging.info("Starting to process datasets")
   train_ds = pd.read_json(os.path.join(data_dir, 'train.json'))
-  logging.info(
-    f"Finished processing train dataset with {len(train_ds)} samples")
   valid_ds = pd.read_json(os.path.join(data_dir, 'dev.json'))
-  logging.info(
-    f"Finished processing validation dataset with {len(valid_ds)} samples")
   test_ds = pd.read_json(os.path.join(data_dir, 'test.json'))
-  logging.info(
-    f"Finished processing test dataset with {len(test_ds)} samples")
   # Get labels.
   get_region = regions.get_region(region)
-  unique_cellid = gutil.cellids_from_polygon(get_region, s2level)
+  unique_cellid = gutil.cellids_from_polygon(get_region.polygon, s2level)
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
   points = gutil.get_centers_from_s2cellids(unique_cellid)
-  cells = pd.DataFrame({'point': points, 'cellid': unique_cellid})
-  vec_cells = util.binary_representation(cells.cellid.to_numpy(), 
+
+  unique_cells_df = pd.DataFrame({'point': points, 'cellid': unique_cellid})
+  
+  unique_cells_df['far'] = unique_cells_df.point.apply(
+      lambda x: gutil.far_cellid(x, unique_cells_df))
+
+  vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
   dim = CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
   # Create Cabby dataset.
-  train_dataset = TextGeoSplit(train_ds, s2level, cells, cellid_to_label)
-  val_dataset = TextGeoSplit(valid_ds, s2level, cells, cellid_to_label)
-  test_dataset = TextGeoSplit(test_ds, s2level, cells, cellid_to_label)
+  logging.info("Starting to create the splits")
+  train_dataset = TextGeoSplit(train_ds, s2level, unique_cells_df, cellid_to_label)
+  logging.info(f"Finished to create the train-set with {len(train_dataset)} samples")
+  val_dataset = TextGeoSplit(valid_ds, s2level, unique_cells_df, cellid_to_label)
+  logging.info(f"Finished to create the valid-set with {len(val_dataset)} samples")
+  test_dataset = TextGeoSplit(test_ds, s2level, unique_cells_df, cellid_to_label)
+  logging.info(f"Finished to create the test-set with {len(test_dataset)} samples")
 
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
     train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
