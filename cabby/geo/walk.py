@@ -45,14 +45,15 @@ from cabby.rvs import item
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 4
-MAX_BATCH_GEN = 1000
+SAVE_ENTITIES_EVERY = 1000
+MAX_BATCH_GEN = 10
 MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
 _Geo_DataFrame_Driver = "GPKG"
 # The max number of failed tries to generate a single path entities.
-MAX_NUM_GEN_FAILED = 10 
+MAX_NUM_GEN_FAILED = 10
 
 
 
@@ -635,7 +636,7 @@ class Walker:
     manager = multiprocessing.Manager()
     
     sema = Semaphore(n_cpu)
-
+    new_entities = [] 
     
     lst = list(range(n_samples))
     batches = [
@@ -653,9 +654,14 @@ class Walker:
       
       for proc in jobs:
           proc.join()
-      new_entities = [entity for idx_entity, entity in return_dict.items()]
+      new_entities += [entity for idx_entity, entity in return_dict.items()]
 
+      if len(new_entities)%SAVE_ENTITIES_EVERY == 0:
+        self.save_entities(new_entities, path_rvs_path)
+        new_entities = []
+    if len(new_entities)>0:
       self.save_entities(new_entities, path_rvs_path)
+
     
   def save_entities(
     self, entities: Sequence[item.RVSPath], path_rvs_path: Text

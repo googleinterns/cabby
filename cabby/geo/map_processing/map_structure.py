@@ -68,7 +68,7 @@ class Map:
       logging.info("Loading map from directory.")
       self.load_map(load_directory)
 
-    logging.info("Create S2Graph.")
+    logging.info("Calculate S2Cell covering.")
     self.calc_s2cells(level)
 
     self.process_param()
