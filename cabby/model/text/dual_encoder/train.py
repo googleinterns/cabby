@@ -232,7 +232,6 @@ class Trainer:
 
     self.save_cell_embed()
 
-
   def save_cell_embed(self):
     if isinstance(self.model, nn.DataParallel):
       cell_embed = self.model.module.cellid_main(self.cells_tensor)
