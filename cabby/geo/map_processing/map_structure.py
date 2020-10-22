@@ -67,6 +67,7 @@ class Map:
     else:
       logging.info("Loading map from directory.")
       self.load_map(load_directory)
+      self.num_poi = self.poi.shape[0]
 
     logging.info("Create S2Graph.")
     self.create_S2Graph(level)
