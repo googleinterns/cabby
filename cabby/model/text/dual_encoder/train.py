@@ -219,7 +219,11 @@ class Trainer:
     error_distances = evaluator.get_error_distances(self.metrics_path)
     _,mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
 
-    logging.info(f"Test Accuracy: {accuracy},\n  Mean distance: {mean_distance}, \n Median distance: {median_distance}, \n Max error: {max_error}, \n Norm AUC: {norm_auc}")
+    logging.info(f"Test Accuracy: {accuracy},\
+          Mean distance: {mean_distance}, \
+          Median distance: {median_distance}, \
+          Max error: {max_error}, \
+          Norm AUC: {norm_auc}")
 
     util.save_metrics_last_only(
           self.metrics_path, 
