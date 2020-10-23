@@ -104,7 +104,7 @@ def update_osm_map(osm_map: Map,
     osm_map.nx_graph.number_of_nodes()))
 
 
-def add_conceptual_nodes_and_edges(graph: nx.MultiDiGraph,
+def add_conceptual_nodes_and_edges(graph: nx.Graph,
                                    poi_map: Dict[Text, int],
                                    wd_relations: pd.DataFrame):
   for _, row in wd_relations.iterrows():
@@ -112,11 +112,48 @@ def add_conceptual_nodes_and_edges(graph: nx.MultiDiGraph,
     graph.add_edge(row["instanceLabel"], place_node_id)
     graph.add_edge(place_node_id, row["instanceLabel"])
 
+def construct_human_readable_name(poi_row: pd.Series) -> Text:
+    name = ""
+    if isinstance(poi_row["name"], str):
+        name = poi_row["name"]
+    elif isinstance(poi_row["wikipedia"], str):
+        name = poi_row["wikipedia"][3:]
+    elif isinstance(poi_row["brand"], str):
+        name = poi_row["brand"]
+    elif isinstance(poi_row["shop"], str):
+        name = poi_row["shop"]
+    elif isinstance(poi_row["tourism"], str):
+        name = poi_row["tourism"]
+    elif isinstance(poi_row["amenity"], str):
+        name = poi_row["amenity"]
+    return "%s_%s" % (name, poi_row["osmid"])
+
+def convert_multidi_to_weighted_undir_graph(
+  in_graph: nx.MultiDiGraph) -> nx.Graph:
+  out_graph = nx.Graph()
+  for u, v in in_graph.edges():
+      if out_graph.has_edge(u,v):
+          out_graph[u][v]['weight'] += 1.0
+      else:
+          out_graph.add_edge(u, v, weight=1.0)
+  return out_graph
+
 def construct_metagraph(region: Region,
                         s2_level: int,
-                        base_osm_map_filepath: Text):
+                        base_osm_map_filepath: Text) -> nx.Graph:
+  # Get relation data and add to existing graph.
   wd_relations = query.get_geofenced_wikidata_relations(region,
                                                         extract_qids=True)
   osm_map = Map(region, s2_level, base_osm_map_filepath)
   update_osm_map(osm_map, wd_relations)
-  return osm_map, wd_relations
+
+  # Construct initial metagraph and human-readable node names.
+  metagraph = convert_multidi_to_weighted_undir_graph(osm_map.nx_graph)
+  osmid_to_name = {}
+  for _, row in osm_map.poi.iterrows():
+    name = construct_human_readable_name(row)
+    osmid_to_name = {row["osmid"]: name}
+  nx.relabel.relabel_nodes(metagraph, osmid_to_name, copy=False)
+  name_to_osmid = {osmid: name for name, osmid in osmid_to_name.items()}
+  nx.set_node_attributes(metagraph, name_to_osmid, name="osmid")
+  return metagraph
