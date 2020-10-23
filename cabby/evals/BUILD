@@ -23,6 +23,6 @@ py_binary(
     deps = [
         ":utils",
         "//cabby:logger",
-        "//cabby/model/text/s2cellid_prediction:train",
+        "//cabby/model/text:util",
     ],
 )
