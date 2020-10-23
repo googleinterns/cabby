@@ -60,10 +60,6 @@ class MapTest(unittest.TestCase):
     for expected, found in zip(expected_ids, found_ids):
       self.assertEqual(expected, found)
 
-    # Check that the POI was added correctly to the graph.
-    cell_to_search = list_cells[0]
-    node = self.map.s2_graph.search(cell_to_search)
-    self.assertTrue(hasattr(node, 'poi') and '#2975908873' in node.poi)
     
 
   

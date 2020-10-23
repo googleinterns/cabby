@@ -590,3 +590,4 @@ def point_str_to_shapely_point(point_str: Text) -> Point:
   coords = point_str.split(" ")
   x, y = float(coords[0]), float(coords[1])
   return Point(x,y)
+

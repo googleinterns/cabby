@@ -19,7 +19,7 @@ import numpy as np
 import os
 import pandas as pd
 import sys
-import swifter
+
 import torch
 import transformers
 from transformers import DistilBertTokenizerFast

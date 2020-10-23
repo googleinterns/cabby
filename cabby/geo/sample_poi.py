@@ -24,6 +24,7 @@ from absl import app
 from absl import flags
 
 from geopandas import GeoDataFrame
+import multiprocessing 
 import osmnx as ox
 from shapely.geometry.point import Point
 
@@ -41,6 +42,7 @@ flags.DEFINE_string("directory", None,
 flags.DEFINE_string("path", None,
           "The path where the files will be saved to.")
 flags.DEFINE_integer("n_samples", None, "Number of samples to generate.")
+flags.DEFINE_integer("n_cpu", multiprocessing.cpu_count()-1, "Number of CPUs to use.")
 
 
 # Required flags.
@@ -56,11 +58,8 @@ def main(argv):
     regions.get_region(FLAGS.region), FLAGS.min_s2_level, FLAGS.directory)
 
   # Create a file with multiple layers of data.
-  walker = walk.Walker()
-  walker.generate_and_save_rvs_routes(FLAGS.path, map_region, FLAGS.n_samples)
-
-  # Read and print instruction.
-  walk.print_instructions(FLAGS.path)
+  walker = walk.Walker(map_region)
+  walker.generate_and_save_rvs_routes(FLAGS.path, FLAGS.n_samples, FLAGS.n_cpu)
 
 
 if __name__ == '__main__':
