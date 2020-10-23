@@ -213,6 +213,11 @@ class Trainer:
     test_loss, predictions, true_vals, true_points, pred_points = self.evaluate(
       validation_set = False)
 
+    util.save_metrics_last_only(
+          self.metrics_path, 
+          true_points, 
+          pred_points)
+
     accuracy = accuracy_score(true_vals, predictions)
 
     evaluator = eu.Evaluator()
@@ -224,11 +229,6 @@ class Trainer:
           Median distance: {median_distance}, \
           Max error: {max_error}, \
           Norm AUC: {norm_auc}")
-
-    util.save_metrics_last_only(
-          self.metrics_path, 
-          true_points, 
-          pred_points)
 
     self.save_cell_embed()
 
