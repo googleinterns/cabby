@@ -74,7 +74,7 @@ def get_wikipedia_items(titles: Sequence[Text]) -> Sequence:
     The Wikipedia items found.
   '''
 
-  with multiprocessing.Pool(processes=4) as pool:
+  with multiprocessing.Pool(processes=10) as pool:
     entities = pool.map(get_wikipedia_item, titles)
   return entities
 
@@ -227,7 +227,7 @@ def get_backlinks_items_from_wikipedia_titles(titles: Sequence[Text]) -> Sequenc
     The backlinks pages.
   '''
 
-  with multiprocessing.Pool(processes=4) as pool:
+  with multiprocessing.Pool(processes=8) as pool:
     backlinks_pages = pool.map(get_backlinks_items_from_wikipedia_title,
                    titles)
 

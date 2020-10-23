@@ -63,7 +63,7 @@ class WikigeoEntity:
       wikipedia.title,
       wikidata_ref.qid,
       wikipedia_ref.pageid,
-      wikipedia_ref.title,
+      str(wikipedia_ref.title),
       wikidata_ref.location,
       wikidata_ref.instance,
       wikipedia_type)
@@ -77,7 +77,7 @@ class WikigeoEntity:
       result.title,
       result.qid,
       -1,
-      result.title,
+      str(result.title),
       result.location,
       result.instance,
       "Wikidata")
@@ -91,7 +91,7 @@ class WikigeoEntity:
       result.name,
       str(result.qid),
       result.osmid,
-      result.name,
+      str(result.name),
       result.point,
       "",
       "OSM")
