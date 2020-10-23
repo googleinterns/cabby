@@ -12,16 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''Tests for wikidata.py'''
+'''Tests for extract.py'''
 
-
-
-from cabby.data import extract
 import unittest
 
+from cabby.data import extract
+from cabby.geo import regions
 
 class GeoSetTest(unittest.TestCase):
-
 
   def testQueryItems(self):
     # Test plain Wikipedia query for items
@@ -37,16 +35,22 @@ class GeoSetTest(unittest.TestCase):
     self.assertEqual(two_pnc_plazza.ref_instance, 'skyscraper')
   
   def testQueryWithOSM(self):
-    samples = extract.get_data_by_region_with_osm("Pittsburgh_small")
+    samples = extract.get_data_by_region_with_osm(
+        regions.get_region('Pittsburgh_small'))
     self.assertEqual(samples[0].sample_type, 'Wikipedia_page')
-    osm_sample = samples[6]
-    self.assertEqual(osm_sample.sample_type, 'OSM')
-    text_osm = 'Figleaf and building and East Carson Street.'
-    self.assertEqual(osm_sample.text, text_osm)
+
     wikidata_sample = samples[4]
     self.assertEqual(wikidata_sample.sample_type, 'Wikidata')
-    text_wikidata = 'Birmingham Public School and building in Pennsylvania, United States and Renaissance Revival architecture and  and building.'
-    self.assertEqual(wikidata_sample.text, text_wikidata)
+    self.assertEqual(
+        wikidata_sample.text,
+        ('Renaissance Revival architecture, building, building in '
+         'Pennsylvania, United States, Birmingham Public School.')
+    )
+
+    osm_sample = samples[6]
+    self.assertEqual(osm_sample.sample_type, 'OSM')
+    self.assertEqual(
+      osm_sample.text, 'Figleaf and building and East Carson Street.')
 
 
 if __name__ == "__main__":

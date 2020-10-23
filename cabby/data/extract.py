@@ -28,6 +28,7 @@ from cabby.data.wikidata import info_item as wdqi
 from cabby.data import osm_item
 from cabby.data import wikigeo
 from cabby.geo.map_processing import map_structure
+from cabby.geo.regions import Region
 
 def get_wikigeo_data(
     wikidata_items: Sequence[wdi.WikidataEntity]
@@ -102,10 +103,10 @@ def get_data_by_qid(qid: str) -> Sequence[wikigeo.WikigeoEntity]:
   return get_wikigeo_data(wikidata_items)
 
 
-def get_data_by_region(region: str) -> Sequence[wikigeo.WikigeoEntity]:
+def get_data_by_region(region: Region) -> Sequence[wikigeo.WikigeoEntity]:
   '''Get data from Wikipedia and Wikidata by region.
   Arguments:
-    region(str): The region to extract items from.
+    region(Region): The region to extract items from.
   Returns:
     The Wikipedia (text,title) and Wikidata (location) data found.
   '''
@@ -119,12 +120,12 @@ def get_data_by_region(region: str) -> Sequence[wikigeo.WikigeoEntity]:
 
 
 def get_data_by_region_with_osm(
-    region: str, path_osm: str = None) -> List[wikigeo.WikigeoEntity]:
+    region: Region, path_osm: str = None) -> List[wikigeo.WikigeoEntity]:
   '''Get three types of samples by region: (1) samples from Wikipedia(text,
   title) and Wikidata(location); (2) Concatenation of Wikidata tags; (3) 
   Concatenation of OSM tags. 
   Arguments:
-    region(str): The region to extract items from.
+    region(Region): The region to extract items from.
   Returns:
     The Wikipedia(text,title) and Wikidata(location) data found.
   '''

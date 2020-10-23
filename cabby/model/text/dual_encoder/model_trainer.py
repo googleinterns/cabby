@@ -74,6 +74,7 @@ flags.DEFINE_integer(
   'num_epochs', default=5,
   help=('Number of training epochs.'))
 
+
 # Required flags.
 flags.mark_flag_as_required("data_dir")
 flags.mark_flag_as_required("dataset_dir")
@@ -89,6 +90,7 @@ def main(argv):
   dataset_path = os.path.join(FLAGS.dataset_dir, str(FLAGS.s2_level))
   train_path_dataset = os.path.join(dataset_path,'train.pth')
   valid_path_dataset = os.path.join(dataset_path,'valid.pth')
+  test_path_dataset = os.path.join(dataset_path,'test.pth')
   unique_cellid_path = os.path.join(dataset_path,"unique_cellid.npy")
   tensor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
   label_to_cellid_path = os.path.join(dataset_path,"label_to_cellid.npy")
@@ -98,6 +100,7 @@ def main(argv):
       dataset_path = dataset_path, 
       train_path_dataset = train_path_dataset, 
       valid_path_dataset = valid_path_dataset, 
+      test_path_dataset = test_path_dataset, 
       label_to_cellid_path = label_to_cellid_path, 
       unique_cellid_path = unique_cellid_path, 
       tensor_cellid_path = tensor_cellid_path)
@@ -112,6 +115,7 @@ def main(argv):
       dataset_path = dataset_path, 
       train_path_dataset = train_path_dataset, 
       valid_path_dataset = valid_path_dataset, 
+      test_path_dataset = test_path_dataset, 
       label_to_cellid_path = label_to_cellid_path, 
       unique_cellid_path = unique_cellid_path, 
       tensor_cellid_path = tensor_cellid_path)
@@ -123,6 +127,8 @@ def main(argv):
     datast_text.train, batch_size=FLAGS.train_batch_size, shuffle=True)
   valid_loader = DataLoader(
     datast_text.valid, batch_size=FLAGS.test_batch_size, shuffle=False)
+  test_loader = DataLoader(
+    datast_text.test, batch_size=FLAGS.test_batch_size, shuffle=False)
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -145,6 +151,7 @@ def main(argv):
     optimizer=optimizer,
     train_loader=train_loader,
     valid_loader=valid_loader,
+    test_loader=test_loader,
     unique_cells = datast_text.unique_cellids,
     file_path=FLAGS.output_dir, 
     cells_tensor = datast_text.unique_cellids_binary,

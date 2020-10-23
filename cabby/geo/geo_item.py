@@ -61,7 +61,7 @@ class GeoPath:
 
   @classmethod
   def empty(cls):
-    """Construct an Entity from the start and end points, route, and pivots.
+    """Construct an empty Entity.
     """
     return GeoPath(
       gpd.GeoDataFrame(columns=['osmid', 'geometry', 'main_tag']),

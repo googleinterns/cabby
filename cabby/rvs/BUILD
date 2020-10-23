@@ -20,7 +20,7 @@ py_test(
         ":observe",
         "//cabby/data/wikidata:item",
         "//cabby/data/wikidata:query",
-        '//cabby/geo:directions',
+        '//cabby/geo:regions',
     ],
 )
 

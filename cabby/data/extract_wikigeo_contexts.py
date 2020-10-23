@@ -53,10 +53,11 @@ def main(argv):
   # Extract items.
   if FLAGS.osm_path is not None:
     output_prefix = FLAGS.region.lower() + '_osm'
-    results = extract.get_data_by_region_with_osm(FLAGS.region, FLAGS.osm_path)
+    results = extract.get_data_by_region_with_osm(
+      regions.get_region(FLAGS.region), FLAGS.osm_path)
   else:
     output_prefix = FLAGS.region.lower()
-    results = extract.get_data_by_region(FLAGS.region)
+    results = extract.get_data_by_region(regions.get_region(FLAGS.region))
   logging.info(f'Found {len(results)} items.')
   
   # Split data into train, dev, and test sets.

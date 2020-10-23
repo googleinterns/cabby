@@ -41,7 +41,8 @@ class RVSPath:
   `from_file` should the entity be processed from file.
   `instructions` is a basic template that includes the points, pivots and route 
   features.
-  `path_features` is a path features: cardinal directions, intersections, instructions and route geometry.
+  `path_features` is a path features: cardinal directions, intersections, 
+  instructions and route geometry.
   """
   start_point: GeoSeries = attr.ib()
   end_point: GeoSeries = attr.ib()
@@ -59,7 +60,7 @@ class RVSPath:
 
     if "main_tag" in self.beyond_pivot:
       avoid_instruction = (
-        f"If you reached {self.beyond_pivot['main_tag']}, you have gone too far.")
+        f"If you reach {self.beyond_pivot['main_tag']}, you have gone too far.")
     else:
       avoid_instruction = ""
       self.beyond_pivot['main_tag'] = ""

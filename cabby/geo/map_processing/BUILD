@@ -20,11 +20,9 @@ py_library(
         ':edge',
         '//cabby/geo:util',
         '//cabby:logger',
-         '//cabby/geo:regions'
-
+        '//cabby/geo:regions'
     ]
 )
-
 
 py_test(
     name = 'map_test',
@@ -37,11 +35,8 @@ py_test(
         "//cabby/geo:util",
         "//cabby:logger",
         '//cabby/geo:regions'
-
-
     ],
 )        
-
 
 py_binary(
     name = 'map_processor',
@@ -53,5 +48,5 @@ py_binary(
         ':edge',
         '//cabby:logger',
         '//cabby/geo:regions'
-        ],
+    ],
 )
