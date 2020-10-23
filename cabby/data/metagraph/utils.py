@@ -55,6 +55,12 @@ def convert_pandas_df_to_metagraph(
       nx.set_node_attributes(g, attribute_dict, metadata_name)
   return g
 
+def get_osmid_from_wd_relations_row(row: pd.Series):
+  osmid = hash(''.join(list(row.values)))
+  if osmid < 0:
+    osmid *= -1
+  return osmid
+
 def update_osm_map(osm_map: Map,
                    wd_relations: pd.DataFrame):
   """Adds new POIs found in wikidata_relations to osm_map.
@@ -81,15 +87,14 @@ def update_osm_map(osm_map: Map,
       if row.place not in missing_qids or row.place in already_added:
           continue
       already_added.add(row.place)
-      osmid = hash(''.join(list(row.values)))
-      if osmid < 0:
-        osmid *= -1
+      osmid = get_osmid_from_wd_relations_row(row)
       wd_query = query.get_place_location_points_from_qid(
         row.place, location_only=True)
       new_df = pd.DataFrame(data={
-          'name': row.placeLabel,
+          'name': row["placeLabel"],
           'geometry': [util.point_str_to_shapely_point(wd_query[0]['point']['value'])],
-          'osmid': [osmid]
+          'osmid': [osmid],
+          'wikidata': row["place"]
       }, index=[osmid])
       new_df.index.rename('osmid', inplace=True)
       osm_map.poi = osm_map.poi.append(new_df)
@@ -150,10 +155,31 @@ def construct_metagraph(region: Region,
   # Construct initial metagraph and human-readable node names.
   metagraph = convert_multidi_to_weighted_undir_graph(osm_map.nx_graph)
   osmid_to_name = {}
+  name_to_point = {}
+  name_to_wikidata = {}
   for _, row in osm_map.poi.iterrows():
     name = construct_human_readable_name(row)
+    assert isinstance(name, str)
     osmid_to_name = {row["osmid"]: name}
-  nx.relabel.relabel_nodes(metagraph, osmid_to_name, copy=False)
+    name_to_point = {name: row["geometry"]}
+    if isinstance(row["wikidata"], str):
+      name_to_wikidata[name] = row["wikidata"]
+  nx.relabel.relabel_nodes(metagraph, osmid_to_name,
+                           copy=False)
+
+  # Set useful node attributes.
   name_to_osmid = {osmid: name for name, osmid in osmid_to_name.items()}
   nx.set_node_attributes(metagraph, name_to_osmid, name="osmid")
+  nx.set_node_attributes(metagraph, name_to_point, name="geometry")
+  nx.set_node_attributes(metagraph, name_to_wikidata, name="wikidata")
+
+
+  # Add conceptual edges from wd_relations.
+  wikidata_to_name = {wikidata: name for
+                      name, wikidata in name_to_wikidata.items()}
+  for _, row in wd_relations.iterrows():
+    place_node_name = wikidata_to_name[row["place"]]
+    concept_node_name = "%s_%s" % (row["instanceLabel"], row["instance"])
+    metagraph.add_edge(place_node_name, concept_node_name, weight=1.0)
+    metagraph.add_edge(concept_node_name, place_node_name, weight=1.0)
   return metagraph
