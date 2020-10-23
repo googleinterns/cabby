@@ -137,7 +137,7 @@ def convert_multidi_to_weighted_undir_graph(
   in_graph: nx.MultiDiGraph) -> nx.Graph:
   out_graph = nx.Graph()
   for u, v in in_graph.edges():
-      if out_graph.has_edge(u,v):
+      if out_graph.has_edge(u, v):
           out_graph[u][v]['weight'] += 1.0
       else:
           out_graph.add_edge(u, v, weight=1.0)
@@ -181,7 +181,6 @@ def construct_metagraph(region: Region,
     place_node_name = wikidata_to_name[row["place"]]
     concept_node_name = "%s_%s" % (row["instanceLabel"], row["instance"])
     metagraph.add_edge(place_node_name, concept_node_name, weight=1.0)
-    metagraph.add_edge(concept_node_name, place_node_name, weight=1.0)
 
   # S2 cell nodes and edges.
   for node, data in metagraph.nodes.data():
@@ -191,5 +190,4 @@ def construct_metagraph(region: Region,
     for level in s2_node_levels:
       s2_cell_id = util.cellid_from_point(geometry, level)
       metagraph.add_edge(node, s2_cell_id)
-      metagraph.add_edge(s2_cell_id, node)
   return metagraph
