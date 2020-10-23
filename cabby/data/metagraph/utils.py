@@ -145,6 +145,7 @@ def convert_multidi_to_weighted_undir_graph(
 
 def construct_metagraph(region: Region,
                         s2_level: int,
+                        s2_node_levels: Sequence[int],
                         base_osm_map_filepath: Text) -> nx.Graph:
   # Get relation data and add to existing graph.
   wd_relations = query.get_geofenced_wikidata_relations(region,
@@ -173,7 +174,6 @@ def construct_metagraph(region: Region,
   nx.set_node_attributes(metagraph, name_to_point, name="geometry")
   nx.set_node_attributes(metagraph, name_to_wikidata, name="wikidata")
 
-
   # Add conceptual edges from wd_relations.
   wikidata_to_name = {wikidata: name for
                       name, wikidata in name_to_wikidata.items()}
@@ -182,4 +182,14 @@ def construct_metagraph(region: Region,
     concept_node_name = "%s_%s" % (row["instanceLabel"], row["instance"])
     metagraph.add_edge(place_node_name, concept_node_name, weight=1.0)
     metagraph.add_edge(concept_node_name, place_node_name, weight=1.0)
+
+  # S2 cell nodes and edges.
+  for node, data in metagraph.nodes.data():
+    if not data or "geometry" not in data:
+      continue
+    geometry = data["geometry"]
+    for level in s2_node_levels:
+      s2_cell_id = util.cellid_from_point(geometry, level)
+      metagraph.add_edge(node, s2_cell_id)
+      metagraph.add_edge(s2_cell_id, node)
   return metagraph
