@@ -69,8 +69,8 @@ class Map:
       self.load_map(load_directory)
       self.num_poi = self.poi.shape[0]
 
-    logging.info("Create S2Graph.")
-    self.create_S2Graph(level)
+    logging.info("Calculate S2Cell covering.")
+    self.calc_s2cells(level)
 
     self.process_param()
 
@@ -395,7 +395,7 @@ class Map:
     else:
       return util.s2cellids_from_polygon(geometry, self.level)
 
-  def create_S2Graph(self, level: int):
+  def calc_s2cells(self, level: int):
     '''Helper funcion for creating S2Graph.'''
 
     # Get cellids for POI.
@@ -404,13 +404,6 @@ class Map:
 
     # Filter out entities that we didn't mange to get cellids covering.
     self.poi = self.poi[self.poi['s2cellids'].notnull()]
-
-    # Create graph.
-    self.s2_graph = graph.MapGraph()
-
-    # Add POI to graph.
-    self.poi[['s2cellids', 'osmid']].apply(
-      lambda x: self.s2_graph.add_poi(x.s2cellids, x.osmid), axis=1)
 
   def get_valid_path(self, dir_name: Text, name_ending: Text,
              file_ending: Text) -> Optional[Text]:

@@ -40,6 +40,7 @@ py_binary(
     srcs = ['train.py'],
     deps = [
           "//cabby/model/text:util",
+          "//cabby/evals:utils",
 
     ],
 )

@@ -19,6 +19,7 @@ from shapely.geometry.point import Point
 
 import attr
 
+VERSION = 0.15
 
 @attr.s
 class WikigeoEntity:
@@ -33,7 +34,7 @@ class WikigeoEntity:
   `ref_point` is the refrenced Wikidata location.    
   `ref_instance` is the refrenced Wikidata instance property.    
   `sample_type` there are 4 types: (1) Wikipedia_page; (2) Wikipedia_backlink; (3) Wikidata; (4) OSM.    
-  `sample` the final WikiGeo sample.    
+  `version` the version WikiGeo sample.    
 
   """
   pageid: int = attr.ib()
@@ -45,11 +46,12 @@ class WikigeoEntity:
   ref_point: Point = attr.ib()
   ref_instance: Text = attr.ib()
   sample_type: Text = attr.ib()
-  sample: dict = attr.ib(init=False)
+  version: int = attr.ib(init=False)
 
   def __attrs_post_init__(self):
     # The QID is the part of the URL that comes after the last / character.
     self.ref_point = text_from_point(self.ref_point)
+    self.version = VERSION
 
   @classmethod
   def from_wiki_items(cls, wikipedia, wikipedia_ref, wikidata_ref, 
@@ -61,7 +63,7 @@ class WikigeoEntity:
       wikipedia.title,
       wikidata_ref.qid,
       wikipedia_ref.pageid,
-      wikipedia_ref.title,
+      str(wikipedia_ref.title),
       wikidata_ref.location,
       wikidata_ref.instance,
       wikipedia_type)
@@ -75,7 +77,7 @@ class WikigeoEntity:
       result.title,
       result.qid,
       -1,
-      result.title,
+      str(result.title),
       result.location,
       result.instance,
       "Wikidata")
@@ -89,7 +91,7 @@ class WikigeoEntity:
       result.name,
       str(result.qid),
       result.osmid,
-      result.name,
+      str(result.name),
       result.point,
       "",
       "OSM")
