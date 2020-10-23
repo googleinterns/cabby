@@ -138,8 +138,7 @@ def get_data_by_region_with_osm(
   samples = get_wikigeo_data(wikidata_items)
 
   logging.info(
-    'Created {} samples from Wikipedia pages and Wikidata \
-    (locations only).'.format(len(samples)))
+    f'Created {len(samples)} samples from Wikipedia pages and Wikidata (locations only).')
 
   # Add samples from Wikidata only.
   wikidata_tags = wdq.get_geofenced_info_wikidata_items(region)
@@ -149,7 +148,7 @@ def get_data_by_region_with_osm(
     samples.append(sample)
 
   logging.info(
-    'Created {} samples with Wikidata additional data.'.format(len(samples)))
+    f'Created {len(samples)} samples with Wikidata additional data.')
 
   # Add sample from OSM only.
   if path_osm is None:
@@ -170,7 +169,7 @@ def get_data_by_region_with_osm(
       samples.append(sample)
       
   logging.info(
-    'Created {} samples with OSM additional data.'.format(len(samples)))
+    f'Created {len(samples)} samples with OSM additional data.')
   return samples
 
 
@@ -180,7 +179,7 @@ def split_dataset(
     percentage_dev: float
 ) -> Dict[str, Sequence[wikigeo.WikigeoEntity]]:
   '''Splits the dataset into train-set, dev-set, test-set according to the 
-  ref_qid." 
+  ref_title." 
   Arguments:
     percentage_train(float in [0,1]): percentage of the train-set.
     percentage_dev(float in [0,1]): percentage of the dev-set.
@@ -199,8 +198,8 @@ def split_dataset(
   # TODO (https://github.com/googleinterns/cabby/issues/28#issue-695818890):
   # Change split by qid so that it will ensure qid isn't shared between sets
 
-  # Sort the dataset by ref_qid.
-  sorted_dataset = sorted(dataset, key=lambda item: item.ref_qid)
+  # Sort the dataset by ref_title.
+  sorted_dataset = sorted(dataset, key=lambda item: item.ref_title)
 
   # Get size of splits.
   size_dataset = len(dataset)
