@@ -183,11 +183,13 @@ def construct_metagraph(region: Region,
     metagraph.add_edge(place_node_name, concept_node_name, weight=1.0)
 
   # S2 cell nodes and edges.
+  edges_to_add = []
   for node, data in metagraph.nodes.data():
     if not data or "geometry" not in data:
       continue
     geometry = data["geometry"]
     for level in s2_node_levels:
       s2_cell_id = util.cellid_from_point(geometry, level)
-      metagraph.add_edge(node, s2_cell_id)
+      edges_to_add.append((node, s2_cell_id))
+  metagraph.add_edges_from(edges_to_add)
   return metagraph
