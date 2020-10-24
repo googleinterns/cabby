@@ -159,7 +159,9 @@ def main(argv):
 
 
   dual_encoder = model.DualEncoder()
-  if os.path.exists(FLAGS.model_path):
+  if FLAGS.model_path is not None:
+    if not os.path.exists(FLAGS.model_path):
+      sys.exit(f"The model's path does not exists: {FLAGS.model_path}")
     util.load_checkpoint(
       load_path=FLAGS.model_path, model=dual_encoder, device=device)
   if torch.cuda.device_count() > 1:
