@@ -205,7 +205,7 @@ def construct_metagraph(region: Region,
 
   # Add geometry data to OSM nodes.
   osm_geometries = {}
-  for _, row in osm_map.nodes:
+  for _, row in osm_map.nodes.iterrows():
     assert metagraph.has_node(row["index"]), "Map.node index %s not in graph" % row["index"]
     osm_geometries[row["index"]] = row["geometry"]
   nx.set_node_attributes(metagraph, osm_geometries, name="geometry")
