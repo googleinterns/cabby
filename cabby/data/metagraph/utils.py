@@ -192,7 +192,8 @@ def construct_metagraph(region: Region,
   update_osm_map(osm_map, wd_relations)
 
   # Construct initial metagraph and human-readable node names.
-  metagraph = convert_multidi_to_weighted_undir_graph(osm_map.nx_graph)
+  metagraph = convert_multidi_to_weighted_undir_graph(osm_map.nx_graph,
+                                                      agg_function)
   osmid_to_name = {}
   name_to_point = {}
   name_to_wikidata = {}
