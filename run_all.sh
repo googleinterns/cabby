@@ -1,15 +1,18 @@
-REGION_NAME="Pittsburgh_small"
-OUTPUT_DIR=$HOME/tmp/cabby_run
+REGION_NAME="UTAustin"
+OUTPUT_DIR=$HOME/tmp/cabby_run/$REGION_NAME
+MAP_DIR=$OUTPUT_DIR/map
 
 echo "****************************************"
 echo "*                 Geo                  *"
 echo "****************************************"
 rm -rf $OUTPUT_DIR
-mkdir -p $OUTPUT_DIR/poiTestData
+mkdir -p $OUTPUT_DIR
+mkdir -p $MAP_DIR
 
-bazel-bin/cabby/geo/map_processing/map_processor --region $REGION_NAME --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData/
-bazel-bin/cabby/geo/map_processing/map_processor --region DC --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData
-bazel-bin/cabby/geo/sample_poi --region DC --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData --path $OUTPUT_DIR/poiTestData/dc_geo_paths.gpkg --n_samples 1
+bazel-bin/cabby/geo/map_processing/map_processor --region $REGION_NAME --min_s2_level 18 --directory $MAP_DIR
+bazel-bin/cabby/geo/sample_poi --region $REGION_NAME --min_s2_level 18 --directory $MAP_DIR --path $MAP_DIR/utaustin_geo_paths.gpkg --n_samples 1
+
+# bazel-bin/cabby/geo/map_processing/map_processor --region DC --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData
 
 echo "****************************************"
 echo "*              Wikidata                *"
@@ -24,10 +27,10 @@ bazel-bin/cabby/data/wikipedia/extract_wikipedia_items --titles=New_York_Stock_E
 echo "****************************************"
 echo "*              Wikigeo                 *"
 echo "****************************************"
-bazel-bin/cabby/data/extract_wikigeo_contexts --region $REGION_NAME --output_dir /tmp/wikigeo
-bazel-bin/cabby/data/extract_wikigeo_contexts --region $REGION_NAME --output_dir /tmp/wikigeo --osm_path $OUTPUT_DIR/poiTestData/pittsburgh_small_poi.pkl
+bazel-bin/cabby/data/create_wikigeo_dataset --region $REGION_NAME --output_dir $OUTPUT_DIR/wikigeo
+bazel-bin/cabby/data/create_wikigeo_dataset --region $REGION_NAME --output_dir $OUTPUT_DIR/wikigeo --osm_path $MAP_DIR/utaustin_poi.pkl
 
 echo "****************************************"
 echo "*                 RVS                  *"
 echo "****************************************"
-bazel-bin/cabby/rvs/generate_rvs --rvs_data_path $OUTPUT_DIR/poiTestData/dc_geo_paths.gpkg --save_instruction_path $OUTPUT_DIR/dc_small_instructions.json
+bazel-bin/cabby/rvs/generate_rvs --rvs_data_path $MAP_DIR/utaustin_geo_paths.gpkg --save_instruction_path $OUTPUT_DIR/utaustin_instructions.json
