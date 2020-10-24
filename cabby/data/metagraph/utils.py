@@ -30,14 +30,13 @@ Dict = typing.Dict
 Map = map_structure.Map
 Region = regions.Region
 Sequence = typing.Sequence
-Text = typing.Text
 Tuple = typing.Tuple
 
 def convert_pandas_df_to_metagraph(
-  df:Any, source_column: Text, target_column: Text,
-  source_metadata_columns: Dict[Text, Text],
-  target_metadata_columns: Dict[Text, Text],
-  edge_attribute_columns: Sequence[Text]) -> Any:
+  df:Any, source_column: str, target_column: str,
+  source_metadata_columns: Dict[str, str],
+  target_metadata_columns: Dict[str, str],
+  edge_attribute_columns: Sequence[str]) -> Any:
   '''Convert a pandas dataframe to a networkx multigraph
   Arguments:
     df: pandas dataframe
@@ -69,7 +68,7 @@ def get_osmid_from_wd_relations_row(row: pd.Series) -> int:
 
   This is used for POIs that were found in a Wikidata bounding box
   for a region, but for one reason or another were not pulled from OSM.
-  
+
   Arguments:
     row: an arbitrary sequence of data on the POI. Should uniquely ID
       the POI to get a unique fake OSMID.
@@ -130,14 +129,14 @@ def update_osm_map(osm_map: Map,
 
 
 def add_conceptual_nodes_and_edges(graph: nx.Graph,
-                                   poi_map: Dict[Text, int],
+                                   poi_map: Dict[str, int],
                                    wd_relations: pd.DataFrame):
   for _, row in wd_relations.iterrows():
     place_node_id = poi_map[row["place"]]
     graph.add_edge(row["instanceLabel"], place_node_id)
     graph.add_edge(place_node_id, row["instanceLabel"])
 
-def construct_human_readable_name(poi_row: pd.Series) -> Text:
+def construct_human_readable_name(poi_row: pd.Series) -> str:
     name = ""
     if isinstance(poi_row["name"], str):
         name = poi_row["name"]
@@ -166,7 +165,7 @@ def convert_multidi_to_weighted_undir_graph(
 def construct_metagraph(region: Region,
                         s2_level: int,
                         s2_node_levels: Sequence[int],
-                        base_osm_map_filepath: Text) -> nx.Graph:
+                        base_osm_map_filepath: str) -> nx.Graph:
   # Get relation data and add to existing graph.
   wd_relations = wikidata.query.get_geofenced_wikidata_relations(
     region, extract_qids=True)
