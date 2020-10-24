@@ -131,7 +131,7 @@ def main(argv):
             data_dir = FLAGS.data_dir, 
             region = FLAGS.region, 
             s2level = FLAGS.s2_level, 
-            infer_only: infer_only
+            infer_only= FLAGS.infer_only
     )
 
     dataset_item.TextGeoDataset.save(
