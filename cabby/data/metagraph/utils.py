@@ -168,6 +168,20 @@ def construct_metagraph(region: Region,
   nx.relabel.relabel_nodes(metagraph, osmid_to_name,
                            copy=False)
 
+  # Relabel node IDs to strings
+  relabel_map = {}
+  for node in metagraph:
+    if isinstance(node, int):
+      relabel_map[node] = str(node)
+  nx.relabel.relabel_nodes(metagraph, relabel_map, copy=False)
+
+  # Add geometry data to OSM nodes.
+  osm_geometries = {}
+  for _, row in osm_map.nodes:
+    assert metagraph.has_node(row["index"]), "Map.node index %s not in graph" % row["index"]
+    osm_geometries[row["index"]] = row["geometry"]
+  nx.set_node_attributes(metagraph, osm_geometries, name="geometry")
+
   # Set useful node attributes.
   name_to_osmid = {osmid: name for name, osmid in osmid_to_name.items()}
   nx.set_node_attributes(metagraph, name_to_osmid, name="osmid")
