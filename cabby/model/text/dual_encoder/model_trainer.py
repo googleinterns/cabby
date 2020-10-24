@@ -69,12 +69,9 @@ flags.DEFINE_enum(
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
 flags.DEFINE_string("output_dir", None,
           "The directory where the model and results will be save to.")
-flags.DEFINE_string("model_path", None,
-          "The path where the model to be evaluated on is.")
 flags.DEFINE_float(
   'learning_rate', default=5e-5,
   help=('The learning rate for the Adam optimizer.'))
-
 
 flags.DEFINE_string("model_path", None,
           "A path of a model the model to be fine tuned\ evaluated.")
