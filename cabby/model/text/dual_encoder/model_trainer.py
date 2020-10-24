@@ -160,7 +160,7 @@ def main(argv):
 
   dual_encoder = model.DualEncoder()
   if os.path.exists(FLAGS.model_path):
-    model = util.load_checkpoint(
+    util.load_checkpoint(
       load_path=FLAGS.model_path, model=dual_encoder, device=device)
   if torch.cuda.device_count() > 1:
     logging.info("Using {} GPUs.".format(torch.cuda.device_count()))
