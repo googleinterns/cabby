@@ -103,7 +103,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
     return len(self.cellids)
 
 
-def create_dataset(data_dir: Text, region: Text, s2level: int
+def create_dataset(
+          data_dir: Text, 
+          region: Text, 
+          s2level: int, 
+          infer_only: bool = False
 ) -> dataset_item.TextGeoDataset:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
@@ -134,11 +138,14 @@ def create_dataset(data_dir: Text, region: Text, s2level: int
   tens_cells = torch.tensor(vec_cells)
 
   # Create Cabby dataset.
+  train_dataset = None
+  val_dataset = None
   logging.info("Starting to create the splits")
-  train_dataset = TextGeoSplit(train_ds, s2level, unique_cells_df, cellid_to_label)
-  logging.info(f"Finished to create the train-set with {len(train_dataset)} samples")
-  val_dataset = TextGeoSplit(valid_ds, s2level, unique_cells_df, cellid_to_label)
-  logging.info(f"Finished to create the valid-set with {len(val_dataset)} samples")
+  if infer_only == False:
+    train_dataset = TextGeoSplit(train_ds, s2level, unique_cells_df, cellid_to_label)
+    logging.info(f"Finished to create the train-set with {len(train_dataset)} samples")
+    val_dataset = TextGeoSplit(valid_ds, s2level, unique_cells_df, cellid_to_label)
+    logging.info(f"Finished to create the valid-set with {len(val_dataset)} samples")
   test_dataset = TextGeoSplit(test_ds, s2level, unique_cells_df, cellid_to_label)
   logging.info(f"Finished to create the test-set with {len(test_dataset)} samples")
 

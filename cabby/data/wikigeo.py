@@ -19,7 +19,7 @@ from shapely.geometry.point import Point
 
 import attr
 
-VERSION = 0.15
+VERSION = 0.17
 
 @attr.s
 class WikigeoEntity:
