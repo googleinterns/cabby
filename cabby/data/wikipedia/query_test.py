@@ -22,17 +22,18 @@ class WikipediaTest(unittest.TestCase):
 
   def testQueryItems(self):
     # Test plain Wikipedia query for items.
-    output = query.get_wikipedia_items(
+    items = query.get_wikipedia_items(
       ['New_York_Stock_Exchange', 'Empire_State_Building'])
-    expected = 'The New York Stock Exchange'
-    self.assertIn(expected, output[0][0]['extract'])
+
+    # Verify that NYSE lookup gets the right pageid.
+    self.assertEqual(items[0].pageid, 21560)
 
   def testBacklinksItems(self):
     # Test backlinks Wikipedia query for items.
     title = 'Two PNC Plaza'
-    entities = query.get_backlinks_items_from_wikipedia_title(title)
-    for entity in entities:
-      self.assertIn(title, entity['extract'])
+    items = query.get_backlinks_items_from_wikipedia_titles([title])
+    for item in items:
+      self.assertIn(title, item.linked_title)
 
 if __name__ == "__main__":
   unittest.main()
