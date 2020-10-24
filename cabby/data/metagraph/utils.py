@@ -17,12 +17,21 @@
 import networkx as nx
 import pandas as pd
 
-from typing import Dict, Tuple, Sequence, Text, Any
+import typing
 
-from cabby.geo.map_processing.map_structure import Map
-import cabby.geo.util as util
-from cabby.data.wikidata import query
-from cabby.geo.regions import Region, get_region
+from cabby.geo.map_processing import map_structure
+from cabby.data import wikidata
+from cabby.geo import regions
+from cabby.geo import util
+
+# Type declarations
+Any = typing.Any
+Dict = typing.Dict
+Map = map_structure.Map
+Region = regions.Region
+Sequence = typing.Sequence
+Text = typing.Text
+Tuple = typing.Tuple
 
 def convert_pandas_df_to_metagraph(
   df:Any, source_column: Text, target_column: Text,
@@ -88,7 +97,7 @@ def update_osm_map(osm_map: Map,
           continue
       already_added.add(row.place)
       osmid = get_osmid_from_wd_relations_row(row)
-      wd_query = query.get_place_location_points_from_qid(
+      wd_query = wikidata.query.get_place_location_points_from_qid(
         row.place, location_only=True)
       new_df = pd.DataFrame(data={
           'name': row["placeLabel"],
@@ -148,8 +157,8 @@ def construct_metagraph(region: Region,
                         s2_node_levels: Sequence[int],
                         base_osm_map_filepath: Text) -> nx.Graph:
   # Get relation data and add to existing graph.
-  wd_relations = query.get_geofenced_wikidata_relations(region,
-                                                        extract_qids=True)
+  wd_relations = wikidata.query.get_geofenced_wikidata_relations(
+    region, extract_qids=True)
   osm_map = Map(region, s2_level, base_osm_map_filepath)
   update_osm_map(osm_map, wd_relations)
 
