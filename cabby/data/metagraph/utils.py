@@ -15,6 +15,7 @@
 '''Utils for metagraph construction'''
 
 import networkx as nx
+import numpy as np
 import pandas as pd
 
 import typing
@@ -162,19 +163,28 @@ def poi_to_readable_name(poi_row: pd.Series) -> str:
   return "%s_%s" % (name, poi_row["osmid"])
 
 def convert_multidi_to_weighted_undir_graph(
-  in_graph: nx.MultiDiGraph) -> nx.Graph:
+  in_graph: nx.MultiDiGraph, agg_function: Any) -> nx.Graph:
+  """Convert a graph with multiple edges to a graph with no multiple edges.
+
+  Arguments:
+    in_graph: graph with (potentially) multiple directed edges per node pair.
+    agg_function: a function that takes an iterable of floats and returns
+      a number. Applied to weights on multiple edges to produce one weight.
+  Returns:
+    out_graph: graph with weighted undirected edges.
+  """
   out_graph = nx.Graph()
-  for u, v in in_graph.edges():
-      if out_graph.has_edge(u, v):
-          out_graph[u][v]['weight'] += 1.0
-      else:
-          out_graph.add_edge(u, v, weight=1.0)
+  for node, adjacencies in in_graph.adjacency_iter():
+    for neighbor, edge_dict in adjacencies.items():
+      aggregated_weight = agg_function([d['weight'] for d in edge_dict.values()])
+      out_graph.add_edge(node, neighbor, weight=aggregated_weight)
   return out_graph
 
 def construct_metagraph(region: Region,
                         s2_level: int,
                         s2_node_levels: Sequence[int],
-                        base_osm_map_filepath: str) -> nx.Graph:
+                        base_osm_map_filepath: str,
+                        agg_function=np.sum) -> nx.Graph:
   # Get relation data and add to existing graph.
   wd_relations = wikidata.query.get_geofenced_wikidata_relations(
     region, extract_qids=True)
