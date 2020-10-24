@@ -14,7 +14,6 @@
 '''Basic classes and functions for Wikipedia items.'''
 
 import re
-from typing import Text
 
 import attr
 
@@ -26,10 +25,14 @@ class WikipediaEntity:
   `pageid` is the Wikipedia page id.
   `title` is the name of the entity.
   `text` is the Wikipedia content.
+  `linked_title` is an optional title of another Wikipedia page that is
+    associated with this one. This is used when the text contains a reference
+    to another page.
   """
   pageid: int = attr.ib()
-  title: Text = attr.ib()
-  text: Text = attr.ib()
+  title: str = attr.ib()
+  text: str = attr.ib()
+  linked_title: str = attr.ib(default='')
 
   def __attrs_post_init__(self):
     # Remove unwanted chars from text.
@@ -38,9 +41,4 @@ class WikipediaEntity:
   @classmethod
   def from_api_result(cls, result):
     """Construct an Entity from the results of the Wikimedia API query."""
-    return WikipediaEntity(
-        result['pageid'],
-        result['title'],
-        result['extract']
-          
-    )
+    return WikipediaEntity(result['pageid'], result['title'], result['extract'])
