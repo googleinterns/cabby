@@ -34,8 +34,7 @@ flags.mark_flag_as_required("titles")
 
 def main(argv):
   del argv  # Unused.
-  results = query.get_wikipedia_items(FLAGS.titles)
-  items = [item for item_list in results for item in item_list]
+  items = query.get_wikipedia_items(FLAGS.titles)
 
   print('The number of Wikipedia items found is: {}'.format(
     len(items)))
