@@ -24,6 +24,8 @@ from cabby.data import wikidata
 from cabby.geo import regions
 from cabby.geo import util
 
+DEFAULT_POI_READABLE_NAME = "poi"
+
 # Type declarations
 Any = typing.Any
 Dict = typing.Dict
@@ -136,21 +138,28 @@ def add_conceptual_nodes_and_edges(graph: nx.Graph,
     graph.add_edge(row["instanceLabel"], place_node_id)
     graph.add_edge(place_node_id, row["instanceLabel"])
 
-def construct_human_readable_name(poi_row: pd.Series) -> str:
-    name = ""
-    if isinstance(poi_row["name"], str):
-        name = poi_row["name"]
-    elif isinstance(poi_row["wikipedia"], str):
-        name = poi_row["wikipedia"][3:]
-    elif isinstance(poi_row["brand"], str):
-        name = poi_row["brand"]
-    elif isinstance(poi_row["shop"], str):
-        name = poi_row["shop"]
-    elif isinstance(poi_row["tourism"], str):
-        name = poi_row["tourism"]
-    elif isinstance(poi_row["amenity"], str):
-        name = poi_row["amenity"]
-    return "%s_%s" % (name, poi_row["osmid"])
+def poi_to_readable_name(poi_row: pd.Series) -> str:
+  """Gets a human-readable name for a POI (place of interest).
+
+  Arguments:
+    poi_row: a row of data from a map_structure.Map.poi data frame.
+  Returns:
+    name: a readable name for use as a node ID in a graph.
+  """
+  name = DEFAULT_POI_READABLE_NAME
+  if isinstance(poi_row["name"], str):
+      name = poi_row["name"]
+  elif isinstance(poi_row["wikipedia"], str):
+      name = poi_row["wikipedia"][3:]
+  elif isinstance(poi_row["brand"], str):
+      name = poi_row["brand"]
+  elif isinstance(poi_row["shop"], str):
+      name = poi_row["shop"]
+  elif isinstance(poi_row["tourism"], str):
+      name = poi_row["tourism"]
+  elif isinstance(poi_row["amenity"], str):
+      name = poi_row["amenity"]
+  return "%s_%s" % (name, poi_row["osmid"])
 
 def convert_multidi_to_weighted_undir_graph(
   in_graph: nx.MultiDiGraph) -> nx.Graph:
@@ -178,7 +187,7 @@ def construct_metagraph(region: Region,
   name_to_point = {}
   name_to_wikidata = {}
   for _, row in osm_map.poi.iterrows():
-    name = construct_human_readable_name(row)
+    name = poi_to_readable_name(row)
     assert isinstance(name, str)
     osmid_to_name = {row["osmid"]: name}
     name_to_point = {name: row["geometry"]}
