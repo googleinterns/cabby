@@ -64,7 +64,18 @@ def convert_pandas_df_to_metagraph(
       nx.set_node_attributes(g, attribute_dict, metadata_name)
   return g
 
-def get_osmid_from_wd_relations_row(row: pd.Series):
+def get_osmid_from_wd_relations_row(row: pd.Series) -> int:
+  """Gets a fake Open Street Map ID (OSMID) for an arbitrary POI.
+
+  This is used for POIs that were found in a Wikidata bounding box
+  for a region, but for one reason or another were not pulled from OSM.
+  
+  Arguments:
+    row: an arbitrary sequence of data on the POI. Should uniquely ID
+      the POI to get a unique fake OSMID.
+  Returns:
+    osmid: an integer fake OSMID.
+  """
   osmid = hash(''.join(list(row.values)))
   if osmid < 0:
     osmid *= -1
