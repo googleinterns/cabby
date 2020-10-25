@@ -83,6 +83,8 @@ class Trainer:
 
     for batch in data_loader:
       for k,v in batch.items():
+        if k=='text':
+          continue
         print (k, v.shape)
       text = {key: val.to(self.device) for key, val in batch['text'].items()}
       cellids = batch['cellid'].float().to(self.device)
