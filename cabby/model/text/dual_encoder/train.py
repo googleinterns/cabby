@@ -105,6 +105,7 @@ class Trainer:
       text_embedding_exp = text_embedding.unsqueeze(1)
       output = self.cos(cellid_embedding_exp,text_embedding_exp)
       output = output.detach().cpu().numpy()
+      print ("output: "output.shape)
       predictions = np.argmax(output, axis=1)
       print ("batch_dim": batch_dim)
       print ('prediction:', predictions.shape)
