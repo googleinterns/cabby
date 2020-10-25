@@ -113,6 +113,7 @@ class Trainer:
 
     true_points_list = np.concatenate(true_points_list, axis=0)
     predictions_list = np.concatenate(predictions_list, axis=0)
+    print (true_points_list.shape, predictions_list.shape)
     pred_points_list = util.predictions_to_points(
       predictions_list, self.label_to_cellid)
     true_vals = np.concatenate(true_vals, axis=0)
