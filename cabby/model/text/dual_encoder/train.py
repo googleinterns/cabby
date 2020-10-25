@@ -90,13 +90,7 @@ class Trainer:
 
       loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
 
-      loss_val_total += loss.item()
-
-      print (self.cells_tensor.shape)
-      for k,v in text.items():
-        print ('text', k, v.shape)
       text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
-      print (text_embedding.shape, cellid_embedding.shape)
       batch_dim = text_embedding.shape[0]
       cell_dim = cellid_embedding.shape[0]
       output_dim  = cellid_embedding.shape[1]
@@ -153,9 +147,6 @@ class Trainer:
     '''Main function for training model.'''
     # Initialize running values.
     global_step = 0
-
-    # Evaluation step.
-    valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
 
     # Training loop.
     self.model.train()
