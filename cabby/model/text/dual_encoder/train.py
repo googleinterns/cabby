@@ -82,6 +82,8 @@ class Trainer:
     loss_val_total = 0
 
     for batch in data_loader:
+      for k,v in batch.items():
+        print (k, v.shape)
       text = {key: val.to(self.device) for key, val in batch['text'].items()}
       cellids = batch['cellid'].float().to(self.device)
       neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
@@ -103,7 +105,7 @@ class Trainer:
       cellid_embedding_exp = cellid_embedding.expand(
         batch_dim, cell_dim, output_dim)
       text_embedding_exp = text_embedding.unsqueeze(1)
-      output = self.cos(cellid_embedding_exp,text_embedding_exp)
+      output = self.cos(cellid_embedding_exp, text_embedding_exp)
       output = output.detach().cpu().numpy()
       print ("output: ",output.shape)
       predictions = np.argmax(output, axis=1)
