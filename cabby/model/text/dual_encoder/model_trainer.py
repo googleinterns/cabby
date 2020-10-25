@@ -45,17 +45,20 @@ from absl import logging
 import numpy as np
 import os 
 import sys
+from sklearn.metrics import accuracy_score
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from transformers import AdamW
 
+from cabby.evals import utils as eu
 from cabby.model.text.dual_encoder import train
 from cabby.model.text.dual_encoder import dataset
 from cabby.model.text.dual_encoder import model
 from cabby.model.text.dual_encoder import dataset_item
 from cabby.model.text import util
+
 
 FLAGS = flags.FLAGS
 
@@ -188,7 +191,20 @@ def main(argv):
     )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")
-    trainer.evaluate(validation_set = False)
+    valid_loss, predictions, true_vals, true_points, pred_points = trainer.evaluate(validation_set = False)
+
+    accuracy = accuracy_score(true_vals, predictions)
+
+    evaluator = eu.Evaluator()
+    error_distances = evaluator.get_error_distances(self.metrics_path)
+    _,mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
+
+    logging.info(f"Test Accuracy: {accuracy},\
+          Mean distance: {mean_distance}, \
+          Median distance: {median_distance}, \
+          Max error: {max_error}, \
+          Norm AUC: {norm_auc}")
+
   else: 
     logging.info("Starting to train model.")
     trainer.train_model()
