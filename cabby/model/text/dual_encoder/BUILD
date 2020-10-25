@@ -11,8 +11,8 @@ package(
 
 
 py_library(
-    name = 'dataset',
-    srcs = ['dataset.py'],
+    name = 'dataset_wikigeo',
+    srcs = ['dataset_wikigeo.py'],
     deps = [
           ":dataset_item",
           "//cabby/geo:util",
@@ -20,7 +20,16 @@ py_library(
 
     ],
 )
+py_library(
+    name = 'dataset_rvs',
+    srcs = ['dataset_rvs.py'],
+    deps = [
+          ":dataset_item",
+          "//cabby/geo:util",
+          "//cabby/geo:regions",
 
+    ],
+)
 
 py_library(
     name = 'dataset_item',
@@ -51,7 +60,8 @@ py_binary(
     srcs = ['model_trainer.py'],
     deps = [
         ':train',
-        ':dataset',
+        ':dataset_wikigeo',
+        ':dataset_rvs',
         ':dataset_item',
         ':model',
         "//cabby/model/text:util",

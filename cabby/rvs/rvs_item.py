@@ -23,7 +23,7 @@ from shapely.geometry.point import Point
 from cabby.geo import util
 
 
-VERSION = 0.1
+VERSION = 0.3
 
 
 @attr.s
@@ -34,7 +34,7 @@ class RVSData:
     `distance` path distance between start and end point.
     `instructions` the instructions describing how to get to the end point.
     `id` is the id of the entity.
-    `sample` RVS sample.
+    `version` version of the RVS samples.
     """
     start_point: tuple = attr.ib()
     end_point: tuple = attr.ib()
@@ -43,20 +43,11 @@ class RVSData:
     distance: int = attr.ib()
     instructions: Text = attr.ib()
     id: int = attr.ib()
-    sample: dict = attr.ib(init=False)
+    version: int = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         # Create RVS sample
-        self.sample = {
-            'start_point': self.start_point, 
-            'start_osmid': self.start_osmid,
-            'end_point': self.end_point, 
-            'end_osmid': self.start_osmid,
-            'distance':self.distance, 
-            'instructions': self.instructions, 
-            'id': self.id, 
-            'version': VERSION
-        }
+        self.version = VERSION
 
     @classmethod
     def from_geo_entities(cls, start, start_osmid, end_osmid, end, route,

@@ -31,6 +31,7 @@ import json
 from random import randint
 import sys
 
+from absl import logging
 from absl import app
 from absl import flags
 
@@ -56,17 +57,19 @@ flags.mark_flag_as_required('save_instruction_path')
 def main(argv):
   del argv  # Unused.
 
+  logging.info(f"Starting to generate RVS samples")
+
   entities = walk.load_entities(FLAGS.rvs_data_path)
 
   if entities is None:
     sys.exit("No entities found.")
 
-  print("Number of RVS samples to create: ", len(entities))
+  logging.info(f"Number of RVS samples to create: {len(entities)}")
 
   # Get templates.
   gen_templates = templates.create_templates()
 
-  print("Number of templates: ", gen_templates.shape[0])
+  logging.info(f"Number of templates: {gen_templates.shape[0]}")
 
   # Generate instructions.
   gen_samples = []
@@ -125,8 +128,11 @@ def main(argv):
       instructions=gen_instructions,
       id=entity_idx,
     )
-    gen_samples.append(rvs_entity.sample)
+    gen_samples.append(rvs_entity)
 
+  logging.info(
+    f"Writing {len(gen_samples)} samples to file => " +
+    f"{FLAGS.save_instruction_path}")
   # Save to file.
   with open(FLAGS.save_instruction_path, 'a') as outfile:
     for sample in gen_samples:
@@ -134,6 +140,7 @@ def main(argv):
       outfile.write('\n')
       outfile.flush()
 
+  logging.info("Finished writing to file.")
 
 if __name__ == '__main__':
   app.run(main)

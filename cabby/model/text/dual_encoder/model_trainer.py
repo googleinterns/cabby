@@ -55,10 +55,12 @@ from transformers import AdamW
 
 from cabby.evals import utils as eu
 from cabby.model.text.dual_encoder import train
-from cabby.model.text.dual_encoder import dataset
+from cabby.model.text.dual_encoder import dataset_wikigeo
+from cabby.model.text.dual_encoder import dataset_rvs
 from cabby.model.text.dual_encoder import model
 from cabby.model.text.dual_encoder import dataset_item
 from cabby.model.text import util
+from cabby.geo import regions
 
 
 FLAGS = flags.FLAGS
@@ -68,8 +70,11 @@ flags.DEFINE_string("data_dir", None,
 flags.DEFINE_string("dataset_dir", None,
           "The directory to save\load dataloader.")
 flags.DEFINE_enum(
-  "region", None, ['Pittsburgh', 'Manhattan'],
-  "Map areas: Manhattan or Pittsburgh.")
+  "region", None, regions.SUPPORTED_REGION_NAMES, 
+  regions.REGION_SUPPORT_MESSAGE)
+flags.DEFINE_enum(
+  "dataset_type", "WikiGeo", ["WikiGeo", "RVS"], 
+  "Supported datasets to train\evaluate on: WikiGeo or RVS.")
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
 flags.DEFINE_string("output_dir", None,
           "The directory where the model and results will be save to.")
@@ -104,7 +109,7 @@ flags.mark_flag_as_required("region")
 flags.mark_flag_as_required("s2_level")
 
 def main(argv):
-
+  
   if not os.path.exists(FLAGS.dataset_dir):
     sys.exit("Dataset path doesn't exist: {}.".format(FLAGS.dataset_dir))
 
@@ -115,6 +120,11 @@ def main(argv):
   unique_cellid_path = os.path.join(dataset_path,"unique_cellid.npy")
   tensor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
   label_to_cellid_path = os.path.join(dataset_path,"label_to_cellid.npy")
+
+  if FLAGS.dataset_type == "WikiGeo":
+    dataset = dataset_wikigeo
+  else:
+    dataset = dataset_rvs
 
   if os.path.exists(dataset_path):
     datast_text = dataset_item.TextGeoDataset.load(
@@ -132,7 +142,7 @@ def main(argv):
             data_dir = FLAGS.data_dir, 
             region = FLAGS.region, 
             s2level = FLAGS.s2_level, 
-            infer_only= FLAGS.infer_only
+            infer_only= FLAGS.infer_only,
     )
 
     dataset_item.TextGeoDataset.save(
