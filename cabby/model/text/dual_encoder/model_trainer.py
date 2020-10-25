@@ -205,9 +205,9 @@ def main(argv):
     error_distances = evaluator.get_error_distances(trainer.metrics_path)
     _, mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
 
-    logging.info(f"\n Test Accuracy: {accuracy}, \n" +
-    f"Mean distance: {mean_distance},\n Median distance: {median_distance},\n" +
-    f"Max error: {max_error},\n Norm AUC: {norm_auc}")
+    logging.info(f"\nTest Accuracy: {accuracy}, \n" +
+    f"Mean distance: {mean_distance},\nMedian distance: {median_distance},\n" +
+    f"Max error: {max_error},\nNorm AUC: {norm_auc}")
 
   else: 
     logging.info("Starting to train model.")
