@@ -205,10 +205,10 @@ def main(argv):
     error_distances = evaluator.get_error_distances(trainer.metrics_path)
     _,mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
 
-    logging.info(f"Test Accuracy: {accuracy},\n \ 
-          Mean distance: {mean_distance},\n \
-          Median distance: {median_distance},\n \
-          Max error: {max_error},\n \
+    logging.info(f"Test Accuracy: {accuracy},\n 
+          Mean distance: {mean_distance},\n 
+          Median distance: {median_distance},\n 
+          Max error: {max_error},\n 
           Norm AUC: {norm_auc}")
 
   else: 
