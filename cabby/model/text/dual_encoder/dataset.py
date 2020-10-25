@@ -117,11 +117,11 @@ def create_dataset(
   Returns:
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
-  print (data_dir)
   train_ds = pd.read_json(os.path.join(data_dir, 'train.json'))
   valid_ds = pd.read_json(os.path.join(data_dir, 'dev.json'))
   test_ds = pd.read_json(os.path.join(data_dir, 'test.json'))
   # Get labels.
+  get_region = regions.get_region(region)
   unique_cellid = gutil.cellids_from_polygon(get_region.polygon, s2level)
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
