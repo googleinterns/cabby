@@ -154,6 +154,9 @@ class Trainer:
     # Initialize running values.
     global_step = 0
 
+    # Evaluation step.
+    valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
+
     # Training loop.
     self.model.train()
 
@@ -177,8 +180,6 @@ class Trainer:
         running_loss += loss.item()
         global_step += 1
 
-      # Evaluation step.
-      valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
 
       average_train_loss = running_loss / batch_idx
       accuracy = accuracy_score(true_vals, predictions)
