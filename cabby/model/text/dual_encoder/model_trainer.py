@@ -207,7 +207,7 @@ def main(argv):
 
     logging.info(f"\n Test Accuracy: {accuracy}, \n" +
     f"Mean distance: {mean_distance},\n Median distance: {median_distance},\n" +
-    "Max error: {max_error},\n Norm AUC: {norm_auc}")
+    f"Max error: {max_error},\n Norm AUC: {norm_auc}")
 
   else: 
     logging.info("Starting to train model.")
