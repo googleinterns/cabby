@@ -93,6 +93,8 @@ class Trainer:
       loss_val_total += loss.item()
 
       print (self.cells_tensor.shape)
+      for k,v in text.items():
+        print ('text', k, v.shape)
       text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
       print (text_embedding.shape, cellid_embedding.shape)
       batch_dim = text_embedding.shape[0]
