@@ -172,7 +172,6 @@ def main(argv):
 
   optimizer = torch.optim.Adam(dual_encoder.parameters(), lr=FLAGS.learning_rate)
   
-  logging.info("Starting to train model.")
 
   trainer = train.Trainer(
     model=dual_encoder,
@@ -188,9 +187,12 @@ def main(argv):
     label_to_cellid = datast_text.label_to_cellid,
     )
   if FLAGS.infer_only:
-      trainer.evaluate(validation_set = False)
+    logging.info("Starting to infer model.")
+    trainer.evaluate(validation_set = False)
   else: 
+    logging.info("Starting to train model.")
     trainer.train_model()
+    
 
 if __name__ == '__main__':
   app.run(main)
