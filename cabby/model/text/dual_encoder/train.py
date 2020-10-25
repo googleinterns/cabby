@@ -82,12 +82,6 @@ class Trainer:
     loss_val_total = 0
 
     for batch in data_loader:
-      for k,v in batch.items():
-        if k=='text':
-          continue
-        print (k, v.shape)
-      for key, val in batch['text'].items():
-        print ('text:', k, v.shape)
 
       text = {key: val.to(self.device) for key, val in batch['text'].items()}
       cellids = batch['cellid'].float().to(self.device)
@@ -98,7 +92,9 @@ class Trainer:
 
       loss_val_total += loss.item()
 
+      print (text.shape, self.cells_tensor.shape)
       text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
+      print (text_embedding.shape, cellid_embedding.shape)
       batch_dim = text_embedding.shape[0]
       cell_dim = cellid_embedding.shape[0]
       output_dim  = cellid_embedding.shape[1]
@@ -107,19 +103,14 @@ class Trainer:
       text_embedding_exp = text_embedding.unsqueeze(1)
       output = self.cos(cellid_embedding_exp, text_embedding_exp)
       output = output.detach().cpu().numpy()
-      print ("output: ",output.shape)
       predictions = np.argmax(output, axis=1)
-      print ("batch_dim: ", batch_dim)
-      print ('prediction: ', predictions.shape)
       predictions_list.append(predictions)
       labels = batch['label'].numpy()
       true_vals.append(labels)
-      print ('points:', batch['point'].shape)
       true_points_list.append(batch['point'])
 
     true_points_list = np.concatenate(true_points_list, axis=0)
     predictions_list = np.concatenate(predictions_list, axis=0)
-    print (true_points_list.shape, predictions_list.shape)
     pred_points_list = util.predictions_to_points(
       predictions_list, self.label_to_cellid)
     true_vals = np.concatenate(true_vals, axis=0)
