@@ -59,9 +59,8 @@ class Trainer:
     self.label_to_cellid = label_to_cellid
     self.cos = nn.CosineSimilarity(dim=2)
     self.best_valid_loss = float("Inf")
-    if self.file_path is not None:
-      self.model_path = os.path.join(self.file_path, 'model.pt')
-      self.metrics_path = os.path.join(self.file_path, 'metrics.tsv')
+    self.model_path = os.path.join(self.file_path, 'model.pt')
+    self.metrics_path = os.path.join(self.file_path, 'metrics.tsv')
         
 
   def evaluate(self, validation_set: bool = True):

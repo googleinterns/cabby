@@ -33,6 +33,7 @@ $ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
   --test_batch_size 32 \
   --infer_only True \
   --model_path ~/tmp/model/dual \
+  --output_dir ~/tmp/output/dual\
 
 
 
@@ -193,10 +194,15 @@ def main(argv):
     logging.info("Starting to infer model.")
     valid_loss, predictions, true_vals, true_points, pred_points = trainer.evaluate(validation_set = False)
 
+    util.save_metrics_last_only(
+      trainer.metrics_path, 
+      true_points, 
+      pred_points)
+
     accuracy = accuracy_score(true_vals, predictions)
 
     evaluator = eu.Evaluator()
-    error_distances = evaluator.get_error_distances(self.metrics_path)
+    error_distances = evaluator.get_error_distances(trainer.metrics_path)
     _,mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
 
     logging.info(f"Test Accuracy: {accuracy},\
