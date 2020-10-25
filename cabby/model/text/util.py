@@ -64,9 +64,14 @@ def save_checkpoint(save_path: Text, model:  torch.nn.Module,
   if save_path == None:
     return
 
-  state_dict = {'model_state_dict': model.state_dict(),
+  if isinstance(model, nn.DataParallel):
+    model_state_dict =  model.module.state_dict()
+  else: 
+    model_state_dict =  model.state_dict()
+    
+  state_dict = {'model_state_dict': model_state_dict,
           'valid_loss': valid_loss}
-
+        
   torch.save(state_dict, save_path)
   logging.info(f'Model saved to ==> {save_path}')
 

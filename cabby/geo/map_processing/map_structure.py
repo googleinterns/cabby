@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 from absl import logging
 import copy
 import geopandas as gpd
@@ -30,7 +31,6 @@ from shapely.ops import split
 import swifter
 import sys
 from typing import Dict, Tuple, Sequence, Text, Optional, List, Any
-
 
 from cabby.geo import util
 from cabby.geo.map_processing import graph
@@ -232,7 +232,7 @@ class Map:
       print(e)
       return []
 
-    edge_id = (near_edge_u, near_edge_v, near_edge_key)
+    edge_osmid = (near_edge_u, near_edge_v, near_edge_key)
 
     if edge_id in list_edges_connected_ids:  # Edge already connected
       return []
