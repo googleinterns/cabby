@@ -86,6 +86,9 @@ class Trainer:
         if k=='text':
           continue
         print (k, v.shape)
+      for key, val in batch['text'].items():
+        print ('text:', k, v.shape)
+
       text = {key: val.to(self.device) for key, val in batch['text'].items()}
       cellids = batch['cellid'].float().to(self.device)
       neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
