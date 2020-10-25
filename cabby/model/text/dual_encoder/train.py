@@ -106,9 +106,11 @@ class Trainer:
       output = self.cos(cellid_embedding_exp,text_embedding_exp)
       output = output.detach().cpu().numpy()
       predictions = np.argmax(output, axis=1)
+      print ('prediction:', predictions.shape)
       predictions_list.append(predictions)
       labels = batch['label'].numpy()
       true_vals.append(labels)
+      print ('points:', batch['point'].shape)
       true_points_list.append(batch['point'])
 
     true_points_list = np.concatenate(true_points_list, axis=0)
