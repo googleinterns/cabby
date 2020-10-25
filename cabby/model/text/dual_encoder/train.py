@@ -106,6 +106,7 @@ class Trainer:
       output = self.cos(cellid_embedding_exp,text_embedding_exp)
       output = output.detach().cpu().numpy()
       predictions = np.argmax(output, axis=1)
+      print ("batch_dim": batch_dim)
       print ('prediction:', predictions.shape)
       predictions_list.append(predictions)
       labels = batch['label'].numpy()
