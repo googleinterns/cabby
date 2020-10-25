@@ -91,11 +91,6 @@ class Trainer:
       neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
       far_cells = batch['far_cells'].float().to(self.device)
 
-      cellids = cellids.float().to(self.device) 
-      neighbor_cells = neighbor_cells.float().to(self.device) 
-      far_cells = far_cells.float().to(self.device)
-      text = {key: val.to(self.device) for key, val in text.items()}
-
       loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
 
       loss_val_total += loss.item()
