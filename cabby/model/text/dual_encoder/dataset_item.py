@@ -45,7 +45,6 @@ class TextGeoDataset:
   unique_cellids_binary: torch.tensor = attr.ib()
   label_to_cellid: Dict[int, int] = attr.ib()
 
-
   @classmethod
   def from_TextGeoSplit(cls, train, valid, test, unique_cellids,
                               unique_cellids_binary, label_to_cellid):
@@ -64,7 +63,6 @@ class TextGeoDataset:
     valid_path_dataset: Text, test_path_dataset: Text, 
     unique_cellid_path: Text, tensor_cellid_path: Text, 
     label_to_cellid_path: Text):
-    
 
     logging.info("Loading dataset from <== {}.".format(dataset_path))
     train_dataset = torch.load(train_path_dataset)
@@ -76,7 +74,9 @@ class TextGeoDataset:
       label_to_cellid_path, allow_pickle='TRUE').item()
     tens_cells = torch.load(tensor_cellid_path)
     n_cells = len(unique_cellid)
-    dataset_text = TextGeoDataset(train_dataset, valid_dataset, test_dataset, unique_cellid, tens_cells, label_to_cellid)
+    dataset_text = TextGeoDataset(
+      train_dataset, valid_dataset, test_dataset, 
+      unique_cellid, tens_cells, label_to_cellid)
 
     return dataset_text
   

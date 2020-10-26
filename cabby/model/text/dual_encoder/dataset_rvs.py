@@ -127,7 +127,6 @@ def create_dataset(
   train_size = round(dataset_size*80/100)
   valid_size = round(dataset_size*10/100)
 
-
   train_ds = ds.iloc[:train_size]
   valid_ds = ds.iloc[train_size:train_size+valid_size]
   test_ds = ds.iloc[train_size+valid_size:]
@@ -154,12 +153,18 @@ def create_dataset(
   val_dataset = None
   logging.info("Starting to create the splits")
   if infer_only == False:
-    train_dataset = TextGeoSplit(train_ds, s2level, unique_cells_df, cellid_to_label)
-    logging.info(f"Finished to create the train-set with {len(train_dataset)} samples")
-    val_dataset = TextGeoSplit(valid_ds, s2level, unique_cells_df, cellid_to_label)
-    logging.info(f"Finished to create the valid-set with {len(val_dataset)} samples")
-  test_dataset = TextGeoSplit(test_ds, s2level, unique_cells_df, cellid_to_label)
-  logging.info(f"Finished to create the test-set with {len(test_dataset)} samples")
+    train_dataset = TextGeoSplit(
+      train_ds, s2level, unique_cells_df, cellid_to_label)
+    logging.info(
+      f"Finished to create the train-set with {len(train_dataset)} samples")
+    val_dataset = TextGeoSplit(
+      valid_ds, s2level, unique_cells_df, cellid_to_label)
+    logging.info(
+      f"Finished to create the valid-set with {len(val_dataset)} samples")
+  test_dataset = TextGeoSplit(
+    test_ds, s2level, unique_cells_df, cellid_to_label)
+  logging.info(
+    f"Finished to create the test-set with {len(test_dataset)} samples")
 
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
     train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 

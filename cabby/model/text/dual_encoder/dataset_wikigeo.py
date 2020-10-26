@@ -38,8 +38,6 @@ tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
 CELLID_DIM = 64
 
-
-
 class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int]):
@@ -102,7 +100,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def __len__(self):
     return len(self.cellids)
 
-
 def create_dataset(
           data_dir: Text, 
           region: Text, 
@@ -142,12 +139,18 @@ def create_dataset(
   val_dataset = None
   logging.info("Starting to create the splits")
   if infer_only == False:
-    train_dataset = TextGeoSplit(train_ds, s2level, unique_cells_df, cellid_to_label)
-    logging.info(f"Finished to create the train-set with {len(train_dataset)} samples")
-    val_dataset = TextGeoSplit(valid_ds, s2level, unique_cells_df, cellid_to_label)
-    logging.info(f"Finished to create the valid-set with {len(val_dataset)} samples")
-  test_dataset = TextGeoSplit(test_ds, s2level, unique_cells_df, cellid_to_label)
-  logging.info(f"Finished to create the test-set with {len(test_dataset)} samples")
+    train_dataset = TextGeoSplit(
+      train_ds, s2level, unique_cells_df, cellid_to_label)
+    logging.info(
+      f"Finished to create the train-set with {len(train_dataset)} samples")
+    val_dataset = TextGeoSplit(
+      valid_ds, s2level, unique_cells_df, cellid_to_label)
+    logging.info(
+      f"Finished to create the valid-set with {len(val_dataset)} samples")
+  test_dataset = TextGeoSplit(
+    test_ds, s2level, unique_cells_df, cellid_to_label)
+  logging.info(
+    f"Finished to create the test-set with {len(test_dataset)} samples")
 
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
     train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 

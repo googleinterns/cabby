@@ -43,7 +43,7 @@ class RVSData:
     distance: int = attr.ib()
     instructions: Text = attr.ib()
     id: int = attr.ib()
-    version: int = attr.ib()
+    version: float = attr.ib()
 
 
     @classmethod

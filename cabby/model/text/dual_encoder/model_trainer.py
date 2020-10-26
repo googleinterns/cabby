@@ -184,7 +184,8 @@ def main(argv):
 
   dual_encoder.to(device)
 
-  optimizer = torch.optim.Adam(dual_encoder.parameters(), lr=FLAGS.learning_rate)
+  optimizer = torch.optim.Adam(
+    dual_encoder.parameters(), lr=FLAGS.learning_rate)
   
 
   trainer = train.Trainer(
@@ -202,7 +203,8 @@ def main(argv):
     )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")
-    valid_loss, predictions, true_vals, true_points, pred_points = trainer.evaluate(validation_set = False)
+    valid_loss, predictions, true_vals, true_points, pred_points = (
+      trainer.evaluate(validation_set = False))
 
     util.save_metrics_last_only(
       trainer.metrics_path, 
@@ -213,7 +215,8 @@ def main(argv):
 
     evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(trainer.metrics_path)
-    _, mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
+    _, mean_distance, median_distance, max_error, norm_auc = (
+      evaluator.compute_metrics(error_distances))
 
     logging.info(f"\nTest Accuracy: {accuracy}, \n" +
     f"Mean distance: {mean_distance},\nMedian distance: {median_distance},\n" +
