@@ -51,7 +51,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     points = data.end_point.apply(
       lambda x: gutil.point_from_list_coord(x))
 
-    data['point'] = data['point'].assign(point=points)
+    data = data.assign(point=points)
 
     self.points = data.end_point.apply(
       lambda x: gutil.coords_from_list_coord(x)).tolist()
