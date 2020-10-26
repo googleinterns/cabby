@@ -91,7 +91,7 @@ class Trainer:
       far_cells = batch['far_cells'].float().to(self.device)
 
       loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
-
+      loss_val_total+=loss
       text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
       batch_dim = text_embedding.shape[0]
       cell_dim = cellid_embedding.shape[0]
