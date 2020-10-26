@@ -47,10 +47,14 @@ class GeoSetTest(unittest.TestCase):
          'Pennsylvania, United States, Birmingham Public School.')
     )
 
-    osm_sample = samples[6]
-    self.assertEqual(osm_sample.sample_type, 'OSM')
-    self.assertEqual(
-      osm_sample.text, 'Figleaf and building and East Carson Street.')
+    foundFigleaf = False
+    for sample in samples:
+      if sample.title == 'Figleaf':
+        foundFigleaf = True
+        self.assertEqual(sample.sample_type, 'OSM')
+        self.assertEqual(
+          sample.text, 'Figleaf and building and East Carson Street.')
+    self.assertTrue(foundFigleaf)
 
 
 if __name__ == "__main__":
