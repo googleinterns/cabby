@@ -73,8 +73,6 @@ class Trainer:
     else:
       data_loader = self.test_loader
 
-    self.model.eval()
-
     # Validation loop.
     logging.info("Starting evaluation.")
     true_points_list, pred_points_list = [], []
@@ -83,29 +81,31 @@ class Trainer:
     total = 0
     loss_val_total = 0
 
-    for batch in data_loader:
+    self.model.eval()
+    with torch.no_grad():
+      for batch in data_loader:
 
-      text = {key: val.to(self.device) for key, val in batch['text'].items()}
-      cellids = batch['cellid'].float().to(self.device)
-      neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
-      far_cells = batch['far_cells'].float().to(self.device)
+        text = {key: val.to(self.device) for key, val in batch['text'].items()}
+        cellids = batch['cellid'].float().to(self.device)
+        neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
+        far_cells = batch['far_cells'].float().to(self.device)
 
-      loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
-      loss_val_total+=loss
-      text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
-      batch_dim = text_embedding.shape[0]
-      cell_dim = cellid_embedding.shape[0]
-      output_dim  = cellid_embedding.shape[1]
-      cellid_embedding_exp = cellid_embedding.expand(
-        batch_dim, cell_dim, output_dim)
-      text_embedding_exp = text_embedding.unsqueeze(1)
-      output = self.cos(cellid_embedding_exp, text_embedding_exp)
-      output = output.detach().cpu().numpy()
-      predictions = np.argmax(output, axis=1)
-      predictions_list.append(predictions)
-      labels = batch['label'].numpy()
-      true_vals.append(labels)
-      true_points_list.append(batch['point'])
+        loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
+        loss_val_total+=loss
+        text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
+        batch_dim = text_embedding.shape[0]
+        cell_dim = cellid_embedding.shape[0]
+        output_dim  = cellid_embedding.shape[1]
+        cellid_embedding_exp = cellid_embedding.expand(
+          batch_dim, cell_dim, output_dim)
+        text_embedding_exp = text_embedding.unsqueeze(1)
+        output = self.cos(cellid_embedding_exp, text_embedding_exp)
+        output = output.detach().cpu().numpy()
+        predictions = np.argmax(output, axis=1)
+        predictions_list.append(predictions)
+        labels = batch['label'].numpy()
+        true_vals.append(labels)
+        true_points_list.append(batch['point'])
 
     true_points_list = np.concatenate(true_points_list, axis=0)
     predictions_list = np.concatenate(predictions_list, axis=0)
