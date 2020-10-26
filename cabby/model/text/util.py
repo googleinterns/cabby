@@ -88,7 +88,11 @@ def load_checkpoint(load_path: Text, model:  torch.nn.Module,
   state_dict = torch.load(load_path, map_location=device)
   logging.info(f'Model loaded from <== {load_path}')
 
-  model.load_state_dict(state_dict['model_state_dict'])
+  if isinstance(model, nn.DataParallel):
+    model.module.load_state_dict(state_dict['model_state_dict'])
+
+  else: 
+    model.load_state_dict(state_dict['model_state_dict'])
   return state_dict
 
 
