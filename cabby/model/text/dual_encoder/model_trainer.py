@@ -34,6 +34,7 @@ $ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
   --infer_only True \
   --model_path ~/tmp/model/dual \
   --output_dir ~/tmp/output/dual\
+  --dataset_type RVS
 
 
 
