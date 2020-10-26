@@ -95,7 +95,8 @@ class Map:
             'brand': True,
             'tourism': True}
 
-    osm_poi = ox.pois.pois_from_polygon(self.polygon_area, tags=tags)
+    osm_poi = ox.geometries.geometries_from_polygon(
+      self.polygon_area, tags=tags)
 
     osm_highway = osm_poi['highway']
     osm_poi_no_streets = osm_poi[osm_highway.isnull()]

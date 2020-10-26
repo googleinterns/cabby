@@ -26,7 +26,7 @@ from cabby.geo import util
 VERSION = 0.3
 
 
-@attr.s()
+@attr.s
 class RVSData:
     """Construct a RVSdata sample.
     `start_point` is the beginning location.
