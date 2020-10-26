@@ -18,7 +18,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-import typing
+from typing import Any, Dict, Sequence
 
 from cabby.geo.map_processing import map_structure
 from cabby.data import wikidata
@@ -28,12 +28,8 @@ from cabby.geo import util
 DEFAULT_POI_READABLE_NAME = "poi"
 
 # Type declarations
-Any = typing.Any
-Dict = typing.Dict
 Map = map_structure.Map
 Region = regions.Region
-Sequence = typing.Sequence
-Tuple = typing.Tuple
 
 def convert_pandas_df_to_metagraph(
   df:Any, source_column: str, target_column: str,
@@ -204,8 +200,7 @@ def construct_metagraph(region: Region,
     name_to_point = {name: row["geometry"]}
     if isinstance(row["wikidata"], str):
       name_to_wikidata[name] = row["wikidata"]
-  nx.relabel.relabel_nodes(metagraph, osmid_to_name,
-                           copy=False)
+  nx.relabel.relabel_nodes(metagraph, osmid_to_name, copy=False)
 
   # Relabel node IDs to strings
   relabel_map = {}
