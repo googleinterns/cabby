@@ -26,7 +26,7 @@ from cabby.geo import util
 VERSION = 0.3
 
 
-@attr.s
+@attr.s()
 class RVSData:
     """Construct a RVSdata sample.
     `start_point` is the beginning location.
@@ -43,11 +43,8 @@ class RVSData:
     distance: int = attr.ib()
     instructions: Text = attr.ib()
     id: int = attr.ib()
-    version: int = attr.ib(init=False)
+    version: int = attr.ib()
 
-    def __attrs_post_init__(self):
-        # Create RVS sample
-        self.version = VERSION
 
     @classmethod
     def from_geo_entities(cls, start, start_osmid, end_osmid, end, route,
@@ -61,5 +58,6 @@ class RVSData:
             end_osmid,
             util.get_linestring_distance(route),
             instructions,
-            id
+            id,
+            VERSION
         )

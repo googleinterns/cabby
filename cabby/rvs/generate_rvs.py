@@ -130,12 +130,22 @@ def main(argv):
     )
     gen_samples.append(rvs_entity)
 
+  logging.info(f"RVS generated: {len(gen_samples)}")
+
+  unique_instructions = []
+  unique_gen_samples = []
+  for gen in gen_samples:
+    if gen.instructions not in unique_instructions:
+      unique_instructions.append(gen.instructions)
+      unique_gen_samples.append(gen)    
+  logging.info(f"Unique RVS generated: {len(unique_gen_samples)}")
+
   logging.info(
-    f"Writing {len(gen_samples)} samples to file => " +
+    f"Writing {len(unique_gen_samples)} samples to file => " +
     f"{FLAGS.save_instruction_path}")
   # Save to file.
   with open(FLAGS.save_instruction_path, 'a') as outfile:
-    for sample in gen_samples:
+    for sample in unique_gen_samples:
       json.dump(sample, outfile, default=lambda o: o.__dict__)
       outfile.write('\n')
       outfile.flush()

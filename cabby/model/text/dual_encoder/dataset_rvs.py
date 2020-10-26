@@ -48,11 +48,13 @@ class TextGeoSplit(torch.utils.data.Dataset):
       data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
 
-    data['point'] = data.end_point.apply(
-      lambda x: gutil.point_from_str_coord(x))
+    points = data.end_point.apply(
+      lambda x: gutil.point_from_list_coord(x))
+
+    data['point'] = data['point'].assign(point=points)
 
     self.points = data.end_point.apply(
-      lambda x: gutil.coords_from_str_coord(x)).tolist()
+      lambda x: gutil.coords_from_list_coord(x)).tolist()
 
     data['cellid'] = data.point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
@@ -118,16 +120,17 @@ def create_dataset(
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
   ds = pd.read_json(os.path.join(data_dir, 'dataset.json'))
+  logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
+  ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
+  logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
   dataset_size = ds.shape[0]
   train_size = round(dataset_size*80/100)
   valid_size = round(dataset_size*10/100)
 
 
   train_ds = ds.iloc[:train_size]
-  valid_ds = ds.iloc[train_size+1:train_size+1+valid_size]
-  test_ds = ds.iloc[train_size+1+valid_size+1:]
-
-  assert dataset_size == train_ds.shape[0] + valid_ds.shape[0] + test_ds.shape[0]
+  valid_ds = ds.iloc[train_size:train_size+valid_size]
+  test_ds = ds.iloc[train_size+valid_size:]
 
   # Get labels.
   get_region = regions.get_region(region)
