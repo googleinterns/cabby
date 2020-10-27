@@ -13,10 +13,10 @@
 # limitations under the License.
 '''Extract and saves Wikigeo items from Wikipedia, Wikidata, and OSM.
 Example:
-$ bazel-bin/cabby/data/extract_wikigeo_contexts \
+$ bazel-bin/cabby/data/create_wikigeo_dataset \
   --region "Pittsburgh_small" --output_dir wikigeo
 Example with Open Street Map items:
-$ bazel-bin/cabby/data/extract_wikigeo_contexts \
+$ bazel-bin/cabby/data/create_wikigeo_dataset \
   --region "Pittsburgh_small" --output_dir wikigeo \
   --osm_path cabby/geo/map_processing/poiTestData/pittsburgh_small_poi.pkl
 '''
@@ -48,7 +48,7 @@ FLAGS = flags.FLAGS
 def main(argv):
   del argv  # Unused.
   
-  logging.info("Extracting Wikigeo samples.")
+  logging.info("Creating Wikigeo dataset.")
 
   # Extract items.
   if FLAGS.osm_path is not None:

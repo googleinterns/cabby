@@ -13,19 +13,18 @@
 # limitations under the License.
 
 
-from typing import Tuple, Sequence, Optional, Dict, Text, Any
+from typing import Dict, Sequence 
 
 from absl import logging
 import numpy as np
 import os
 from sklearn.metrics import accuracy_score
 import torch
-import torch.optim as optim
 import torch.nn as nn
 from transformers import AdamW
 from torch.utils.data import DataLoader
-from cabby.evals import utils as eu
 
+from cabby.evals import utils as eu
 from cabby.model.text import util
 
 criterion = nn.CosineEmbeddingLoss()
@@ -37,7 +36,7 @@ class Trainer:
           model: torch.nn.Module,
           device: torch.device,
           optimizer: torch.optim.Adam,
-          file_path: Text,
+          file_path: str,
           train_loader: DataLoader,
           valid_loader: DataLoader,
           test_loader: DataLoader,

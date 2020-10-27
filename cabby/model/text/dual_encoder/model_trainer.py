@@ -34,7 +34,7 @@ $ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
   --infer_only True \
   --model_path ~/tmp/model/dual \
   --output_dir ~/tmp/output/dual\
-  --dataset_type RVS
+  --task RVS
 
 
 
@@ -74,7 +74,7 @@ flags.DEFINE_enum(
   "region", None, regions.SUPPORTED_REGION_NAMES, 
   regions.REGION_SUPPORT_MESSAGE)
 flags.DEFINE_enum(
-  "dataset_type", "WikiGeo", ["WikiGeo", "RVS"], 
+  "task", "WikiGeo", ["WikiGeo", "RVS"], 
   "Supported datasets to train\evaluate on: WikiGeo or RVS.")
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
 flags.DEFINE_string("output_dir", None,
@@ -122,10 +122,8 @@ def main(argv):
   tensor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
   label_to_cellid_path = os.path.join(dataset_path,"label_to_cellid.npy")
 
-  if FLAGS.dataset_type == "WikiGeo":
-    dataset = dataset_wikigeo
-  else:
-    dataset = dataset_rvs
+
+  dataset = dataset_wikigeo if FLAGS.task == "WikiGeo" else dataset_rvs
 
   if os.path.exists(dataset_path):
     datast_text = dataset_item.TextGeoDataset.load(

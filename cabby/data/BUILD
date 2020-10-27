@@ -13,10 +13,7 @@ py_library(
         "//cabby/data/wikipedia:query",
         "//cabby/data/wikidata:info_item",
         '//cabby/geo/map_processing:map_structure'
-
-
     ],
-
 )
 
 py_library(
@@ -43,15 +40,12 @@ py_test(
         "//cabby/data/wikipedia:query",
         "//cabby/data/wikidata:info_item",
         '//cabby/geo/map_processing:map_structure'
-
-
     ],
 )
 
 py_binary(
-    name = 'extract_wikigeo_contexts',
-    main = 'extract_wikigeo_contexts.py',
-    srcs = ['extract_wikigeo_contexts.py'],
+    name = 'create_wikigeo_dataset',
+    srcs = ['create_wikigeo_dataset.py'],
     deps = [
         ':extract',
         ":osm_item",
@@ -61,5 +55,4 @@ py_binary(
         "//cabby/data/wikipedia:query",
         "//cabby/data:wikigeo"
     ],
-
 )

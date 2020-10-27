@@ -13,24 +13,45 @@
 # limitations under the License.
 
 '''Library to support Wikipedia queries.'''
-
-
-from typing import Dict, Tuple, Sequence, Text, Optional
-import requests
-import spacy
-import multiprocessing
+import collections
 import copy
+import itertools
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
+import multiprocessing
+import random
 import re
+import requests
+import spacy
+from typing import Any, Dict, Tuple, Sequence, Text, Optional
+
+from cabby.data.wikipedia import item as wpi
+
+# Threshold for the number of characters needed in a sentence to be extracted
+# as a context from a page.
+MIN_CHARACTER_COUNT = 30
+
+# The maximum number of times a given pageid can be explored for backlink
+# contexts given the set of Wikipedia titles under consideration. This is
+# intended to reduce checking pages that are backlinks just because they are
+# part of a Wikipedia list, such as historical places in a city.
+BACKLINK_COUNT_THRESHOLD = 5
+
+# A cap on the number of backlinks to explore per title.
+MAX_BACKLINKS_PER_TITLE = 25
 
 # Process text with spacy.
 nlp = spacy.load("en_core_web_sm")
 nlp.max_length = 5000000
 
+def get_items_for_title(title: str) -> Sequence[wpi.WikipediaEntity]:
+  '''Creates WikipediaEntity objects from the text on the requested page.
 
-def get_wikipedia_item(title: Text) -> Optional[Sequence]:
-
+  Args:
+    title: The title of the page to search for.
+  Returns:
+    A sequence of WikipediaEntity objects, one per sentence in the page's text. 
+  '''
   url = (
     'https://en.wikipedia.org/w/api.php'
     '?action=query'
@@ -42,55 +63,53 @@ def get_wikipedia_item(title: Text) -> Optional[Sequence]:
   )
   try:
     json_response = requests.get(url).json()
-    entity = list(json_response['query']['pages'].values())[0]
+    result = list(json_response['query']['pages'].values())[0]
   except:
-    print("An exception occurred when runing query: {0}".format(url))
+    print("An exception occurred when running query: {0}".format(url))
     return []
-  
-  text = clean_text(entity['extract'])
 
+  # Found title can be different from input title, e.g. not having underscores.
+  result_title = result['title']
+  pageid = result['pageid']
+  text = clean_text(result['extract'])
   doc = nlp(text)
 
-  entities = []
-
+  items = []
   for span in list(doc.sents):
-    sub_sentences = span.text.split('\n')
-    for sentence in sub_sentences:
-      # Filter short sentences
-      if len(sentence.split(" "))<5:
-        continue
-      sub_entity = copy.deepcopy(entity)
-      sub_entity['extract'] = sentence
-      if sub_entity not in entities:
-        entities.append(sub_entity)
-  return entities
+    for sentence in span.text.split('\n'):
+      # Filter short sentences based on number of characters.
+      if len(sentence) > MIN_CHARACTER_COUNT:
+        items.append(wpi.WikipediaEntity(pageid, title, sentence))
+
+  return items
 
 
-def get_wikipedia_items(titles: Sequence[Text]) -> Sequence:
-  '''Query the Wikipedia API. 
+def get_wikipedia_items(titles: Sequence[str]) -> Sequence[wpi.WikipediaEntity]:
+  '''Query the Wikipedia API.
+
   Arguments:
-    titles(Text): The Wikipedia titles to run on the Wikipedia API.
+    titles: The Wikipedia titles to run on the Wikipedia API.
   Returns:
     The Wikipedia items found.
   '''
-
   with multiprocessing.Pool(processes=10) as pool:
-    entities = pool.map(get_wikipedia_item, titles)
-  return entities
+    items = pool.map(get_items_for_title, titles)
+  return list(itertools.chain.from_iterable(items))
 
 
-def clean_title(title: Text) -> Text:
+def clean_title(title: str) -> str:
   '''Parse Wikipedia title and remove unwanted chars. 
   Arguments:
-    title(Text): The Wikipedia title to be parsed.
+    title: The Wikipedia title to be parsed.
   Returns:
     The title after parsing.
   '''
   title = title.split(',')[0]
   title = title.split('(')[0]
-  return title
+  return title.strip()
 
-def clean_text(text: Text) -> Text:
+
+def clean_text(text: str) -> str:
   '''Parse Wikipedia text and remove unwanted chars. 
   Arguments:
     text(Text): The Wikipedia text to be parsed.
@@ -106,76 +125,13 @@ def clean_text(text: Text) -> Text:
   return text
 
 
-def get_wikipedia_items_title_in_text(backlink_id: int, orig_title: Text) -> Sequence:
-  '''Query the Wikipedia API. 
-  Arguments:
-    backlinks_titles(Sequence[Text]): The Wikipedia backlinks titles to
-    run on the Wikipedia API.
-    orig_title(Text): The Wikipedia title that would be searched in
-    the backlinks text.
-  Returns:
-    The backlinks Wikipedia items found.
-  '''
-
-  url = (
-    'https://en.wikipedia.org/w/api.php'
-    '?action=query'
-    '&prop=extracts'
-    '&explaintext'
-    f'&pageids={backlink_id}'
-    '&format=json'
-  )
-
-  orig_title = clean_title(orig_title)
-
-  try:
-    json_response = requests.get(url).json()
-    entity = list(json_response['query']['pages'].values())[0]
-
-  except:
-    print("An exception occurred when runing query: {0}".format(url))
-    return []
-
-  if 'may refer to:' in entity['extract']:
-    return []
-
-  text = clean_text(entity['extract'])
-
-  doc = nlp(text)
-
-  entities = []
-
-  fuzzy_score = fuzz.token_set_ratio(doc.text, orig_title)
-
-  if orig_title not in doc.text and fuzzy_score < 90:
-    return entities
-
-  for span in list(doc.sents):
-    sub_sentences = span.text.split('\n')
-    for sentence in sub_sentences:
-      # Filter short sentences
-      if len(sentence.split(" "))<5:
-        continue
-      fuzzy_score = fuzz.token_set_ratio(sentence, orig_title)
-      if orig_title not in sentence and fuzzy_score < 90:
-        continue
-
-      sub_entity = copy.deepcopy(entity)
-      sub_entity['extract'] = sentence
-      entities.append(sub_entity)
-
-  return entities
-
-
-def get_backlinks_ids_from_wikipedia_title(title: Text) -> Sequence[int]:
+def get_backlinks_ids_from_wikipedia_title(title: str) -> Sequence[int]:
   '''Query the Wikipedia API for backlinks pageids. 
   Arguments:
-    title(Text): The Wikipedia title for which the backlinks
-    will be connected to.
+    title: The Wikipedia title to obtain backlinks from.
   Returns:
     The backlinks pageids.
   '''
-
   url = (
     'https://en.wikipedia.org/w/api.php'
     '?action=query'
@@ -188,47 +144,144 @@ def get_backlinks_ids_from_wikipedia_title(title: Text) -> Sequence[int]:
 
   try:
     json_response = requests.get(url).json()
-
-    backlinks_ids = [y['pageid'] for k, x in json_response['query']
-             ['pages'].items() for y in x['linkshere']]
+    backlinks_ids = [
+      y['pageid'] for k, x in json_response['query']['pages'].items() 
+      for y in x['linkshere']]
 
   except:
-    print("An exception occurred when runing query: {0}".format(url))
+    print("An exception occurred when running query: {0}".format(url))
     return []
 
   return backlinks_ids
 
 
-def get_backlinks_items_from_wikipedia_title(title: Text) -> Sequence:
-  '''Query the Wikipedia API for backlinks pages. 
-  Arguments:
-    title(Text): The Wikipedia title for which the backlinks
-    will be connected to.
+def get_page_from_id(pageid: int):
+  '''Gets the JSON result of looking up a page by its id.
+
+  Args:
+    pageid: The Wikipedia page id to look up.
   Returns:
-    The backlinks pages.
+    The result from the Wikipedia API for that page id.
   '''
-  # Get the backlinks titles.
-  backlinks_pageids = get_backlinks_ids_from_wikipedia_title(title)
+  url = (
+    'https://en.wikipedia.org/w/api.php'
+      '?action=query'
+      '&prop=extracts'
+      '&explaintext'
+      f'&pageids={pageid}'
+      '&format=json'
+    )
 
-  # Get the backlinks pages.
-  backlinks_pages = []
+  try:
+    json_response = requests.get(url).json()
+    result = list(json_response['query']['pages'].values())[0]
 
-  for id in backlinks_pageids:
-    backlinks_pages += get_wikipedia_items_title_in_text(id, title)
-  return backlinks_pages
+  except:
+    print("An exception occurred when running query: {0}".format(url))
+    return None
 
+  if 'may refer to:' in result['extract']:
+    return None
 
-def get_backlinks_items_from_wikipedia_titles(titles: Sequence[Text]) -> Sequence[Sequence]:
-  '''Query the Wikipedia API for backlinks pages multiple titles. 
+  return result
+
+def get_items_matching_titles(backlink_id: int, titles: Sequence[str]):
+  '''Extract paragraphs containing references to any of the provided titles.
+  
+  Queries the Wikipedia API to obtain the page text of the backlink_id, parses
+  it with Spacy, and then checks for each of the titles. By doing multiple
+  titles for the same backlink_id, we only need to process the document's text
+  once. Using this, we can get examples such as this from the page for Errol
+  Flynn (the backlink id) but as a context for the University of Texas at Austin
+  (an example title matching a sentence in Errol Flynn's page):
+
+    'Many of these pieces were lost until 2009, when they were rediscovered in a 
+    collection at the University of Texas at Austin's Dolph Briscoe Center for 
+    American History.'
+
   Arguments:
-    titles(Sequence): The Wikipedia titles for which the
-    backlinks will be connected to.
+    backlink_id: The backlink id of the Wikipedia page to search.
+    titles: The Wikipedia titles to search for in the text.
   Returns:
-    The backlinks pages.
+    The backlinks Wikipedia items found.
   '''
+  result = get_page_from_id(backlink_id)
+  if result is None:
+    return []
 
-  with multiprocessing.Pool(processes=8) as pool:
-    backlinks_pages = pool.map(get_backlinks_items_from_wikipedia_title,
-                   titles)
+  result_title = result['title']
+  text = clean_text(result['extract'])
+  doc = nlp(text)
 
-  return backlinks_pages
+  items = []
+
+  # We need clean titles for search in text, but we need to be able to map back
+  # to the original titles for creating WikipediaEntity objects.
+  clean_titles = [clean_title(title) for title in titles]
+  clean_title_to_original = dict(zip(clean_titles, titles))
+
+  # See which titles have at least one match and fail fast if there is little 
+  # hope of finding a match for any title.
+  possibly_matching_titles = []
+  for title in clean_titles:
+    if title in doc.text or fuzz.token_set_ratio(doc.text, title) > 90:
+      possibly_matching_titles.append(title)
+
+  if not possibly_matching_titles:
+    return items
+
+  # Extract sentence specific contexts.
+  for span in list(doc.sents):
+    sub_sentences = span.text.split('\n')
+    for sentence in sub_sentences:
+      # Filter short sentences with an insufficient character count.
+      if len(sentence) < MIN_CHARACTER_COUNT:
+        continue
+
+      for title in possibly_matching_titles:
+        fuzzy_score = fuzz.token_set_ratio(sentence, title)
+        if title in sentence or fuzzy_score > 90:
+          items.append(wpi.WikipediaEntity(
+            pageid=backlink_id, 
+            title=result_title, 
+            text=sentence,
+            linked_title=clean_title_to_original[title]
+          ))
+
+  return items
+
+def get_backlinks_items_from_wikipedia_titles(
+  titles: Sequence[str]) -> Sequence[wpi.WikipediaEntity]:
+  '''Query the Wikipedia API for backlinks pages with multiple titles. 
+
+  Arguments:
+    titles: The Wikipedia titles to search through for backlinks and contexts
+      matching those titles in them.
+  Returns:
+    A list of WikipediaEntity objects obtained from backlinks to the given
+    titles.
+  '''
+  title_to_backlinks = {
+    title: get_backlinks_ids_from_wikipedia_title(title)
+    for title in titles
+  }
+
+  backlink_counts = collections.defaultdict(int)
+  for backlinks in title_to_backlinks.values():
+    for bl in backlinks:
+      backlink_counts[bl] += 1
+  
+  backlinks_to_titles = collections.defaultdict(list)
+  for title, backlinks in title_to_backlinks.items():
+    valid_backlinks = [bl for bl in backlinks 
+                       if backlink_counts[bl] < BACKLINK_COUNT_THRESHOLD]   
+    random.shuffle(valid_backlinks)
+    for backlink in valid_backlinks[:MAX_BACKLINKS_PER_TITLE]:
+      backlinks_to_titles[backlink].append(title)
+
+  with multiprocessing.Pool(processes=10) as pool:
+    backlinks_items = pool.starmap(
+        get_items_matching_titles, backlinks_to_titles.items())
+
+  # Flatten the sequence of sequences and return the items.
+  return list(itertools.chain.from_iterable(backlinks_items))

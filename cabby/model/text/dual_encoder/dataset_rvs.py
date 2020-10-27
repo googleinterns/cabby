@@ -12,20 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Sequence, Optional, Dict, Text, Any
+from typing import Dict
 
 from absl import logging
 import numpy as np
 import os
 import pandas as pd
-import sys
 
 import torch
-import transformers
 from transformers import DistilBertTokenizerFast
-from transformers.tokenization_utils_base import BatchEncoding
-
-from shapely.geometry.point import Point
 
 from cabby.geo import util as gutil
 from cabby.model.text import util 
@@ -33,14 +28,20 @@ from cabby.model.text import util
 from cabby.geo import regions
 from cabby.model.text.dual_encoder import dataset_item
 
-
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
 CELLID_DIM = 64
 
 
-
 class TextGeoSplit(torch.utils.data.Dataset):
+  """A split of of the RVS dataset.
+  
+  `points`: The ground true end-points of the samples.
+  `labels`: The ground true label of the cellid.
+  `cellids`: The ground truth S2Cell id.
+  `neighbor_cells`: One neighbor cell id of the ground truth S2Cell id.
+  `far_cells`: One far away cell id (in the region defined) of the ground truth S2Cell id.
+  """
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int]):
     # Tokenize instructions.
@@ -53,13 +54,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     data = data.assign(point=points)
 
-    self.points = data.end_point.apply(
-      lambda x: gutil.coords_from_list_coord(x)).tolist()
-
     data['cellid'] = data.point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
-
-    self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
 
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.neighbor_cellid(x))
@@ -71,10 +67,13 @@ class TextGeoSplit(torch.utils.data.Dataset):
     neighbor_cells_array = np.array(data.neighbor_cells.tolist())
     far_cells_array = np.array(data.far_cells.tolist())
 
+
+    self.points = data.point.apply(
+      lambda x: gutil.tuple_from_point(x)).tolist()
+    self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
     self.cellids = util.binary_representation(cellids_array, dim = CELLID_DIM)
     self.neighbor_cells =  util.binary_representation(
       neighbor_cells_array, dim = CELLID_DIM)
-
     self.far_cells =  util.binary_representation(
       far_cells_array, dim = CELLID_DIM)
 
@@ -106,10 +105,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 
 def create_dataset(
-          data_dir: Text, 
-          region: Text, 
-          s2level: int, 
-          infer_only: bool = False
+                  data_dir: str, 
+                  region: str, 
+                  s2level: int, 
+                  infer_only: bool = False
 ) -> dataset_item.TextGeoDataset:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
@@ -132,8 +131,8 @@ def create_dataset(
   test_ds = ds.iloc[train_size+valid_size:]
 
   # Get labels.
-  get_region = regions.get_region(region)
-  unique_cellid = gutil.cellids_from_polygon(get_region.polygon, s2level)
+  active_region = regions.get_region(region)
+  unique_cellid = gutil.cellids_from_polygon(active_region.polygon, s2level)
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
@@ -148,7 +147,7 @@ def create_dataset(
   dim = CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
-  # Create Cabby dataset.
+  # Create RVS dataset.
   train_dataset = None
   val_dataset = None
   logging.info("Starting to create the splits")

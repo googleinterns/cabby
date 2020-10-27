@@ -499,19 +499,6 @@ def point_from_list_coord(coord: Sequence) -> Point:
 
   return Point(lon, lat)
 
-def coords_from_list_coord(coord: Sequence) -> CoordsYX:
-  '''Converts coordinates in list format (latitude and longtitude) to 
-  coordinates in a tuple format. 
-  E.g, of string [40.715865, -74.037258].
-  Arguments:
-    coord: A lat-lng coordinate to be converted to a tuple.
-  Returns:
-    A tuple of lat-lng.
-  '''
-  lat = coord[0]
-  lon = coord[1]
-
-  return CoordsYX(lat, lon)
 
 def point_from_str_coord(coord_str: Text) -> Point:
   '''Converts coordinates in string format (latitude and longtitude) to Point. 

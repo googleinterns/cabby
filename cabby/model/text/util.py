@@ -96,7 +96,6 @@ def load_checkpoint(load_path: Text, model:  torch.nn.Module,
   return state_dict
 
 
-
 def save_metrics_last_only(save_path: Text,
          true_points_list: Sequence[Tuple[float, float]],
          pred_points_list: Sequence[Tuple[float, float]]):

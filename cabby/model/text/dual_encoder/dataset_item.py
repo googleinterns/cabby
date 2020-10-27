@@ -23,7 +23,7 @@ import re
 from shapely.geometry.point import Point
 from shapely.geometry import box, mapping, LineString
 import sys
-from typing import Text, Dict, Any
+from typing import Any, Dict, Text 
 import torch
 
 import attr

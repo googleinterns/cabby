@@ -12,20 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Sequence, Optional, Dict, Text, Any
+from typing import Dict
 
 from absl import logging
 import numpy as np
 import os
 import pandas as pd
-import sys
 
 import torch
-import transformers
 from transformers import DistilBertTokenizerFast
-from transformers.tokenization_utils_base import BatchEncoding
-
-from shapely.geometry.point import Point
 
 from cabby.geo import util as gutil
 from cabby.model.text import util 
@@ -101,8 +96,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
     return len(self.cellids)
 
 def create_dataset(
-          data_dir: Text, 
-          region: Text, 
+          data_dir: str, 
+          region: str, 
           s2level: int, 
           infer_only: bool = False
 ) -> dataset_item.TextGeoDataset:
@@ -134,7 +129,7 @@ def create_dataset(
   dim = CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
-  # Create Cabby dataset.
+  # Create WikiGeo dataset.
   train_dataset = None
   val_dataset = None
   logging.info("Starting to create the splits")

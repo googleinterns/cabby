@@ -50,8 +50,9 @@ class WikidataEntity:
     # The QID is the part of the URL that comes after the last / character.
     self.qid = self.url[self.url.rindex('/')+1:]
 
-    # The Wikipedia title is part of the URL.
-    self.wikipedia_title = self.wikipedia_url.split("wiki/")[-1]
+    # The Wikipedia title is part of the URL, changing underscores to spaces.
+    title_in_url = self.wikipedia_url.split("wiki/")[-1]
+    self.wikipedia_title = title_in_url.replace('_', ' ').strip()
   
 
   @classmethod

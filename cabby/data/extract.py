@@ -18,7 +18,7 @@ import json
 import os
 import pandas as pd
 import string
-from typing import Dict, Optional, Sequence, Tuple, List
+from typing import Dict, List, Sequence
 
 from cabby.data.wikidata import query as wdq
 from cabby.data.wikipedia import query as wpq
@@ -42,49 +42,43 @@ def get_wikigeo_data(
         Wikidata (location) data).
     '''
     # Get Wikipedia titles.
-    titles = [entity.wikipedia_title for entity in wikidata_items]
+    titles_to_wikidata = {item.wikipedia_title: item for item in wikidata_items}
 
     # Get Wikipedia pages.
-    wikipedia_pages = wpq.get_wikipedia_items(titles)
-    wikipedia_items = []
-    wikipedia_titles =[]
-    for wikipedia_page in wikipedia_pages:
-      wikipedia_page_items=[]
-      for item in wikipedia_page:
-        wikipedia_item = wpi.WikipediaEntity.from_api_result(item)
-        wikipedia_page_items.append(wikipedia_item)
-        if wikipedia_item.title not in wikipedia_titles:
-          wikipedia_titles.append(wikipedia_item.title)
-      wikipedia_items.append(wikipedia_page_items)
+    wikipedia_items = wpq.get_wikipedia_items(list(titles_to_wikidata.keys()))
+    titles_to_wikipedia = {item.title: item for item in wikipedia_items}
 
-    # # Change to Geodata dataset foramt.
+    # Change to Geodata dataset format.
     geo_data = []
-    for wikipedia_page_items, wikidata in zip(wikipedia_items, wikidata_items):
-      for wikipedia in wikipedia_page_items:
-        geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
-            wikipedia, wikipedia, wikidata, "Wikipedia_page"))
+    for wp_item in wikipedia_items:
+      geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
+        wp_item, wp_item, titles_to_wikidata[wp_item.title], 'Wikipedia_page'))
 
-    # # Get backlinks for Wikipedia pages.
-    backlinks_pages = wpq.get_backlinks_items_from_wikipedia_titles(
-        wikipedia_titles)
-    backlinks_items = []
-    for list_backlinks in backlinks_pages:
-        backlinks_items.append(
-            [wpi.WikipediaEntity.from_api_result(result) for \
-                result in list_backlinks])
+    # Get backlinks for Wikipedia pages.
+    logging.info("Creating WikipediaEntities from backlinks.")
+    backlinks_items = wpq.get_backlinks_items_from_wikipedia_titles(
+      list(titles_to_wikidata.keys()))
 
     # Change backlinks pages to Geodata dataset format.
-    for list_backlinks, original_wikipedia_items, original_wikidata in \
-        zip(backlinks_items, wikipedia_items, wikidata_items):
-        for backlink in list_backlinks:
-            wikigeo_sample = wikigeo.WikigeoEntity.from_wiki_items(
-                backlink, original_wikipedia_items[0], original_wikidata, "Wikipedia_backlink")
-            
-            sample_text = wikigeo_sample.text
-            if any(item.text == sample_text for item in geo_data):
-                continue
-            geo_data.append(wikigeo_sample)
-    return geo_data
+    logging.info("Converting backlink pages to geodata")
+
+    for item in backlinks_items:
+      geo_data.append(wikigeo.WikigeoEntity.from_wiki_items(
+        item, 
+        titles_to_wikipedia[item.linked_title], 
+        titles_to_wikidata[item.linked_title], 
+        "Wikipedia_backlink"))
+
+    # Remove duplicates.
+    logging.info("Removing duplicate items.")
+    uniq_wgitems = {}
+    for wgitem in geo_data:
+      key = wgitem.ref_qid + wgitem.text
+      uniq_wgitems[key] = wgitem
+
+    logging.info("Done with all extraction.")
+
+    return list(uniq_wgitems.values())
 
 
 def get_data_by_qid(qid: str) -> Sequence[wikigeo.WikigeoEntity]:
@@ -95,7 +89,7 @@ def get_data_by_qid(qid: str) -> Sequence[wikigeo.WikigeoEntity]:
     The Wikipedia (text, title) and Wikidata (location) data found.
   '''
 
-  # Get Wikidata items by region.
+  # Get Wikidata items by qid.
   wikidata_results = wdq.get_place_location_points_from_qid(qid)
   wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
                     for result in wikidata_results]
@@ -103,7 +97,7 @@ def get_data_by_qid(qid: str) -> Sequence[wikigeo.WikigeoEntity]:
   return get_wikigeo_data(wikidata_items)
 
 
-def get_data_by_region(region: Region) -> Sequence[wikigeo.WikigeoEntity]:
+def get_data_by_region(region: Region) -> List[wikigeo.WikigeoEntity]:
   '''Get data from Wikipedia and Wikidata by region.
   Arguments:
     region(Region): The region to extract items from.
@@ -114,29 +108,25 @@ def get_data_by_region(region: Region) -> Sequence[wikigeo.WikigeoEntity]:
   # Get Wikidata items by region.
   wikidata_results = wdq.get_geofenced_wikidata_items(region)
   wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
-            for result in wikidata_results]
-
+                    for result in wikidata_results]
   return get_wikigeo_data(wikidata_items)
 
 
 def get_data_by_region_with_osm(
     region: Region, path_osm: str = None) -> List[wikigeo.WikigeoEntity]:
-  '''Get three types of samples by region: (1) samples from Wikipedia(text,
-  title) and Wikidata(location); (2) Concatenation of Wikidata tags; (3) 
-  Concatenation of OSM tags. 
+  '''Get three types of samples by region: 
+      (1) samples from Wikipedia(text, title) and Wikidata(location)
+      (2) Concatenation of Wikidata tags
+      (3) Concatenation of OSM tags. 
+
   Arguments:
     region(Region): The region to extract items from.
   Returns:
     The Wikipedia(text,title) and Wikidata(location) data found.
   '''
 
-
   # Get Wikidata items by region.
-  wikidata_results = wdq.get_geofenced_wikidata_items(region)
-  wikidata_items = [wdi.WikidataEntity.from_sparql_result(result)
-            for result in wikidata_results]
-
-  samples = get_wikigeo_data(wikidata_items)
+  samples = get_data_by_region(region)
 
   logging.info(
     f'Created {len(samples)} samples from Wikipedia pages and Wikidata (locations only).')
