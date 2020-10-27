@@ -21,7 +21,7 @@ import pandas as pd
 from typing import Any, Dict, Sequence
 
 from cabby.geo.map_processing import map_structure
-from cabby.data import wikidata
+from cabby.data.wikidata import query
 from cabby.geo import regions
 from cabby.geo import util
 
@@ -106,7 +106,7 @@ def update_osm_map(osm_map: Map,
           continue
       already_added.add(row.place)
       osmid = get_osmid_from_wd_relations_row(row)
-      wd_query = wikidata.query.get_place_location_points_from_qid(
+      wd_query = query.get_place_location_points_from_qid(
         row.place, location_only=True)
       new_df = pd.DataFrame(data={
           'name': row["placeLabel"],
@@ -170,7 +170,7 @@ def convert_multidi_to_weighted_undir_graph(
     out_graph: graph with weighted undirected edges.
   """
   out_graph = nx.Graph()
-  for node, adjacencies in in_graph.adjacency_iter():
+  for node, adjacencies in in_graph.adjacency():
     for neighbor, edge_dict in adjacencies.items():
       aggregated_weight = agg_function([d['weight'] for d in edge_dict.values()])
       out_graph.add_edge(node, neighbor, weight=aggregated_weight)
@@ -182,7 +182,7 @@ def construct_metagraph(region: Region,
                         base_osm_map_filepath: str,
                         agg_function=np.sum) -> nx.Graph:
   # Get relation data and add to existing graph.
-  wd_relations = wikidata.query.get_geofenced_wikidata_relations(
+  wd_relations = query.get_geofenced_wikidata_relations(
     region, extract_qids=True)
   osm_map = Map(region, s2_level, base_osm_map_filepath)
   update_osm_map(osm_map, wd_relations)
