@@ -56,6 +56,8 @@ _Geo_DataFrame_Driver = "GPKG"
 MAX_NUM_GEN_FAILED = 10
 
 
+ADD_POI_DISTANCE = 5000
+
 
 class Walker:
   def __init__(self, map: map_structure.Map, rand_sample: bool = True):
@@ -194,7 +196,7 @@ class Walker:
     try:
       # Find nodes within 2000 meter path distance.
       outer_circle_graph = ox.truncate.truncate_graph_dist(
-      self.map.nx_graph, dest_osmid, max_dist=MAX_PATH_DIST, weight='length')
+      self.map.nx_graph, dest_osmid, max_dist=(MAX_PATH_DIST+2*ADD_POI_DISTANCE), weight='length')
 
       outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
@@ -203,7 +205,7 @@ class Walker:
     try:
       # Get graph that is too close (less than 200 meter path distance)
       inner_circle_graph = ox.truncate.truncate_graph_dist(
-        self.map.nx_graph, dest_osmid, max_dist=MIN_PATH_DIST, weight='length')
+        self.map.nx_graph, dest_osmid, max_dist=MIN_PATH_DIST+2*ADD_POI_DISTANCE, weight='length')
       inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
@@ -304,7 +306,7 @@ class Walker:
     '''
 
     near_poi_con = self.map.poi.apply(lambda x: util.get_distance_between_geometries(
-      x.geometry, end_point['centroid']) < NEAR_PIVOT_DIST, axis=1)
+      x.geometry, end_point['centroid']) < NEAR_PIVOT_DIST+ADD_POI_DISTANCE, axis=1)
 
     poi = self.map.poi[near_poi_con]
     
@@ -418,7 +420,7 @@ class Walker:
 
     points_route = route['geometry'].tolist()
 
-    poly_route = Polygon(points_route).buffer(0.0001)
+    poly_route = LineString(points_route).buffer(0.0001)
 
     route_endpoint_points = [last_node_in_route["geometry"],
                 end_point['centroid'],
@@ -568,7 +570,7 @@ class Walker:
           self.map.nodes)
     if route is None:
       return None
-
+    
     # Select pivots.
     result = self.get_pivots(route, end_point)
     if result is None:

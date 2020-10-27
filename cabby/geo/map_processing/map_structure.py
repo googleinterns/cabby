@@ -40,6 +40,7 @@ from cabby.geo import regions
 
 POI_PREFIX = '#'
 SHOW_PROGRESS_EVERY = 100
+ADD_POI_DISTANCE = 5000
 
 class Map:
 
@@ -301,7 +302,7 @@ class Map:
       v_for_edge=projected_point_osmid,
       osmid=near_edge['osmid'],
       geometry=projected_line,
-      length = projected_line_dist
+      length = projected_line_dist + ADD_POI_DISTANCE
     )
     edges_list.append(edge_to_add)
 
