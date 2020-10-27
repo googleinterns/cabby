@@ -24,6 +24,7 @@ from shapely.geometry import box
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import box, mapping, LineString
+from shapely.geometry.multipolygon import MultiPolygon
 from shapely import wkt
 from shapely.ops import split
 
@@ -96,7 +97,7 @@ class Map:
             'brand': True,
             'tourism': True}
 
-    osm_poi = ox.pois.pois_from_polygon(self.polygon_area, tags=tags)
+    osm_poi = ox.geometries_from_polygon(self.polygon_area, tags=tags)
 
     osm_highway = osm_poi['highway']
     osm_poi_no_streets = osm_poi[osm_highway.isnull()]
@@ -132,20 +133,26 @@ class Map:
     # Project POI on to the closest edge in graph.
     geometry = single_poi['geometry']
     if isinstance(geometry, Point):
-      points = [single_poi['geometry']]
-    elif isinstance(geometry, Polygon):
-      coords = single_poi['geometry'].exterior.coords
+      points = [geometry]
+    else: # Polygon or LineString
+      if isinstance(geometry, Polygon):
+        coords = geometry.exterior.coords
+      elif isinstance(geometry, LineString):
+        coords = geometry.coords
+      elif isinstance(geometry, MultiPolygon):
+        coords = [poly.exterior.coords[0]  for poly in geometry]
+      else:
+        return None
       n_points = len(coords)
 
       # Sample maximum 4 points.
       sample_1 = Point(coords[0])
-      sample_2 = Point(coords[round(n_points/4)])
-      sample_3 = Point(coords[round(n_points/2)])
-      sample_4 = Point(coords[round(3*n_points/4)])
+      sample_2 = Point(coords[int(n_points/4)])
+      sample_3 = Point(coords[int(n_points/2)])
+      sample_4 = Point(coords[int(3*n_points/4)])
       points = [sample_1, sample_2, sample_3, sample_4]
       points = points[0:4]
-    else:
-      return single_poi['osmid']
+ 
 
     poi_osmid = single_poi['osmid']
 

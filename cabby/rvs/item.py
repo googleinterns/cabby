@@ -24,7 +24,7 @@ from typing import Text, Dict
 import attr
 
 
-@attr.s
+@attr.s()
 class RVSPath:
   """Construct a RVSPath sample.
   `start_point` is the beginning location.
@@ -55,6 +55,7 @@ class RVSPath:
   process: bool = attr.ib()
   instructions: Text = attr.ib(init=False)
   path_features: Dict = attr.ib(init=False)
+
 
   def __attrs_post_init__(self):
 
