@@ -306,7 +306,8 @@ class Walker:
     '''
 
     near_poi_con = self.map.poi.apply(lambda x: util.get_distance_between_geometries(
-      x.geometry, end_point['centroid']) < NEAR_PIVOT_DIST+ADD_POI_DISTANCE, axis=1)
+      x.geometry, end_point['centroid']) < NEAR_PIVOT_DIST + 
+      2*ADD_POI_DISTANCE, axis=1)
 
     poi = self.map.poi[near_poi_con]
     

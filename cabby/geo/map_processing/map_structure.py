@@ -40,6 +40,8 @@ from cabby.geo import regions
 
 POI_PREFIX = '#'
 SHOW_PROGRESS_EVERY = 100
+# Addition of distance to POI edges in order to prevent shhortcut route through 
+# the POI node.
 ADD_POI_DISTANCE = 5000
 
 class Map:
