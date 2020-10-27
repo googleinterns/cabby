@@ -24,9 +24,6 @@ class UtilTest(unittest.TestCase):
     # shape (2).
     dprob = util.DistanceProbability(1000)
 
-    for x in range(0, 2000, 100):
-      print(x, dprob(x), dprob.cdf(x))
-
     # Check probability of 900 meters.
     self.assertAlmostEqual(dprob(900), 0.36591269376653923)
 
