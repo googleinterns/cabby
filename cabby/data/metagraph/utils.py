@@ -13,7 +13,7 @@
 # limitations under the License.
 
 '''Utils for metagraph construction'''
-
+import collections
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -26,6 +26,7 @@ from cabby.geo import regions
 from cabby.geo import util
 
 DEFAULT_POI_READABLE_NAME = "poi"
+DEFAULT_EDGE_WEIGHT = 1.0
 
 # Type declarations
 Map = map_structure.Map
@@ -169,11 +170,20 @@ def convert_multidi_to_weighted_undir_graph(
   Returns:
     out_graph: graph with weighted undirected edges.
   """
+  edges = collections.defaultdict(dict)
+  for node, neighbor_dict in in_graph.adjacency():
+    for neighbor, edges_dict in neighbor_dict.items():
+      id_pair = tuple(sorted([node, neighbor]))
+      if 'weight' not in edges[id_pair]:
+        edges[id_pair]['weight'] = 0.0
+      for _, edge_data in edges_dict.items():
+        if 'true_length' in edge_data:
+          weight = edge_data['true_length']
+        else:
+          weight = edge_data['length']
+        edges[id_pair]['weight'] += weight
   out_graph = nx.Graph()
-  for node, adjacencies in in_graph.adjacency():
-    for neighbor, edge_dict in adjacencies.items():
-      aggregated_weight = agg_function([d['weight'] for d in edge_dict.values()])
-      out_graph.add_edge(node, neighbor, weight=aggregated_weight)
+  out_graph.add_edges_from([id_pair + (data,) for id_pair, data in edges.items()])
   return out_graph
 
 def construct_metagraph(region: Region,
@@ -187,9 +197,18 @@ def construct_metagraph(region: Region,
   osm_map = Map(region, s2_level, base_osm_map_filepath)
   update_osm_map(osm_map, wd_relations)
 
-  # Construct initial metagraph and human-readable node names.
+  # Relabel node IDs to strings
+  relabel_map = {}
+  for node in osm_map.nx_graph:
+    if isinstance(node, int):
+      relabel_map[node] = str(node)
+  nx.relabel.relabel_nodes(osm_map.nx_graph, relabel_map, copy=False)
+
+  # Construct initial metagraph.
   metagraph = convert_multidi_to_weighted_undir_graph(osm_map.nx_graph,
                                                       agg_function)
+
+  # Convert node IDs to unique human-readable node names.
   osmid_to_name = {}
   name_to_point = {}
   name_to_wikidata = {}
@@ -201,13 +220,6 @@ def construct_metagraph(region: Region,
     if isinstance(row["wikidata"], str):
       name_to_wikidata[name] = row["wikidata"]
   nx.relabel.relabel_nodes(metagraph, osmid_to_name, copy=False)
-
-  # Relabel node IDs to strings
-  relabel_map = {}
-  for node in metagraph:
-    if isinstance(node, int):
-      relabel_map[node] = str(node)
-  nx.relabel.relabel_nodes(metagraph, relabel_map, copy=False)
 
   # Add geometry data to OSM nodes.
   osm_geometries = {}
