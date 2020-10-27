@@ -14,7 +14,8 @@
 
 '''Tests for map_structure.py'''
 
-
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 import collections
 import osmnx as ox
