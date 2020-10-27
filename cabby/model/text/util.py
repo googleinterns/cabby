@@ -21,6 +21,8 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
 import torch
+import torch.nn as nn
+
 
 from cabby.geo import util
 
@@ -64,9 +66,14 @@ def save_checkpoint(save_path: Text, model:  torch.nn.Module,
   if save_path == None:
     return
 
-  state_dict = {'model_state_dict': model.state_dict(),
+  if isinstance(model, nn.DataParallel):
+    model_state_dict =  model.module.state_dict()
+  else: 
+    model_state_dict =  model.state_dict()
+    
+  state_dict = {'model_state_dict': model_state_dict,
           'valid_loss': valid_loss}
-
+        
   torch.save(state_dict, save_path)
   logging.info(f'Model saved to ==> {save_path}')
 
@@ -81,9 +88,12 @@ def load_checkpoint(load_path: Text, model:  torch.nn.Module,
   state_dict = torch.load(load_path, map_location=device)
   logging.info(f'Model loaded from <== {load_path}')
 
-  model.load_state_dict(state_dict['model_state_dict'])
-  return state_dict
+  if isinstance(model, nn.DataParallel):
+    model.module.load_state_dict(state_dict['model_state_dict'])
 
+  else: 
+    model.load_state_dict(state_dict['model_state_dict'])
+  return state_dict
 
 
 def save_metrics_last_only(save_path: Text,

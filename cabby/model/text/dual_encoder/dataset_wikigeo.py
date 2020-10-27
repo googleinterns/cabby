@@ -12,20 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Tuple, Sequence, Optional, Dict, Text, Any
+from typing import Dict
 
 from absl import logging
 import numpy as np
 import os
 import pandas as pd
-import sys
 
 import torch
-import transformers
 from transformers import DistilBertTokenizerFast
-from transformers.tokenization_utils_base import BatchEncoding
-
-from shapely.geometry.point import Point
 
 from cabby.geo import util as gutil
 from cabby.model.text import util 
@@ -37,8 +32,6 @@ from cabby.model.text.dual_encoder import dataset_item
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
 CELLID_DIM = 64
-
-
 
 class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
@@ -102,8 +95,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def __len__(self):
     return len(self.cellids)
 
-
-def create_dataset(data_dir: Text, region: Text, s2level: int
+def create_dataset(
+          data_dir: str, 
+          region: str, 
+          s2level: int, 
+          infer_only: bool = False
 ) -> dataset_item.TextGeoDataset:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
@@ -133,14 +129,23 @@ def create_dataset(data_dir: Text, region: Text, s2level: int
   dim = CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
-  # Create Cabby dataset.
+  # Create WikiGeo dataset.
+  train_dataset = None
+  val_dataset = None
   logging.info("Starting to create the splits")
-  train_dataset = TextGeoSplit(train_ds, s2level, unique_cells_df, cellid_to_label)
-  logging.info(f"Finished to create the train-set with {len(train_dataset)} samples")
-  val_dataset = TextGeoSplit(valid_ds, s2level, unique_cells_df, cellid_to_label)
-  logging.info(f"Finished to create the valid-set with {len(val_dataset)} samples")
-  test_dataset = TextGeoSplit(test_ds, s2level, unique_cells_df, cellid_to_label)
-  logging.info(f"Finished to create the test-set with {len(test_dataset)} samples")
+  if infer_only == False:
+    train_dataset = TextGeoSplit(
+      train_ds, s2level, unique_cells_df, cellid_to_label)
+    logging.info(
+      f"Finished to create the train-set with {len(train_dataset)} samples")
+    val_dataset = TextGeoSplit(
+      valid_ds, s2level, unique_cells_df, cellid_to_label)
+    logging.info(
+      f"Finished to create the valid-set with {len(val_dataset)} samples")
+  test_dataset = TextGeoSplit(
+    test_ds, s2level, unique_cells_df, cellid_to_label)
+  logging.info(
+    f"Finished to create the test-set with {len(test_dataset)} samples")
 
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
     train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 

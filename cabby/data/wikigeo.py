@@ -22,7 +22,7 @@ import attr
 from cabby.data.wikidata import item as wdi
 from cabby.data.wikipedia import item as wpi
 
-VERSION = 0.15
+VERSION = 0.17
 
 @attr.s
 class WikigeoEntity:

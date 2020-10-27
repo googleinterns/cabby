@@ -53,7 +53,8 @@ class GeoSetTest(unittest.TestCase):
         foundFigleaf = True
         self.assertEqual(sample.sample_type, 'OSM')
         self.assertEqual(
-          sample.text, 'Figleaf and building and East Carson Street.')
+          sample.text, 
+          'Figleaf and building and East Carson Street.')
     self.assertTrue(foundFigleaf)
 
 
