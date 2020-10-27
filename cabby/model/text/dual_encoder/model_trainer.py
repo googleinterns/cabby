@@ -31,11 +31,22 @@ $ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
   --region Pittsburgh \
   --s2_level 12 \
   --test_batch_size 32 \
-  --infer_only True \
+  --infer_only true \
   --model_path ~/tmp/model/dual \
   --output_dir ~/tmp/output/dual\
   --task RVS
 
+Fine tune:
+bazel-bin/cabby/model/text/dual_encoder/model_trainer \
+  --data_dir ~/data/wikigeo/pittsburgh  \
+  --dataset_dir ~/model/dual_encoder/dataset/pittsburgh \
+  --region Pittsburgh \
+  --s2_level 12 \
+  --test_batch_size 32 \
+  --infer_only false \
+  --model_path ~/tmp/model/dual \
+  --output_dir ~/tmp/output/dual\
+  --task RVS
 
 
 """
