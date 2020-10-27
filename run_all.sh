@@ -12,8 +12,6 @@ mkdir -p $MAP_DIR
 bazel-bin/cabby/geo/map_processing/map_processor --region $REGION_NAME --min_s2_level 18 --directory $MAP_DIR
 bazel-bin/cabby/geo/sample_poi --region $REGION_NAME --min_s2_level 18 --directory $MAP_DIR --path $MAP_DIR/utaustin_geo_paths.gpkg --n_samples 1
 
-# bazel-bin/cabby/geo/map_processing/map_processor --region DC --min_s2_level 18 --directory $OUTPUT_DIR/poiTestData
-
 echo "****************************************"
 echo "*              Wikidata                *"
 echo "****************************************"

@@ -54,7 +54,7 @@ class GeoSetTest(unittest.TestCase):
         self.assertEqual(sample.sample_type, 'OSM')
         self.assertEqual(
           sample.text, 
-          'Elixir Ultra Lounge and bar and building and East Carson Street.')
+          'Figleaf and building and East Carson Street.')
     self.assertTrue(foundFigleaf)
 
 

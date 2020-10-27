@@ -25,6 +25,7 @@ import pandas as pd
 from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
+from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry import box, mapping, LineString
 import sys
 from typing import Optional, Tuple, Sequence, Any, Text
@@ -450,9 +451,10 @@ def get_distance_between_geometries(geometry: Any, point: Point) -> float:
   if isinstance(geometry, Point):
     return get_distance_between_points(geometry, point)
   else:
-    return get_polygon_distance_from_point(geometry, point)
+    return get_distance_between_point_to_geometry(geometry, point)
 
-def get_polygon_distance_from_point(poly: Polygon, point: Point) -> float:
+def get_distance_between_point_to_geometry(
+  geometry: Any, point: Point) -> float:
   '''Calculate the distance between point and polygon in meters.
   Arguments:
     route: The line that length calculation will be performed on.
@@ -461,7 +463,13 @@ def get_polygon_distance_from_point(poly: Polygon, point: Point) -> float:
     The distance between point and polygon in meters.
   '''
   dist_min = float("Inf")
-  for coord in poly.exterior.coords:
+  if isinstance(geometry, MultiPolygon):
+    coords = [coord for poly in geometry for coord in poly.exterior.coords]
+  elif isinstance(geometry, Polygon):
+    coords = geometry.exterior.coords
+  else:
+    coords = geometry.coords
+  for coord in coords:
     point_current = Point(coord)
     dist = get_distance_between_points(point, point_current)
     if dist_min > dist:
