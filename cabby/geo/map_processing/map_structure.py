@@ -69,7 +69,9 @@ class Map:
       self.add_poi_to_graph()
       self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
 
-
+      osmid = self.nx_graph.nodes
+      osmid_str = list(map(str, osmid))
+      nx.set_edge_attributes(self.nx_graph, osmid_str, 'osmid')
     else:
       logging.info("Loading map from directory.")
       self.load_map(load_directory)
