@@ -62,10 +62,9 @@ class Map:
       logging.info("Constructing graph.")
       self.nx_graph = ox.graph_from_polygon(
         self.polygon_area, network_type='walk')
-      distance=nx.get_edge_attributes(self.nx_graph,'length')
+      distance = nx.get_edge_attributes(self.nx_graph, 'length')
       nx.set_edge_attributes(self.nx_graph, distance, 'true_length')
       
-
       logging.info("Add POI to graph.")
       self.add_poi_to_graph()
       self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
@@ -86,7 +85,8 @@ class Map:
 
     # Drop columns with list type.
     self.edges.drop(self.edges.columns.difference(
-      ['osmid', 'true_length','length', 'geometry', 'u', 'v', 'key']), 1, inplace=True)
+      ['osmid', 'true_length', 'length', 'geometry', 'u', 'v', 'key']), 
+      1, inplace=True)
     self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
 
   def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
@@ -130,7 +130,8 @@ class Map:
     if self.num_poi_add%SHOW_PROGRESS_EVERY == 0:
       percentage_gen = round(100*self.num_poi_add/self.num_poi)
       logging.info(
-        f"Number of POI add to graph {self.num_poi_add}, that is {percentage_gen}% of the required POI addition.")
+        f"Number of POI add to graph {self.num_poi_add}, " + 
+        f"that is {percentage_gen}% of the required POI addition.")
 
     # If the POI is already in the graph, do not add it.
     if single_poi['osmid'] in self.nx_graph:
@@ -227,7 +228,8 @@ class Map:
     projected point: (a) u-projected point; (b) v-projected point; (5) remove 
     closest edge u-v.
     Arguments:
-      point_exterior: a point on the exterior of a POI that will be projected on to the closest edge.
+      point_exterior: a point on the exterior of a POI that will be projected 
+      on to the closest edge.
       list_edges_connected_ids: list of edges ids already connected to the POI. 
       If the current edge found is already connected it will avoid connecting 
       it again.

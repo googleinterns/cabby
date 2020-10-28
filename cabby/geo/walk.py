@@ -196,7 +196,8 @@ class Walker:
     try:
       # Find nodes within 2000 meter path distance.
       outer_circle_graph = ox.truncate.truncate_graph_dist(
-      self.map.nx_graph, dest_osmid, max_dist=(MAX_PATH_DIST+2*ADD_POI_DISTANCE), weight='length')
+        self.map.nx_graph, dest_osmid, 
+        max_dist=(MAX_PATH_DIST+2*ADD_POI_DISTANCE), weight='length')
 
       outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
@@ -205,7 +206,8 @@ class Walker:
     try:
       # Get graph that is too close (less than 200 meter path distance)
       inner_circle_graph = ox.truncate.truncate_graph_dist(
-        self.map.nx_graph, dest_osmid, max_dist=MIN_PATH_DIST+2*ADD_POI_DISTANCE, weight='length')
+        self.map.nx_graph, dest_osmid, 
+        max_dist=MIN_PATH_DIST + 2 * ADD_POI_DISTANCE, weight='length')
       inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
@@ -305,9 +307,10 @@ class Walker:
       A single landmark near the goal location.
     '''
 
-    near_poi_con = self.map.poi.apply(lambda x: util.get_distance_between_geometries(
-      x.geometry, end_point['centroid']) < NEAR_PIVOT_DIST + 
-      2*ADD_POI_DISTANCE, axis=1)
+    near_poi_con = self.map.poi.apply(
+      lambda x: util.get_distance_between_geometries(
+        x.geometry, 
+        end_point['centroid']) < NEAR_PIVOT_DIST + 2 * ADD_POI_DISTANCE, axis=1)
 
     poi = self.map.poi[near_poi_con]
     
