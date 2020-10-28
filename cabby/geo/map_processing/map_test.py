@@ -39,6 +39,14 @@ class MapTest(unittest.TestCase):
     for osmid in osmids:
       self.assertIn(osmid, self.map.nx_graph.nodes)
 
+  def testOSMNodes(self):
+    node_osmids = set(self.map.nodes['osmid'])
+    nxg_osmids = set(self.map.nx_graph)
+    self.assertEqual(len(node_osmids), len(nxg_osmids))
+    diff = node_osmids.difference(nxg_osmids)
+    self.assertEqual(len(diff),0)
+    
+
   def testAttributeInGraph(self):
     self.assertIn('1#1360050503', self.map.nx_graph.nodes)
     node = self.map.nx_graph.nodes['1#1360050503']
