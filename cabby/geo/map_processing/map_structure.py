@@ -67,11 +67,14 @@ class Map:
       
       logging.info("Add POI to graph.")
       self.add_poi_to_graph()
+
+      osmid = nx.get_node_attributes(self.nx_graph, 'osmid')
+      osmid_str = dict(zip(osmid, map(str, osmid.values())))
+      nx.set_node_attributes(self.nx_graph, osmid_str, 'osmid')
+      nx.relabel_nodes(self.nx_graph, osmid_str, copy=False)
+      
       self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
 
-      osmid = self.nx_graph.nodes
-      osmid_str = list(map(str, osmid))
-      nx.set_node_attributes(self.nx_graph, osmid_str, 'osmid')
     else:
       logging.info("Loading map from directory.")
       self.load_map(load_directory)
