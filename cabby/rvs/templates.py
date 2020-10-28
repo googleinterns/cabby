@@ -77,7 +77,7 @@ NEAR_GOAL_START = [
 AVOID = [
   ". If you reach BEYOND_PIVOT, you have gone too far.",
   ". You've overshot the meeting point if you reach BEYOND_PIVOT.",
-  ". If you pass BEYOND_PIVOT, you've gone to far.",
+  ". If you pass BEYOND_PIVOT, you've gone too far.",
   ""]
 
 GOAL_END = [
