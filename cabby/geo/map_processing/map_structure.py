@@ -95,8 +95,10 @@ class Map:
             'wikipedia': True,
             'shop': True,
             'brand': True,
-            'tourism': True}
-
+            'tourism': [
+              'aquarium', 'gallery', 'guest_house', 'hostel', 'hotel', 'motel',
+              'museum', 'picnic_site', 'theme_park', 'viewpoint', 'zoo']}
+              
     osm_poi = ox.geometries_from_polygon(self.polygon_area, tags=tags)
 
     osm_highway = osm_poi['highway']
