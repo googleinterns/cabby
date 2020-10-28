@@ -109,6 +109,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 def create_dataset(
                   data_dir: str, 
+                  region: str, 
                   s2level: int, 
                   infer_only: bool = False
 ) -> dataset_item.TextGeoDataset:
