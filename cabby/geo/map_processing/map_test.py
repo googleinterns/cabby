@@ -14,7 +14,8 @@
 
 '''Tests for map_structure.py'''
 
-
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 import collections
 import osmnx as ox
@@ -43,7 +44,6 @@ class MapTest(unittest.TestCase):
     node = self.map.nx_graph.nodes['1#1360050503']
     self.assertEqual('primary', node['highway'])
 
-
   def testSingleOutput(self):
     # Verify that a known POI is present.
 
@@ -59,10 +59,6 @@ class MapTest(unittest.TestCase):
     found_ids = [list_cells[i].id() for i in range(len(list_cells))]
     for expected, found in zip(expected_ids, found_ids):
       self.assertEqual(expected, found)
-
-    
-
-  
 
 
 if __name__ == "__main__":

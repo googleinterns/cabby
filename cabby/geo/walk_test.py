@@ -60,7 +60,7 @@ class WalkTest(unittest.TestCase):
     self.assertEqual(geo_entity.start_point['osmid'], '#2984603460')
     self.assertEqual(geo_entity.end_point['osmid'], '#1362253177')
     self.assertEqual(geo_entity.main_pivot['osmid'], '#91900570')
-    self.assertEqual(geo_entity.near_pivot['osmid'], '#751864718')
+    self.assertEqual(geo_entity.near_pivot['osmid'], '#2975872267')
     self.assertEqual(geo_entity.intersections, 1)
 
 
