@@ -58,11 +58,13 @@ from cabby.evals import utils as eu
 from cabby.model.text.dual_encoder import train
 from cabby.model.text.dual_encoder import dataset_wikigeo
 from cabby.model.text.dual_encoder import dataset_rvs
+from cabby.model.text.dual_encoder import dataset_run
 from cabby.model.text.dual_encoder import model
 from cabby.model.text.dual_encoder import dataset_item
 from cabby.model.text import util
 from cabby.geo import regions
 
+TASKS = ["WikiGeo", "RVS", "RUN"]
 
 FLAGS = flags.FLAGS
 
@@ -74,7 +76,7 @@ flags.DEFINE_enum(
   "region", None, regions.SUPPORTED_REGION_NAMES, 
   regions.REGION_SUPPORT_MESSAGE)
 flags.DEFINE_enum(
-  "task", "WikiGeo", ["WikiGeo", "RVS", "RUN"], 
+  "task", "WikiGeo", TASKS, 
   "Supported datasets to train\evaluate on: WikiGeo, RVS or RUN.")
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
 flags.DEFINE_string("output_dir", None,
@@ -123,8 +125,14 @@ def main(argv):
   label_to_cellid_path = os.path.join(dataset_path,"label_to_cellid.npy")
 
 
-  dataset = dataset_wikigeo if FLAGS.task == "WikiGeo" else dataset_rvs
-
+  assert FLAGS.task in TASKS
+  if FLAGS.task == "WikiGeo":
+    dataset = dataset_wikigeo
+  elif FLAGS.task == "RVS": 
+    dataset = dataset_rvs
+  else: # RUN.
+    dataset = dataset_run
+ 
   if os.path.exists(dataset_path):
     datast_text = dataset_item.TextGeoDataset.load(
       dataset_path = dataset_path, 
