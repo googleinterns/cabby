@@ -62,10 +62,6 @@ class Map:
       logging.info("Constructing graph.")
       self.nx_graph = ox.graph_from_polygon(
         self.polygon_area, network_type='walk')
-      osmid = nx.get_node_attributes(self.nx_graph,'osmid')
-      osmid_str = map(str, osmid)
-      nx.set_edge_attributes(self.nx_graph, osmid_str, 'osmid')
-
       distance = nx.get_edge_attributes(self.nx_graph, 'length')
       nx.set_edge_attributes(self.nx_graph, distance, 'true_length')
       
@@ -73,7 +69,9 @@ class Map:
       self.add_poi_to_graph()
       self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
 
-
+      osmid = self.nx_graph.nodes
+      osmid_str = list(map(str, osmid))
+      nx.set_edge_attributes(self.nx_graph, osmid_str, 'osmid')
     else:
       logging.info("Loading map from directory.")
       self.load_map(load_directory)
