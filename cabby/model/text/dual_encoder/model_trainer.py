@@ -74,8 +74,8 @@ flags.DEFINE_enum(
   "region", None, regions.SUPPORTED_REGION_NAMES, 
   regions.REGION_SUPPORT_MESSAGE)
 flags.DEFINE_enum(
-  "task", "WikiGeo", ["WikiGeo", "RVS"], 
-  "Supported datasets to train\evaluate on: WikiGeo or RVS.")
+  "task", "WikiGeo", ["WikiGeo", "RVS", "RUN"], 
+  "Supported datasets to train\evaluate on: WikiGeo, RVS or RUN.")
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
 flags.DEFINE_string("output_dir", None,
           "The directory where the model and results will be save to.")
