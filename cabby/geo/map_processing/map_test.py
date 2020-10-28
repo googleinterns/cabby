@@ -14,9 +14,6 @@
 
 '''Tests for map_structure.py'''
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 import collections
 import osmnx as ox
 from s2geometry import pywraps2 as s2
@@ -38,6 +35,14 @@ class MapTest(unittest.TestCase):
     osmids = self.map.poi['osmid'].tolist()
     for osmid in osmids:
       self.assertIn(osmid, self.map.nx_graph.nodes)
+
+  def testOSMNodes(self):
+    node_osmids = set(self.map.nodes['osmid'])
+    nxg_osmids = set(self.map.nx_graph)
+    self.assertEqual(len(node_osmids), len(nxg_osmids))
+    diff = node_osmids.difference(nxg_osmids)
+    self.assertEqual(len(diff),0)
+    
 
   def testAttributeInGraph(self):
     self.assertIn('1#1360050503', self.map.nx_graph.nodes)
