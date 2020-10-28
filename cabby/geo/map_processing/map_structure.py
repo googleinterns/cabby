@@ -59,7 +59,9 @@ class Map:
       logging.info("Constructing graph.")
       self.nx_graph = ox.graph_from_polygon(
         self.polygon_area, network_type='walk')
-      
+      osmid=nx.get_nodes_attributes(self.nx_graph,'osmid')
+      osmid_str = map(str, osmid)
+      nx.set_edge_attributes(self.nx_graph, osmid_str, 'osmid')
 
       logging.info("Add POI to graph.")
       self.add_poi_to_graph()
