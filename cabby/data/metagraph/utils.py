@@ -151,6 +151,12 @@ def convert_multidi_to_weighted_undir_graph(
       if 'weight' not in edges[id_pair]:
         edges[id_pair]['weight'] = 0.0
       for _, edge_data in edges_dict.items():
+        # Some input edges have artificially high weight [1] in to prevent
+        # an agent from visiting the center of a POI. So, the input is also
+        # given a "true_length" attribute [2] so that the graph construction
+        # can use the actual distance.
+        # [1] See cabby.geo.map_processing.map_structure.ADD_POI_DISTANCE
+        # [2] See cabby.geo.map_processing.edge
         if 'true_length' in edge_data:
           weight = edge_data['true_length']
         else:
@@ -165,6 +171,24 @@ def construct_metagraph(region: Region,
                         s2_node_levels: Sequence[int],
                         base_osm_map_filepath: str,
                         agg_function=np.sum) -> nx.Graph:
+  """Builds metagraph from existing OSM data and Wikidata/S2 nodes in a region.
+
+  The region, s2_level, and base_osm_filepath arguments are passed to the 
+  constructor of map_structure.Map.
+
+  # TODO(palowitch): add detail on weight scale & weights for different types.
+
+  Arguments:
+    Region: region to build the graph on. 
+    s2_level: S2 level of the map_structure.Map to be loaded.
+    s2_node_levels: iterable of S2 cell levels (ints) to add to the graph.
+    base_osm_map_filepath: location of the map_structure.Map to be loaded.
+    agg_function: a function that takes an iterable of floats and returns
+      a number. Applied to weights on the multi-edge input OSM graph to produce
+      a single weight value.
+  Returns:
+    metagraph: an nx.Graph with undirected edges and weights as described above.
+  """
   # Step 0: Load the OSM graph and add extra wikidata-found places to it.
   wd_relations = query.get_geofenced_wikidata_relations(
     region, extract_qids=True)
@@ -202,6 +226,7 @@ def construct_metagraph(region: Region,
     # Add edge.
     place_node_id = wikidata_to_nodeid[row["place"]]
     concept_node_id = row["instance"]
+    # TODO(palowitch): make a smarter (possibly configurable/programmatic) default weight.
     metagraph.add_edge(node_id, concept_node_id, weight=1.0)
     # Add attributes.
     attributes_to_add[place_node_id]["name"] = row["placeLabel"]
@@ -217,6 +242,7 @@ def construct_metagraph(region: Region,
     geometry = data["geometry"]
     for level in s2_node_levels:
       s2_cell_id = util.cellid_from_point(geometry, level)
+      # TODO(palowitch): remove the S2 prefix in favor of S2 type node attribute.
       s2_cell_node_id = "S2_L%d_%s" % (level, s2_cell_id)
       edges_to_add.append((node, s2_cell_node_id))
   metagraph.add_edges_from(edges_to_add)
