@@ -82,7 +82,11 @@ class RVSPath:
     prune_columns(self.beyond_pivot)
 
     self.instructions = (
-      f"Starting at a {self.start_point['main_tag']} walk {self.cardinal_direction} past { self.main_pivot['main_tag']} {intersection_instruction}and your goal is the {self.end_point['main_tag']}, near {self.near_pivot['main_tag']}. "
+      f"Starting at a {self.start_point['main_tag']}" +
+      f"walk {self.cardinal_direction} past" + 
+      f"{ self.main_pivot['main_tag']} {intersection_instruction}and your" + 
+      f"goal is the {self.end_point['main_tag']}, " +
+      f"near {self.near_pivot['main_tag']}. "
       + avoid_instruction
     )
 
