@@ -222,7 +222,7 @@ class Walker:
       # Find nodes within 2000 meter path distance.
       outer_circle_graph = ox.truncate.truncate_graph_dist(
         self.map.nx_graph, dest_osmid, 
-        max_dist=(MAX_PATH_DIST+2*ADD_POI_DISTANCE), weight='length')
+        max_dist=(MAX_PATH_DIST + 2 * ADD_POI_DISTANCE), weight='length')
 
       outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
