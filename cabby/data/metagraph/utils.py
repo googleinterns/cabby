@@ -18,6 +18,7 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
+from shapely.geometry import point
 from typing import Any, Dict, Sequence
 
 from cabby.geo.map_processing import map_structure
@@ -25,11 +26,16 @@ from cabby.data.wikidata import query
 from cabby.geo import regions
 from cabby.geo import util
 
+
 DEFAULT_POI_READABLE_NAME = "poi"
 DEFAULT_EDGE_WEIGHT = 1.0
+IMPORTANT_POI_METADATA_FIELDS = [
+  "name", "wikipedia", "wikidata", "brand", "shop", "tourism", "amenity"
+]
 
 # Type declarations
 Map = map_structure.Map
+Point = point.Point
 Region = regions.Region
 
 def convert_pandas_df_to_metagraph(
@@ -127,38 +133,6 @@ def update_osm_map(osm_map: Map,
   print("In update_osm_map: %d nodes in graph after adding." % (
     osm_map.nx_graph.number_of_nodes()))
 
-
-def add_conceptual_nodes_and_edges(graph: nx.Graph,
-                                   poi_map: Dict[str, int],
-                                   wd_relations: pd.DataFrame):
-  for _, row in wd_relations.iterrows():
-    place_node_id = poi_map[row["place"]]
-    graph.add_edge(row["instanceLabel"], place_node_id)
-    graph.add_edge(place_node_id, row["instanceLabel"])
-
-def poi_to_readable_name(poi_row: pd.Series) -> str:
-  """Gets a human-readable name for a POI (place of interest).
-
-  Arguments:
-    poi_row: a row of data from a map_structure.Map.poi data frame.
-  Returns:
-    name: a readable name for use as a node ID in a graph.
-  """
-  name = DEFAULT_POI_READABLE_NAME
-  if isinstance(poi_row["name"], str):
-      name = poi_row["name"]
-  elif isinstance(poi_row["wikipedia"], str):
-      name = poi_row["wikipedia"][3:]
-  elif isinstance(poi_row["brand"], str):
-      name = poi_row["brand"]
-  elif isinstance(poi_row["shop"], str):
-      name = poi_row["shop"]
-  elif isinstance(poi_row["tourism"], str):
-      name = poi_row["tourism"]
-  elif isinstance(poi_row["amenity"], str):
-      name = poi_row["amenity"]
-  return "%s_%s" % (name, poi_row["osmid"])
-
 def convert_multidi_to_weighted_undir_graph(
   in_graph: nx.MultiDiGraph, agg_function: Any) -> nx.Graph:
   """Convert a graph with multiple edges to a graph with no multiple edges.
@@ -191,65 +165,60 @@ def construct_metagraph(region: Region,
                         s2_node_levels: Sequence[int],
                         base_osm_map_filepath: str,
                         agg_function=np.sum) -> nx.Graph:
-  # Get relation data and add to existing graph.
+  # Step 0: Load the OSM graph and add extra wikidata-found places to it.
   wd_relations = query.get_geofenced_wikidata_relations(
     region, extract_qids=True)
   osm_map = Map(region, s2_level, base_osm_map_filepath)
   update_osm_map(osm_map, wd_relations)
 
-  # Relabel node IDs to strings
-  relabel_map = {}
-  for node in osm_map.nx_graph:
-    if isinstance(node, int):
-      relabel_map[node] = str(node)
-  nx.relabel.relabel_nodes(osm_map.nx_graph, relabel_map, copy=False)
-
-  # Construct initial metagraph.
+  # Step 1: Convert the nx.MultiDiGraph into a weighted nx.Graph.
   metagraph = convert_multidi_to_weighted_undir_graph(osm_map.nx_graph,
                                                       agg_function)
 
-  # Convert node IDs to unique human-readable node names.
-  osmid_to_name = {}
-  name_to_point = {}
-  name_to_wikidata = {}
-  for _, row in osm_map.poi.iterrows():
-    name = poi_to_readable_name(row)
-    assert isinstance(name, str)
-    osmid_to_name = {row["osmid"]: name}
-    name_to_point = {name: row["geometry"]}
-    if isinstance(row["wikidata"], str):
-      name_to_wikidata[name] = row["wikidata"]
-  nx.relabel.relabel_nodes(metagraph, osmid_to_name, copy=False)
-
-  # Add geometry data to OSM nodes.
-  osm_geometries = {}
+  # Step 2: Add all geometries to the graph.
   for _, row in osm_map.nodes.iterrows():
-    assert metagraph.has_node(row["index"]), "Map.node index %s not in graph" % row["index"]
-    osm_geometries[row["index"]] = row["geometry"]
-  nx.set_node_attributes(metagraph, osm_geometries, name="geometry")
+    metagraph.nodes[row["osmid"]]["geometry"] = row["geometry"]
+  for _, row in osm_map.poi.iterrows():
+    if "geometry" in metagraph.nodes[row["osmid"]]:
+      continue
+    assert isinstance(row["geometry"], Point)
+    metagraph.nodes[row["osmid"]]["geometry"] = row["geometry"]
 
-  # Set useful node attributes.
-  name_to_osmid = {osmid: name for name, osmid in osmid_to_name.items()}
-  nx.set_node_attributes(metagraph, name_to_osmid, name="osmid")
-  nx.set_node_attributes(metagraph, name_to_point, name="geometry")
-  nx.set_node_attributes(metagraph, name_to_wikidata, name="wikidata")
+  # Step 3: Add important POI attributes.
+  attributes_to_add = collections.defaultdict(dict)
+  wikidata_to_nodeid = {}  # Needed for wikidata concept node additions.
+  for _, row in osm_map.poi.iterrows():
+    node_id = row["osmid"]
+    for field in IMPORTANT_POI_METADATA_FIELDS:
+      if isinstance(row[field], str):
+        attributes_to_add[node_id][field] = row[field]
+        if field == "wikidata":
+          wikidata_to_nodeid[row[field]] = node_id
+  nx.set_node_attributes(metagraph, values=attributes_to_add)
 
-  # Add conceptual edges from wd_relations.
-  wikidata_to_name = {wikidata: name for
-                      name, wikidata in name_to_wikidata.items()}
+  # Step 4: Add conceptual nodes, attributes, and edges to the graph.
+  attributes_to_add = collections.defaultdict(dict)
   for _, row in wd_relations.iterrows():
-    place_node_name = wikidata_to_name[row["place"]]
-    concept_node_name = "%s_%s" % (row["instanceLabel"], row["instance"])
-    metagraph.add_edge(place_node_name, concept_node_name, weight=1.0)
+    # Add edge.
+    place_node_id = wikidata_to_nodeid[row["place"]]
+    concept_node_id = row["instance"]
+    metagraph.add_edge(node_id, concept_node_id, weight=1.0)
+    # Add attributes.
+    attributes_to_add[place_node_id]["name"] = row["placeLabel"]
+    attributes_to_add[concept_node_id]["name"] = row["instanceLabel"]
+    attributes_to_add[concept_node_id]["wikidata"] = row["place"]
+  nx.set_node_attributes(metagraph, values=attributes_to_add)
 
-  # S2 cell nodes and edges.
+  # Step 5: Add S2 nodes and edges
   edges_to_add = []
   for node, data in metagraph.nodes.data():
-    if not data or "geometry" not in data:
+    if "geometry" not in data:
       continue
     geometry = data["geometry"]
     for level in s2_node_levels:
       s2_cell_id = util.cellid_from_point(geometry, level)
-      edges_to_add.append((node, s2_cell_id))
+      s2_cell_node_id = "S2_L%d_%s" % (level, s2_cell_id)
+      edges_to_add.append((node, s2_cell_node_id))
   metagraph.add_edges_from(edges_to_add)
+
   return metagraph
