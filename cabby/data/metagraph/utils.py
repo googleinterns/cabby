@@ -149,7 +149,7 @@ def convert_multidi_to_weighted_undir_graph(
     for neighbor, edges_dict in neighbor_dict.items():
       id_pair = tuple(sorted([node, neighbor]))
       if 'weight' not in edges[id_pair]:
-        edges[id_pair]['weight'] = 0.0
+        edges[id_pair]['weight'] = []
       for _, edge_data in edges_dict.items():
         # Some input edges have artificially high weight [1] in to prevent
         # an agent from visiting the center of a POI. So, the input is also
@@ -161,7 +161,9 @@ def convert_multidi_to_weighted_undir_graph(
           weight = edge_data['true_length']
         else:
           weight = edge_data['length']
-        edges[id_pair]['weight'] += weight
+        edges[id_pair]['weight'].append(weight)
+  for id_pair in edges:
+    edges[id_pair]['weight'] = agg_function(edges[id_pair]['weight'])
   out_graph = nx.Graph()
   out_graph.add_edges_from([id_pair + (data,) for id_pair, data in edges.items()])
   return out_graph
@@ -244,7 +246,7 @@ def construct_metagraph(region: Region,
       s2_cell_id = util.cellid_from_point(geometry, level)
       # TODO(palowitch): remove the S2 prefix in favor of S2 type node attribute.
       s2_cell_node_id = "S2_L%d_%s" % (level, s2_cell_id)
-      edges_to_add.append((node, s2_cell_node_id))
+      edges_to_add.append((node, s2_cell_node_id, {"weight": 1.0}))
   metagraph.add_edges_from(edges_to_add)
 
   return metagraph
