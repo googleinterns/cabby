@@ -46,7 +46,7 @@ from cabby.rvs import item
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 4
 SAVE_ENTITIES_EVERY = 1000
-MAX_BATCH_GEN = 10
+MAX_BATCH_GEN = 100
 MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
@@ -54,6 +54,7 @@ NEAR_PIVOT_DIST = 80
 _Geo_DataFrame_Driver = "GPKG"
 # The max number of failed tries to generate a single path entities.
 MAX_NUM_GEN_FAILED = 10
+NON_SPECIFIC_TAGS = {'amenity': False, 'brand': False, 'shop': 'after', 'historic	': 'before', 'tourism': False, 'bridge': True,'man_made': False, 'natural': False, 'place': False}
 
 
 ADD_POI_DISTANCE = 5000
@@ -141,6 +142,27 @@ class Walker:
 
     return route_nodes
 
+  def get_non_specific_tag(self, poi):
+    '''Selects a non-specific tag (e.g., museum instead of "Austin Museum of 
+    Popular Culture") instead of a POI.
+    Arguments:
+      poi: The POI to select a non-specific tag for.
+    Returns:
+      A non-specific tag.
+    '''
+    for tag, add_key in NON_SPECIFIC_TAGS.items():
+      if tag not in poi or not isinstance(poi[tag], str):
+        continue
+      if add_key == True:
+        return add_key
+      tag_value = poi[tag].replace("_", " ")
+      if add_key == 'after':
+        return tag_value + " " + tag
+      elif add_key == "before":
+        return tag + " " + tag_value 
+      return tag_value
+    return None
+
   def get_end_poi(self,
   ) -> Optional[GeoSeries]:
     '''Returns a random POI.
@@ -148,12 +170,15 @@ class Walker:
       A single POI.
     '''
     
-    # Filter with name.
-    named_poi = self.map.poi[self.map.poi['name'].notnull()]
 
     # Filter large POI.
-    small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
+    small_poi = self.map.poi[self.map.poi['s2cellids'].str.len() <= SMALL_POI]
 
+    # Filter non-specific tags.
+    main_tags = small_poi.apply(self.get_non_specific_tag, axis=1)
+    small_poi = small_poi.assign(main_tag = main_tags)
+    small_poi = small_poi[small_poi['main_tag'].notnull()]
+    
     if small_poi.shape[0] == 0:
       return None
 
@@ -219,11 +244,13 @@ class Walker:
 
     poi_in_ring = self.map.poi[self.map.poi['osmid'].isin(osmid_in_range)]
 
-    # Filter with name.
-    named_poi = poi_in_ring[poi_in_ring['name'].notnull()]
-
     # Filter large POI.
-    small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
+    small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= SMALL_POI]
+
+    # Filter non-specific tags.
+    main_tags = small_poi.apply(self.get_non_specific_tag, axis=1)
+    small_poi = small_poi.assign(main_tag = main_tags)
+    small_poi = small_poi[small_poi['main_tag'].notnull()]
 
     if small_poi.shape[0] == 0:
       return None

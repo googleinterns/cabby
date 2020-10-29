@@ -60,6 +60,7 @@ def main(argv):
   # Create a file with multiple layers of data.
   walker = walk.Walker(map_region)
   walker.generate_and_save_rvs_routes(FLAGS.path, FLAGS.n_samples, FLAGS.n_cpu)
+  walk.print_instructions(FLAGS.path)
 
 
 if __name__ == '__main__':
