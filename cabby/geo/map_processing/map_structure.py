@@ -72,6 +72,9 @@ class Map:
       osmid_str = dict(zip(osmid, map(str, osmid.values())))
       nx.set_node_attributes(self.nx_graph, osmid_str, 'osmid')
       nx.relabel_nodes(self.nx_graph, osmid_str, copy=False)
+
+      self.poi['osmid'] = self.poi['osmid'].astype(str)
+
       
       self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
 
