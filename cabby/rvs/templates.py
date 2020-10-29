@@ -57,22 +57,22 @@ MAIN = [
 V1 = ['Go', 'Walk', 'Head', 'Proceed', 'Travel']
 
 V2 = [
-  'Meet at GOAL_LOCATION.', 
-  'Come to GOAL_LOCATION.',
-  'Head over to GOAL_LOCATION.',
-  'GOAL_LOCATION is the meeting point.'
+  'Meet at the GOAL_LOCATION.', 
+  'Come to the GOAL_LOCATION.',
+  'Head over to he tGOAL_LOCATION.',
+  'The GOAL_LOCATION is the meeting point.'
 ]
 
 NEAR_GOAL_END = [
-  ". GOAL_LOCATION will be near NEAR_PIVOT.",
-  ". NEAR_PIVOT is quite close to GOAL_LOCATION.",
-  ". Meet at GOAL_LOCATION, which is right next to NEAR_PIVOT."
-  ". If you see NEAR_PIVOT, you should find GOAL_LOCATION close by."
+  ". The GOAL_LOCATION will be near a NEAR_PIVOT.",
+  ". A NEAR_PIVOT is quite close to the GOAL_LOCATION.",
+  ". Meet at the GOAL_LOCATION, which is right next to a NEAR_PIVOT."
+  ". If you see a NEAR_PIVOT, you should find the GOAL_LOCATION close by."
 ]
 NEAR_GOAL_START = [
-  ". It will be near NEAR_PIVOT.",
-  ". It is close to NEAR_PIVOT."
-  ". NEAR_PIVOT is close by."
+  ". It will be near a NEAR_PIVOT.",
+  ". It is close to a NEAR_PIVOT."
+  ". A NEAR_PIVOT is close by."
 ]
 AVOID = [
   ". If you reach BEYOND_PIVOT, you have gone too far.",
@@ -81,10 +81,10 @@ AVOID = [
   ""]
 
 GOAL_END = [
-  'and meet at GOAL_LOCATION.',
-  'and come to GOAL_LOCATION.',
-  'to reach GOAL_LOCATION.',
-  'to arrive at GOAL_LOCATION.'
+  'and meet at the GOAL_LOCATION.',
+  'and come to the GOAL_LOCATION.',
+  'to reach the GOAL_LOCATION.',
+  'to arrive at the GOAL_LOCATION.'
 ]
 
 GOAL = ["GOAL_LOCATION"]

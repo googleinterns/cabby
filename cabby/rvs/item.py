@@ -86,7 +86,7 @@ class RVSPath:
       f"walk {self.cardinal_direction} past " + 
       f"{ self.main_pivot['main_tag']} {intersection_instruction}and your " + 
       f"goal is the {self.end_point['main_tag']}, " +
-      f"near {self.near_pivot['main_tag']}. "
+      f"near a {self.near_pivot['main_tag']}. "
       + avoid_instruction
     )
 

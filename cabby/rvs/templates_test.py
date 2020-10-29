@@ -14,6 +14,9 @@
 
 '''Tests for speak.py'''
 
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
+
 from typing import Dict, Text
 import unittest
 
@@ -32,7 +35,7 @@ class ObserveTest(unittest.TestCase):
 
     # Create RVSPath entity.
     start = gpd.GeoSeries({'osmid': 1, 'geometry': Point(), 'main_tag': 'START'})
-    end = gpd.GeoSeries({'osmid': 2, 'geometry': Point(), 'main_tag': 'The Target Coffee Shop'})
+    end = gpd.GeoSeries({'osmid': 2, 'geometry': Point(), 'main_tag': 'Target Coffee Shop'})
     main = gpd.GeoSeries({'osmid': 3, 'geometry': Point(), 'main_tag': 'Food On The Way'})
     near = gpd.GeoSeries({'osmid': 4, 'geometry': Point(), 'main_tag': 'Far is Near Travel Agency'})
     beyond = gpd.GeoSeries({'osmid': 5, 'geometry': Point(), 'main_tag': 'Beyond The Rainbow Fairy Shop'})
@@ -42,7 +45,7 @@ class ObserveTest(unittest.TestCase):
 
     instruction = templates.add_features_to_template(picked_template,entity)
 
-    expected = "Meet at The Target Coffee Shop. Go North-North from Food On The Way for 2 intersections. It will be near Far is Near Travel Agency. If you reach Beyond The Rainbow Fairy Shop, you have gone too far."
+    expected = "Meet at the Target Coffee Shop. Go North-North from Food On The Way for 2 intersections. It will be near a Far is Near Travel Agency. If you reach Beyond The Rainbow Fairy Shop, you have gone too far."
     self.assertEqual(instruction, expected) 
 
 if __name__ == "__main__":

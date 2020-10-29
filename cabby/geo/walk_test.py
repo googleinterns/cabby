@@ -13,6 +13,9 @@
 # limitations under the License.
 '''Tests for walk.py'''
 
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
+
 import networkx as nx
 import osmnx as ox
 from shapely.geometry.point import Point
@@ -54,9 +57,9 @@ class WalkTest(unittest.TestCase):
       return
       
     self.assertIsNotNone(geo_entity)
-    self.assertEqual(geo_entity.start_point['osmid'], '#751864718')
-    self.assertEqual(geo_entity.end_point['osmid'], '#3151968731')
-    self.assertEqual(geo_entity.main_pivot['osmid'], '#751864718')
+    self.assertEqual(geo_entity.start_point['osmid'], '#739653657')
+    self.assertEqual(geo_entity.end_point['osmid'], '#1360050503')
+    self.assertEqual(geo_entity.main_pivot['osmid'], '#739653657')
     self.assertEqual(geo_entity.near_pivot['osmid'], '#1362253177')
     self.assertEqual(geo_entity.intersections, 1)
 

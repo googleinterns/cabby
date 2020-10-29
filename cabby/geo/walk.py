@@ -41,7 +41,7 @@ from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 from cabby.geo import geo_item
 from cabby.rvs import item
-
+from cabby.geo import osm
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 4
@@ -54,7 +54,6 @@ NEAR_PIVOT_DIST = 80
 _Geo_DataFrame_Driver = "GPKG"
 # The max number of failed tries to generate a single path entities.
 MAX_NUM_GEN_FAILED = 10
-NON_SPECIFIC_TAGS = {'amenity': False, 'brand': False, 'shop': 'after', 'historic	': 'before', 'tourism': False, 'bridge': True,'man_made': False, 'natural': False, 'place': False}
 
 
 ADD_POI_DISTANCE = 5000
@@ -150,18 +149,63 @@ class Walker:
     Returns:
       A non-specific tag.
     '''
-    for tag, add_key in NON_SPECIFIC_TAGS.items():
+    for tag, addition in osm.NON_SPECIFIC_TAGS.items():
       if tag not in poi or not isinstance(poi[tag], str):
         continue
-      if add_key == True:
-        return add_key
-      tag_value = poi[tag].replace("_", " ")
-      if add_key == 'after':
-        return tag_value + " " + tag
-      elif add_key == "before":
-        return tag + " " + tag_value 
-      return tag_value
+      if addition == True:
+        return tag
+      tag_value = poi[tag]
+      tag_value_clean = tag_value.replace("_", " ")
+      if tag_value in osm.CORRECTIONS:
+        tag_value_clean = osm.CORRECTIONS[tag_value]
+      if addition == 'after':
+        new_tag = tag_value_clean + " " + tag
+      elif addition == "before":
+        new_tag = tag + " " + tag_value_clean 
+      elif addition == False:
+        new_tag = tag_value_clean
+      elif tag_value not in addition:
+        continue
+      else: 
+        new_tag = tag_value_clean
+      if new_tag in osm.CORRECTIONS:
+        new_tag = osm.CORRECTIONS[new_tag]
+      if new_tag in osm.BLACK_LIST:
+        continue
+      return new_tag
     return None
+  
+  def select_non_specific_unique_pois(self, pois: pd.DataFrame):
+    '''Returns a non-specific POIs with main tag being the non-specific tag.
+    Arguments:
+      pois: all pois to select from.
+    Returns:
+      A number of non-specific POIs which are unique.
+    '''
+    # Assign main tag. 
+    main_tags = pois.apply(self.get_non_specific_tag, axis=1)
+    pois = pois.assign(main_tag = main_tags)
+
+    # Get Unique main tags.
+    uniqueness = pois.duplicated(subset=['main_tag'], keep=False)==False
+    pois_unique = pois[uniqueness]
+
+    return pois_unique
+
+  def select_non_specific_poi(self, pois: pd.DataFrame):
+    '''Returns a non-specific POI with main tag being the non-specific tag.
+    Arguments:
+      pois: all pois to select from.
+    Returns:
+      A single sample of a POI with main tag being the non-specific tag.
+    '''
+    
+    pois_unique = self.select_non_specific_unique_pois(pois)
+    
+    if pois_unique.shape[0]==0:
+      return None
+    # Sample POI.
+    return self.sample_point(pois_unique)
 
   def get_end_poi(self,
   ) -> Optional[GeoSeries]:
@@ -170,21 +214,18 @@ class Walker:
       A single POI.
     '''
     
-
     # Filter large POI.
     small_poi = self.map.poi[self.map.poi['s2cellids'].str.len() <= SMALL_POI]
 
+    if small_poi.shape[0]==0:
+      return None
+      
     # Filter non-specific tags.
-    main_tags = small_poi.apply(self.get_non_specific_tag, axis=1)
-    small_poi = small_poi.assign(main_tag = main_tags)
-    small_poi = small_poi[small_poi['main_tag'].notnull()]
+    poi = self.select_non_specific_poi(small_poi)
     
-    if small_poi.shape[0] == 0:
+    if poi is None:
       return None
 
-    # Pick random POI.
-
-    poi = self.sample_point(small_poi)
     poi['geometry'] = poi.centroid
 
     return poi
@@ -248,22 +289,18 @@ class Walker:
     small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= SMALL_POI]
 
     # Filter non-specific tags.
-    main_tags = small_poi.apply(self.get_non_specific_tag, axis=1)
-    small_poi = small_poi.assign(main_tag = main_tags)
-    small_poi = small_poi[small_poi['main_tag'].notnull()]
-
-    if small_poi.shape[0] == 0:
+    start_point = self.select_non_specific_poi(small_poi)
+    
+    if start_point is None:
       return None
 
-    # Pick random POI.
-    start_point = self.sample_point(small_poi)
     start_point['geometry'] = start_point.centroid
     return start_point
 
 
   def get_landmark_if_tag_exists(self, 
                                 gdf: GeoDataFrame, 
-                                tag: Text, main_tag:Text, 
+                                tag: Text, main_tag: Text, 
                                 alt_main_tag: Text
   ) -> GeoSeries:
     '''Check if tag exists, set main tag name and choose pivot.
@@ -280,11 +317,13 @@ class Walker:
       if pivots.shape[0]:
         pivots = gdf[gdf[main_tag].notnull()]
         if main_tag in candidate_landmarks and pivots.shape[0]:
-          pivots = pivots.assign(main_tag=pivots[main_tag])
+          if 'main_tag' not in pivots:
+            pivots = pivots.assign(main_tag=pivots[main_tag])
           return self.sample_point(pivots)
         pivots = gdf[gdf[alt_main_tag].notnull()]
         if alt_main_tag in candidate_landmarks and pivots.shape[0]:
-          pivots = pivots.assign(main_tag=pivots[alt_main_tag])
+          if 'main_tag' not in pivots:
+            pivots = pivots.assign(main_tag=pivots[alt_main_tag])
           return self.sample_point(pivots)
     return None
 
@@ -337,7 +376,7 @@ class Walker:
     near_poi_con = self.map.poi.apply(
       lambda x: util.get_distance_between_geometries(
         x.geometry, 
-        end_point['centroid']) < NEAR_PIVOT_DIST + 2 * ADD_POI_DISTANCE, axis=1)
+        end_point['centroid']) < NEAR_PIVOT_DIST, axis=1)
 
     poi = self.map.poi[near_poi_con]
     
@@ -351,7 +390,12 @@ class Walker:
     # Remove the endpoint.
     nearby_poi = poi[poi['osmid'] != end_point['osmid']]
 
-    prominent_poi = self.pick_prominent_pivot(nearby_poi, end_point)
+    # Filter non-specific tags.
+    unique_poi = self.select_non_specific_unique_pois(nearby_poi)
+    if unique_poi.shape[0]==0:
+      return None
+
+    prominent_poi = self.pick_prominent_pivot(unique_poi, end_point)
     return prominent_poi
 
 
