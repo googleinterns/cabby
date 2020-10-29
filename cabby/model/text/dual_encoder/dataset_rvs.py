@@ -22,13 +22,20 @@ import pandas as pd
 import torch
 from transformers import DistilBertTokenizerFast
 
+import sys
+sys.path.append("/home/tzuf_google_com/dev/cabby")
+
 from cabby.geo import util as gutil
+from cabby.model import util as mutil
 from cabby.model.text import util 
+
 
 from cabby.geo import regions
 from cabby.model.text.dual_encoder import dataset_item
 
+
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
+dprob = mutil.DistanceProbability(500)
 
 CELLID_DIM = 64
 
@@ -45,16 +52,29 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int]):
     # Tokenize instructions.
+
+
+    start_points = data.start_point.apply(
+      lambda x: gutil.point_from_list_coord(x))
+    
+    distances = start_points.apply(
+      lambda start_p: unique_cells_df.point.apply(
+        lambda end_p: gutil.get_distance_between_points(start_p, end_p)))
+
+    self.start_ditribution = distances.apply(
+      lambda distance_list: distance_list.apply(
+        lambda dist: dprob(dist)))
+    
     self.encodings = tokenizer(
       data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
 
-    points = data.end_point.apply(
+    end_points = data.end_point.apply(
       lambda x: gutil.point_from_list_coord(x))
 
-    data = data.assign(point=points)
+    data = data.assign(end_point=end_points)
 
-    data['cellid'] = data.point.apply(
+    data['cellid'] = data.end_point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
 
     data['neighbor_cells'] = data.cellid.apply(
@@ -68,7 +88,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     far_cells_array = np.array(data.far_cells.tolist())
 
 
-    self.points = data.point.apply(
+    self.end_points = data.end_point.apply(
       lambda x: gutil.tuple_from_point(x)).tolist()
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
     self.cellids = util.binary_representation(cellids_array, dim = CELLID_DIM)
@@ -92,11 +112,14 @@ class TextGeoSplit(torch.utils.data.Dataset):
     cellid = torch.tensor(self.cellids[idx])
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
-    point = torch.tensor(self.points[idx])
+    end_point = torch.tensor(self.end_points[idx])
     label = torch.tensor(self.labels[idx])
+    distribution = self.start_ditribution.iloc[idx].tolist()
+    distribution_tensor = torch.tensor(distribution)
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
-      'far_cells': far_cells, 'point': point, 'label': label}
+      'far_cells': far_cells, 'point': end_point, 'label': label, 
+      'distribution': distribution_tensor}
 
     return sample
 
@@ -168,4 +191,3 @@ def create_dataset(
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
     train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
     tens_cells, label_to_cellid)
-

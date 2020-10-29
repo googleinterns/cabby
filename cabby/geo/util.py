@@ -55,15 +55,14 @@ def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
   Returns:
     A cellid of a far cell.
   '''
-  far_cells_condition = cells.apply(lambda x: get_distance_between_points(
-    point, x.point) > FAR_DISTANCE_THRESHOLD, axis=1)
+  far_cell_found = None
+  while far_cell_found is None:
+    sample_cell = cells.sample(1).iloc[0]
+    distance = get_distance_between_points(point, sample_cell.point) 
+    if distance > FAR_DISTANCE_THRESHOLD:
+      far_cell_found = sample_cell.cellid
 
-  far_cells = cells[far_cells_condition]
-
-  if far_cells.shape[0]==0:
-    return None
-
-  return far_cells.sample(1).cellid.iloc[0]
+  return far_cell_found
 
 def neighbor_cellid(cellid: int) -> int:
   '''Get a neighbor cell id. 
