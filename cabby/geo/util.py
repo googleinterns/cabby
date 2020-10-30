@@ -64,7 +64,6 @@ def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
 
   return far_cell_found
 
-
 def neighbor_cellid(cellid: int) -> int:
   '''Get a neighbor cell id. 
   Arguments:
