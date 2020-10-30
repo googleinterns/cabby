@@ -38,10 +38,8 @@ py_library(
           ":dataset_item",
           "//cabby/geo:util",
           "//cabby/geo:regions",
-
     ],
 )
-
 
 py_library(
     name = 'dataset_item',

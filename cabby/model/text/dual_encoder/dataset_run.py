@@ -1,5 +1,5 @@
-# Copyright 2020 The Flax Authors.
-#
+# coding=utf-8
+# Copyright 2020 Google LLC
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,9 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from typing import Dict
 
@@ -139,8 +136,8 @@ def create_dataset(
 
   # Get unique cells:
   cells = ds.end_point.apply(
-      lambda x: gutil.cellid_from_point(gutil.point_from_list_coord(x), s2level)
-      ).tolist()
+    lambda x: gutil.cellid_from_point(gutil.point_from_list_coord(x), s2level)
+    ).tolist()
   unique_cellid = list(set(cells))
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
@@ -150,10 +147,10 @@ def create_dataset(
   unique_cells_df = pd.DataFrame({'point': points, 'cellid': unique_cellid})
   
   unique_cells_df['far'] = unique_cells_df.point.apply(
-      lambda x: gutil.far_cellid(x, unique_cells_df))
+    lambda x: gutil.far_cellid(x, unique_cells_df))
 
   vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
-  dim = CELLID_DIM)
+    dim = CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
   # Create RUN dataset.

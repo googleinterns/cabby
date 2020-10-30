@@ -134,7 +134,7 @@ def main(argv):
     dataset = dataset_run
  
   if os.path.exists(dataset_path):
-    datast_text = dataset_item.TextGeoDataset.load(
+    dataset_text = dataset_item.TextGeoDataset.load(
       dataset_path = dataset_path, 
       train_path_dataset = train_path_dataset, 
       valid_path_dataset = valid_path_dataset, 
@@ -145,7 +145,7 @@ def main(argv):
 
   else:
     logging.info("Preparing data.")
-    datast_text = dataset.create_dataset(
+    dataset_text = dataset.create_dataset(
             data_dir = FLAGS.data_dir, 
             region = FLAGS.region, 
             s2level = FLAGS.s2_level, 
@@ -153,7 +153,7 @@ def main(argv):
     )
 
     dataset_item.TextGeoDataset.save(
-      dataset_text = datast_text,
+      dataset_text = dataset_text,
       dataset_path = dataset_path, 
       train_path_dataset = train_path_dataset, 
       valid_path_dataset = valid_path_dataset, 
@@ -163,17 +163,17 @@ def main(argv):
       tensor_cellid_path = tensor_cellid_path)
   
   logging.info("Number of unique cells: {}".format(
-  len(datast_text.unique_cellids)))
+  len(dataset_text.unique_cellids)))
 
   train_loader = None
   valid_loader = None
   if FLAGS.infer_only == False:
     train_loader = DataLoader(
-      datast_text.train, batch_size=FLAGS.train_batch_size, shuffle=True)
+      dataset_text.train, batch_size=FLAGS.train_batch_size, shuffle=True)
     valid_loader = DataLoader(
-      datast_text.valid, batch_size=FLAGS.test_batch_size, shuffle=False)
+      dataset_text.valid, batch_size=FLAGS.test_batch_size, shuffle=False)
   test_loader = DataLoader(
-    datast_text.test, batch_size=FLAGS.test_batch_size, shuffle=False)
+    dataset_text.test, batch_size=FLAGS.test_batch_size, shuffle=False)
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -203,10 +203,10 @@ def main(argv):
     train_loader=train_loader,
     valid_loader=valid_loader,
     test_loader=test_loader,
-    unique_cells = datast_text.unique_cellids,
+    unique_cells = dataset_text.unique_cellids,
     file_path=FLAGS.output_dir, 
-    cells_tensor = datast_text.unique_cellids_binary,
-    label_to_cellid = datast_text.label_to_cellid,
+    cells_tensor = dataset_text.unique_cellids_binary,
+    label_to_cellid = dataset_text.label_to_cellid,
     )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")
