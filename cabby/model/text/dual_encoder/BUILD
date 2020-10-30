@@ -25,6 +25,7 @@ py_library(
     srcs = ['dataset_rvs.py'],
     deps = [
           ":dataset_item",
+          "//cabby/model:util",
           "//cabby/geo:util",
           "//cabby/geo:regions",
 
@@ -36,6 +37,7 @@ py_library(
     srcs = ['dataset_run.py'],
     deps = [
           ":dataset_item",
+          "//cabby/model:util",
           "//cabby/geo:util",
           "//cabby/geo:regions",
     ],
