@@ -39,8 +39,7 @@ MAIN_NO_V = [
 ]
 
 MAIN = [
-  (". When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS "
-   "intersections away"),
+  ". When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away",
   ". When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away",
   ". MAIN_PIVOT is NUMBER_INTERSECTIONS intersections away",
   ". MAIN_PIVOT is NUMBER_BLOCKS blocks away",
@@ -48,31 +47,31 @@ MAIN = [
   ". Go to MAIN_PIVOT and walk NUMBER_INTERSECTIONS intersections past it",
   ". Travel to MAIN_PIVOT and continue NUMBER_BLOCKS blocks further",
   ". Walk to MAIN_PIVOT and proceed NUMBER_BLOCKS blocks past it",
-  ". After you reach MAIN_PIVOT, you'll need to go NUMBER_INTERSECTIONS intersections further"
-  ". When you get to MAIN_PIVOT, you have NUMBER_INTERSECTIONS intersections more to walk"
-  ". After you pass MAIN_PIVOT, go NUMBER_BLOCKS blocks more"
+  ". After you reach MAIN_PIVOT, you'll need to go NUMBER_INTERSECTIONS intersections further",
+  ". When you get to MAIN_PIVOT, you have NUMBER_INTERSECTIONS intersections more to walk",
+  ". After you pass MAIN_PIVOT, go NUMBER_BLOCKS blocks more",
   ". Once you reach MAIN_PIVOT, continue for NUMBER_BLOCKS blocks"
 ]
 
 V1 = ['Go', 'Walk', 'Head', 'Proceed', 'Travel']
 
 V2 = [
-  'Meet at the GOAL_LOCATION.', 
-  'Come to the GOAL_LOCATION.',
-  'Head over to the GOAL_LOCATION.',
-  'The GOAL_LOCATION is the meeting point.'
+  'Meet at GOAL_LOCATION.', 
+  'Come to GOAL_LOCATION.',
+  'Head over to GOAL_LOCATION.',
+  'GOAL_LOCATION is the meeting point.'
 ]
 
 NEAR_GOAL_END = [
-  ". The GOAL_LOCATION will be near a NEAR_PIVOT.",
-  ". A NEAR_PIVOT is quite close to the GOAL_LOCATION.",
-  ". Meet at the GOAL_LOCATION, which is right next to a NEAR_PIVOT."
-  ". If you see a NEAR_PIVOT, you should find the GOAL_LOCATION close by."
+  ". GOAL_LOCATION will be near NEAR_PIVOT.",
+  ". NEAR_PIVOT is quite close to GOAL_LOCATION.",
+  ". Meet at GOAL_LOCATION, which is right next to NEAR_PIVOT.",
+  ". If you see NEAR_PIVOT, you should find GOAL_LOCATION close by."
 ]
 NEAR_GOAL_START = [
-  ". It will be near a NEAR_PIVOT.",
-  ". It is close to a NEAR_PIVOT."
-  ". A NEAR_PIVOT is close by."
+  ". It will be near NEAR_PIVOT.",
+  ". It is close to NEAR_PIVOT.",
+  ". NEAR_PIVOT is close by."
 ]
 AVOID = [
   ". If you reach BEYOND_PIVOT, you have gone too far.",
@@ -81,10 +80,10 @@ AVOID = [
   ""]
 
 GOAL_END = [
-  'and meet at the GOAL_LOCATION.',
-  'and come to the GOAL_LOCATION.',
-  'to reach the GOAL_LOCATION.',
-  'to arrive at the GOAL_LOCATION.'
+  'and meet at GOAL_LOCATION.',
+  'and come to GOAL_LOCATION.',
+  'to reach GOAL_LOCATION.',
+  'to arrive at GOAL_LOCATION.'
 ]
 
 GOAL = ["GOAL_LOCATION"]
@@ -117,7 +116,7 @@ def create_templates():
                     Nonterminal('V2_BODY'))),
     # A verb and rest of the instruction body assuming goal already mentioned.
     Production(Nonterminal('V2_BODY'), (Nonterminal('V1'),
-                      Nonterminal('M_G'))),
+                      Nonterminal('M_G_ALREADY_V'))),
     # A verb and the rest of the instruction body assuming the goal wasn't
     # mentioned before.
     Production(Nonterminal('S'), (Nonterminal(
@@ -135,29 +134,32 @@ def create_templates():
                         Nonterminal('M_G'))),
     # Main part of the instruction without verb in begining and resuming
     # sentence.
-    Production(Nonterminal('M_G'), (Nonterminal('MAIN_NO_V'),
-                    Nonterminal('E'))),
-    # Main part of the instruction, adding a new sentence.
+    Production(Nonterminal('M_G_ALREADY_V'), (Nonterminal('MAIN_NO_V'),
+                    Nonterminal('END_NEAR_GOAL_KNOWN'))),
+    # # Main part of the instruction, adding a new sentence.
     Production(Nonterminal('M_G'), (Nonterminal('MAIN'),
-                    Nonterminal('E'))),
+                    Nonterminal('END_NEAR_GOAL_KNOWN'))),
     # End part - (1) near pivot assuming goal already mentioned; and (2) avoid
     # sentence.
-    Production(Nonterminal('E'), (Nonterminal('NEAR_GOAL_START'),
+    Production(
+      Nonterminal('END_NEAR_GOAL_KNOWN'), (Nonterminal('NEAR_GOAL_START'),
                     Nonterminal('AVOID'))),
     # End part - (1) near pivot assuming goal not mentioned yet; and (2) avoid
     # sentence.
-    Production(Nonterminal('E'), (Nonterminal('NEAR_GOAL_END'),
+    Production(Nonterminal(
+      'END_NEAR_GOAL_KNOWN'), (Nonterminal('NEAR_GOAL_END'),
                     Nonterminal('AVOID'))),
     # Main part of the instruction without verb in begining and resuming
     # sentence assuming no goal mentioned before.
     Production(Nonterminal('NO_GOAL'), (Nonterminal('MAIN_NO_V'),
-                      Nonterminal('G'))),
+                      Nonterminal('END_NEAR_GOAL_UNKNOWN'))),
     # Add Goal to main part and then resume instruction by adding an
     # ending(near+avoid).
-    Production(Nonterminal('G'), (Nonterminal('GOAL_END'),
-                    Nonterminal('E'))),
+    Production(Nonterminal('END_NEAR_GOAL_UNKNOWN'), (Nonterminal('GOAL_END'),
+                    Nonterminal('END_NEAR_GOAL_KNOWN'))),
     # Add Goal with near and then add an avoid sentenece.
-    Production(Nonterminal('G'), (Nonterminal('NEAR_GOAL_END'),
+    Production(
+      Nonterminal('END_NEAR_GOAL_UNKNOWN'), (Nonterminal('NEAR_GOAL_END'),
                     Nonterminal('AVOID'))),
     # Termial for IN+DT after verb.
     Production(Nonterminal('V1_CON'), ('to the',)),
@@ -194,7 +196,7 @@ def create_templates():
   templates_df = pd.DataFrame(
     templates, columns=['sentence']).drop_duplicates()
   # Save templates
-  templates_df.to_csv('templates.csv', index=False)
+  templates_df.to_csv('templates.csv', index=False, header = False)
 
   # Flag features.
   templates_df['cardinal_direction'] = templates_df['sentence'].apply(
@@ -233,4 +235,5 @@ def add_features_to_template(template: Text, entity: item.RVSPath) -> Text:
   # Fix text.
   template = template.replace('The The', 'The')
   template = template.replace('the The', 'the')
-  return template
+
+  return template.capitalize()
