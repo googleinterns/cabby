@@ -90,8 +90,6 @@ class Trainer:
         cellids = batch['cellid'].float().to(self.device)
         neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
         far_cells = batch['far_cells'].float().to(self.device)
-        distance_distribution = batch['distribution'].to(self.device)
-
 
         loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
         loss_val_total+=loss
@@ -104,6 +102,7 @@ class Trainer:
         text_embedding_exp = text_embedding.unsqueeze(1)
         output = self.cos(cellid_embedding_exp, text_embedding_exp)
         if self.is_distance_distribution:
+          distance_distribution = batch['distribution'].to(self.device)
           output = output * distance_distribution
         output = output.detach().cpu().numpy()
         predictions = np.argmax(output, axis=1)
