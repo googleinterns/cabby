@@ -185,6 +185,7 @@ class Walker:
     # Assign main tag. 
     main_tags = pois.apply(self.get_non_specific_tag, axis=1)
     pois = pois.assign(main_tag = main_tags)
+    pois.dropna(subset=['main_tag'], inplace=True)
 
     # Get Unique main tags.
     uniqueness = pois.duplicated(subset=['main_tag'], keep=False)==False
