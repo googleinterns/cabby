@@ -59,7 +59,7 @@ V1 = ['Go', 'Walk', 'Head', 'Proceed', 'Travel']
 V2 = [
   'Meet at the GOAL_LOCATION.', 
   'Come to the GOAL_LOCATION.',
-  'Head over to he tGOAL_LOCATION.',
+  'Head over to the GOAL_LOCATION.',
   'The GOAL_LOCATION is the meeting point.'
 ]
 
