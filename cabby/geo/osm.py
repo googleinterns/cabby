@@ -13,7 +13,13 @@
 # limitations under the License.
 '''Defines OSM entities adaptations.'''
 
-CORRECTIONS = {'fuel': 'gas station', 'parking': 'parking lot', 'taxi': 'taxi stand', 'doctors': 'doctor\'s office', 'dentist': 'dentist\'s office', 'gambling': 'gambling place', 'police': 'police station', 'shower': 'public bath', 'mall shop': 'mall', 'general shop': 'shop', 'supermarket shop': 'supermarket', 'toys shop': 'toy shop', 'fast food': 'fast food restaurant'}
+CORRECTIONS = {'fuel': 'gas station', 'parking': 'parking lot', 
+  'taxi': 'taxi stand', 'doctors': 'doctor\'s office', 
+  'dentist': 'dentist\'s office', 'gambling': 'gambling place', 
+  'police': 'police station', 'shower': 'public bath', 
+  'mall shop': 'mall', 'general shop': 'shop', 
+  'supermarket shop': 'supermarket', 'toys shop': 'toy shop', 
+  'fast food': 'fast food restaurant', 'Medical Center shop': 'Medical Center'}
 
 BLACK_LIST = ['place of worship']
 
