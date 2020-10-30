@@ -23,54 +23,38 @@ import torch
 from transformers import DistilBertTokenizerFast
 
 from cabby.geo import util as gutil
-from cabby.model import util as mutil
 from cabby.model.text import util 
-
 
 from cabby.geo import regions
 from cabby.model.text.dual_encoder import dataset_item
 
-
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
-dprob = mutil.DistanceProbability(500)
 
 CELLID_DIM = 64
 
+
 class TextGeoSplit(torch.utils.data.Dataset):
-  """A split of of the RVS dataset.
+  """A split of of the RUN dataset.
   
   `points`: The ground true end-points of the samples.
   `labels`: The ground true label of the cellid.
   `cellids`: The ground truth S2Cell id.
   `neighbor_cells`: One neighbor cell id of the ground truth S2Cell id.
-  `far_cells`: One far away cell id (in the region defined) of the ground truth 
-  S2Cell id.
+  `far_cells`: One far away cell id (in the region defined) of the ground truth S2Cell id.
   """
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int]):
     # Tokenize instructions.
-
-    start_points = data.start_point.apply(
-      lambda x: gutil.point_from_list_coord(x))
-    
-    distances = start_points.apply(
-      lambda start_p: unique_cells_df.point.apply(
-        lambda end_p: gutil.get_distance_between_points(start_p, end_p)))
-
-    self.start_distribution = distances.apply(
-      lambda distance_list: distance_list.apply(
-        lambda dist: dprob(dist)))
-    
     self.encodings = tokenizer(
       data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
 
-    end_points = data.end_point.apply(
+    points = data.end_point.apply(
       lambda x: gutil.point_from_list_coord(x))
 
-    data = data.assign(end_point=end_points)
+    data = data.assign(point=points)
 
-    data['cellid'] = data.end_point.apply(
+    data['cellid'] = data.point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
 
     data['neighbor_cells'] = data.cellid.apply(
@@ -84,7 +68,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     far_cells_array = np.array(data.far_cells.tolist())
 
 
-    self.end_points = data.end_point.apply(
+    self.points = data.point.apply(
       lambda x: gutil.tuple_from_point(x)).tolist()
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
     self.cellids = util.binary_representation(cellids_array, dim = CELLID_DIM)
@@ -108,14 +92,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
     cellid = torch.tensor(self.cellids[idx])
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
-    end_point = torch.tensor(self.end_points[idx])
+    point = torch.tensor(self.points[idx])
     label = torch.tensor(self.labels[idx])
-    distribution = self.start_distribution.iloc[idx].tolist()
-    distribution_tensor = torch.tensor(distribution)
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
-      'far_cells': far_cells, 'point': end_point, 'label': label, 
-      'distribution': distribution_tensor}
+      'far_cells': far_cells, 'point': point, 'label': label}
 
     return sample
 
@@ -138,20 +119,26 @@ def create_dataset(
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
   ds = pd.read_json(os.path.join(data_dir, 'dataset.json'))
-  logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
-  ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
-  logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
+  ds['instructions'] = ds.groupby(['id'])['instruction'].transform(lambda x: ' '.join(x))
+
+  ds = ds.drop_duplicates(subset='id', keep="last")
+
+  columns_keep = ds.columns.difference(
+    ['map', 'id', 'instructions', 'end_point', 'start_point'])
+  ds.drop(columns_keep, 1, inplace=True)
+
   dataset_size = ds.shape[0]
-  train_size = round(dataset_size*80/100)
-  valid_size = round(dataset_size*10/100)
+  logging.info(f"Size of dataset: {ds.shape[0]}")
 
-  train_ds = ds.iloc[:train_size]
-  valid_ds = ds.iloc[train_size:train_size+valid_size]
-  test_ds = ds.iloc[train_size+valid_size:]
+  train_ds = ds[ds['map']=='map_1']
+  valid_ds = ds[ds['map']=='map_2']
+  test_ds = ds[ds['map']=='map_3']
 
-  # Get labels.
-  active_region = regions.get_region(region)
-  unique_cellid = gutil.cellids_from_polygon(active_region.polygon, s2level)
+  # Get unique cells:
+  cells = ds.end_point.apply(
+    lambda x: gutil.cellid_from_point(gutil.point_from_list_coord(x), s2level)
+    ).tolist()
+  unique_cellid = list(set(cells))
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
@@ -160,13 +147,13 @@ def create_dataset(
   unique_cells_df = pd.DataFrame({'point': points, 'cellid': unique_cellid})
   
   unique_cells_df['far'] = unique_cells_df.point.apply(
-      lambda x: gutil.far_cellid(x, unique_cells_df))
+    lambda x: gutil.far_cellid(x, unique_cells_df))
 
   vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
-  dim = CELLID_DIM)
+    dim = CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
-  # Create RVS dataset.
+  # Create RUN dataset.
   train_dataset = None
   val_dataset = None
   logging.info("Starting to create the splits")
@@ -187,3 +174,4 @@ def create_dataset(
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
     train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
     tens_cells, label_to_cellid)
+

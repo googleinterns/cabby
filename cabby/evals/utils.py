@@ -66,8 +66,6 @@ class Evaluator:
                  (eval_tuple.predicted_lat, eval_tuple.predicted_lng)).m
       error_distances.append(err)
       total_examples += 1
-      if total_examples % 100 == 0:
-        self.eval_logger.info("Processed [%d]", total_examples)
     return error_distances
 
   def compute_metrics(self, error_distances):
