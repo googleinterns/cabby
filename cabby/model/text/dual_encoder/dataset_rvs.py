@@ -22,9 +22,6 @@ import pandas as pd
 import torch
 from transformers import DistilBertTokenizerFast
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 from cabby.geo import util as gutil
 from cabby.model import util as mutil
 from cabby.model.text import util 
@@ -39,7 +36,6 @@ dprob = mutil.DistanceProbability(500)
 
 CELLID_DIM = 64
 
-
 class TextGeoSplit(torch.utils.data.Dataset):
   """A split of of the RVS dataset.
   
@@ -47,12 +43,12 @@ class TextGeoSplit(torch.utils.data.Dataset):
   `labels`: The ground true label of the cellid.
   `cellids`: The ground truth S2Cell id.
   `neighbor_cells`: One neighbor cell id of the ground truth S2Cell id.
-  `far_cells`: One far away cell id (in the region defined) of the ground truth S2Cell id.
+  `far_cells`: One far away cell id (in the region defined) of the ground truth 
+  S2Cell id.
   """
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int]):
     # Tokenize instructions.
-
 
     start_points = data.start_point.apply(
       lambda x: gutil.point_from_list_coord(x))
@@ -61,7 +57,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       lambda start_p: unique_cells_df.point.apply(
         lambda end_p: gutil.get_distance_between_points(start_p, end_p)))
 
-    self.start_ditribution = distances.apply(
+    self.start_distribution = distances.apply(
       lambda distance_list: distance_list.apply(
         lambda dist: dprob(dist)))
     
@@ -114,7 +110,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     far_cells = torch.tensor(self.far_cells[idx])
     end_point = torch.tensor(self.end_points[idx])
     label = torch.tensor(self.labels[idx])
-    distribution = self.start_ditribution.iloc[idx].tolist()
+    distribution = self.start_distribution.iloc[idx].tolist()
     distribution_tensor = torch.tensor(distribution)
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 

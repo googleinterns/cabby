@@ -43,7 +43,8 @@ class Trainer:
           unique_cells: Sequence[int],
           num_epochs: int,
           cells_tensor: torch.tensor,
-          label_to_cellid: Dict[int, int]):
+          label_to_cellid: Dict[int, int],
+          is_distance_distribution: bool):
 
     self.model = model
     self.device = device
@@ -62,6 +63,7 @@ class Trainer:
       os.mkdir(self.file_path)
     self.model_path = os.path.join(self.file_path, 'model.pt')
     self.metrics_path = os.path.join(self.file_path, 'metrics.tsv')
+    self.is_distance_distribution = is_distance_distribution
         
 
   def evaluate(self, validation_set: bool = True):
@@ -88,7 +90,7 @@ class Trainer:
         cellids = batch['cellid'].float().to(self.device)
         neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
         far_cells = batch['far_cells'].float().to(self.device)
-        distibution = batch['distribution'].to(self.device)
+        distance_distribution = batch['distribution'].to(self.device)
 
 
         loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
@@ -101,7 +103,8 @@ class Trainer:
           batch_dim, cell_dim, output_dim)
         text_embedding_exp = text_embedding.unsqueeze(1)
         output = self.cos(cellid_embedding_exp, text_embedding_exp)
-        # output = output * distibution
+        if self.is_distance_distribution:
+          output = output * distance_distribution
         output = output.detach().cpu().numpy()
         predictions = np.argmax(output, axis=1)
         predictions_list.append(predictions)

@@ -102,6 +102,9 @@ flags.DEFINE_bool(
   'infer_only', default=False,
   help=('Train and infer\ just infer.'))
 
+flags.DEFINE_bool(
+  'is_distance_distribution', default=False,
+  help=('Add probability over cells according to the distance from start point.'))
 
 # Required flags.
 flags.mark_flag_as_required("data_dir")
@@ -199,6 +202,7 @@ def main(argv):
     file_path=FLAGS.output_dir, 
     cells_tensor = datast_text.unique_cellids_binary,
     label_to_cellid = datast_text.label_to_cellid,
+    is_distance_distribution = FLAGS.is_distance_distribution
     )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")
