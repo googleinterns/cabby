@@ -34,7 +34,7 @@ CELLID_DIM = 64
 
 
 class TextGeoSplit(torch.utils.data.Dataset):
-  """A split of of the RVS dataset.
+  """A split of of the RUN dataset.
   
   `points`: The ground true end-points of the samples.
   `labels`: The ground true label of the cellid.
@@ -119,20 +119,26 @@ def create_dataset(
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
   ds = pd.read_json(os.path.join(data_dir, 'dataset.json'))
-  logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
-  ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
-  logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
+  ds['instructions'] = ds.groupby(['id'])['instruction'].transform(lambda x: ' '.join(x))
+
+  ds = ds.drop_duplicates(subset='id', keep="last")
+
+  columns_keep = ds.columns.difference(
+    ['map', 'id', 'instructions', 'end_point', 'start_point'])
+  ds.drop(columns_keep, 1, inplace=True)
+
   dataset_size = ds.shape[0]
-  train_size = round(dataset_size*80/100)
-  valid_size = round(dataset_size*10/100)
+  logging.info(f"Size of dataset: {ds.shape[0]}")
 
-  train_ds = ds.iloc[:train_size]
-  valid_ds = ds.iloc[train_size:train_size+valid_size]
-  test_ds = ds.iloc[train_size+valid_size:]
+  train_ds = ds[ds['map']=='map_1']
+  valid_ds = ds[ds['map']=='map_2']
+  test_ds = ds[ds['map']=='map_3']
 
-  # Get labels.
-  active_region = regions.get_region(region)
-  unique_cellid = gutil.cellids_from_polygon(active_region.polygon, s2level)
+  # Get unique cells:
+  cells = ds.end_point.apply(
+    lambda x: gutil.cellid_from_point(gutil.point_from_list_coord(x), s2level)
+    ).tolist()
+  unique_cellid = list(set(cells))
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
@@ -141,13 +147,13 @@ def create_dataset(
   unique_cells_df = pd.DataFrame({'point': points, 'cellid': unique_cellid})
   
   unique_cells_df['far'] = unique_cells_df.point.apply(
-      lambda x: gutil.far_cellid(x, unique_cells_df))
+    lambda x: gutil.far_cellid(x, unique_cells_df))
 
   vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
-  dim = CELLID_DIM)
+    dim = CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
-  # Create RVS dataset.
+  # Create RUN dataset.
   train_dataset = None
   val_dataset = None
   logging.info("Starting to create the splits")
