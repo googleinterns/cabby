@@ -56,22 +56,22 @@ MAIN = [
 V1 = ['Go', 'Walk', 'Head', 'Proceed', 'Travel']
 
 V2 = [
-  'Meet at GOAL_LOCATION.', 
-  'Come to GOAL_LOCATION.',
-  'Head over to GOAL_LOCATION.',
-  'GOAL_LOCATION is the meeting point.'
+  'Meet at the GOAL_LOCATION.', 
+  'Come to the GOAL_LOCATION.',
+  'Head over to the GOAL_LOCATION.',
+  'The GOAL_LOCATION is the meeting point.'
 ]
 
 NEAR_GOAL_END = [
-  ". GOAL_LOCATION will be near NEAR_PIVOT.",
-  ". NEAR_PIVOT is quite close to GOAL_LOCATION.",
-  ". Meet at GOAL_LOCATION, which is right next to NEAR_PIVOT.",
-  ". If you see NEAR_PIVOT, you should find GOAL_LOCATION close by."
+  ". The GOAL_LOCATION will be near a NEAR_PIVOT.",
+  ". A NEAR_PIVOT is quite close to the GOAL_LOCATION.",
+  ". Meet at the GOAL_LOCATION, which is right next to a NEAR_PIVOT.",
+  ". If you see a NEAR_PIVOT, you should find the GOAL_LOCATION close by."
 ]
 NEAR_GOAL_START = [
-  ". It will be near NEAR_PIVOT.",
-  ". It is close to NEAR_PIVOT.",
-  ". NEAR_PIVOT is close by."
+  ". It will be near a NEAR_PIVOT.",
+  ". It is close to a NEAR_PIVOT.",
+  ". A NEAR_PIVOT is close by."
 ]
 AVOID = [
   ". If you reach BEYOND_PIVOT, you have gone too far.",
@@ -80,13 +80,13 @@ AVOID = [
   ""]
 
 GOAL_END = [
-  'and meet at GOAL_LOCATION.',
-  'and come to GOAL_LOCATION.',
-  'to reach GOAL_LOCATION.',
-  'to arrive at GOAL_LOCATION.'
+  'and meet at the GOAL_LOCATION.',
+  'and come to the GOAL_LOCATION.',
+  'to reach the GOAL_LOCATION.',
+  'to arrive at the GOAL_LOCATION.'
 ]
 
-GOAL = ["GOAL_LOCATION"]
+GOAL = ["the GOAL_LOCATION"]
 
 
 def add_rules(nonterminal_name: Text,
@@ -223,6 +223,12 @@ def add_features_to_template(template: Text, entity: item.RVSPath) -> Text:
   intersections = int(entity.intersections)
   blocks = str(intersections-1)
   intersections = str(intersections)
+  if entity.end_point.main_tag[0].isupper():
+    template = template.replace('The GOAL_LOCATION', 'GOAL_LOCATION')
+    template = template.replace('the GOAL_LOCATION', 'GOAL_LOCATION')
+  if entity.near_pivot.main_tag[0].isupper():
+    template = template.replace('A NEAR_PIVOT', 'NEAR_PIVOT')
+    template = template.replace('a NEAR_PIVOT', 'NEAR_PIVOT')
   template = template.replace('GOAL_LOCATION', entity.end_point.main_tag)
   template = template.replace('MAIN_PIVOT', entity.main_pivot.main_tag)
   template = template.replace('NEAR_PIVOT', entity.near_pivot.main_tag)
@@ -236,4 +242,4 @@ def add_features_to_template(template: Text, entity: item.RVSPath) -> Text:
   template = template.replace('The The', 'The')
   template = template.replace('the The', 'the')
 
-  return template.capitalize()
+  return template
