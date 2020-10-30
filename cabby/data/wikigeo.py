@@ -19,7 +19,10 @@ from shapely.geometry.point import Point
 
 import attr
 
-VERSION = 0.15
+from cabby.data.wikidata import item as wdi
+from cabby.data.wikipedia import item as wpi
+
+VERSION = 0.17
 
 @attr.s
 class WikigeoEntity:
@@ -54,8 +57,12 @@ class WikigeoEntity:
     self.version = VERSION
 
   @classmethod
-  def from_wiki_items(cls, wikipedia, wikipedia_ref, wikidata_ref, 
-    wikipedia_type):
+  def from_wiki_items(
+    cls, 
+    wikipedia: wpi.WikipediaEntity, 
+    wikipedia_ref: wpi.WikipediaEntity, 
+    wikidata_ref: wdi.WikidataEntity, 
+    wikipedia_type: str):
     """Construct an Entity from the Wikipedia and Wikidata entities."""
     return WikigeoEntity(
       wikipedia.pageid,

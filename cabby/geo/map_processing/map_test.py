@@ -14,8 +14,6 @@
 
 '''Tests for map_structure.py'''
 
-
-
 import collections
 import osmnx as ox
 from s2geometry import pywraps2 as s2
@@ -38,11 +36,18 @@ class MapTest(unittest.TestCase):
     for osmid in osmids:
       self.assertIn(osmid, self.map.nx_graph.nodes)
 
+  def testOSMNodes(self):
+    node_osmids = set(self.map.nodes['osmid'])
+    nxg_osmids = set(self.map.nx_graph)
+    self.assertEqual(len(node_osmids), len(nxg_osmids))
+    diff = node_osmids.difference(nxg_osmids)
+    self.assertEqual(len(diff),0)
+    
+
   def testAttributeInGraph(self):
     self.assertIn('1#1360050503', self.map.nx_graph.nodes)
     node = self.map.nx_graph.nodes['1#1360050503']
     self.assertEqual('primary', node['highway'])
-
 
   def testSingleOutput(self):
     # Verify that a known POI is present.
@@ -59,10 +64,6 @@ class MapTest(unittest.TestCase):
     found_ids = [list_cells[i].id() for i in range(len(list_cells))]
     for expected, found in zip(expected_ids, found_ids):
       self.assertEqual(expected, found)
-
-    
-
-  
 
 
 if __name__ == "__main__":

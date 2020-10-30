@@ -62,7 +62,7 @@ SUPPORTED_REGIONS = [
   ),
   Region(
     name='UTAustin',
-    polygon=box(minx=-97.7418, miny=30.2836, maxx=-97.7360, maxy=30.2872),
+    polygon=box(minx=-97.74, miny=30.28, maxx=-97.73, maxy=30.29),
   )  
 ]
 

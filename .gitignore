@@ -4,3 +4,4 @@
 *.log
 .vscode/
 .ipynb_checkpoints
+templates.csv

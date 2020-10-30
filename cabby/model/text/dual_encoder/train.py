@@ -13,19 +13,18 @@
 # limitations under the License.
 
 
-from typing import Tuple, Sequence, Optional, Dict, Text, Any
+from typing import Dict, Sequence 
 
 from absl import logging
 import numpy as np
 import os
 from sklearn.metrics import accuracy_score
 import torch
-import torch.optim as optim
 import torch.nn as nn
 from transformers import AdamW
 from torch.utils.data import DataLoader
-from cabby.evals import utils as eu
 
+from cabby.evals import utils as eu
 from cabby.model.text import util
 
 criterion = nn.CosineEmbeddingLoss()
@@ -37,14 +36,15 @@ class Trainer:
           model: torch.nn.Module,
           device: torch.device,
           optimizer: torch.optim.Adam,
-          file_path: Text,
+          file_path: str,
           train_loader: DataLoader,
           valid_loader: DataLoader,
           test_loader: DataLoader,
           unique_cells: Sequence[int],
           num_epochs: int,
           cells_tensor: torch.tensor,
-          label_to_cellid: Dict[int, int]):
+          label_to_cellid: Dict[int, int],
+          is_distance_distribution: bool):
 
     self.model = model
     self.device = device
@@ -59,8 +59,11 @@ class Trainer:
     self.label_to_cellid = label_to_cellid
     self.cos = nn.CosineSimilarity(dim=2)
     self.best_valid_loss = float("Inf")
+    if not os.path.exists(self.file_path):
+      os.mkdir(self.file_path)
     self.model_path = os.path.join(self.file_path, 'model.pt')
     self.metrics_path = os.path.join(self.file_path, 'metrics.tsv')
+    self.is_distance_distribution = is_distance_distribution
         
 
   def evaluate(self, validation_set: bool = True):
@@ -71,8 +74,6 @@ class Trainer:
     else:
       data_loader = self.test_loader
 
-    self.model.eval()
-
     # Validation loop.
     logging.info("Starting evaluation.")
     true_points_list, pred_points_list = [], []
@@ -81,35 +82,34 @@ class Trainer:
     total = 0
     loss_val_total = 0
 
-    for batch in data_loader:
-      text = {key: val.to(self.device) for key, val in batch['text'].items()}
-      cellids = batch['cellid'].float().to(self.device)
-      neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
-      far_cells = batch['far_cells'].float().to(self.device)
+    self.model.eval()
+    with torch.no_grad():
+      for batch in data_loader:
 
-      cellids = cellids.float().to(self.device) 
-      neighbor_cells = neighbor_cells.float().to(self.device) 
-      far_cells = far_cells.float().to(self.device)
-      text = {key: val.to(self.device) for key, val in text.items()}
+        text = {key: val.to(self.device) for key, val in batch['text'].items()}
+        cellids = batch['cellid'].float().to(self.device)
+        neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
+        far_cells = batch['far_cells'].float().to(self.device)
 
-      loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
-
-      loss_val_total += loss.item()
-
-      text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
-      batch_dim = text_embedding.shape[0]
-      cell_dim = cellid_embedding.shape[0]
-      output_dim  = cellid_embedding.shape[1]
-      cellid_embedding_exp = cellid_embedding.expand(
-        batch_dim, cell_dim, output_dim)
-      text_embedding_exp = text_embedding.unsqueeze(1)
-      output = self.cos(cellid_embedding_exp,text_embedding_exp)
-      output = output.detach().cpu().numpy()
-      predictions = np.argmax(output, axis=1)
-      predictions_list.append(predictions)
-      labels = batch['label'].numpy()
-      true_vals.append(labels)
-      true_points_list.append(batch['point'])
+        loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
+        loss_val_total+=loss
+        text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
+        batch_dim = text_embedding.shape[0]
+        cell_dim = cellid_embedding.shape[0]
+        output_dim  = cellid_embedding.shape[1]
+        cellid_embedding_exp = cellid_embedding.expand(
+          batch_dim, cell_dim, output_dim)
+        text_embedding_exp = text_embedding.unsqueeze(1)
+        output = self.cos(cellid_embedding_exp, text_embedding_exp)
+        if self.is_distance_distribution:
+          distance_distribution = batch['distribution'].to(self.device)
+          output = output * distance_distribution
+        output = output.detach().cpu().numpy()
+        predictions = np.argmax(output, axis=1)
+        predictions_list.append(predictions)
+        labels = batch['label'].numpy()
+        true_vals.append(labels)
+        true_points_list.append(batch['point'])
 
     true_points_list = np.concatenate(true_points_list, axis=0)
     predictions_list = np.concatenate(predictions_list, axis=0)
@@ -177,6 +177,7 @@ class Trainer:
         running_loss += loss.item()
         global_step += 1
 
+
       # Evaluation step.
       valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
 
@@ -213,22 +214,22 @@ class Trainer:
     test_loss, predictions, true_vals, true_points, pred_points = self.evaluate(
       validation_set = False)
 
+    util.save_metrics_last_only(
+          self.metrics_path, 
+          true_points, 
+          pred_points)
+
     accuracy = accuracy_score(true_vals, predictions)
 
     evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(self.metrics_path)
-    _,mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
+    _, mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
 
     logging.info(f"Test Accuracy: {accuracy},\
           Mean distance: {mean_distance}, \
           Median distance: {median_distance}, \
           Max error: {max_error}, \
           Norm AUC: {norm_auc}")
-
-    util.save_metrics_last_only(
-          self.metrics_path, 
-          true_points, 
-          pred_points)
 
     self.save_cell_embed()
 

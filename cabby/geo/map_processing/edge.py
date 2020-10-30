@@ -36,6 +36,7 @@ class Edge:
   u_for_edge: int = attr.ib()
   v_for_edge: int = attr.ib()
   length: float = attr.ib()
+  true_length: float = attr.ib()
   oneway: int = attr.ib()
   highway: Text = attr.ib()
   osmid: int = attr.ib()
@@ -59,6 +60,7 @@ class Edge:
       u_for_edge,
       v_for_edge,
       max(0.001, length),
+      length,
       False,
       highway,
       osmid,
@@ -67,7 +69,12 @@ class Edge:
     )
 
   @classmethod
-  def from_poi(cls, u_for_edge, v_for_edge, osmid, length, geometry):
+  def from_poi(cls, 
+              u_for_edge, 
+              v_for_edge, 
+              osmid, length, 
+              true_length, 
+              geometry):
     """Construct an edge entity to connect a POI.
     Arguments:
       u_for_edge: The u endside of the edge.
@@ -81,6 +88,7 @@ class Edge:
       u_for_edge,
       v_for_edge,
       max(0.001, length),
+      true_length,
       False,
       "poi",
       osmid,
