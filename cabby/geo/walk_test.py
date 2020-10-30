@@ -13,9 +13,6 @@
 # limitations under the License.
 '''Tests for walk.py'''
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
-
 import networkx as nx
 import osmnx as ox
 from shapely.geometry.point import Point

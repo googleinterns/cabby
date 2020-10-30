@@ -14,8 +14,6 @@
 
 '''Tests for speak.py'''
 
-import sys
-sys.path.append("/home/tzuf_google_com/dev/cabby")
 
 from typing import Dict, Text
 import unittest
