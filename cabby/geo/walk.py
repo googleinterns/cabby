@@ -46,7 +46,7 @@ from cabby.geo import osm
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 4
 SAVE_ENTITIES_EVERY = 1000
-MAX_BATCH_GEN = 100
+MAX_BATCH_GEN = 1000
 MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
@@ -158,6 +158,8 @@ class Walker:
       tag_value_clean = tag_value.replace("_", " ")
       if tag_value in osm.CORRECTIONS:
         tag_value_clean = osm.CORRECTIONS[tag_value]
+      if tag_value_clean in ['yes', 'no']:
+        continue
       if addition == 'after':
         new_tag = tag_value_clean + " " + tag
       elif addition == "before":
@@ -175,23 +177,25 @@ class Walker:
       return new_tag
     return None
   
-  def select_non_specific_unique_pois(self, pois: pd.DataFrame):
+  def select_non_specific_unique_pois(self, pois: pd.DataFrame, is_unique: bool = False):
     '''Returns a non-specific POIs with main tag being the non-specific tag.
     Arguments:
       pois: all pois to select from.
+      is_unique: if to filter unique tags.
     Returns:
       A number of non-specific POIs which are unique.
     '''
     # Assign main tag. 
     main_tags = pois.apply(self.get_non_specific_tag, axis=1)
-    pois = pois.assign(main_tag = main_tags)
-    pois.dropna(subset=['main_tag'], inplace=True)
+    new_pois = pois.assign(main_tag = main_tags)
+    new_pois.dropna(subset=['main_tag'], inplace=True)
 
     # Get Unique main tags.
-    uniqueness = pois.duplicated(subset=['main_tag'], keep=False)==False
-    pois_unique = pois[uniqueness]
+    if is_unique:
+      uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==False
+      new_pois = new_pois[uniqueness]
 
-    return pois_unique
+    return new_pois
 
   def select_non_specific_poi(self, pois: pd.DataFrame):
     '''Returns a non-specific POI with main tag being the non-specific tag.
@@ -201,12 +205,12 @@ class Walker:
       A single sample of a POI with main tag being the non-specific tag.
     '''
     
-    pois_unique = self.select_non_specific_unique_pois(pois)
+    pois_non_specific = self.select_non_specific_unique_pois(pois)
     
-    if pois_unique.shape[0]==0:
+    if pois_non_specific.shape[0]==0:
       return None
     # Sample POI.
-    return self.sample_point(pois_unique)
+    return self.sample_point(pois_non_specific)
 
   def get_end_poi(self,
   ) -> Optional[GeoSeries]:
@@ -392,7 +396,8 @@ class Walker:
     nearby_poi = poi[poi['osmid'] != end_point['osmid']]
 
     # Filter non-specific tags.
-    unique_poi = self.select_non_specific_unique_pois(nearby_poi)
+    unique_poi = self.select_non_specific_unique_pois(
+      nearby_poi, is_unique=True)
     if unique_poi.shape[0]==0:
       return None
 
