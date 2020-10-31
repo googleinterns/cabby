@@ -708,7 +708,6 @@ class Walker:
     
     sema = Semaphore(n_cpu)
     new_entities = [] 
-    
     lst = list(range(n_samples))
     batches = [
       lst[i:i + MAX_BATCH_GEN] for i in range(0, len(lst), MAX_BATCH_GEN)]
@@ -727,7 +726,7 @@ class Walker:
           proc.join()
       new_entities += [entity for idx_entity, entity in return_dict.items()]
 
-      if len(new_entities)%SAVE_ENTITIES_EVERY == 0:
+      if len(new_entities)>SAVE_ENTITIES_EVERY:
         self.save_entities(new_entities, path_rvs_path)
         new_entities = []
     if len(new_entities)>0:
