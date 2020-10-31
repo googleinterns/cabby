@@ -46,7 +46,7 @@ from cabby.geo import osm
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 0
 SAVE_ENTITIES_EVERY = 1000
-MAX_BATCH_GEN = 1000
+MAX_BATCH_GEN = 100
 MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
@@ -417,8 +417,15 @@ class Walker:
     # Remove streets.
     if 'highway' in df_pivots.columns:
       df_pivots = df_pivots[(df_pivots['highway'].isnull())]
+    
+    # Remove POI near goal.
+    far_poi_con = df_pivots.apply(
+    lambda x: util.get_distance_between_geometries(
+      x.geometry, 
+      end_point['centroid']) > NEAR_PIVOT_DIST, axis=1)
+    far_poi = df_pivots[far_poi_con]
 
-    main_pivot = self.pick_prominent_pivot(df_pivots, end_point)
+    main_pivot = self.pick_prominent_pivot(far_poi, end_point)
     return main_pivot
 
   def get_pivot_beyond_goal(self, 

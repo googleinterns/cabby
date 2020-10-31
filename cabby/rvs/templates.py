@@ -241,5 +241,9 @@ def add_features_to_template(template: Text, entity: item.RVSPath) -> Text:
   # Fix text.
   template = template.replace('The The', 'The')
   template = template.replace('the The', 'the')
+  template = template.replace(' a a', ' an a')
+  template = template.replace(' a e', ' an e')
+  template = template.replace(' a u', ' an u')
+  template = template.replace(' a o', ' an o')
 
   return template
