@@ -21,42 +21,42 @@ CORRECTIONS = {'fuel': 'gas station', 'parking': 'parking lot',
   'supermarket shop': 'supermarket', 'toys shop': 'toy shop', 
   'fast food': 'fast food restaurant', 'Medical Center shop': 'Medical Center'}
 
-BLACK_LIST = ['place of worship']
+BLOCK_LIST = ['place of worship']
 
-TOURISM_INTRESTING = [ 'aquarium', 'gallery', 'guest_house', 'hostel', 'hotel',
+TOURISM_INTERESTING = [ 'aquarium', 'gallery', 'guest_house', 'hostel', 'hotel',
   'motel','museum', 'picnic_site', 'theme_park', 'viewpoint', 'zoo']
            
-LEISURE_INTRESTING = ['dog_park', 'fitness_centre', 'garden', 'golfcourse', 
+LEISURE_INTERESTING = ['dog_park', 'fitness_centre', 'garden', 'golfcourse', 
   'ice_rink', 'marina', 'miniature_golf', 'park', 'playground', 'stadium', 
   'water_park']
 
-BUILDING_INTRESTING = ['hotel', 'supermarket', 'warehouse', 'cathedral', 
+BUILDING_INTERESTING = ['hotel', 'supermarket', 'warehouse', 'cathedral', 
   'chapel', 'church', 'mosque', 'synagogue', 'hospital', 'kindergarten', 
   'school', 'university', 'train_station', 'stadium', 'bridge']
 
-CRAFT_INTRESTING = ['bakery']
+CRAFT_INTERESTING = ['bakery']
 
-MAN_MADE_INTRESTING = ['tower', 'obelisk', 'bridge', 'lighthouse']
+MAN_MADE_INTERESTING = ['tower', 'obelisk', 'bridge', 'lighthouse']
 
 PLACE = ['square']
 
-INTRESTING_TAGS =  {'name': True,
+INTERESTING_TAGS =  {'name': True,
                     'amenity': True,
                     'wikidata': True,
                     'wikipedia': True,
                     'shop': True,
                     'brand': True,
-                    'tourism': TOURISM_INTRESTING,
-                    'leisure': LEISURE_INTRESTING,
-                    'building': BUILDING_INTRESTING,
-                    'craft': CRAFT_INTRESTING,
-                    'man_made': MAN_MADE_INTRESTING}
+                    'tourism': TOURISM_INTERESTING,
+                    'leisure': LEISURE_INTERESTING,
+                    'building': BUILDING_INTERESTING,
+                    'craft': CRAFT_INTERESTING,
+                    'man_made': MAN_MADE_INTERESTING}
 
 NON_SPECIFIC_TAGS = {'amenity': False, 'brand': False, 'shop': 'after', 
-  'historic	': 'before', 'tourism': TOURISM_INTRESTING, 'bridge': True,
+  'historic	': 'before', 'tourism': TOURISM_INTERESTING, 'bridge': True,
   'man_made': False, 'natural': False, 'place': PLACE, 
-  'leisure': LEISURE_INTRESTING, 'building': BUILDING_INTRESTING, 
-  'craft': CRAFT_INTRESTING, 'man_made': MAN_MADE_INTRESTING}
+  'leisure': LEISURE_INTERESTING, 'building': BUILDING_INTERESTING, 
+  'craft': CRAFT_INTERESTING, 'man_made': MAN_MADE_INTERESTING}
 
 
 PROMINENT_TAGS_ORDERED = [

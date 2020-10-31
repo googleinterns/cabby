@@ -44,7 +44,7 @@ from cabby.rvs import item
 from cabby.geo import osm
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
-SEED = 4
+SEED = 0
 SAVE_ENTITIES_EVERY = 1000
 MAX_BATCH_GEN = 1000
 MAX_SEED = 2**32 - 1
@@ -141,7 +141,7 @@ class Walker:
 
     return route_nodes
 
-  def get_non_specific_tag(self, poi):
+  def get_generic_tag(self, poi: pd.Series) -> Optional[str]:
     '''Selects a non-specific tag (e.g., museum instead of "Austin Museum of 
     Popular Culture") instead of a POI.
     Arguments:
@@ -172,12 +172,12 @@ class Walker:
         new_tag = tag_value_clean
       if new_tag in osm.CORRECTIONS:
         new_tag = osm.CORRECTIONS[new_tag]
-      if new_tag in osm.BLACK_LIST:
+      if new_tag in osm.BLOCK_LIST:
         continue
       return new_tag
     return None
   
-  def select_non_specific_unique_pois(self, pois: pd.DataFrame, is_unique: bool = False):
+  def select_generic_unique_pois(self, pois: pd.DataFrame, is_unique: bool = False):
     '''Returns a non-specific POIs with main tag being the non-specific tag.
     Arguments:
       pois: all pois to select from.
@@ -186,7 +186,7 @@ class Walker:
       A number of non-specific POIs which are unique.
     '''
     # Assign main tag. 
-    main_tags = pois.apply(self.get_non_specific_tag, axis=1)
+    main_tags = pois.apply(self.get_generic_tag, axis=1)
     new_pois = pois.assign(main_tag = main_tags)
     new_pois.dropna(subset=['main_tag'], inplace=True)
 
@@ -197,7 +197,7 @@ class Walker:
 
     return new_pois
 
-  def select_non_specific_poi(self, pois: pd.DataFrame):
+  def select_generic_poi(self, pois: pd.DataFrame):
     '''Returns a non-specific POI with main tag being the non-specific tag.
     Arguments:
       pois: all pois to select from.
@@ -205,15 +205,17 @@ class Walker:
       A single sample of a POI with main tag being the non-specific tag.
     '''
     
-    pois_non_specific = self.select_non_specific_unique_pois(pois)
+    pois_generic = self.select_generic_unique_pois(pois)
     
-    if pois_non_specific.shape[0]==0:
+    if pois_generic.shape[0]==0:
       return None
     # Sample POI.
-    return self.sample_point(pois_non_specific)
+    poi =  self.sample_point(pois_generic)
+    poi['geometry'] = poi.centroid
+    return poi
 
-  def get_end_poi(self,
-  ) -> Optional[GeoSeries]:
+
+  def get_end_poi(self,) -> Optional[GeoSeries]:
     '''Returns a random POI.
     Returns:
       A single POI.
@@ -226,14 +228,7 @@ class Walker:
       return None
       
     # Filter non-specific tags.
-    poi = self.select_non_specific_poi(small_poi)
-    
-    if poi is None:
-      return None
-
-    poi['geometry'] = poi.centroid
-
-    return poi
+    return self.select_generic_poi(small_poi)
 
 
   def sample_point(self,
@@ -294,14 +289,7 @@ class Walker:
     small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= SMALL_POI]
 
     # Filter non-specific tags.
-    start_point = self.select_non_specific_poi(small_poi)
-    
-    if start_point is None:
-      return None
-
-    start_point['geometry'] = start_point.centroid
-    return start_point
-
+    return self.select_generic_poi(small_poi)
 
   def get_landmark_if_tag_exists(self, 
                                 gdf: GeoDataFrame, 
@@ -396,7 +384,7 @@ class Walker:
     nearby_poi = poi[poi['osmid'] != end_point['osmid']]
 
     # Filter non-specific tags.
-    unique_poi = self.select_non_specific_unique_pois(
+    unique_poi = self.select_generic_unique_pois(
       nearby_poi, is_unique=True)
     if unique_poi.shape[0]==0:
       return None

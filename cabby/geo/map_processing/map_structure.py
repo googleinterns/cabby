@@ -104,7 +104,7 @@ class Map:
       (1) The POI that are not roads; and (2) the roads POI.
     '''
 
-    tags = osm.INTRESTING_TAGS
+    tags = osm.INTERESTING_TAGS
               
     osm_poi = ox.geometries_from_polygon(self.polygon_area, tags=tags)
 
