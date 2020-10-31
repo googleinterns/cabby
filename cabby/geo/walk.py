@@ -41,12 +41,12 @@ from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 from cabby.geo import geo_item
 from cabby.rvs import item
-
+from cabby.geo import osm
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
-SEED = 4
+SEED = 0
 SAVE_ENTITIES_EVERY = 1000
-MAX_BATCH_GEN = 10
+MAX_BATCH_GEN = 100
 MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
@@ -141,28 +141,94 @@ class Walker:
 
     return route_nodes
 
-  def get_end_poi(self,
-  ) -> Optional[GeoSeries]:
+  def get_generic_tag(self, poi: pd.Series) -> Optional[str]:
+    '''Selects a non-specific tag (e.g., museum instead of "Austin Museum of 
+    Popular Culture") instead of a POI.
+    Arguments:
+      poi: The POI to select a non-specific tag for.
+    Returns:
+      A non-specific tag.
+    '''
+    for tag, addition in osm.NON_SPECIFIC_TAGS.items():
+      if tag not in poi or not isinstance(poi[tag], str):
+        continue
+      if addition == True:
+        return tag
+      tag_value = poi[tag]
+      tag_value_clean = tag_value.replace("_", " ")
+      if tag_value in osm.CORRECTIONS:
+        tag_value_clean = osm.CORRECTIONS[tag_value]
+      if tag_value_clean in ['yes', 'no']:
+        continue
+      if addition == 'after':
+        new_tag = tag_value_clean + " " + tag
+      elif addition == "before":
+        new_tag = tag + " " + tag_value_clean 
+      elif addition == False:
+        new_tag = tag_value_clean
+      elif tag_value not in addition:
+        continue
+      else: 
+        new_tag = tag_value_clean
+      if new_tag in osm.CORRECTIONS:
+        new_tag = osm.CORRECTIONS[new_tag]
+      if new_tag in osm.BLOCK_LIST:
+        continue
+      return new_tag
+    return None
+  
+  def select_generic_unique_pois(self, pois: pd.DataFrame, is_unique: bool = False):
+    '''Returns a non-specific POIs with main tag being the non-specific tag.
+    Arguments:
+      pois: all pois to select from.
+      is_unique: if to filter unique tags.
+    Returns:
+      A number of non-specific POIs which are unique.
+    '''
+    # Assign main tag. 
+    main_tags = pois.apply(self.get_generic_tag, axis=1)
+    new_pois = pois.assign(main_tag = main_tags)
+    new_pois.dropna(subset=['main_tag'], inplace=True)
+
+    # Get Unique main tags.
+    if is_unique:
+      uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==False
+      new_pois = new_pois[uniqueness]
+
+    return new_pois
+
+  def select_generic_poi(self, pois: pd.DataFrame):
+    '''Returns a non-specific POI with main tag being the non-specific tag.
+    Arguments:
+      pois: all pois to select from.
+    Returns:
+      A single sample of a POI with main tag being the non-specific tag.
+    '''
+    
+    pois_generic = self.select_generic_unique_pois(pois)
+    
+    if pois_generic.shape[0]==0:
+      return None
+    # Sample POI.
+    poi =  self.sample_point(pois_generic)
+    poi['geometry'] = poi.centroid
+    return poi
+
+
+  def get_end_poi(self,) -> Optional[GeoSeries]:
     '''Returns a random POI.
     Returns:
       A single POI.
     '''
     
-    # Filter with name.
-    named_poi = self.map.poi[self.map.poi['name'].notnull()]
-
     # Filter large POI.
-    small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
+    small_poi = self.map.poi[self.map.poi['s2cellids'].str.len() <= SMALL_POI]
 
-    if small_poi.shape[0] == 0:
+    if small_poi.shape[0]==0:
       return None
-
-    # Pick random POI.
-
-    poi = self.sample_point(small_poi)
-    poi['geometry'] = poi.centroid
-
-    return poi
+      
+    # Filter non-specific tags.
+    return self.select_generic_poi(small_poi)
 
 
   def sample_point(self,
@@ -197,7 +263,7 @@ class Walker:
       # Find nodes within 2000 meter path distance.
       outer_circle_graph = ox.truncate.truncate_graph_dist(
         self.map.nx_graph, dest_osmid, 
-        max_dist=(MAX_PATH_DIST+2*ADD_POI_DISTANCE), weight='length')
+        max_dist=(MAX_PATH_DIST + 2 * ADD_POI_DISTANCE), weight='length')
 
       outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
@@ -219,24 +285,15 @@ class Walker:
 
     poi_in_ring = self.map.poi[self.map.poi['osmid'].isin(osmid_in_range)]
 
-    # Filter with name.
-    named_poi = poi_in_ring[poi_in_ring['name'].notnull()]
-
     # Filter large POI.
-    small_poi = named_poi[named_poi['s2cellids'].str.len() <= SMALL_POI]
+    small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= SMALL_POI]
 
-    if small_poi.shape[0] == 0:
-      return None
-
-    # Pick random POI.
-    start_point = self.sample_point(small_poi)
-    start_point['geometry'] = start_point.centroid
-    return start_point
-
+    # Filter non-specific tags.
+    return self.select_generic_poi(small_poi)
 
   def get_landmark_if_tag_exists(self, 
                                 gdf: GeoDataFrame, 
-                                tag: Text, main_tag:Text, 
+                                tag: Text, main_tag: Text, 
                                 alt_main_tag: Text
   ) -> GeoSeries:
     '''Check if tag exists, set main tag name and choose pivot.
@@ -253,11 +310,13 @@ class Walker:
       if pivots.shape[0]:
         pivots = gdf[gdf[main_tag].notnull()]
         if main_tag in candidate_landmarks and pivots.shape[0]:
-          pivots = pivots.assign(main_tag=pivots[main_tag])
+          if 'main_tag' not in pivots:
+            pivots = pivots.assign(main_tag=pivots[main_tag])
           return self.sample_point(pivots)
         pivots = gdf[gdf[alt_main_tag].notnull()]
         if alt_main_tag in candidate_landmarks and pivots.shape[0]:
-          pivots = pivots.assign(main_tag=pivots[alt_main_tag])
+          if 'main_tag' not in pivots:
+            pivots = pivots.assign(main_tag=pivots[alt_main_tag])
           return self.sample_point(pivots)
     return None
 
@@ -310,7 +369,7 @@ class Walker:
     near_poi_con = self.map.poi.apply(
       lambda x: util.get_distance_between_geometries(
         x.geometry, 
-        end_point['centroid']) < NEAR_PIVOT_DIST + 2 * ADD_POI_DISTANCE, axis=1)
+        end_point['centroid']) < NEAR_PIVOT_DIST, axis=1)
 
     poi = self.map.poi[near_poi_con]
     
@@ -324,7 +383,13 @@ class Walker:
     # Remove the endpoint.
     nearby_poi = poi[poi['osmid'] != end_point['osmid']]
 
-    prominent_poi = self.pick_prominent_pivot(nearby_poi, end_point)
+    # Filter non-specific tags.
+    unique_poi = self.select_generic_unique_pois(
+      nearby_poi, is_unique=True)
+    if unique_poi.shape[0]==0:
+      return None
+
+    prominent_poi = self.pick_prominent_pivot(unique_poi, end_point)
     return prominent_poi
 
 
@@ -352,8 +417,15 @@ class Walker:
     # Remove streets.
     if 'highway' in df_pivots.columns:
       df_pivots = df_pivots[(df_pivots['highway'].isnull())]
+    
+    # Remove POI near goal.
+    far_poi_con = df_pivots.apply(
+    lambda x: util.get_distance_between_geometries(
+      x.geometry, 
+      end_point['centroid']) > NEAR_PIVOT_DIST, axis=1)
+    far_poi = df_pivots[far_poi_con]
 
-    main_pivot = self.pick_prominent_pivot(df_pivots, end_point)
+    main_pivot = self.pick_prominent_pivot(far_poi, end_point)
     return main_pivot
 
   def get_pivot_beyond_goal(self, 
@@ -643,7 +715,6 @@ class Walker:
     
     sema = Semaphore(n_cpu)
     new_entities = [] 
-    
     lst = list(range(n_samples))
     batches = [
       lst[i:i + MAX_BATCH_GEN] for i in range(0, len(lst), MAX_BATCH_GEN)]
@@ -662,7 +733,7 @@ class Walker:
           proc.join()
       new_entities += [entity for idx_entity, entity in return_dict.items()]
 
-      if len(new_entities)%SAVE_ENTITIES_EVERY == 0:
+      if len(new_entities)>SAVE_ENTITIES_EVERY:
         self.save_entities(new_entities, path_rvs_path)
         new_entities = []
     if len(new_entities)>0:

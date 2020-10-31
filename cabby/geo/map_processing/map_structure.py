@@ -37,6 +37,7 @@ from cabby.geo import util
 from cabby.geo.map_processing import graph
 from cabby.geo.map_processing import edge
 from cabby.geo import regions
+from cabby.geo import osm
 
 POI_PREFIX = '#'
 SHOW_PROGRESS_EVERY = 100
@@ -103,14 +104,8 @@ class Map:
       (1) The POI that are not roads; and (2) the roads POI.
     '''
 
-    tags = {'name': True,
-            'amenity': True,
-            'wikidata': True,
-            'wikipedia': True,
-            'shop': True,
-            'brand': True,
-            'tourism': True}
-
+    tags = osm.INTERESTING_TAGS
+              
     osm_poi = ox.geometries_from_polygon(self.polygon_area, tags=tags)
 
     osm_highway = osm_poi['highway']

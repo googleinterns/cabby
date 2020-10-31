@@ -82,11 +82,12 @@ class RVSPath:
     prune_columns(self.beyond_pivot)
 
     self.instructions = (
-      "Starting at {0} walk {1} past {2} {3}and your goal is {4}, near {5}. "
-      .format(self.start_point['main_tag'], self.cardinal_direction,
-          self.main_pivot['main_tag'], intersection_instruction,
-          self.end_point['main_tag'],
-          self.near_pivot['main_tag']) + avoid_instruction
+      f"Starting at the {self.start_point['main_tag']} " +
+      f"walk {self.cardinal_direction} past " + 
+      f"{ self.main_pivot['main_tag']} {intersection_instruction}and your " + 
+      f"goal is the {self.end_point['main_tag']}, " +
+      f"near a {self.near_pivot['main_tag']}. "
+      + avoid_instruction
     )
 
     self.path_features = {
@@ -135,9 +136,6 @@ class RVSPath:
 
 def prune_columns(gds: GeoDataFrame):
   """Remove unneeded columns."""
-
-  if 'main_tag' not in gds:
-    gds['main_tag'] = gds['name']
 
   columns_remove = gds.keys().difference(['osmid', 'geometry', 'main_tag'])
   if len(columns_remove) == 0:
