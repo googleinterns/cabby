@@ -32,7 +32,7 @@ from typing import Optional, Tuple, Sequence, Any, Text
 import webbrowser
 
 FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
-MAX_FAILED_ATTEMPTS = 10
+MAX_FAILED_ATTEMPTS = 50
 
 CoordsYX = namedtuple('CoordsYX', ('y x'))
 CoordsXY = namedtuple('CoordsXY', ('x y'))
@@ -61,7 +61,7 @@ def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
   while far_cell_found is None:
     failed_counter += 1
     if failed_counter > MAX_FAILED_ATTEMPTS:
-      sys.exit("Reached max number of failed attempts in far cell calculation.")
+      sys.exit(f"Reached max number of failed attempts in far cell calculation for point: {Point.y, Point.x} from {cells.point}.")
     sample_cell = cells.sample(1).iloc[0]
     distance = get_distance_between_points(point, sample_cell.point) 
     if distance > FAR_DISTANCE_THRESHOLD:
