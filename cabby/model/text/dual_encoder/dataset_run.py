@@ -134,13 +134,23 @@ def create_dataset(
   valid_ds = ds[ds['map']=='map_2']
   test_ds = ds[ds['map']=='map_3']
 
-  # Get unique cells:
+  # Get unique cells.
   cells = ds.end_point.apply(
     lambda x: gutil.cellid_from_point(gutil.point_from_list_coord(x), s2level)
     ).tolist()
   unique_cellid = list(set(cells))
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
+
+  # Get unique cells for test split.
+  cells_test = test_ds.end_point.apply(
+    lambda x: gutil.cellid_from_point(gutil.point_from_list_coord(x), s2level)
+    ).tolist()
+  unique_cellid_test = list(set(cells_test))
+  label_to_cellid_test = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
+  vec_cells_test = util.binary_representation(np.array(unique_cellid_test), 
+    dim = CELLID_DIM)
+  tens_cells_test = torch.tensor(vec_cells_test)
 
   points = gutil.get_centers_from_s2cellids(unique_cellid)
 
@@ -172,6 +182,6 @@ def create_dataset(
     f"Finished to create the test-set with {len(test_dataset)} samples")
 
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
-    train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
-    tens_cells, label_to_cellid)
+    train_dataset, val_dataset, test_dataset, np.array(unique_cellid_test), 
+    tens_cells_test, label_to_cellid_test)
 
