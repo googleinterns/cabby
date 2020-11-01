@@ -40,7 +40,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
   `labels`: The ground true label of the cellid.
   `cellids`: The ground truth S2Cell id.
   `neighbor_cells`: One neighbor cell id of the ground truth S2Cell id.
-  `far_cells`: One far away cell id (in the region defined) of the ground truth S2Cell id.
+  `far_cells`: One far away cell id (in the region defined) of the ground truth 
+  S2Cell id.
   """
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int]):
@@ -119,7 +120,8 @@ def create_dataset(
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
   ds = pd.read_json(os.path.join(data_dir, 'dataset.json'))
-  ds['instructions'] = ds.groupby(['id'])['instruction'].transform(lambda x: ' '.join(x))
+  ds['instructions'] = ds.groupby(
+    ['id'])['instruction'].transform(lambda x: ' '.join(x))
 
   ds = ds.drop_duplicates(subset='id', keep="last")
 
@@ -148,7 +150,8 @@ def create_dataset(
     ).tolist()
   unique_cellid_test = list(set(cells_test))
   logging.info(f"Number of unique cells in test: {len(unique_cellid_test)}")
-  label_to_cellid_test = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
+  label_to_cellid_test = {
+    idx: cellid for idx, cellid in enumerate(unique_cellid)}
   vec_cells_test = util.binary_representation(np.array(unique_cellid_test), 
     dim = CELLID_DIM)
   tens_cells_test = torch.tensor(vec_cells_test)
