@@ -49,7 +49,9 @@ def get_distance_between_points(start_point: Point, end_point: Point) -> float:
   return ox.distance.great_circle_vec(
     start_point.y, start_point.x, end_point.y, end_point.x)
 
-def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
+def far_cellid(
+  point: Point, cells: pd.DataFrame, far_distance = FAR_DISTANCE_THRESHOLD
+  ) -> Optional[float]:
   '''Get a cell id far from the given cell point. 
   Arguments:
     point: The center point of the cell.
@@ -62,15 +64,12 @@ def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
     failed_counter += 1
     if failed_counter > MAX_FAILED_ATTEMPTS:
       sys.exit(
-        f"Reached max number of failed attempts in far cell calculation for point: {
-        (Point.y, Point.x)} from {(sample_cell.point.y, sample_cell.point.x)}.")
+        f"Reached max number of failed attempts in far cell calculation for point: {(Point.y, Point.x)}.")
     sample_cell = cells.sample(1).iloc[0]
     distance = get_distance_between_points(point, sample_cell.point) 
-    if distance > FAR_DISTANCE_THRESHOLD:
+    if distance > far_distance:
       far_cell_found = sample_cell.cellid
     
-    
-
   return far_cell_found
 
 def neighbor_cellid(cellid: int) -> int:
