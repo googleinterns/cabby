@@ -157,6 +157,9 @@ def create_dataset(
   unique_cells_df_test = pd.DataFrame(
     {'point': points_test, 'cellid': unique_cellid_test})
 
+  unique_cells_df_test['far'] = unique_cells_df_test.point.apply(
+    lambda x: gutil.far_cellid(x, unique_cells_df_test))
+
   vec_cells_test = util.binary_representation(
     unique_cells_df_test.cellid.to_numpy(), dim = CELLID_DIM)
   tens_cells_test = torch.tensor(vec_cells_test)
@@ -178,6 +181,8 @@ def create_dataset(
 
   unique_cells_df_valid = pd.DataFrame(
     {'point': points_valid, 'cellid': unique_cellid_valid})
+  unique_cells_df_valid['far'] = unique_cells_df_valid.point.apply(
+    lambda x: gutil.far_cellid(x, unique_cells_df_valid))
 
   vec_cells_valid = util.binary_representation(
     unique_cells_df_valid.cellid.to_numpy(), dim = CELLID_DIM)
@@ -201,6 +206,8 @@ def create_dataset(
 
   unique_cells_df_train = pd.DataFrame(
     {'point': points_train, 'cellid': unique_cellid_train})
+  unique_cells_df_train['far'] = unique_cells_df_train.point.apply(
+    lambda x: gutil.far_cellid(x, unique_cells_df_train))
 
   vec_cells_train = util.binary_representation(
     unique_cells_df_train.cellid.to_numpy(), dim = CELLID_DIM)
