@@ -61,7 +61,7 @@ def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
   while far_cell_found is None:
     failed_counter += 1
     if failed_counter > MAX_FAILED_ATTEMPTS:
-      sys.exit(f"Reached max number of failed attempts in far cell calculation for point: {Point.y, Point.x} from {cells.point}.")
+      sys.exit(f"Reached max number of failed attempts in far cell calculation for point: {(Point.y, Point.x)} from {(cells.point.y, cells.point.x)}.")
     sample_cell = cells.sample(1).iloc[0]
     distance = get_distance_between_points(point, sample_cell.point) 
     if distance > FAR_DISTANCE_THRESHOLD:
