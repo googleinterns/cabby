@@ -145,13 +145,10 @@ def create_dataset(
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
   # Get unique cells for test split.
-  cells_test = test_ds.end_point.apply(
-    lambda x: gutil.cellid_from_point(gutil.point_from_list_coord(x), s2level)
-    ).tolist()
-  unique_cellid_test = list(set(cells_test))
-  logging.info(f"Number of unique cells in test: {len(unique_cellid_test)}")
-  label_to_cellid_test = {
-    idx: cellid for idx, cellid in enumerate(unique_cellid)}
+  active_region_test = regions.get_region("RUN-map3")
+  unique_cellid_test = gutil.cellids_from_polygon(active_region_test.polygon, s2level)
+  label_to_cellid_test = {idx: cellid for idx, cellid in enumerate(unique_cellid_test)}
+
   vec_cells_test = util.binary_representation(np.array(unique_cellid_test), 
     dim = CELLID_DIM)
   tens_cells_test = torch.tensor(vec_cells_test)
