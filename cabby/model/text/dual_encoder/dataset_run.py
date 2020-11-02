@@ -175,8 +175,6 @@ def create_dataset(
     idx: cellid for idx, cellid in enumerate(unique_cellid_valid)}
   cellid_to_label_valid = {
     cellid: idx for idx, cellid in enumerate(unique_cellid_valid)}
-  label_to_cellid_valid = {
-    idx: cellid for idx, cellid in enumerate(unique_cellid_valid)}
   points_valid = gutil.get_centers_from_s2cellids(unique_cellid_valid)
 
   unique_cells_df_valid = pd.DataFrame(
