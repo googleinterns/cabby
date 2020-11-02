@@ -148,9 +148,10 @@ def create_dataset(
   active_region_test = regions.get_region("RUN-map3")
   unique_cellid_test = gutil.cellids_from_polygon(active_region_test.polygon, s2level)
   label_to_cellid_test = {idx: cellid for idx, cellid in enumerate(unique_cellid_test)}
+  unique_cells_df_test = pd.DataFrame({'cellid': label_to_cellid_test})
 
-  vec_cells_test = util.binary_representation(np.array(unique_cellid_test), 
-    dim = CELLID_DIM)
+  vec_cells_test = util.binary_representation(
+    unique_cells_df_test.cellid.to_numpy(), dim = CELLID_DIM)
   tens_cells_test = torch.tensor(vec_cells_test)
   logging.info(
     f"Shape of unique cells tensors in test: {tens_cells_test.shape}")
