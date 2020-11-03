@@ -20,6 +20,7 @@ import os
 import pandas as pd
 from sklearn.utils import shuffle
 import torch
+from transformers import DistilBertTokenizerFast
 
 from cabby.geo import util as gutil
 from cabby.model.text import util 

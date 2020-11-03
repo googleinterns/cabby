@@ -25,7 +25,6 @@ from shapely.geometry import box, mapping, LineString
 import sys
 from typing import Any, Dict, Text 
 import torch
-from transformers import DistilBertTokenizerFast
 
 import attr
 
