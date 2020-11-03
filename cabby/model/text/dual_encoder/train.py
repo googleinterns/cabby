@@ -82,6 +82,7 @@ class Trainer:
       center_points = gutil.get_centers_from_s2cellids(top_cellids)
       for idx, center_point in enumerate(center_points):
         start_point = batch_start_point[batch_idx]
+        print ('start_point:', start_point)
         distance = gutil.get_distance_between_points(start_point, center_point)
         print (f'start_point: {start_point.y, start_point.x}, center_point:{center_point.y, center_point.x}')
         print (type(distance), distance)
