@@ -100,7 +100,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     far_cells = torch.tensor(self.far_cells[idx])
     point = torch.tensor(self.points[idx])
     label = torch.tensor(self.labels[idx])
-    start_point = [self.start_points[idx]]
+    start_point = torch.tensor(self.start_points[idx])
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
       'far_cells': far_cells, 'point': point, 'label': label, 

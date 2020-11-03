@@ -128,7 +128,7 @@ class Trainer:
         output = self.cos(cellid_embedding_exp, text_embedding_exp)
         output = output.detach().cpu().numpy()
         if self.is_reranker:
-          predictions = self.reranker(batch['start_point'], output)
+          predictions = self.reranker(batch['start_point'].numpy(), output)
         else:
           predictions = np.argmax(output, axis=1)
         predictions_list.append(predictions)
