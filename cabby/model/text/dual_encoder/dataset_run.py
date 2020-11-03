@@ -153,9 +153,9 @@ def create_dataset(
   logging.info(map_2.polygon.wkt)
   logging.info(map_3.polygon.wkt)
 
-  unique_cellid_map_1 = gutil.cellids_from_polygon(map_1, s2level)
-  unique_cellid_map_2 = gutil.cellids_from_polygon(map_2, s2level)
-  unique_cellid_map_3 = gutil.cellids_from_polygon(map_3, s2level)
+  unique_cellid_map_1 = gutil.cellids_from_polygon(map_1.polygon, s2level)
+  unique_cellid_map_2 = gutil.cellids_from_polygon(map_2.polygon, s2level)
+  unique_cellid_map_3 = gutil.cellids_from_polygon(map_3.polygon, s2level)
 
   unique_cellid = (
     unique_cellid_map_1 + unique_cellid_map_2 + unique_cellid_map_3)
