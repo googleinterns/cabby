@@ -73,7 +73,7 @@ class Trainer:
     self.is_reranker = is_reranker
       
   def reranker(
-    self, batch_start_point: Point, batch_cosine_scores: np.ndarray ,top_k: int = 3):
+    self, batch_start_coords: Point, batch_cosine_scores: np.ndarray ,top_k: int = 3):
     top_idx = np.argpartition(batch_cosine_scores, top_k, axis=1)[-1*top_k:]
     u,inv = np.unique(top_idx,return_inverse = True)
     batch_top_cellids = np.array([self.label_to_cellid[x] for x in u])[inv].reshape(top_idx.shape)
@@ -81,11 +81,9 @@ class Trainer:
     for batch_idx, top_cellids in enumerate(batch_top_cellids):
       center_points = gutil.get_centers_from_s2cellids(top_cellids)
       for idx, center_point in enumerate(center_points):
-        start_point = batch_start_point[batch_idx]
-        print ('start_point:', start_point)
+        start_coords = batch_start_coords[batch_idx][0]
+        start_point = Point(start_coords)
         distance = gutil.get_distance_between_points(start_point, center_point)
-        print (f'start_point: {start_point.y, start_point.x}, center_point:{center_point.y, center_point.x}')
-        print (type(distance), distance)
         probabilities[batch_idx, idx] = dprob(distance)
     rescore = np.multiply(probabilities, batch_cosine_scores[top_idx])
     top_idx_for_k = np.argmax(rescore, axis=1)
