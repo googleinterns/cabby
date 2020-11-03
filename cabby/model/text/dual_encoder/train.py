@@ -91,7 +91,8 @@ class Trainer:
     top_cosine = np.take_along_axis(batch_cosine_scores,top_idx,1)
     rescore = np.multiply(probabilities, top_cosine)
     top_idx_for_k = np.argmax(rescore, axis=1)
-    return top_idx[top_idx_for_k]
+    top_idx_for_k = np.reshape(top_idx_for_k, (-1, top_idx_for_k.shape[0])).T
+    return np.take_along_axis(top_idx,top_idx_for_k,1)[:,0]    
     
 
   def evaluate(self, validation_set: bool = True):
