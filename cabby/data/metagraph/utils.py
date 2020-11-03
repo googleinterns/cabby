@@ -125,6 +125,7 @@ def update_osm_map(osm_map: Map,
       new_df = pd.DataFrame(data={
           'name': row["placeLabel"],
           'geometry': [util.point_str_to_shapely_point(wd_query[0]['point']['value'])],
+          'centroid': [util.point_str_to_shapely_point(wd_query[0]['point']['value'])],
           'osmid': [osmid],
           'wikidata': row["place"]
       }, index=[osmid])
