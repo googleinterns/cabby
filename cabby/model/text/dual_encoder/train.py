@@ -83,6 +83,8 @@ class Trainer:
       for idx, center_point in enumerate(center_points):
         start_point = batch_start_point[batch_idx]
         distance = gutil.get_distance_between_points(start_point, center_point)
+        print (f'start_point: {start_point.y, start_point.x}, center_point:{center_point.y, center_point.x}')
+        print (type(distance), distance)
         probabilities[batch_idx, idx] = dprob(distance)
     rescore = np.multiply(probabilities, batch_cosine_scores[top_idx])
     top_idx_for_k = np.argmax(rescore, axis=1)
