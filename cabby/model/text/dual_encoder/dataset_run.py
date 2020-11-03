@@ -18,7 +18,7 @@ from absl import logging
 import numpy as np
 import os
 import pandas as pd
-
+from sklearn.utils import shuffle
 import torch
 from transformers import DistilBertTokenizerFast
 
@@ -129,110 +129,61 @@ def create_dataset(
     ['map', 'id', 'instructions', 'end_point', 'start_point'])
   ds.drop(columns_keep, 1, inplace=True)
 
+  ds = shuffle(ds)
+  ds.reset_index(inplace=True, drop=True)
+
   dataset_size = ds.shape[0]
   logging.info(f"Size of dataset: {ds.shape[0]}")
+  train_size = round(dataset_size*80/100)
+  valid_size = round(dataset_size*10/100)
 
-  train_ds = ds[ds['map']=='map_1']
-  valid_ds = ds[ds['map']=='map_2']
-  test_ds = ds[ds['map']=='map_3']
+  train_ds = ds.iloc[:train_size]
+  valid_ds = ds.iloc[train_size:train_size+valid_size]
+  test_ds = ds.iloc[train_size+valid_size:]
 
-  # Get unique cells.
-  cells = ds.end_point.apply(
-    lambda x: gutil.cellid_from_point(gutil.point_from_list_coord(x), s2level)
-    ).tolist()
-  unique_cellid = list(set(cells))
-
-  # Get unique cells for test split.
-  active_region_test = regions.get_region("RUN-map3")
-  unique_cellid_test = gutil.cellids_from_polygon(
-    active_region_test.polygon, s2level)
-  label_to_cellid_test = {
-    idx: cellid for idx, cellid in enumerate(unique_cellid_test)}
-  cellid_to_label_test = {
-    cellid: idx for idx, cellid in enumerate(unique_cellid_test)}
-  label_to_cellid_test = {
-    idx: cellid for idx, cellid in enumerate(unique_cellid_test)}
-  points_test = gutil.get_centers_from_s2cellids(unique_cellid_test)
-
-  unique_cells_df_test = pd.DataFrame(
-    {'point': points_test, 'cellid': unique_cellid_test})
-
-  unique_cells_df_test['far'] = unique_cells_df_test.point.apply(
-    lambda x: gutil.far_cellid(x, unique_cells_df_test, 100))
-
-  vec_cells_test = util.binary_representation(
-    unique_cells_df_test.cellid.to_numpy(), dim = CELLID_DIM)
-  tens_cells_test = torch.tensor(vec_cells_test)
-  logging.info(
-    f"Shape of unique cells tensors in test: {tens_cells_test.shape}")
+  logging.info(train_ds.head(10))
 
 
-  # Get unique cells for valid split.
-  active_region_valid = regions.get_region("RUN-map2")
-  unique_cellid_valid = gutil.cellids_from_polygon(
-    active_region_valid.polygon, s2level)
-  label_to_cellid_valid = {
-    idx: cellid for idx, cellid in enumerate(unique_cellid_valid)}
-  cellid_to_label_valid = {
-    cellid: idx for idx, cellid in enumerate(unique_cellid_valid)}
-  points_valid = gutil.get_centers_from_s2cellids(unique_cellid_valid)
+  # Get labels.
+  map_1 = regions.get_region("RUN-map1")
+  map_2 = regions.get_region("RUN-map2")
+  map_3 = regions.get_region("RUN-map3")
+  map_polygon = map_1.polygon.union(map_2.polygon).union(map_3.polygon)
 
-  unique_cells_df_valid = pd.DataFrame(
-    {'point': points_valid, 'cellid': unique_cellid_valid})
-  unique_cells_df_valid['far'] = unique_cells_df_valid.point.apply(
-    lambda x: gutil.far_cellid(x, unique_cells_df_valid, 100))
+  unique_cellid = gutil.cellids_from_polygon(map_polygon, s2level)
+  label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
+  cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
-  vec_cells_valid = util.binary_representation(
-    unique_cells_df_valid.cellid.to_numpy(), dim = CELLID_DIM)
-  tens_cells_valid = torch.tensor(vec_cells_valid)
-  logging.info(
-    f"Shape of unique cells tensors in test: {tens_cells_valid.shape}")
+  points = gutil.get_centers_from_s2cellids(unique_cellid)
 
+  unique_cells_df = pd.DataFrame({'point': points, 'cellid': unique_cellid})
+  
+  unique_cells_df['far'] = unique_cells_df.point.apply(
+      lambda x: gutil.far_cellid(x, unique_cells_df))
 
+  vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
+  dim = CELLID_DIM)
+  tens_cells = torch.tensor(vec_cells)
 
-  # Get unique cells for train split.
-  active_region_train = regions.get_region("RUN-map1")
-  unique_cellid_train = gutil.cellids_from_polygon(
-    active_region_train.polygon, s2level)
-  label_to_cellid_train = {
-    idx: cellid for idx, cellid in enumerate(unique_cellid_train)}
-  cellid_to_label_train = {
-    cellid: idx for idx, cellid in enumerate(unique_cellid_train)}
-  label_to_cellid_train = {
-    idx: cellid for idx, cellid in enumerate(unique_cellid_train)}
-  points_train = gutil.get_centers_from_s2cellids(unique_cellid_train)
-
-  unique_cells_df_train = pd.DataFrame(
-    {'point': points_train, 'cellid': unique_cellid_train})
-  unique_cells_df_train['far'] = unique_cells_df_train.point.apply(
-    lambda x: gutil.far_cellid(x, unique_cells_df_train, 100))
-
-  vec_cells_train = util.binary_representation(
-    unique_cells_df_train.cellid.to_numpy(), dim = CELLID_DIM)
-  tens_cells_train = torch.tensor(vec_cells_train)
-  logging.info(
-    f"Shape of unique cells tensors in test: {tens_cells_train.shape}")
-
-
-  # Create RUN dataset.
+  # Create RVS dataset.
   train_dataset = None
   val_dataset = None
   logging.info("Starting to create the splits")
   if infer_only == False:
     train_dataset = TextGeoSplit(
-      train_ds, s2level, unique_cells_df_train, cellid_to_label_train)
+      train_ds, s2level, unique_cells_df, cellid_to_label)
     logging.info(
       f"Finished to create the train-set with {len(train_dataset)} samples")
     val_dataset = TextGeoSplit(
-      valid_ds, s2level, unique_cells_df_valid, cellid_to_label_valid)
+      valid_ds, s2level, unique_cells_df, cellid_to_label)
     logging.info(
       f"Finished to create the valid-set with {len(val_dataset)} samples")
   test_dataset = TextGeoSplit(
-    test_ds, s2level, unique_cells_df_test, cellid_to_label_test)
+    test_ds, s2level, unique_cells_df, cellid_to_label)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
-  
+
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
-    train_dataset, val_dataset, test_dataset, np.array(unique_cellid_test), 
-    tens_cells_test, label_to_cellid_test)
+    train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
+    tens_cells, label_to_cellid)
 
