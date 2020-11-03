@@ -19,6 +19,7 @@ from absl import logging
 import numpy as np
 import os
 from sklearn.metrics import accuracy_score
+from shapely.geometry.point import Point
 import torch
 import torch.nn as nn
 from transformers import AdamW
@@ -26,8 +27,13 @@ from torch.utils.data import DataLoader
 
 from cabby.evals import utils as eu
 from cabby.model.text import util
+from cabby.model import util as mutil
+from cabby.geo import util as gutil
+
+
 
 criterion = nn.CosineEmbeddingLoss()
+dprob = mutil.DistanceProbability(500)
 
 
 class Trainer:
@@ -44,6 +50,7 @@ class Trainer:
           num_epochs: int,
           cells_tensor: torch.tensor,
           label_to_cellid: Dict[int, int],
+          is_reranker: bool
           ):
 
     self.model = model
@@ -63,7 +70,24 @@ class Trainer:
       os.mkdir(self.file_path)
     self.model_path = os.path.join(self.file_path, 'model.pt')
     self.metrics_path = os.path.join(self.file_path, 'metrics.tsv')
-        
+    self.is_reranker = is_reranker
+      
+  def reranker(
+    self, batch_start_point: Point, batch_cosine_scores: np.ndarray ,top_k: int = 10):
+    top_idx = np.argpartition(batch_cosine_scores, top_k, axis=1)[-1*top_k:]
+    u,inv = np.unique(top_idx,return_inverse = True)
+    batch_top_cellids = np.array([self.label_to_cellid[x] for x in u])[inv].reshape(top_idx.shape)
+    probabilities = np.zeros_like(batch_cosine_scores)
+    for batch_idx, top_cellids in enumerate(batch_top_cellids):
+      center_points = gutil.get_centers_from_s2cellids(top_cellids)
+      for idx, center_point in enumerate(center_points):
+        start_point = batch_start_point[batch_idx]
+        distance = gutil.get_distance_between_points(start_point, center_point)
+        probabilities[batch_idx, idx] = dprob(distance)
+    rescore = np.multiply(probabilities, batch_cosine_scores[top_idx])
+    top_idx_for_k = np.argmax(rescore, axis=1)
+    return top_idx[top_idx_for_k]
+    
 
   def evaluate(self, validation_set: bool = True):
     '''Validate the model.'''
@@ -101,7 +125,10 @@ class Trainer:
         text_embedding_exp = text_embedding.unsqueeze(1)
         output = self.cos(cellid_embedding_exp, text_embedding_exp)
         output = output.detach().cpu().numpy()
-        predictions = np.argmax(output, axis=1)
+        if self.is_reranker:
+          predictions = self.reranker(batch['start_point'], output)
+        else:
+          predictions = np.argmax(output, axis=1)
         predictions_list.append(predictions)
         labels = batch['label'].numpy()
         true_vals.append(labels)
@@ -245,6 +272,9 @@ def infer_text(model: torch.nn.Module, text: str):
     return model.module.text_embed(text)
   else:
     return model.text_embed(text)
+
+
+
     
   
 

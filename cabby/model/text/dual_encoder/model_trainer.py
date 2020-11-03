@@ -104,6 +104,10 @@ flags.DEFINE_bool(
   'infer_only', default=False,
   help=('Train and infer\ just infer.'))
 
+flags.DEFINE_bool(
+  'is_reranker', default=False,
+  help=('Re-rank by distance distribution from start point.'))
+
 
 # Required flags.
 flags.mark_flag_as_required("data_dir")
@@ -207,6 +211,7 @@ def main(argv):
     file_path=FLAGS.output_dir, 
     cells_tensor = dataset_text.unique_cellids_binary,
     label_to_cellid = dataset_text.label_to_cellid,
+    is_reranker = FLAGS.is_reranker
     )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")

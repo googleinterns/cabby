@@ -50,6 +50,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
       data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
 
+    start_points = data.start_point.apply(
+      lambda x: gutil.point_from_list_coord(x))
+
+    data = data.assign(start_point=start_points)
+
     points = data.end_point.apply(
       lambda x: gutil.point_from_list_coord(x))
 
@@ -68,7 +73,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
     neighbor_cells_array = np.array(data.neighbor_cells.tolist())
     far_cells_array = np.array(data.far_cells.tolist())
 
-
+    self.start_points = data.start_point.apply(
+      lambda x: gutil.tuple_from_point(x)).tolist()
     self.points = data.point.apply(
       lambda x: gutil.tuple_from_point(x)).tolist()
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
@@ -94,9 +100,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
     far_cells = torch.tensor(self.far_cells[idx])
     point = torch.tensor(self.points[idx])
     label = torch.tensor(self.labels[idx])
+    start_point = torch.tensor(self.start_points[idx])
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
-      'far_cells': far_cells, 'point': point, 'label': label}
+      'far_cells': far_cells, 'point': point, 'label': label, 
+      'start_point': start_point}
 
     return sample
 
@@ -169,7 +177,7 @@ def create_dataset(
       lambda x: gutil.far_cellid(x, unique_cells_df))
 
   vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
-  dim = dataset_item.CELLID_DIM)
+  dim = CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
   # Create RVS dataset.
@@ -177,15 +185,15 @@ def create_dataset(
   val_dataset = None
   logging.info("Starting to create the splits")
   if infer_only == False:
-    train_dataset = dataset_item.TextGeoSplit(
+    train_dataset = TextGeoSplit(
       train_ds, s2level, unique_cells_df, cellid_to_label)
     logging.info(
       f"Finished to create the train-set with {len(train_dataset)} samples")
-    val_dataset = dataset_item.TextGeoSplit(
+    val_dataset = TextGeoSplit(
       valid_ds, s2level, unique_cells_df, cellid_to_label)
     logging.info(
       f"Finished to create the valid-set with {len(val_dataset)} samples")
-  test_dataset = dataset_item.TextGeoSplit(
+  test_dataset = TextGeoSplit(
     test_ds, s2level, unique_cells_df, cellid_to_label)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
