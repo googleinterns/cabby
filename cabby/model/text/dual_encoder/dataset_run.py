@@ -20,7 +20,6 @@ import os
 import pandas as pd
 from sklearn.utils import shuffle
 import torch
-from transformers import DistilBertTokenizerFast
 
 from cabby.geo import util as gutil
 from cabby.model.text import util 
@@ -169,7 +168,7 @@ def create_dataset(
       lambda x: gutil.far_cellid(x, unique_cells_df))
 
   vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
-  dim = CELLID_DIM)
+  dim = dataset_item.CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
   # Create RVS dataset.
@@ -177,15 +176,15 @@ def create_dataset(
   val_dataset = None
   logging.info("Starting to create the splits")
   if infer_only == False:
-    train_dataset = TextGeoSplit(
+    train_dataset = dataset_item.TextGeoSplit(
       train_ds, s2level, unique_cells_df, cellid_to_label)
     logging.info(
       f"Finished to create the train-set with {len(train_dataset)} samples")
-    val_dataset = TextGeoSplit(
+    val_dataset = dataset_item.TextGeoSplit(
       valid_ds, s2level, unique_cells_df, cellid_to_label)
     logging.info(
       f"Finished to create the valid-set with {len(val_dataset)} samples")
-  test_dataset = TextGeoSplit(
+  test_dataset = dataset_item.TextGeoSplit(
     test_ds, s2level, unique_cells_df, cellid_to_label)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")

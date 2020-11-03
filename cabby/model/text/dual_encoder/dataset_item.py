@@ -25,6 +25,7 @@ from shapely.geometry import box, mapping, LineString
 import sys
 from typing import Any, Dict, Text 
 import torch
+from transformers import DistilBertTokenizerFast
 
 import attr
 
@@ -95,3 +96,4 @@ class TextGeoDataset:
     np.save(label_to_cellid_path, dataset_text.label_to_cellid) 
 
     logging.info("Saved data to ==> {}.".format(dataset_path))
+
