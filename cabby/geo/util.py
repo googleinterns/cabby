@@ -28,7 +28,7 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry import box, mapping, LineString
 import sys
-from typing import Optional, Tuple, Sequence, Any, Text
+from typing import List, Optional, Tuple, Sequence, Any, Text
 import webbrowser
 
 FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
@@ -106,7 +106,7 @@ def s2cellids_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2CellId]:
 
 
 def get_s2cover_for_s2polygon(s2polygon: s2.S2Polygon,
-                level: int) -> Optional[Sequence]:
+                level: int) -> Optional[List]:
   '''Returns the cellids that cover the shape (point/polygon/polyline). 
   Arguments:
     s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be 
@@ -319,7 +319,7 @@ def s2cellids_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
   return get_s2cover_for_s2polygon(s2polygon, level)
 
 
-def cellids_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
+def cellids_from_polygon(polygon: Polygon, level: int) -> Optional[List]:
   '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
   Arguments:
     polygon(Polygon): a Shapely Polygon to which S2Cells.

@@ -20,7 +20,6 @@ import os
 import pandas as pd
 from sklearn.utils import shuffle
 import torch
-from transformers import DistilBertTokenizerFast
 
 from cabby.geo import util as gutil
 from cabby.model.text import util 
@@ -28,81 +27,7 @@ from cabby.model.text import util
 from cabby.geo import regions
 from cabby.model.text.dual_encoder import dataset_item
 
-tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
-CELLID_DIM = 64
-
-
-class TextGeoSplit(torch.utils.data.Dataset):
-  """A split of of the RUN dataset.
-  
-  `points`: The ground true end-points of the samples.
-  `labels`: The ground true label of the cellid.
-  `cellids`: The ground truth S2Cell id.
-  `neighbor_cells`: One neighbor cell id of the ground truth S2Cell id.
-  `far_cells`: One far away cell id (in the region defined) of the ground truth 
-  S2Cell id.
-  """
-  def __init__(self, data: pd.DataFrame, s2level: int, 
-    unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int]):
-    # Tokenize instructions.
-    self.encodings = tokenizer(
-      data.instructions.tolist(), truncation=True,
-      padding=True, add_special_tokens=True)
-
-    points = data.end_point.apply(
-      lambda x: gutil.point_from_list_coord(x))
-
-    data = data.assign(point=points)
-
-    data['cellid'] = data.point.apply(
-      lambda x: gutil.cellid_from_point(x, s2level))
-
-    data['neighbor_cells'] = data.cellid.apply(
-      lambda x: gutil.neighbor_cellid(x))
-
-    data['far_cells'] = data.cellid.apply(
-      lambda cellid: unique_cells_df[unique_cells_df['cellid']==cellid].far.iloc[0])
-
-    cellids_array = np.array(data.cellid.tolist())
-    neighbor_cells_array = np.array(data.neighbor_cells.tolist())
-    far_cells_array = np.array(data.far_cells.tolist())
-
-
-    self.points = data.point.apply(
-      lambda x: gutil.tuple_from_point(x)).tolist()
-    self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
-    self.cellids = util.binary_representation(cellids_array, dim = CELLID_DIM)
-    self.neighbor_cells =  util.binary_representation(
-      neighbor_cells_array, dim = CELLID_DIM)
-    self.far_cells =  util.binary_representation(
-      far_cells_array, dim = CELLID_DIM)
-
-    
-  def __getitem__(self, idx: int):
-    '''Supports indexing such that TextGeoDataset[i] can be used to get 
-    i-th sample. 
-    Arguments:
-      idx: The index for which a sample from the dataset will be returned.
-    Returns:
-      A single sample including text, the correct cellid, a neighbor cellid, 
-      a far cellid, a point of the cellid and the label of the cellid.
-    '''
-    text = {key: torch.tensor(val[idx])
-        for key, val in self.encodings.items()}
-    cellid = torch.tensor(self.cellids[idx])
-    neighbor_cells = torch.tensor(self.neighbor_cells[idx])
-    far_cells = torch.tensor(self.far_cells[idx])
-    point = torch.tensor(self.points[idx])
-    label = torch.tensor(self.labels[idx])
-    
-    sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
-      'far_cells': far_cells, 'point': point, 'label': label}
-
-    return sample
-
-  def __len__(self):
-    return len(self.cellids)
 
 
 def create_dataset(
@@ -170,7 +95,7 @@ def create_dataset(
       lambda x: gutil.far_cellid(x, unique_cells_df))
 
   vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
-  dim = CELLID_DIM)
+  dim = dataset_item.CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
   # Create RVS dataset.
@@ -178,15 +103,15 @@ def create_dataset(
   val_dataset = None
   logging.info("Starting to create the splits")
   if infer_only == False:
-    train_dataset = TextGeoSplit(
+    train_dataset = dataset_item.TextGeoSplit(
       train_ds, s2level, unique_cells_df, cellid_to_label)
     logging.info(
       f"Finished to create the train-set with {len(train_dataset)} samples")
-    val_dataset = TextGeoSplit(
+    val_dataset = dataset_item.TextGeoSplit(
       valid_ds, s2level, unique_cells_df, cellid_to_label)
     logging.info(
       f"Finished to create the valid-set with {len(val_dataset)} samples")
-  test_dataset = TextGeoSplit(
+  test_dataset = dataset_item.TextGeoSplit(
     test_ds, s2level, unique_cells_df, cellid_to_label)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
