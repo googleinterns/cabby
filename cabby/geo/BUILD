@@ -7,7 +7,8 @@ py_library(
     srcs = ['walk.py'],
     deps = [
         ':util',
-        'geo_item',
+        ':geo_item',
+        ':osm',
         '//cabby/rvs:item',
         '//cabby/geo/map_processing:map_structure',
         '//cabby/geo:regions'
@@ -16,6 +17,10 @@ py_library(
 
 )
 
+py_library(
+    name = 'osm',
+    srcs = ['osm.py'],
+)
 
 py_library(
     name = 'geo_item',
