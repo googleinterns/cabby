@@ -73,7 +73,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
     neighbor_cells_array = np.array(data.neighbor_cells.tolist())
     far_cells_array = np.array(data.far_cells.tolist())
 
-    self.start_points = data.start_point.tolist()
+    self.start_points = data.start_point.apply(
+      lambda x: x.coords).tolist()
     self.points = data.point.apply(
       lambda x: gutil.tuple_from_point(x)).tolist()
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
