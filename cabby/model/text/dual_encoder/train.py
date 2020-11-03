@@ -73,7 +73,7 @@ class Trainer:
     self.is_reranker = is_reranker
       
   def reranker(
-    self, batch_start_point: Point, batch_cosine_scores: np.ndarray ,top_k: int = 10):
+    self, batch_start_point: Point, batch_cosine_scores: np.ndarray ,top_k: int = 3):
     top_idx = np.argpartition(batch_cosine_scores, top_k, axis=1)[-1*top_k:]
     u,inv = np.unique(top_idx,return_inverse = True)
     batch_top_cellids = np.array([self.label_to_cellid[x] for x in u])[inv].reshape(top_idx.shape)
