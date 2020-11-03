@@ -141,16 +141,24 @@ def create_dataset(
   valid_ds = ds.iloc[train_size:train_size+valid_size]
   test_ds = ds.iloc[train_size+valid_size:]
 
-  logging.info(train_ds.head(10))
+  logging.info(train_ds.head(30))
 
 
   # Get labels.
   map_1 = regions.get_region("RUN-map1")
   map_2 = regions.get_region("RUN-map2")
   map_3 = regions.get_region("RUN-map3")
-  map_polygon = map_1.polygon.union(map_2.polygon).union(map_3.polygon)
+  # map_polygon = map_1.polygon.union(map_2.polygon).union(map_3.polygon)
+  logging.info(map_1.polygon.wkt)
+  logging.info(map_2.polygon.wkt)
+  logging.info(map_3.polygon.wkt)
 
-  unique_cellid = gutil.cellids_from_polygon(map_polygon, s2level)
+  unique_cellid_map_1 = gutil.cellids_from_polygon(map_1, s2level)
+  unique_cellid_map_2 = gutil.cellids_from_polygon(map_2, s2level)
+  unique_cellid_map_3 = gutil.cellids_from_polygon(map_3, s2level)
+
+  unique_cellid = (
+    unique_cellid_map_1 + unique_cellid_map_2 + unique_cellid_map_3)
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
