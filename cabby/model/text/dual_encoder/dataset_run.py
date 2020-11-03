@@ -78,7 +78,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.far_cells =  util.binary_representation(
       far_cells_array, dim = CELLID_DIM)
 
-    
   def __getitem__(self, idx: int):
     '''Supports indexing such that TextGeoDataset[i] can be used to get 
     i-th sample. 
