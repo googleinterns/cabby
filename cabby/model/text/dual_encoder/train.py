@@ -73,11 +73,11 @@ class Trainer:
     self.is_reranker = is_reranker
       
   def reranker(
-    self, batch_start_coords: Point, batch_cosine_scores: np.ndarray ,top_k: int = 3):
+    self, batch_start_coords: Point, batch_cosine_scores: np.ndarray ,top_k: int = 2):
     top_idx = np.argpartition(batch_cosine_scores, top_k, axis=1)[-1*top_k:]
     u,inv = np.unique(top_idx,return_inverse = True)
     batch_top_cellids = np.array([self.label_to_cellid[x] for x in u])[inv].reshape(top_idx.shape)
-    probabilities = np.zeros_like(batch_cosine_scores)
+    probabilities = np.zeros_like(batch_cosine_scores[top_idx])
     for batch_idx, top_cellids in enumerate(batch_top_cellids):
       center_points = gutil.get_centers_from_s2cellids(top_cellids)
       for idx, center_point in enumerate(center_points):
