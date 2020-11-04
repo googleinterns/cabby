@@ -33,6 +33,13 @@ IMPORTANT_POI_METADATA_FIELDS = [
   "name", "wikipedia", "wikidata", "brand", "shop", "tourism", "amenity"
 ]
 
+# Node type names
+TYPE_OSM_LOC = "OSM_LOC"
+TYPE_OSM_POI = "OSM_POI"
+TYPE_WD_POI = "WD_POI"
+TYPE_WD_CONCEPT = "WD_CONCEPT"
+TYPE_S2 = "S2"
+
 # Type declarations
 Map = map_structure.Map
 Point = point.Point
@@ -118,6 +125,7 @@ def update_osm_map(osm_map: Map,
       new_df = pd.DataFrame(data={
           'name': row["placeLabel"],
           'geometry': [util.point_str_to_shapely_point(wd_query[0]['point']['value'])],
+          'centroid': [util.point_str_to_shapely_point(wd_query[0]['point']['value'])],
           'osmid': [osmid],
           'wikidata': row["place"]
       }, index=[osmid])
@@ -204,11 +212,13 @@ def construct_metagraph(region: Region,
   # Step 2: Add all geometries to the graph.
   for _, row in osm_map.nodes.iterrows():
     metagraph.nodes[row["osmid"]]["geometry"] = row["geometry"]
+    metagraph.nodes[row["osmid"]]["type"] = TYPE_OSM_LOC
   for _, row in osm_map.poi.iterrows():
     if "geometry" in metagraph.nodes[row["osmid"]]:
       continue
     assert isinstance(row["geometry"], Point)
     metagraph.nodes[row["osmid"]]["geometry"] = row["geometry"]
+    metagraph.nodes[row["osmid"]]["type"] = TYPE_OSM_POI
 
   # Step 3: Add important POI attributes.
   attributes_to_add = collections.defaultdict(dict)
@@ -232,8 +242,10 @@ def construct_metagraph(region: Region,
     metagraph.add_edge(node_id, concept_node_id, weight=1.0)
     # Add attributes.
     attributes_to_add[place_node_id]["name"] = row["placeLabel"]
+    attributes_to_add[place_node_id]["type"] = TYPE_WD_POI
     attributes_to_add[concept_node_id]["name"] = row["instanceLabel"]
-    attributes_to_add[concept_node_id]["wikidata"] = row["place"]
+    attributes_to_add[concept_node_id]["wikidata"] = row["instance"]
+    attributes_to_add[concept_node_id]["type"] = TYPE_WD_CONCEPT
   nx.set_node_attributes(metagraph, values=attributes_to_add)
 
   # Step 5: Add S2 nodes and edges
@@ -243,10 +255,9 @@ def construct_metagraph(region: Region,
       continue
     geometry = data["geometry"]
     for level in s2_node_levels:
-      s2_cell_id = util.cellid_from_point(geometry, level)
-      # TODO(palowitch): remove the S2 prefix in favor of S2 type node attribute.
-      s2_cell_node_id = "S2_L%d_%s" % (level, s2_cell_id)
+      s2_cell_node_id = util.cellid_from_point(geometry, level)
       edges_to_add.append((node, s2_cell_node_id, {"weight": 1.0}))
+      attributes_to_add[s2_cell_node_id]["type"] = TYPE_S2
   metagraph.add_edges_from(edges_to_add)
 
   return metagraph
