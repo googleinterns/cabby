@@ -25,34 +25,11 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.getcwd() )))
 from cabby.geo import util
+from cabby.geo import walk
+from cabby.rvs import item
 
-def read_file(path: Text) -> gpd.GeoDataFrame:
-    '''Read file.
-    Arguments:
-      path: path to file.
-    Returns:
-      The GeoDataFrame theat includes the start and end points, pivots and 
-      route.
-    '''
-
-    start = gpd.read_file(path, layer='start')
-    end = gpd.read_file(path, layer='end')
-    route = gpd.read_file(path, layer='route')
-    main = gpd.read_file(path, layer='main')
-    near = gpd.read_file(path, layer='near')
-    beyond = gpd.read_file(path, layer='beyond')
-
-    start = start.rename(columns={'geometry': 'start_point'})
-    start['end_point'] = end['geometry']
-    start['route'] = route['geometry']
-    start['main_pivot_point'] = main['geometry']
-    start['near_pivot_point'] = near['geometry']
-    start['beyond_pivot_point'] = beyond['geometry']
-
-    return start
-
-
-def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
+ 
+def get_osm_map(entity: item.RVSPath) -> Sequence[folium.Map]:
     '''Create the OSM maps.
     Arguments:
       gdf: the GeoDataFrame from which to create the OSM map.
@@ -60,7 +37,8 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
       OSM maps from the GeoDataFrame.
     '''
 
-    mid_point = util.midpoint(gdf.end_point, gdf.start_point)
+    mid_point = util.midpoint(
+      entity.end_point.geometry, entity.start_point.geometry)
     zoom_location = util.list_yx_from_point(mid_point)
 
     # create a map
@@ -68,47 +46,47 @@ def get_osm_map(gdf: gpd.GeoDataFrame) -> Sequence[folium.Map]:
                          zoom_start=15, tiles='OpenStreetMap')
 
     # draw the points
-    start_point = util.list_yx_from_point(gdf.start_point)
-    end_point = util.list_yx_from_point(gdf.end_point)
-    main_pivot = util.list_yx_from_point(gdf.main_pivot_point)
-    near_pivot = util.list_yx_from_point(gdf.near_pivot_point)
+    start_point_geom = util.list_yx_from_point(entity.start_point.geometry)
+    end_point_geom = util.list_yx_from_point(entity.end_point.geometry)
+    main_pivot_geom = util.list_yx_from_point(
+      entity.main_pivot.geometry)
+    near_pivot_geom = util.list_yx_from_point(
+      entity.near_pivot.geometry)
 
-    folium.Marker(start_point, popup='start: ' + gdf.start, \
+    folium.Marker(
+      start_point_geom, popup=f'start: {entity.start_point.main_tag}' , 
       icon=folium.Icon(color='pink')).add_to(map_osm)
-    folium.Marker(end_point, popup='end: ' + gdf.end, \
+    folium.Marker(end_point_geom, popup=f'end: {entity.end_point.main_tag}', 
       icon=folium.Icon(color='black')).add_to(map_osm)
-    folium.Marker(main_pivot, popup='main pivot: ' + \
-      gdf.main_pivot, icon=folium.Icon(
+    folium.Marker(main_pivot_geom, 
+      popup=f'main pivot: {entity.main_pivot.main_tag}', icon=folium.Icon(
         color='orange', icon='info-sign')).add_to(map_osm)
-    folium.Marker(near_pivot, popup='near pivot: '+gdf.near_pivot, \
-       icon=folium.Icon(
-        color='red', icon='info-sign')).add_to(map_osm)
+    folium.Marker(
+      near_pivot_geom, popup=f'near pivot: {entity.near_pivot.main_tag}', 
+       icon=folium.Icon(color='red', icon='info-sign')).add_to(map_osm)
     
-    if not gdf.beyond_pivot_point is None: 
-      beyond_pivot = util.list_yx_from_point(gdf.beyond_pivot_point)
-      folium.Marker(beyond_pivot, popup='beyond pivot: '+gdf.near_pivot, \
+    if not entity.beyond_pivot.geometry is None: 
+      beyond_pivot_geom = util.list_yx_from_point(entity.beyond_pivot.geometry)
+      folium.Marker(
+        beyond_pivot_geom, popup=f'beyond pivot: {entity.beyond_pivot.main_tag}', 
         icon=folium.Icon(
           color='green', icon='info-sign')).add_to(map_osm)
 
-    place_lng, place_lat = gdf.route.exterior.xy
+    lat_lng_list = []
+    for coord in entity.route.coords:
+        lat_lng_list.append([coord[1], coord[0]])
 
-    points = []
-    for i in range(len(place_lat)):
-        points.append([place_lat[i], place_lng[i]])
-
-    for index, lat in enumerate(place_lat):
-        folium.Circle(location = [lat,
-                       place_lng[index]],
+    for index, coord_lat_lng in enumerate(lat_lng_list):
+        folium.Circle(location = coord_lat_lng,
                        radius = 5,
                       color='crimson',
-
                       ).add_to(map_osm)
 
     return map_osm
 
 
-def get_maps_and_instructions(
-  path: Text) -> Tuple[Sequence[folium.Map], Sequence[Text]]:
+def get_maps_and_instructions(path: Text
+) -> Sequence[Tuple[folium.Map, str]]:
     '''Create the OSM maps and instructions.
     Arguments:
       path: The path from the start point to the goal location.
@@ -116,9 +94,11 @@ def get_maps_and_instructions(
       OSM maps from the GeoDataFrame.
     '''
 
-    gdf = read_file(path)
-    map_osms_instructions = gdf.apply(lambda x: \
-      (get_osm_map(x),x.instruction), axis=1)
+    map_osms_instructions = []
+    entities = walk.load_entities(path)
+    for entity in entities:
+      map_osm = get_osm_map(entity)
+      map_osms_instructions.append((map_osm, entity.instructions))
 
     return map_osms_instructions
 
