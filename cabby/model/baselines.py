@@ -13,12 +13,12 @@
 # limitations under the License.
 
 """
-Baseline models.
+Baseline models evaluation: 
+(1) NO-MOVE - Uses the start point as the predicted target.
 RUN - 
 $ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
   --data_dir ~/data/RUN  \
   --metrics_dir ~/eval/ \
-
 
 """
 
