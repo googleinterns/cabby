@@ -32,7 +32,6 @@ from cabby.model.text.dual_encoder import dataset_item
 
 
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
-dprob = mutil.DistanceProbability(500)
 
 CELLID_DIM = 64
 
@@ -49,18 +48,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int]):
     # Tokenize instructions.
-
-    start_points = data.start_point.apply(
-      lambda x: gutil.point_from_list_coord(x))
-    
-    distances = start_points.apply(
-      lambda start_p: unique_cells_df.point.apply(
-        lambda end_p: gutil.get_distance_between_points(start_p, end_p)))
-
-    self.start_distribution = distances.apply(
-      lambda distance_list: distance_list.apply(
-        lambda dist: dprob(dist)))
-    
+  
     self.encodings = tokenizer(
       data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
@@ -110,12 +98,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
     far_cells = torch.tensor(self.far_cells[idx])
     end_point = torch.tensor(self.end_points[idx])
     label = torch.tensor(self.labels[idx])
-    distribution = self.start_distribution.iloc[idx].tolist()
-    distribution_tensor = torch.tensor(distribution)
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
-      'far_cells': far_cells, 'point': end_point, 'label': label, 
-      'distribution': distribution_tensor}
+      'far_cells': far_cells, 'point': end_point, 'label': label, }
 
     return sample
 

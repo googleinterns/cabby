@@ -18,7 +18,7 @@ from absl import logging
 import numpy as np
 import os
 import pandas as pd
-
+from sklearn.utils import shuffle
 import torch
 from transformers import DistilBertTokenizerFast
 
@@ -40,7 +40,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
   `labels`: The ground true label of the cellid.
   `cellids`: The ground truth S2Cell id.
   `neighbor_cells`: One neighbor cell id of the ground truth S2Cell id.
-  `far_cells`: One far away cell id (in the region defined) of the ground truth S2Cell id.
+  `far_cells`: One far away cell id (in the region defined) of the ground truth 
+  S2Cell id.
   """
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int]):
@@ -77,7 +78,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.far_cells =  util.binary_representation(
       far_cells_array, dim = CELLID_DIM)
 
-    
   def __getitem__(self, idx: int):
     '''Supports indexing such that TextGeoDataset[i] can be used to get 
     i-th sample. 
@@ -119,7 +119,8 @@ def create_dataset(
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
   ds = pd.read_json(os.path.join(data_dir, 'dataset.json'))
-  ds['instructions'] = ds.groupby(['id'])['instruction'].transform(lambda x: ' '.join(x))
+  ds['instructions'] = ds.groupby(
+    ['id'])['instruction'].transform(lambda x: ' '.join(x))
 
   ds = ds.drop_duplicates(subset='id', keep="last")
 
@@ -127,18 +128,36 @@ def create_dataset(
     ['map', 'id', 'instructions', 'end_point', 'start_point'])
   ds.drop(columns_keep, 1, inplace=True)
 
+  ds = shuffle(ds)
+  ds.reset_index(inplace=True, drop=True)
+
   dataset_size = ds.shape[0]
   logging.info(f"Size of dataset: {ds.shape[0]}")
+  train_size = round(dataset_size*80/100)
+  valid_size = round(dataset_size*10/100)
 
-  train_ds = ds[ds['map']=='map_1']
-  valid_ds = ds[ds['map']=='map_2']
-  test_ds = ds[ds['map']=='map_3']
+  train_ds = ds.iloc[:train_size]
+  valid_ds = ds.iloc[train_size:train_size+valid_size]
+  test_ds = ds.iloc[train_size+valid_size:]
 
-  # Get unique cells:
-  cells = ds.end_point.apply(
-    lambda x: gutil.cellid_from_point(gutil.point_from_list_coord(x), s2level)
-    ).tolist()
-  unique_cellid = list(set(cells))
+  logging.info(train_ds.head(30))
+
+
+  # Get labels.
+  map_1 = regions.get_region("RUN-map1")
+  map_2 = regions.get_region("RUN-map2")
+  map_3 = regions.get_region("RUN-map3")
+  # map_polygon = map_1.polygon.union(map_2.polygon).union(map_3.polygon)
+  logging.info(map_1.polygon.wkt)
+  logging.info(map_2.polygon.wkt)
+  logging.info(map_3.polygon.wkt)
+
+  unique_cellid_map_1 = gutil.cellids_from_polygon(map_1.polygon, s2level)
+  unique_cellid_map_2 = gutil.cellids_from_polygon(map_2.polygon, s2level)
+  unique_cellid_map_3 = gutil.cellids_from_polygon(map_3.polygon, s2level)
+
+  unique_cellid = (
+    unique_cellid_map_1 + unique_cellid_map_2 + unique_cellid_map_3)
   label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
   cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
@@ -147,13 +166,13 @@ def create_dataset(
   unique_cells_df = pd.DataFrame({'point': points, 'cellid': unique_cellid})
   
   unique_cells_df['far'] = unique_cells_df.point.apply(
-    lambda x: gutil.far_cellid(x, unique_cells_df))
+      lambda x: gutil.far_cellid(x, unique_cells_df))
 
   vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
-    dim = CELLID_DIM)
+  dim = CELLID_DIM)
   tens_cells = torch.tensor(vec_cells)
 
-  # Create RUN dataset.
+  # Create RVS dataset.
   train_dataset = None
   val_dataset = None
   logging.info("Starting to create the splits")

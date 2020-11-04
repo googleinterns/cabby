@@ -63,7 +63,19 @@ SUPPORTED_REGIONS = [
   Region(
     name='UTAustin',
     polygon=box(minx=-97.74, miny=30.28, maxx=-97.73, maxy=30.29),
-  )  
+  ),
+  Region(
+    name='RUN-map1',
+    polygon=box(minx=-73.99944, miny=40.7484699999999, maxx=-73.98874, maxy=40.7535699999999),
+  ),
+  Region(
+    name='RUN-map2',
+    polygon=box(minx=-73.98732, miny=40.723, maxx=-73.97682, maxy=40.7277),
+  ),
+  Region(
+    name='RUN-map3',
+    polygon=box(minx=-74.00518, miny=40.74154, maxx=-73.99358, maxy=40.74624),
+  )        
 ]
 
 REGION_LOOKUP = dict(map(lambda r: (r.name, r), SUPPORTED_REGIONS))

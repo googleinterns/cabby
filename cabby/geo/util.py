@@ -28,10 +28,11 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry import box, mapping, LineString
 import sys
-from typing import Optional, Tuple, Sequence, Any, Text
+from typing import List, Optional, Tuple, Sequence, Any, Text
 import webbrowser
 
 FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
+MAX_FAILED_ATTEMPTS = 50
 
 CoordsYX = namedtuple('CoordsYX', ('y x'))
 CoordsXY = namedtuple('CoordsXY', ('x y'))
@@ -48,7 +49,9 @@ def get_distance_between_points(start_point: Point, end_point: Point) -> float:
   return ox.distance.great_circle_vec(
     start_point.y, start_point.x, end_point.y, end_point.x)
 
-def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
+def far_cellid(
+  point: Point, cells: pd.DataFrame, far_distance = FAR_DISTANCE_THRESHOLD
+  ) -> Optional[float]:
   '''Get a cell id far from the given cell point. 
   Arguments:
     point: The center point of the cell.
@@ -56,12 +59,17 @@ def far_cellid(point: Point, cells: pd.DataFrame) -> Optional[float]:
     A cellid of a far cell.
   '''
   far_cell_found = None
+  failed_counter = 0
   while far_cell_found is None:
+    failed_counter += 1
+    if failed_counter > MAX_FAILED_ATTEMPTS:
+      sys.exit(
+        f"Reached max number of failed attempts in far cell calculation for point: {(Point.y, Point.x)}.")
     sample_cell = cells.sample(1).iloc[0]
     distance = get_distance_between_points(point, sample_cell.point) 
-    if distance > FAR_DISTANCE_THRESHOLD:
+    if distance > far_distance:
       far_cell_found = sample_cell.cellid
-
+    
   return far_cell_found
 
 def neighbor_cellid(cellid: int) -> int:
@@ -98,7 +106,7 @@ def s2cellids_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2CellId]:
 
 
 def get_s2cover_for_s2polygon(s2polygon: s2.S2Polygon,
-                level: int) -> Optional[Sequence]:
+                level: int) -> Optional[List]:
   '''Returns the cellids that cover the shape (point/polygon/polyline). 
   Arguments:
     s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be 
@@ -311,7 +319,7 @@ def s2cellids_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
   return get_s2cover_for_s2polygon(s2polygon, level)
 
 
-def cellids_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
+def cellids_from_polygon(polygon: Polygon, level: int) -> Optional[List]:
   '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
   Arguments:
     polygon(Polygon): a Shapely Polygon to which S2Cells.

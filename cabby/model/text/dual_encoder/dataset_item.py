@@ -95,3 +95,4 @@ class TextGeoDataset:
     np.save(label_to_cellid_path, dataset_text.label_to_cellid) 
 
     logging.info("Saved data to ==> {}.".format(dataset_path))
+
