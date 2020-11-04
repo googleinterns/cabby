@@ -28,6 +28,8 @@ py_library(
           "//cabby/model:util",
           "//cabby/geo:util",
           "//cabby/geo:regions",
+          "//cabby/model:datasets",
+
 
     ],
 )
@@ -40,6 +42,7 @@ py_library(
           "//cabby/model:util",
           "//cabby/geo:util",
           "//cabby/geo:regions",
+          "//cabby/model:datasets",
     ],
 )
 

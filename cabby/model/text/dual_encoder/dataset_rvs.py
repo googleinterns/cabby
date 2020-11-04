@@ -29,6 +29,7 @@ from cabby.model.text import util
 
 from cabby.geo import regions
 from cabby.model.text.dual_encoder import dataset_item
+from cabby.model import datasets
 
 
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
@@ -122,27 +123,11 @@ def create_dataset(
   Returns:
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
-  ds = pd.read_json(os.path.join(data_dir, 'dataset.json'))
-  logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
-  ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
-  logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
-  dataset_size = ds.shape[0]
-  train_size = round(dataset_size*80/100)
-  valid_size = round(dataset_size*10/100)
+  rvs_dataset = datasets.RVSDataset(data_dir, s2level, region)
 
-  train_ds = ds.iloc[:train_size]
-  valid_ds = ds.iloc[train_size:train_size+valid_size]
-  test_ds = ds.iloc[train_size+valid_size:]
+  points = gutil.get_centers_from_s2cellids(rvs_dataset.unique_cellid)
 
-  # Get labels.
-  active_region = regions.get_region(region)
-  unique_cellid = gutil.cellids_from_polygon(active_region.polygon, s2level)
-  label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
-  cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
-
-  points = gutil.get_centers_from_s2cellids(unique_cellid)
-
-  unique_cells_df = pd.DataFrame({'point': points, 'cellid': unique_cellid})
+  unique_cells_df = pd.DataFrame({'point': points, 'cellid': rvs_dataset.unique_cellid})
   
   unique_cells_df['far'] = unique_cells_df.point.apply(
       lambda x: gutil.far_cellid(x, unique_cells_df))
@@ -157,18 +142,19 @@ def create_dataset(
   logging.info("Starting to create the splits")
   if infer_only == False:
     train_dataset = TextGeoSplit(
-      train_ds, s2level, unique_cells_df, cellid_to_label)
+      rvs_dataset.train, s2level, unique_cells_df, rvs_dataset.cellid_to_label)
     logging.info(
       f"Finished to create the train-set with {len(train_dataset)} samples")
     val_dataset = TextGeoSplit(
-      valid_ds, s2level, unique_cells_df, cellid_to_label)
+      rvs_dataset.valid, s2level, unique_cells_df, rvs_dataset.cellid_to_label)
     logging.info(
       f"Finished to create the valid-set with {len(val_dataset)} samples")
   test_dataset = TextGeoSplit(
-    test_ds, s2level, unique_cells_df, cellid_to_label)
+    rvs_dataset.test, s2level, unique_cells_df, rvs_dataset.cellid_to_label)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
 
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
-    train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
-    tens_cells, label_to_cellid)
+    train_dataset, val_dataset, test_dataset, 
+    np.array(rvs_dataset.unique_cellid), 
+    tens_cells, rvs_dataset.label_to_cellid)

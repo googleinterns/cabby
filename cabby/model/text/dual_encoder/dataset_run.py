@@ -27,6 +27,7 @@ from cabby.model.text import util
 
 from cabby.geo import regions
 from cabby.model.text.dual_encoder import dataset_item
+from cabby.model import datasets
 
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
@@ -118,52 +119,12 @@ def create_dataset(
   Returns:
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
-  ds = pd.read_json(os.path.join(data_dir, 'dataset.json'))
-  ds['instructions'] = ds.groupby(
-    ['id'])['instruction'].transform(lambda x: ' '.join(x))
+  run_dataset = datasets.RUNDataset(data_dir, s2level)
 
-  ds = ds.drop_duplicates(subset='id', keep="last")
+  points = gutil.get_centers_from_s2cellids(run_dataset.unique_cellid)
 
-  columns_keep = ds.columns.difference(
-    ['map', 'id', 'instructions', 'end_point', 'start_point'])
-  ds.drop(columns_keep, 1, inplace=True)
-
-  ds = shuffle(ds)
-  ds.reset_index(inplace=True, drop=True)
-
-  dataset_size = ds.shape[0]
-  logging.info(f"Size of dataset: {ds.shape[0]}")
-  train_size = round(dataset_size*80/100)
-  valid_size = round(dataset_size*10/100)
-
-  train_ds = ds.iloc[:train_size]
-  valid_ds = ds.iloc[train_size:train_size+valid_size]
-  test_ds = ds.iloc[train_size+valid_size:]
-
-  logging.info(train_ds.head(30))
-
-
-  # Get labels.
-  map_1 = regions.get_region("RUN-map1")
-  map_2 = regions.get_region("RUN-map2")
-  map_3 = regions.get_region("RUN-map3")
-  # map_polygon = map_1.polygon.union(map_2.polygon).union(map_3.polygon)
-  logging.info(map_1.polygon.wkt)
-  logging.info(map_2.polygon.wkt)
-  logging.info(map_3.polygon.wkt)
-
-  unique_cellid_map_1 = gutil.cellids_from_polygon(map_1.polygon, s2level)
-  unique_cellid_map_2 = gutil.cellids_from_polygon(map_2.polygon, s2level)
-  unique_cellid_map_3 = gutil.cellids_from_polygon(map_3.polygon, s2level)
-
-  unique_cellid = (
-    unique_cellid_map_1 + unique_cellid_map_2 + unique_cellid_map_3)
-  label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
-  cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
-
-  points = gutil.get_centers_from_s2cellids(unique_cellid)
-
-  unique_cells_df = pd.DataFrame({'point': points, 'cellid': unique_cellid})
+  unique_cells_df = pd.DataFrame(
+    {'point': points, 'cellid': run_dataset.unique_cellid})
   
   unique_cells_df['far'] = unique_cells_df.point.apply(
       lambda x: gutil.far_cellid(x, unique_cells_df))
@@ -178,19 +139,20 @@ def create_dataset(
   logging.info("Starting to create the splits")
   if infer_only == False:
     train_dataset = TextGeoSplit(
-      train_ds, s2level, unique_cells_df, cellid_to_label)
+      run_dataset.train, s2level, unique_cells_df, run_dataset.cellid_to_label)
     logging.info(
       f"Finished to create the train-set with {len(train_dataset)} samples")
     val_dataset = TextGeoSplit(
-      valid_ds, s2level, unique_cells_df, cellid_to_label)
+      run_dataset.valid, s2level, unique_cells_df, run_dataset.cellid_to_label)
     logging.info(
       f"Finished to create the valid-set with {len(val_dataset)} samples")
   test_dataset = TextGeoSplit(
-    test_ds, s2level, unique_cells_df, cellid_to_label)
+    run_dataset.test, s2level, unique_cells_df, run_dataset.cellid_to_label)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
 
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
-    train_dataset, val_dataset, test_dataset, np.array(unique_cellid), 
-    tens_cells, label_to_cellid)
+    train_dataset, val_dataset, test_dataset, 
+    np.array(run_dataset.unique_cellid), 
+    tens_cells, run_dataset.label_to_cellid)
 
