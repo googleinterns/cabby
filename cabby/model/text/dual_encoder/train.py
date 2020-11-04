@@ -31,9 +31,8 @@ from cabby.model import util as mutil
 from cabby.geo import util as gutil
 
 
-
 criterion = nn.CosineEmbeddingLoss()
-dprob = mutil.DistanceProbability(500)
+dprob = mutil.DistanceProbability(37)
 
 
 class Trainer:
