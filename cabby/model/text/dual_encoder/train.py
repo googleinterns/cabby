@@ -100,6 +100,8 @@ class Trainer:
           batch_dim, cell_dim, output_dim)
         text_embedding_exp = text_embedding.unsqueeze(1)
         output = self.cos(cellid_embedding_exp, text_embedding_exp)
+        prob = batch['prob'].float().to(self.device) 
+        output = output*prob
         output = output.detach().cpu().numpy()
         predictions = np.argmax(output, axis=1)
         predictions_list.append(predictions)

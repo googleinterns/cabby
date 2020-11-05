@@ -28,6 +28,9 @@ from cabby.model.text import util
 from cabby.geo import regions
 from cabby.model.text.dual_encoder import dataset_item
 from cabby.model import datasets
+from cabby.model import util as mutil
+dprob = mutil.DistanceProbability(37)
+
 
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
@@ -50,6 +53,15 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.encodings = tokenizer(
       data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
+
+    start_points = data.start_point.apply(
+      lambda x: gutil.point_from_list_coord(x))
+    
+    dist = unique_cells_df.point.apply(
+      lambda x: gutil.get_distance_between_points(start_points, x))
+    
+    self.prob = dist.apply(dprob, axis=1).tolist()
+    
 
     points = data.end_point.apply(
       lambda x: gutil.point_from_list_coord(x))
@@ -95,9 +107,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
     far_cells = torch.tensor(self.far_cells[idx])
     point = torch.tensor(self.points[idx])
     label = torch.tensor(self.labels[idx])
+    prob = torch.tensor(self.prob[idx])
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
-      'far_cells': far_cells, 'point': point, 'label': label}
+      'far_cells': far_cells, 'point': point, 'label': label, 'prob': prob}
 
     return sample
 
