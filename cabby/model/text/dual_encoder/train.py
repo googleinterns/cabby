@@ -24,6 +24,8 @@ import torch
 import torch.nn as nn
 from transformers import AdamW
 from torch.utils.data import DataLoader
+from geopy.distance import great_circle
+
 
 from cabby.evals import utils as eu
 from cabby.model.text import util
@@ -85,7 +87,9 @@ class Trainer:
       for idx, center_point in enumerate(center_points):
         start_coords = batch_start_coords[batch_idx][0]
         start_point = Point(start_coords)
-        distance = gutil.get_distance_between_points(start_point, center_point)
+        distance = great_circle((start_point.y, start_point.x),
+                 (center_point.y, center_point.x)).m
+        # distance = gutil.get_distance_between_points(start_point, center_point)
         probabilities[batch_idx, idx] = dprob(distance)
     top_cosine = np.take_along_axis(batch_cosine_scores,top_idx,1)
     rescore = np.multiply(probabilities, top_cosine)
