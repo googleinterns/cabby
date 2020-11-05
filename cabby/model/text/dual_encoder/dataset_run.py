@@ -59,7 +59,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     
     dist_lists = unique_cells_df.point.apply(
       lambda end: start_points.apply(
-        lambda start: gutil.get_distance_between_points(start, end))).tolist()
+        lambda start: gutil.get_distance_between_points(start, end))).values.tolist()
     
     self.prob = [dprob(dist) for dist_list in dist_lists for dist in dist_list]
 
