@@ -61,7 +61,13 @@ class TextGeoSplit(torch.utils.data.Dataset):
       lambda end: start_points.apply(
         lambda start: gutil.get_distance_between_points(start, end))).values.tolist()
     
-    self.prob = [dprob(dist) for dist_list in dist_lists for dist in dist_list]
+
+    self.prob = []
+    for dist_list in dist_lists:
+      prob = []
+      for dist in dist_list:
+        prob.append(dprob(dist))
+      self.prob.append(prob)
 
     points = data.end_point.apply(
       lambda x: gutil.point_from_list_coord(x))
