@@ -104,6 +104,12 @@ flags.DEFINE_bool(
   'infer_only', default=False,
   help=('Train and infer\ just infer.'))
 
+flags.DEFINE_bool(
+  'is_distance_distribution', default=False,
+  help=(
+    'Add probability over cells according to the distance from start point.'+ 
+    'This is optional only for RVS and RUN.'))
+
 
 # Required flags.
 flags.mark_flag_as_required("data_dir")
@@ -194,6 +200,9 @@ def main(argv):
   optimizer = torch.optim.Adam(
     dual_encoder.parameters(), lr=FLAGS.learning_rate)
   
+  if is_distance_distribution and FLAGS=='WikiGeo':
+    sys.exit("Wikigeo does not have a distance distribution option.")
+
 
   trainer = train.Trainer(
     model=dual_encoder,
@@ -207,6 +216,7 @@ def main(argv):
     file_path=FLAGS.output_dir, 
     cells_tensor = dataset_text.unique_cellids_binary,
     label_to_cellid = dataset_text.label_to_cellid,
+    is_distance_distribution = FLAGS.is_distance_distribution
     )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")
