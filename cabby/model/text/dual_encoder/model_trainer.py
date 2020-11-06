@@ -200,7 +200,7 @@ def main(argv):
   optimizer = torch.optim.Adam(
     dual_encoder.parameters(), lr=FLAGS.learning_rate)
   
-  if is_distance_distribution and FLAGS=='WikiGeo':
+  if FLAGS.is_distance_distribution and FLAGS.task=='WikiGeo':
     sys.exit("Wikigeo does not have a distance distribution option.")
 
 

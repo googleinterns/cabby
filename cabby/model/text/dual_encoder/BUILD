@@ -17,6 +17,7 @@ py_library(
           ":dataset_item",
           "//cabby/geo:util",
           "//cabby/geo:regions",
+          "//cabby/model:util",
 
     ],
 )

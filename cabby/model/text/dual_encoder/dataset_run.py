@@ -27,10 +27,10 @@ from cabby.model.text import util
 from cabby.geo import regions
 from cabby.model.text.dual_encoder import dataset_item
 from cabby.model import datasets
-
 from cabby.model import util as mutil
 
-# DISTRIBUTION_SCALE_DISTANCEA is a factor (in meters) that gives the overall scale in meters for the distribution.
+# DISTRIBUTION_SCALE_DISTANCEA is a factor (in meters) that gives the overall 
+# scale in meters for the distribution.
 DISTRIBUTION_SCALE_DISTANCE = 37
 dprob = mutil.DistanceProbability(DISTRIBUTION_SCALE_DISTANCE)
 

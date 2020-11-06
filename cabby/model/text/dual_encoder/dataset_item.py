@@ -31,6 +31,7 @@ import attr
 
 from cabby.model import util as mutil
 from cabby.geo import util as gutil
+from cabby.model.text import util 
 
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 

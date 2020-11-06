@@ -23,13 +23,13 @@ import torch
 
 from cabby.geo import util as gutil
 from cabby.model.text import util 
-
-
+from cabby.model import util as mutil
 from cabby.geo import regions
 from cabby.model.text.dual_encoder import dataset_item
 from cabby.model import datasets
 
-# DISTRIBUTION_SCALE_DISTANCEA is a factor (in meters) that gives the overall scale in meters for the distribution.
+# DISTRIBUTION_SCALE_DISTANCEA is a factor (in meters) that gives the overall 
+# scale in meters for the distribution.
 DISTRIBUTION_SCALE_DISTANCE = 1000
 dprob = mutil.DistanceProbability(DISTRIBUTION_SCALE_DISTANCE)
 
@@ -66,22 +66,22 @@ def create_dataset(
   logging.info("Starting to create the splits")
   if infer_only == False:
     train_dataset = dataset_item.TextGeoSplit(
-      run_dataset.train, s2level, unique_cells_df, 
-      run_dataset.cellid_to_label, dprob)
+      rvs_dataset.train, s2level, unique_cells_df, 
+      rvs_dataset.cellid_to_label, dprob)
     logging.info(
       f"Finished to create the train-set with {len(train_dataset)} samples")
     val_dataset = dataset_item.TextGeoSplit(
-      run_dataset.valid, s2level, unique_cells_df, 
-      run_dataset.cellid_to_label, dprob)
+      rvs_dataset.valid, s2level, unique_cells_df, 
+      rvs_dataset.cellid_to_label, dprob)
     logging.info(
       f"Finished to create the valid-set with {len(val_dataset)} samples")
   test_dataset = dataset_item.TextGeoSplit(
-    run_dataset.test, s2level, unique_cells_df, 
-    run_dataset.cellid_to_label, dprob)
+    rvs_dataset.test, s2level, unique_cells_df, 
+    rvs_dataset.cellid_to_label, dprob)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
 
   return dataset_item.TextGeoDataset.from_TextGeoSplit(
     train_dataset, val_dataset, test_dataset, 
-    np.array(run_dataset.unique_cellid), 
-    tens_cells, run_dataset.label_to_cellid)
+    np.array(rvs_dataset.unique_cellid), 
+    tens_cells, rvs_dataset.label_to_cellid)
