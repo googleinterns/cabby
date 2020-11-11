@@ -259,5 +259,6 @@ def construct_metagraph(region: Region,
       edges_to_add.append((node, s2_cell_node_id, {"weight": 1.0}))
       attributes_to_add[s2_cell_node_id]["type"] = TYPE_S2
   metagraph.add_edges_from(edges_to_add)
+  nx.set_node_attributes(metagraph, values=attributes_to_add)
 
   return metagraph
