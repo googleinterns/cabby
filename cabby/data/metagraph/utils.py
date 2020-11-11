@@ -29,6 +29,7 @@ from cabby.geo import util
 
 DEFAULT_POI_READABLE_NAME = "poi"
 DEFAULT_EDGE_WEIGHT = 1.0
+PROJECTED_POI_2ND_CHAR = "#"
 IMPORTANT_POI_METADATA_FIELDS = [
   "name", "wikipedia", "wikidata", "brand", "shop", "tourism", "amenity"
 ]
@@ -39,6 +40,7 @@ TYPE_OSM_POI = "OSM_POI"
 TYPE_WD_POI = "WD_POI"
 TYPE_WD_CONCEPT = "WD_CONCEPT"
 TYPE_S2 = "S2"
+TYPE_PROJECTED_POI = "PROJECTED_POI"
 
 # Type declarations
 Map = map_structure.Map
@@ -259,6 +261,16 @@ def construct_metagraph(region: Region,
       edges_to_add.append((node, s2_cell_node_id, {"weight": 1.0}))
       attributes_to_add[s2_cell_node_id]["type"] = TYPE_S2
   metagraph.add_edges_from(edges_to_add)
+  nx.set_node_attributes(metagraph, values=attributes_to_add)
+
+  # Step 6: Add types to projected POIs.
+  attributes_to_add = collections.defaultdict(dict)
+  for node in metagraph:
+    nodedata = metagraph.nodes[node]
+    if node[1] == PROJECTED_POI_2ND_CHAR:
+      attributes_to_add[node]["type"] = TYPE_PROJECTED_POI
+    else:
+      assert "type" in nodedata, "node %s has no type and is not a projected POI" % node
   nx.set_node_attributes(metagraph, values=attributes_to_add)
 
   return metagraph
