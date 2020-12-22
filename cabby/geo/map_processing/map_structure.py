@@ -106,7 +106,7 @@ class Map:
 
     tags = osm.INTERESTING_TAGS
               
-    osm_poi = ox.geometries_from_polygon(self.polygon_area, tags=tags)
+    osm_poi = ox.geometries.geometries_from_polygon(self.polygon_area, tags=tags)
 
     osm_highway = osm_poi['highway']
     osm_poi_no_streets = osm_poi[osm_highway.isnull()]
