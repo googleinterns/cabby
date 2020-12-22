@@ -45,6 +45,7 @@ SHOW_PROGRESS_EVERY = 100
 # the POI node.
 ADD_POI_DISTANCE = 5000
 
+
 class Map:
 
   def __init__(
