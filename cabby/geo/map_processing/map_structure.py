@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from absl import logging
 import copy
 import geopandas as gpd
@@ -42,11 +41,11 @@ from cabby.geo import osm
 
 POI_PREFIX = '#'
 SHOW_PROGRESS_EVERY = 100
-# Addition of distance to POI edges in order to prevent shhortcut route through 
+# Addition of distance to POI edges in order to prevent shortcut route through 
 # the POI node.
 ADD_POI_DISTANCE = 5000
 
-# Remove large POI such as Manhattan. Max in area in WGS84 - EPSG:4326
+# Remove large POI such as Manhattan. Max area in WGS84 - EPSG:4326.
 LARGE_AREAS = 0.0001
 
 class Map:
