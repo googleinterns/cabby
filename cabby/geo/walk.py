@@ -54,6 +54,7 @@ NEAR_PIVOT_DIST = 80
 _Geo_DataFrame_Driver = "GPKG"
 # The max number of failed tries to generate a single path entities.
 MAX_NUM_GEN_FAILED = 10
+PIVOT_ALONG_ROUTE_MAX_DIST = 0.005
 
 
 ADD_POI_DISTANCE = 5000
@@ -407,7 +408,7 @@ class Walker:
     # Get POI along the route.
     points_route = route['geometry'].tolist()
 
-    poly = LineString(points_route).buffer(0.0001)
+    poly = LineString(points_route).buffer(PIVOT_ALONG_ROUTE_MAX_DIST)
 
     df_pivots = self.map.poi[self.map.poi.apply(
       lambda x: poly.intersects(x['geometry']), axis=1)]
