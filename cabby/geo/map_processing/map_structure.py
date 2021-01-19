@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.getcwd() )))
+
 from absl import logging
 import copy
 import geopandas as gpd
@@ -41,7 +46,7 @@ from cabby.geo import osm
 
 POI_PREFIX = '#'
 SHOW_PROGRESS_EVERY = 100
-# Addition of distance to POI edges in order to prevent shortcut route through 
+# Addition of distance to POI edges in order to prevent shortcut route through
 # the POI node.
 ADD_POI_DISTANCE = 5000
 
@@ -111,9 +116,12 @@ class Map:
               
     osm_poi = ox.geometries.geometries_from_polygon(self.polygon_area, tags=tags)
 
-    osm_highway = osm_poi['highway']
-    osm_poi_no_streets = osm_poi[osm_highway.isnull()]
-    osm_poi_streets = osm_poi[osm_highway.notnull()]
+    condition_streets = osm_poi.apply(
+      lambda x:  (pd.notnull(x.highway))
+                 or (pd.notnull(x.railway))
+                 or (isinstance(x.geometry, LineString)), axis=1)
+    osm_poi_no_streets = osm_poi[~condition_streets]
+    osm_poi_streets = osm_poi[condition_streets]
 
     # Remove large POI such as Manhattan.
     osm_without_large_areas = osm_poi_no_streets[
@@ -563,3 +571,7 @@ def convert_string_to_list(string_list: Text) -> Sequence:
   return list(map_object)
 
 
+from cabby.geo import regions
+
+region = regions.get_region("Manhattan")
+Map(region, 18)
