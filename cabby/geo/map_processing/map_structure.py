@@ -41,9 +41,12 @@ from cabby.geo import osm
 
 POI_PREFIX = '#'
 SHOW_PROGRESS_EVERY = 100
-# Addition of distance to POI edges in order to prevent shhortcut route through 
+# Addition of distance to POI edges in order to prevent shortcut route through 
 # the POI node.
 ADD_POI_DISTANCE = 5000
+
+# Remove large POI such as Manhattan. Max area in WGS84 - EPSG:4326.
+LARGE_AREAS = 0.0001
 
 class Map:
 
@@ -112,13 +115,17 @@ class Map:
     osm_poi_no_streets = osm_poi[osm_highway.isnull()]
     osm_poi_streets = osm_poi[osm_highway.notnull()]
 
+    # Remove large POI such as Manhattan.
+    osm_without_large_areas = osm_poi_no_streets[
+      osm_poi_no_streets.geometry.apply(lambda x: x.area < LARGE_AREAS)]
+
     # Get centroid for POI.
-    centroid_list = osm_poi_no_streets['geometry'].apply(
+    centroid_list = osm_without_large_areas['geometry'].apply(
       lambda x: x if isinstance(x, Point) else x.centroid).tolist()
     
-    osm_poi_no_streets = osm_poi_no_streets.assign(centroid=centroid_list)
+    osm_without_large_areas = osm_without_large_areas.assign(centroid=centroid_list)
 
-    return osm_poi_no_streets, osm_poi_streets
+    return osm_without_large_areas, osm_poi_streets
 
   def add_single_poi_to_graph(
       self, single_poi: pd.Series) -> Optional[Sequence[edge.Edge]]:
@@ -150,7 +157,7 @@ class Map:
       elif isinstance(geometry, LineString):
         coords = geometry.coords
       elif isinstance(geometry, MultiPolygon):
-        coords = [poly.exterior.coords[0]  for poly in geometry]
+        coords = [poly.exterior.coords[0] for poly in geometry]
       else:
         return None
       n_points = len(coords)
@@ -554,3 +561,5 @@ def convert_string_to_list(string_list: Text) -> Sequence:
   string_list = string_list.split(",")
   map_object = map(int, string_list)
   return list(map_object)
+
+
