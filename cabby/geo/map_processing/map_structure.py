@@ -12,10 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
-import os
-
-sys.path.append(os.path.dirname(os.path.dirname(os.getcwd() )))
 
 from absl import logging
 import copy
@@ -570,8 +566,3 @@ def convert_string_to_list(string_list: Text) -> Sequence:
   map_object = map(int, string_list)
   return list(map_object)
 
-
-from cabby.geo import regions
-
-region = regions.get_region("Manhattan")
-Map(region, 18)
