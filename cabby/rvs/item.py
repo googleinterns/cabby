@@ -33,7 +33,7 @@ class RVSPath:
   `main_pivot` is pivot along the route.
   `near_pivot` is the pivot near the goal location.
   `beyond_pivot` is the pivot beyond the goal location.
-  `cardinal_direction` is the cardinal direction betweeen main pivot and 
+  `cardinal_direction` is the cardinal direction between start point and
   goal. Possible cardinal directions: North, South, East, West, North-East, 
   North-West, South-East, South-West. 
   `intersections` is the number of intersections between the pivot along the 
