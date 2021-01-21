@@ -21,21 +21,17 @@ import networkx as nx
 import os
 import osmnx as ox
 import pandas as pd
-from shapely.geometry import box
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
-from shapely.geometry import box, mapping, LineString
+from shapely.geometry import LineString
 from shapely.geometry.multipolygon import MultiPolygon
-from shapely import wkt
-from shapely.ops import split
+
 
 import swifter
-import sys
-from typing import Dict, Tuple, Sequence, Text, Optional, List, Any
+from typing import Tuple, Sequence, Text, Optional, List, Any
 
 
 from cabby.geo import util
-from cabby.geo.map_processing import graph
 from cabby.geo.map_processing import edge
 from cabby.geo import regions
 from cabby.geo import osm
@@ -112,10 +108,14 @@ class Map:
               
     osm_poi = ox.geometries.geometries_from_polygon(self.polygon_area, tags=tags)
 
-    condition_streets = osm_poi.apply(
-      lambda x:  (pd.notnull(x.highway))
-                 or (pd.notnull(x.railway))
-                 or (isinstance(x.geometry, LineString)), axis=1)
+    if ('highway' in osm_poi.columns) and ('railway' in osm_poi.columns):
+      condition_streets = osm_poi.apply(
+        lambda x:  (pd.notnull(x.highway))
+                   or (pd.notnull(x.railway))
+                   or (isinstance(x.geometry, LineString)), axis=1)
+    else:
+      condition_streets = osm_poi.apply(
+        lambda x:  isinstance(x.geometry, LineString), axis=1)
     osm_poi_no_streets = osm_poi[~condition_streets]
     osm_poi_streets = osm_poi[condition_streets]
 

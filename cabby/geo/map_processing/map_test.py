@@ -14,10 +14,6 @@
 
 '''Tests for map_structure.py'''
 
-import collections
-import osmnx as ox
-from s2geometry import pywraps2 as s2
-from shapely.geometry.point import Point
 import unittest
 
 from cabby.geo.map_processing import map_structure
@@ -30,7 +26,7 @@ class MapTest(unittest.TestCase):
 
     # Process the map for an area in D.C.
     cls.map = map_structure.Map(regions.get_region('DC'), 18)
-  
+
   def testPOIInGraph(self):
     osmids = self.map.poi['osmid'].tolist()
     for osmid in osmids:
@@ -42,7 +38,7 @@ class MapTest(unittest.TestCase):
     self.assertEqual(len(node_osmids), len(nxg_osmids))
     diff = node_osmids.difference(nxg_osmids)
     self.assertEqual(len(diff),0)
-    
+
 
   def testAttributeInGraph(self):
     self.assertIn('1#1360050503', self.map.nx_graph.nodes)
