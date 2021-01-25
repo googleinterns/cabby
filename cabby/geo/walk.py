@@ -54,6 +54,7 @@ MAX_NUM_GEN_FAILED = 10
 PIVOT_ALONG_ROUTE_MAX_DIST = 0.0001
 SMALL_AREAS = 0.00001
 ADD_POI_DISTANCE = 5000
+MAX_NUM_BEYOND_TRY = 50
 
 
 class Walker:
@@ -459,10 +460,9 @@ class Walker:
     street_beyond_osmid = street_beyond_route['osmid'].iloc[0]
     condition_street_id = self.map.edges['osmid'].apply(
       lambda x: x == street_beyond_osmid)
-    samples = 50
     street_nodes = self.map.edges[condition_street_id]['u'].unique()
-    street_nodes = np.random.choice(street_nodes, samples)
-    for i in range(samples):
+    street_nodes = np.random.choice(street_nodes, MAX_NUM_BEYOND_TRY)
+    for i in range(MAX_NUM_BEYOND_TRY):
       length = nx.shortest_path_length(self.map.nx_graph, source=street_nodes[i],target=last_node_in_route['osmid'])
       if length>3 and length<10:
         continue
