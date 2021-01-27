@@ -37,8 +37,11 @@ class MapTest(unittest.TestCase):
     nxg_osmids = set(self.map.nx_graph)
     self.assertEqual(len(node_osmids), len(nxg_osmids))
     diff = node_osmids.difference(nxg_osmids)
-    self.assertEqual(len(diff),0)
+    self.assertEqual(len(diff), 0)
 
+  def testEdgesTrueLength(self):
+    true_length_is_null = self.map.edges.true_length.isnull().values.any()
+    self.assertFalse(true_length_is_null)
 
   def testAttributeInGraph(self):
     self.assertIn('1#1360050503', self.map.nx_graph.nodes)
