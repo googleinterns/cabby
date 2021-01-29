@@ -52,7 +52,6 @@ _Geo_DataFrame_Driver = "GPKG"
 # The max number of failed tries to generate a single path entities.
 MAX_NUM_GEN_FAILED = 10
 PIVOT_ALONG_ROUTE_MAX_DIST = 0.0001
-SMALL_AREAS = 0.00001
 ADD_POI_DISTANCE = 5000
 MAX_NUM_BEYOND_TRY = 50
 
@@ -319,7 +318,9 @@ class Walker:
     return None
 
 
-  def pick_prominent_pivot(self, df_pivots: GeoDataFrame, end_point: Dict, small: bool = False
+  def pick_prominent_pivot(self,
+                           df_pivots: GeoDataFrame,
+                           end_point: Dict[str, Any],
   ) -> Optional[GeoSeries]:
     '''Select a landmark from a set of landmarks by priority.
     Arguments:
@@ -331,8 +332,6 @@ class Walker:
 
     # Remove goal location.
     df_pivots = df_pivots[df_pivots['osmid']!=end_point['osmid']]
-    if small:
-      df_pivots = df_pivots[df_pivots.geometry.apply(lambda x: x.area < SMALL_AREAS)]
 
     if df_pivots.shape[0]==0:
       return None
@@ -463,15 +462,32 @@ class Walker:
     street_nodes = self.map.edges[condition_street_id]['u'].unique()
     street_nodes = np.random.choice(street_nodes, MAX_NUM_BEYOND_TRY)
     for i in range(MAX_NUM_BEYOND_TRY):
-      length = nx.shortest_path_length(self.map.nx_graph, source=street_nodes[i],target=last_node_in_route['osmid'])
-      if length>3 and length<10:
+      length = nx.shortest_path_length(
+        self.map.nx_graph,
+        source=street_nodes[i],
+        target=last_node_in_route['osmid'])
+
+      # The beyond pivot should not be too close but also not too far away.
+      if not (length>3 and length<10):
         continue
-      path = nx.shortest_path(self.map.nx_graph, source=street_nodes[i], target=last_node_in_route['osmid'])
+
+      # Check the path between the POI and the last node in the route taken.
+      # If the path calculated does not pass through the route taken then it is
+      # beyond the route.
+      path = nx.shortest_path(self.map.nx_graph,
+                              source=street_nodes[i],
+                              target=last_node_in_route['osmid'])
+
+      # Remove the nodes in the route taken from the path calculated so that it
+      # will not be choosen as the pivot beyond.
       path.remove(last_node_in_route['osmid'])
       if final_node_in_route['osmid'] in path:
         path.remove(final_node_in_route['osmid'])
 
       intersections = set(route['osmid']).intersection(path)
+
+      # Check if the path calculated overlaps the route taken,
+      # if not then pick a POI to be the pivot beyond.
       if len(intersections)<1 and len(path)>2:
         beyond = self.select_pivot_from_path(route, end_point, path)
         if beyond is not None:
@@ -486,12 +502,12 @@ class Walker:
 
     path_nodes = self.map.nodes[self.map.nodes['osmid'].isin(path)]
     points_route = path_nodes['geometry'].tolist()
-    poly = LineString(points_route).buffer(PIVOT_ALONG_ROUTE_MAX_DIST)
+    path_beyond = LineString(points_route).buffer(PIVOT_ALONG_ROUTE_MAX_DIST)
     route_shape = LineString(route['geometry'].tolist()).buffer(PIVOT_ALONG_ROUTE_MAX_DIST)
-    poly = poly.difference(route_shape)
 
     df_pivots = self.map.poi[self.map.poi.apply(
-      lambda x: poly.intersects(x['geometry']), axis=1)]
+      lambda x: (path_beyond.intersects(x['geometry'])) &
+                (route_shape.intersects(x['geometry'])==False), axis=1)]
 
     if df_pivots.shape[0] == 0:
       return None
@@ -506,7 +522,7 @@ class Walker:
       # Return Empty.
       return None
 
-    beyond_pivot = self.pick_prominent_pivot(df_pivots, end_point, small=True)
+    beyond_pivot = self.pick_prominent_pivot(df_pivots, end_point)
     return beyond_pivot
 
   def get_pivots(self, 
@@ -813,3 +829,4 @@ def print_instructions(path: Text):
     sys.exit(f"The path to the RVS data was not found {path}.")
   route = gpd.read_file(path, layer='route')
   logging.info('\n'.join(route['instructions'].values))
+
