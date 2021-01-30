@@ -35,7 +35,11 @@ class RVSPath:
   `beyond_pivot` is the pivot beyond the goal location.
   `cardinal_direction` is the cardinal direction between start point and
   goal. Possible cardinal directions: North, South, East, West, North-East, 
-  North-West, South-East, South-West. 
+  North-West, South-East, South-West.
+  `spatial_rel_goal` is the relation between the route and the goal:
+  is the goal on the right or left side.
+  `spatial_rel_pivot` is the relation between the route and
+  the main pivot: is the main pivot on the right or left side.
   `intersections` is the number of intersections between the pivot along the 
   route and the goal.
   `from_file` should the entity be processed from file.
@@ -51,10 +55,13 @@ class RVSPath:
   near_pivot: GeoSeries = attr.ib()
   beyond_pivot: GeoSeries = attr.ib()
   cardinal_direction: Text = attr.ib()
+  spatial_rel_goal: Text = attr.ib()
+  spatial_rel_pivot: Text = attr.ib()
   intersections: int = attr.ib()
   process: bool = attr.ib()
   instructions: Text = attr.ib(init=False)
   path_features: Dict = attr.ib(init=False)
+
 
 
   def __attrs_post_init__(self):
@@ -83,15 +90,19 @@ class RVSPath:
 
     self.instructions = (
       f"Starting at the {self.start_point['main_tag']} " +
-      f"walk {self.cardinal_direction} past " + 
-      f"{ self.main_pivot['main_tag']} {intersection_instruction}and your " + 
+      f"walk {self.cardinal_direction} pass " +
+      f"{self.main_pivot['main_tag']} on your {self.spatial_rel_pivot}, " +
+      f"{intersection_instruction}and your " +
       f"goal is the {self.end_point['main_tag']}, " +
+      f"on your {self.spatial_rel_goal}, "+
       f"near a {self.near_pivot['main_tag']}. "
       + avoid_instruction
     )
 
     self.path_features = {
-          'cardinal_direction': self.cardinal_direction, 
+          'cardinal_direction': self.cardinal_direction,
+          'spatial_rel_goal': self.spatial_rel_goal,
+          'spatial_rel_pivot': self.spatial_rel_pivot,
           'instructions': self.instructions,
           'intersections': self.intersections,
           'geometry': self.route
@@ -99,9 +110,17 @@ class RVSPath:
 
 
   @classmethod
-  def from_points_route_pivots(cls, start, end, route, main_pivot,
-                              near_pivot, beyond_pivot, cardinal_direction, 
-                              intersections):
+  def from_points_route_pivots(cls,
+                               start,
+                               end,
+                               route,
+                               main_pivot,
+                               near_pivot,
+                               beyond_pivot,
+                               cardinal_direction,
+                               intersections,
+                               spatial_rel_goal,
+                               spatial_rel_pivot):
     """Construct an Entity from the start and end points, route, and pivots.
     """
     return RVSPath(
@@ -112,6 +131,8 @@ class RVSPath:
       near_pivot,
       beyond_pivot,
       cardinal_direction,
+      spatial_rel_goal,
+      spatial_rel_pivot,
       intersections,
       True,
     )
@@ -119,7 +140,7 @@ class RVSPath:
   @classmethod
   def from_file(cls, start, end, route, main_pivot,
                 near_pivot, beyond_pivot, cardinal_direction,
-                intersections):
+                spatial_rel_goal, spatial_rel_pivot, intersections):
     """Construct an Entity from the start and end points, route, and pivots.
     """
     return RVSPath(
@@ -130,6 +151,8 @@ class RVSPath:
       near_pivot,
       beyond_pivot,
       cardinal_direction,
+      spatial_rel_goal,
+      spatial_rel_pivot,
       int(intersections),
       False,
     )

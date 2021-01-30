@@ -70,7 +70,9 @@ class GeoPath:
         columns=[
           'instructions', 
           'geometry',  
-          'cardinal_direction', 
+          'cardinal_direction',
+          'spatial_rel_goal',
+          'spatial_rel_pivot',
           'intersections']),
       gpd.GeoDataFrame(columns=['osmid', 'geometry', 'main_tag']),
       gpd.GeoDataFrame(columns=['osmid', 'geometry', 'main_tag']), 

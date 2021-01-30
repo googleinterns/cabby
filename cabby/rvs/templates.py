@@ -38,19 +38,30 @@ MAIN_NO_V = [
   ""
 ]
 
+# SPATIAL_RELATION_PIVOT
+
 MAIN = [
   ". When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away",
   ". When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away",
   ". MAIN_PIVOT is NUMBER_INTERSECTIONS intersections away",
+  ". MAIN_PIVOT is NUMBER_INTERSECTIONS intersections away on the SPATIAL_RELATION_PIVOT side of the street",
   ". MAIN_PIVOT is NUMBER_BLOCKS blocks away",
+  ". MAIN_PIVOT is NUMBER_BLOCKS blocks away, on the SPATIAL_RELATION_PIVOT side of the street,",
   ". Head to MAIN_PIVOT and go NUMBER_INTERSECTIONS intersections further",
   ". Go to MAIN_PIVOT and walk NUMBER_INTERSECTIONS intersections past it",
   ". Travel to MAIN_PIVOT and continue NUMBER_BLOCKS blocks further",
   ". Walk to MAIN_PIVOT and proceed NUMBER_BLOCKS blocks past it",
   ". After you reach MAIN_PIVOT, you'll need to go NUMBER_INTERSECTIONS intersections further",
+  ". After you reach MAIN_PIVOT on your SPATIAL_RELATION_PIVOT, "+
+  "you'll need to go NUMBER_INTERSECTIONS intersections further",
   ". When you get to MAIN_PIVOT, you have NUMBER_INTERSECTIONS intersections more to walk",
+  ". When you see to MAIN_PIVOT on your SPATIAL_RELATION_PIVOT, "+
+  "you have NUMBER_INTERSECTIONS intersections more to walk",
   ". After you pass MAIN_PIVOT, go NUMBER_BLOCKS blocks more",
-  ". Once you reach MAIN_PIVOT, continue for NUMBER_BLOCKS blocks"
+  ". After you pass MAIN_PIVOT on your SPATIAL_RELATION_PIVOT, go NUMBER_BLOCKS blocks more",
+  ". Once you reach MAIN_PIVOT, continue for NUMBER_BLOCKS blocks",
+  ". Once you see MAIN_PIVOT on your SPATIAL_RELATION_PIVOT, continue for NUMBER_BLOCKS blocks",
+
 ]
 
 V1 = ['Go', 'Walk', 'Head', 'Proceed', 'Travel']
@@ -64,13 +75,20 @@ V2 = [
 
 NEAR_GOAL_END = [
   ". The GOAL_LOCATION will be near a NEAR_PIVOT.",
+  ". The GOAL_LOCATION will be on your SPATIAL_RELATION_GOAL, near a NEAR_PIVOT.",
   ". A NEAR_PIVOT is quite close to the GOAL_LOCATION.",
   ". Meet at the GOAL_LOCATION, which is right next to a NEAR_PIVOT.",
-  ". If you see a NEAR_PIVOT, you should find the GOAL_LOCATION close by."
+  ". Meet at the GOAL_LOCATION, which will be on your SPATIAL_RELATION_GOAL, right next to a NEAR_PIVOT.",
+  ". If you see a NEAR_PIVOT, you should find the GOAL_LOCATION close by.",
+  ". If you see a NEAR_PIVOT, you should find on the SPATIAL_RELATION_GOAL side of the street"+
+  " the GOAL_LOCATION close by."
+
 ]
 NEAR_GOAL_START = [
   ". It will be near a NEAR_PIVOT.",
+  ". It will be on your SPATIAL_RELATION_GOAL, near a NEAR_PIVOT.",
   ". It is close to a NEAR_PIVOT.",
+  ". It is on the SPATIAL_RELATION_GOAL side of the street, close to a NEAR_PIVOT.",
   ". A NEAR_PIVOT is close by."
 ]
 AVOID = [
@@ -199,8 +217,6 @@ def create_templates():
   templates_df.to_csv('templates.csv', index=False, header = False)
 
   # Flag features.
-  templates_df['cardinal_direction'] = templates_df['sentence'].apply(
-    lambda x: 'CARDINAL_DIRECTION' in x)
   templates_df['blocks'] = templates_df['sentence'].apply(
     lambda x: 'NUMBER_BLOCKS' in x)
   templates_df['intersections'] = templates_df['sentence'].apply(
@@ -237,6 +253,10 @@ def add_features_to_template(template: Text, entity: item.RVSPath) -> Text:
   template = template.replace('NUMBER_BLOCKS', blocks)
   template = template.replace(
     'CARDINAL_DIRECTION', entity.cardinal_direction)
+  template = template.replace(
+    'SPATIAL_RELATION_GOAL', entity.spatial_rel_goal)
+  template = template.replace(
+    'SPATIAL_RELATION_PIVOT', entity.spatial_rel_pivot)
 
   # Fix text.
   template = template.replace('The The', 'The')

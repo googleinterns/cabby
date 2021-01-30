@@ -553,6 +553,50 @@ class Walker:
 
     return main_pivot, near_pivot, beyond_pivot
 
+  def get_egocentric_spatial_relation_pivot(self,
+                                            ref_point: Point,
+                                            route: GeoDataFrame
+                                            ) -> str:
+    line = LineString(route['geometry'].tolist())
+    dist_projected = line.project(ref_point)
+    cut_geometry = util.cut(line, dist_projected)
+    first_segment = cut_geometry[0]
+    coords = list(first_segment.coords)
+    return self.calc_spatial_relation_for_line(
+      ref_point, Point(coords[-1]), Point(coords[-2]))
+
+  def calc_spatial_relation_for_line(self,
+                                     ref_point: Point,
+                                     line_point_last_part: Point,
+                                     line_point_second_from_last: Point,
+  ) -> str:
+
+    # Calculate the angle of the last segment of the line_point_last_part.
+    azim_route = util.get_bearing(
+      line_point_second_from_last, line_point_last_part)
+
+    # Calculate the angle between the last segment of the route and the goal.
+    azim_ref_point = util.get_bearing(
+      line_point_last_part, ref_point)
+
+    diff_azim = (azim_ref_point-azim_route) % 360
+
+    if diff_azim < 180:
+      return "right"
+
+    return "left"
+
+  def get_egocentric_spatial_relation_goal(self,
+                                           ref_point: Point,
+                                           route: GeoDataFrame
+                                           ) -> str:
+
+    final_node_in_route = route.iloc[-2]['geometry'].centroid
+    last_node_in_route = route.iloc[-3]['geometry'].centroid
+
+    return self.calc_spatial_relation_for_line(
+      ref_point, final_node_in_route, last_node_in_route)
+
 
   def get_cardinal_direction(self, start_point: Point, end_point: Point
   ) -> Text:
@@ -658,18 +702,29 @@ class Walker:
     cardinal_direction = self.get_cardinal_direction(
       start_point['geometry'], end_point['geometry'])
 
+    # Get Egocentric spatial relation from goal.
+    spatial_relation_from_goal = self.get_egocentric_spatial_relation_goal(
+      end_point['geometry'].centroid, route)
+
+    # Get Egocentric spatial relation from main pivot.
+    spatial_relation_from_main_pivot = self.get_egocentric_spatial_relation_pivot(
+      main_pivot['geometry'].centroid, route)
+
     # Get number of intersections between main pivot and goal location.
     intersections = self.get_number_intersections_past(
       main_pivot, route, end_point)
 
-    rvs_path_entity = item.RVSPath.from_points_route_pivots(start_point,
-                                end_point,
-                                route,
-                                main_pivot,
-                                near_pivot,
-                                beyond_pivot,
-                                cardinal_direction,
-                                intersections)
+    rvs_path_entity = item.RVSPath.from_points_route_pivots(
+          start_point,
+          end_point,
+          route,
+          main_pivot,
+          near_pivot,
+          beyond_pivot,
+          cardinal_direction,
+          intersections,
+          spatial_relation_from_goal,
+          spatial_relation_from_main_pivot)
 
     return rvs_path_entity
 
@@ -815,6 +870,8 @@ def load_entities(path: Text) -> List[item.RVSPath]:
       near_pivot=geo_file.near_pivot.iloc[index],
       beyond_pivot=geo_file.beyond_pivot.iloc[index],
       cardinal_direction=geo_file.path_features.iloc[index].cardinal_direction,
+      spatial_rel_goal=geo_file.path_features.iloc[index]['spatial_rel_goal'],
+      spatial_rel_pivot=geo_file.path_features.iloc[index].spatial_rel_pivot,
       intersections=geo_file.path_features.iloc[index].intersections
     )
     entities.append(entity)
@@ -829,4 +886,3 @@ def print_instructions(path: Text):
     sys.exit(f"The path to the RVS data was not found {path}.")
   route = gpd.read_file(path, layer='route')
   logging.info('\n'.join(route['instructions'].values))
-
