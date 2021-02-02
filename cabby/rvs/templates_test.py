@@ -37,14 +37,29 @@ class ObserveTest(unittest.TestCase):
     main = gpd.GeoSeries({'osmid': 3, 'geometry': Point(), 'main_tag': 'Food On The Way'})
     near = gpd.GeoSeries({'osmid': 4, 'geometry': Point(), 'main_tag': 'Far is Near Travel Agency'})
     beyond = gpd.GeoSeries({'osmid': 5, 'geometry': Point(), 'main_tag': 'Beyond The Rainbow Fairy Shop'})
-    route = gpd.GeoSeries({'geometry': Point(), 'intersections': 2, 'cardinal_direction': 'North-North'})
+    route = gpd.GeoSeries({'geometry': Point(),
+                           'intersections': 2,
+                           'cardinal_direction': 'North-North',
+                           'spatial_rel_goal': 'right',
+                           'spatial_rel_pivot': 'left'
+                           })
 
-    entity = item.RVSPath.from_file(start, end, route, main, near, beyond, route.cardinal_direction, route.intersections)
+    entity = item.RVSPath.from_file(
+      start,
+      end,
+      route,
+      main,
+      near,
+      beyond,
+      route.cardinal_direction,
+      route.spatial_rel_goal,
+      route.spatial_rel_pivot,
+      route.intersections)
 
     instruction = templates.add_features_to_template(picked_template,entity)
 
     expected = "Meet at Target Coffee Shop. Go North-North from Food On The Way for 2 intersections. It will be near Far is Near Travel Agency. If you reach Beyond The Rainbow Fairy Shop, you have gone too far."
-    self.assertEqual(instruction, expected) 
+    self.assertEqual(instruction, expected)
 
 if __name__ == "__main__":
     unittest.main()
