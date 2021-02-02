@@ -27,6 +27,8 @@ class Edge:
   `u_for_edge` is one side of the segment.
   `v_for_edge` is the other side of the segment.
   `length` is the length of the segment.
+  `true_length` is the actual length of the segment,
+   without addition distance to prevent from shortcuts through POI.
   `oneway` whether it is directional.
   `highway` is highway (if connecting a POI it will be `poi`).
   `osmid` is the osmid of the street.

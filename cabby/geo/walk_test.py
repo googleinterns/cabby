@@ -13,10 +13,6 @@
 # limitations under the License.
 '''Tests for walk.py'''
 
-import networkx as nx
-import osmnx as ox
-from shapely.geometry.point import Point
-from shapely.geometry import box
 import unittest
 
 from cabby.geo.map_processing import map_structure

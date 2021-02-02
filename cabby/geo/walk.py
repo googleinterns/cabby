@@ -15,25 +15,22 @@
 '''Library to support sampling points, creating routes between them and pivots
 along the path and near the goal.'''
 
+
 from typing import Tuple, Sequence, Optional, Dict, Text, Any, List
 
 from absl import logging
 import geopandas as gpd
 from geopandas import GeoDataFrame, GeoSeries
+import multiprocessing
+from multiprocessing import Semaphore
+import numpy as np
 import networkx as nx
-import sys
 import os
 import osmnx as ox
 import pandas as pd
-import json
-import multiprocessing 
-from multiprocessing import Pool
-from multiprocessing import Semaphore
 import random 
-from shapely import geometry
 from shapely.geometry.point import Point
-from shapely.geometry.polygon import Polygon, LinearRing
-from shapely.geometry import box, mapping, LineString
+from shapely.geometry import LineString
 import sys
     
 
@@ -54,10 +51,9 @@ NEAR_PIVOT_DIST = 80
 _Geo_DataFrame_Driver = "GPKG"
 # The max number of failed tries to generate a single path entities.
 MAX_NUM_GEN_FAILED = 10
-PIVOT_ALONG_ROUTE_MAX_DIST = 0.005
-
-
+PIVOT_ALONG_ROUTE_MAX_DIST = 0.0001
 ADD_POI_DISTANCE = 5000
+MAX_NUM_BEYOND_TRY = 50
 
 
 class Walker:
@@ -322,7 +318,9 @@ class Walker:
     return None
 
 
-  def pick_prominent_pivot(self, df_pivots: GeoDataFrame, end_point: Dict
+  def pick_prominent_pivot(self,
+                           df_pivots: GeoDataFrame,
+                           end_point: Dict[str, Any],
   ) -> Optional[GeoSeries]:
     '''Select a landmark from a set of landmarks by priority.
     Arguments:
@@ -334,6 +332,7 @@ class Walker:
 
     # Remove goal location.
     df_pivots = df_pivots[df_pivots['osmid']!=end_point['osmid']]
+
     if df_pivots.shape[0]==0:
       return None
 
@@ -445,8 +444,9 @@ class Walker:
       # Return Empty.
       return GeoDataFrame(index=[0], columns=self.map.nodes.columns).iloc[0]
 
-    last_node_in_route = route.iloc[-1]
-    before_last_node_in_route = route.iloc[-2]
+    final_node_in_route = route.iloc[-1]
+    last_node_in_route = route.iloc[-2]
+    before_last_node_in_route = route.iloc[-3]
 
     street_beyond_route = self.map.edges[
       (self.map.edges['u'] == last_node_in_route['osmid'])
@@ -457,31 +457,60 @@ class Walker:
       return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
 
     street_beyond_osmid = street_beyond_route['osmid'].iloc[0]
-
-    # Change OSMID to key
-    segment_beyond_path = ((last_node_in_route['osmid'] == self.map.edges['u'])
-                & (before_last_node_in_route['osmid'] !=
-                  self.map.edges['v']))
     condition_street_id = self.map.edges['osmid'].apply(
       lambda x: x == street_beyond_osmid)
-    last_line = self.map.edges[condition_street_id
-                & segment_beyond_path]
+    street_nodes = self.map.edges[condition_street_id]['u'].unique()
+    street_nodes = np.random.choice(street_nodes, MAX_NUM_BEYOND_TRY)
+    for i in range(MAX_NUM_BEYOND_TRY):
+      length = nx.shortest_path_length(
+        self.map.nx_graph,
+        source=street_nodes[i],
+        target=last_node_in_route['osmid'])
 
-    if last_line.shape[0] == 0:
-      # Return Empty.
-      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+      # The beyond pivot should not be too close but also not too far away.
+      if not (length>3 and length<10):
+        continue
 
-    last_line_max = last_line[last_line['length'] ==
-                  last_line['length'].max()].iloc[0]
+      # Check the path between the POI and the last node in the route taken.
+      # If the path calculated does not pass through the route taken then it is
+      # beyond the route.
+      path = nx.shortest_path(self.map.nx_graph,
+                              source=street_nodes[i],
+                              target=last_node_in_route['osmid'])
 
-    poly = last_line_max['geometry'].buffer(0.0001)
+      # Remove the nodes in the route taken from the path calculated so that it
+      # will not be choosen as the pivot beyond.
+      path.remove(last_node_in_route['osmid'])
+      if final_node_in_route['osmid'] in path:
+        path.remove(final_node_in_route['osmid'])
+
+      intersections = set(route['osmid']).intersection(path)
+
+      # Check if the path calculated overlaps the route taken,
+      # if not then pick a POI to be the pivot beyond.
+      if len(intersections)<1 and len(path)>2:
+        beyond = self.select_pivot_from_path(route, end_point, path)
+        if beyond is not None:
+          return beyond
+    return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+
+
+  def select_pivot_from_path(self,
+                        route: GeoDataFrame,
+                        end_point: Dict,
+                        path: list):
+
+    path_nodes = self.map.nodes[self.map.nodes['osmid'].isin(path)]
+    points_route = path_nodes['geometry'].tolist()
+    path_beyond = LineString(points_route).buffer(PIVOT_ALONG_ROUTE_MAX_DIST)
+    route_shape = LineString(route['geometry'].tolist()).buffer(PIVOT_ALONG_ROUTE_MAX_DIST)
 
     df_pivots = self.map.poi[self.map.poi.apply(
-      lambda x: poly.intersects(x['geometry']), axis=1)]
+      lambda x: (path_beyond.intersects(x['geometry'])) &
+                (route_shape.intersects(x['geometry'])==False), axis=1)]
 
     if df_pivots.shape[0] == 0:
-      # Return Empty.
-      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+      return None
 
     # Remove streets.
     if 'highway' in df_pivots.columns:
@@ -491,38 +520,9 @@ class Walker:
     df_pivots = df_pivots[(df_pivots['geometry'].is_valid)]
     if df_pivots.shape[0] == 0:
       # Return Empty.
-      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+      return None
 
-    # Remove the route area.
-
-    points_route = route['geometry'].tolist()
-
-    poly_route = LineString(points_route).buffer(0.0001)
-
-    route_endpoint_points = [last_node_in_route["geometry"],
-                end_point['centroid'],
-                last_node_in_route["geometry"]]
-    route_to_endpoint = Polygon(route_endpoint_points).buffer(0.0001)
-
-    poly_route_with_end = poly_route.union(route_to_endpoint)
-
-    df_pivots = df_pivots[df_pivots.apply(lambda x:
-                        not util.check_if_geometry_in_polygon(
-                          x, poly_route_with_end),
-                        axis=1)]
-
-    if df_pivots.shape[0] == 0:
-      # Return Empty.
-      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
-
-    # Remove the end_point.
-    df_pivots = df_pivots[df_pivots['geometry'] != end_point['geometry']]
     beyond_pivot = self.pick_prominent_pivot(df_pivots, end_point)
-
-    if beyond_pivot is None:
-      # Return Empty.
-      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
-
     return beyond_pivot
 
   def get_pivots(self, 
@@ -829,3 +829,4 @@ def print_instructions(path: Text):
     sys.exit(f"The path to the RVS data was not found {path}.")
   route = gpd.read_file(path, layer='route')
   logging.info('\n'.join(route['instructions'].values))
+
