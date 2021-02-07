@@ -16,7 +16,7 @@
 along the path and near the goal.'''
 
 
-from typing import Tuple, Sequence, Optional, Dict, Text, Any, List
+from typing import Tuple, Sequence, Optional, Dict, Text, Any
 
 from absl import logging
 import geopandas as gpd
@@ -37,7 +37,6 @@ import sys
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 from cabby.geo import geo_item
-from cabby.rvs import item
 from cabby.geo import osm
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
@@ -48,7 +47,6 @@ MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
-_Geo_DataFrame_Driver = "GPKG"
 # The max number of failed tries to generate a single path entities.
 MAX_NUM_GEN_FAILED = 10
 PIVOT_ALONG_ROUTE_MAX_DIST = 0.0001
@@ -56,11 +54,15 @@ ADD_POI_DISTANCE = 5000
 MAX_NUM_BEYOND_TRY = 50
 
 
+LANDMARK_TYPES = ["end_point", "start_point", "main_pivot", "near_pivot", "beyond_pivot"]
+
+
 class Walker:
   def __init__(self, map: map_structure.Map, rand_sample: bool = True):
     #whether to sample randomly.
     self.rand_sample = rand_sample
     self.map = map
+
 
 
   def compute_route_from_nodes(self,
@@ -439,10 +441,11 @@ class Walker:
     Returns:
       A single landmark. '''
 
+    columns_empty = self.map.nodes.columns.tolist() + ['main_tag']
 
     if route.shape[0] < 2:
       # Return Empty.
-      return GeoDataFrame(index=[0], columns=self.map.nodes.columns).iloc[0]
+      return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
 
     final_node_in_route = route.iloc[-1]
     last_node_in_route = route.iloc[-2]
@@ -454,7 +457,7 @@ class Walker:
     ]
     if street_beyond_route.shape[0] == 0:
       # Return Empty.
-      return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+      return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
 
     street_beyond_osmid = street_beyond_route['osmid'].iloc[0]
     condition_street_id = self.map.edges['osmid'].apply(
@@ -492,18 +495,19 @@ class Walker:
         beyond = self.select_pivot_from_path(route, end_point, path)
         if beyond is not None:
           return beyond
-    return GeoDataFrame(index=[0], columns=route.columns).iloc[0]
+    return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
 
 
   def select_pivot_from_path(self,
                         route: GeoDataFrame,
                         end_point: Dict,
-                        path: list):
+                        path: Sequence):
 
     path_nodes = self.map.nodes[self.map.nodes['osmid'].isin(path)]
     points_route = path_nodes['geometry'].tolist()
     path_beyond = LineString(points_route).buffer(PIVOT_ALONG_ROUTE_MAX_DIST)
-    route_shape = LineString(route['geometry'].tolist()).buffer(PIVOT_ALONG_ROUTE_MAX_DIST)
+    route_shape = LineString(
+      route['geometry'].tolist()).buffer(PIVOT_ALONG_ROUTE_MAX_DIST)
 
     df_pivots = self.map.poi[self.map.poi.apply(
       lambda x: (path_beyond.intersects(x['geometry'])) &
@@ -662,69 +666,67 @@ class Walker:
       lambda x: len(x - common_streets) > 0).sum()
 
     if number_intersection <= 0:
-      return -1
+      return 0
 
     return number_intersection
 
   def get_sample(self, 
-  ) -> Optional[item.RVSPath]:
+  ) -> Optional[geo_item.GeoEntity]:
     '''Sample start and end point, a pivot landmark and route.
     Returns:
       A start and end point, a pivot landmark and route.
     '''
 
+    geo_landmarks = {}
     # Select end point.
-    end_point = self.get_end_poi()
-    if end_point is None:
+    geo_landmarks['end_point'] = self.get_end_poi()
+    if geo_landmarks['end_point'] is None:
       return None
 
     # Select start point.
-    start_point = self.get_start_poi(end_point)
-    if start_point is None:
+    geo_landmarks['start_point'] = self.get_start_poi(geo_landmarks['end_point'])
+    if geo_landmarks['start_point'] is None:
       return None
 
     # Compute route between start and end points.
     route = self.compute_route_from_nodes(
-          start_point['osmid'], 
-          end_point['osmid'], 
+          geo_landmarks['start_point']['osmid'],
+          geo_landmarks['end_point']['osmid'],
           self.map.nx_graph, 
           self.map.nodes)
     if route is None:
       return None
     
     # Select pivots.
-    result = self.get_pivots(route, end_point)
+    result = self.get_pivots(route, geo_landmarks['end_point'])
     if result is None:
       return None
-    main_pivot, near_pivot, beyond_pivot = result
 
+    geo_landmarks['main_pivot'], geo_landmarks['near_pivot'], \
+     geo_landmarks['beyond_pivot'] = result
+
+    geo_features = {}
     # Get cardinal direction.
-    cardinal_direction = self.get_cardinal_direction(
-      start_point['geometry'], end_point['geometry'])
+    geo_features['cardinal_direction'] = self.get_cardinal_direction(
+      geo_landmarks['start_point']['geometry'], geo_landmarks['end_point']['geometry'])
 
     # Get Egocentric spatial relation from goal.
-    spatial_relation_from_goal = self.get_egocentric_spatial_relation_goal(
-      end_point['geometry'].centroid, route)
+    geo_features['spatial_rel_goal'] = self.get_egocentric_spatial_relation_goal(
+      geo_landmarks['end_point']['geometry'].centroid, route)
 
     # Get Egocentric spatial relation from main pivot.
-    spatial_relation_from_main_pivot = self.get_egocentric_spatial_relation_pivot(
-      main_pivot['geometry'].centroid, route)
+    geo_features['spatial_rel_pivot'] = self.get_egocentric_spatial_relation_pivot(
+      geo_landmarks['main_pivot']['geometry'].centroid, route)
+
 
     # Get number of intersections between main pivot and goal location.
-    intersections = self.get_number_intersections_past(
-      main_pivot, route, end_point)
+    geo_features['intersections'] = self.get_number_intersections_past(
+      geo_landmarks['main_pivot'], route, geo_landmarks['end_point'])
 
-    rvs_path_entity = item.RVSPath.from_points_route_pivots(
-          start_point,
-          end_point,
-          route,
-          main_pivot,
-          near_pivot,
-          beyond_pivot,
-          cardinal_direction,
-          intersections,
-          spatial_relation_from_goal,
-          spatial_relation_from_main_pivot)
+    rvs_path_entity = geo_item.GeoEntity.add_entity(
+      route=route,
+      geo_features=geo_features,
+      geo_landmarks=geo_landmarks)
 
     return rvs_path_entity
 
@@ -733,7 +735,7 @@ class Walker:
             index: int, 
             sema: Any, 
             n_samples: int, 
-            return_dict: Dict[int, item.RVSPath]):
+            return_dict: Dict[int, geo_item.GeoEntity]):
     '''Sample exactly one RVS path sample.
     Arguments:
       index: index of sample.
@@ -745,11 +747,11 @@ class Walker:
     entity = None
     attempt = 0
     while entity is None:
-      entity = self.get_sample()
-      attempt += 1
       if attempt >= MAX_NUM_GEN_FAILED:
         sys.exit("Reached max number of failed attempts.")
-    
+      entity = self.get_sample()
+      attempt += 1
+
     logging.info(f"Created sample {index}/{n_samples}.")
     return_dict[index]=entity
     sema.release()
@@ -797,7 +799,7 @@ class Walker:
 
     
   def save_entities(
-    self, entities: Sequence[item.RVSPath], path_rvs_path: Text
+    self, entities: Sequence[geo_item.GeoEntity], path_rvs_path: Text
   ):
     '''Save entities to path. If the path already exists append.
     Arguments:
@@ -805,84 +807,36 @@ class Walker:
       path_rvs_path: the path to add the entities too.
     '''
 
-    if os.path.exists(path_rvs_path):
-      geo_file = load(path_rvs_path)
-    else:
-      geo_file = geo_item.GeoPath.empty()
-    
-    for entity in entities:
-
-      geo_file.start_point = geo_file.start_point.append(
-        entity.start_point, ignore_index=True)
-      geo_file.end_point = geo_file.end_point.append(
-        entity.end_point, ignore_index=True)
-      geo_file.path_features = geo_file.path_features.append(
-        entity.path_features, ignore_index=True)
-      geo_file.main_pivot = geo_file.main_pivot.append(
-        entity.main_pivot, ignore_index=True)
-      geo_file.near_pivot = geo_file.near_pivot.append(
-        entity.near_pivot, ignore_index=True)
-      geo_file.beyond_pivot = geo_file.beyond_pivot.append(
-        entity.beyond_pivot, ignore_index=True)
-
-    if geo_file.start_point.shape[0] == 0:
-      return
     path = os.path.abspath(path_rvs_path)
-    geo_file.start_point.to_file(
-      path, layer='start', driver=_Geo_DataFrame_Driver)
-    geo_file.end_point.to_file(path, layer='end', driver=_Geo_DataFrame_Driver)
-    geo_file.path_features.to_file(
-      path, layer='route', driver=_Geo_DataFrame_Driver)
-    geo_file.main_pivot.to_file(
-      path, layer='main', driver=_Geo_DataFrame_Driver)
-    geo_file.near_pivot.to_file(
-      path, layer='near', driver=_Geo_DataFrame_Driver)
-    geo_file.beyond_pivot.to_file(
-      path, layer='beyond', driver=_Geo_DataFrame_Driver)
 
-    geo_file.size = geo_file.beyond_pivot.shape[0]
+    geo_item.GeoEntity.save(entities, path)
 
-    logging.info(f"Saved {geo_file.size} entities to => {path}")
+    logging.info(f"Saved {len(entities)} entities to => {path}")
 
-
-def load(path: Text) -> geo_item.GeoPath:
-  start = gpd.read_file(path, layer='start')
-  end = gpd.read_file(path, layer='end')
-  route = gpd.read_file(path, layer='route')
-  main = gpd.read_file(path, layer='main')
-  near = gpd.read_file(path, layer='near')
-  beyond = gpd.read_file(path, layer='beyond')
-  return geo_item.GeoPath.from_file(start, end, route, main, near, beyond)
-
-def load_entities(path: Text) -> List[item.RVSPath]:
+def load_entities(path: Text) -> Sequence[geo_item.GeoEntity]:
   if not os.path.exists(path):
     return []
-  
-  geo_file = load(path)
+  geo_types_all = {}
+  for landmark_type in LANDMARK_TYPES:
+    geo_types_all[landmark_type] = gpd.read_file(path, layer=landmark_type)
+  geo_types_all['route'] = gpd.read_file(path, layer='path_features')['geometry']
+  geo_types_all['path_features'] = gpd.read_file(path, layer='path_features')
+  geo_entities = []
+  for row_idx in range(geo_types_all[LANDMARK_TYPES[0]].shape[0]):
+    landmarks = {}
+    for landmark_type in LANDMARK_TYPES:
+      landmarks[landmark_type] = geo_types_all[landmark_type].iloc[row_idx]
+    features = geo_types_all['path_features'].iloc[row_idx].to_dict()
+    del features['geometry']
+    route = geo_types_all['route'].iloc[row_idx]
+    geo_item_cur = geo_item.GeoEntity.add_entity(
+      geo_landmarks=landmarks,
+      geo_features=features,
+      route=LineString(route.exterior.coords[:-1])
+      )
+    geo_entities.append(geo_item_cur)
 
-  entities = []
-  for index in range(geo_file.beyond_pivot.shape[0]):
-    entity = item.RVSPath.from_file(
-      start=geo_file.start_point.iloc[index],
-      end=geo_file.end_point.iloc[index],
-      route=geo_file.path_features.iloc[index].geometry,
-      main_pivot=geo_file.main_pivot.iloc[index],
-      near_pivot=geo_file.near_pivot.iloc[index],
-      beyond_pivot=geo_file.beyond_pivot.iloc[index],
-      cardinal_direction=geo_file.path_features.iloc[index].cardinal_direction,
-      spatial_rel_goal=geo_file.path_features.iloc[index]['spatial_rel_goal'],
-      spatial_rel_pivot=geo_file.path_features.iloc[index].spatial_rel_pivot,
-      intersections=geo_file.path_features.iloc[index].intersections
-    )
-    entities.append(entity)
-
-  logging.info(f"Loaded entities {len(entities)} from <= {path}")
-  return entities
+  logging.info(f"Loaded entities {len(geo_entities)} from <= {path}")
+  return geo_entities
 
 
-def print_instructions(path: Text):
-  '''Read a geodata file and print instruction.'''
-  if not os.path.exists(path):
-    sys.exit(f"The path to the RVS data was not found {path}.")
-  route = gpd.read_file(path, layer='route')
-  logging.info('\n'.join(route['instructions'].values))

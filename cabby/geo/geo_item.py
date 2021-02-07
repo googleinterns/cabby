@@ -131,7 +131,6 @@ class GeoLandmark:
       pivot['geometry'],
       pivot['main_tag'],
       pivot
-
     )
 
 

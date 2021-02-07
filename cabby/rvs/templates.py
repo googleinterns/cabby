@@ -14,21 +14,21 @@
 '''Define templates for RVS.'''
 
 from typing import Dict, Sequence, Text
-
 import nltk
 from nltk import CFG, Production
 from nltk.parse.generate import Nonterminal
 import pandas as pd
 
-from cabby.rvs import item
+from cabby.geo import geo_item
+
 
 
 # Terminals in the grammar.
 MAIN_NO_V = [
-  "CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_INTERSECTIONS intersections",
+  "CARDINAL_DIRECTION from MAIN_PIVOT for INTERSECTIONS intersections",
   "CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks",
   "NUMBER_BLOCKS blocks past MAIN_PIVOT",
-  "NUMBER_INTERSECTIONS intersections past MAIN_PIVOT",
+  "INTERSECTIONS intersections past MAIN_PIVOT",
   "past MAIN_PIVOT",
   "CARDINAL_DIRECTION and past MAIN_PIVOT",
   "past MAIN_PIVOT and continue to the next intersection",
@@ -41,54 +41,54 @@ MAIN_NO_V = [
 # SPATIAL_RELATION_PIVOT
 
 MAIN = [
-  ". When you pass MAIN_PIVOT, you'll be just NUMBER_INTERSECTIONS intersections away",
+  ". When you pass MAIN_PIVOT, you'll be just INTERSECTIONS intersections away",
   ". When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away",
-  ". MAIN_PIVOT is NUMBER_INTERSECTIONS intersections away",
-  ". MAIN_PIVOT is NUMBER_INTERSECTIONS intersections away on the SPATIAL_RELATION_PIVOT side of the street",
+  ". MAIN_PIVOT is INTERSECTIONS intersections away",
+  ". MAIN_PIVOT is INTERSECTIONS intersections away on the SPATIAL_REL_PIVOT side of the street",
   ". MAIN_PIVOT is NUMBER_BLOCKS blocks away",
-  ". MAIN_PIVOT is NUMBER_BLOCKS blocks away, on the SPATIAL_RELATION_PIVOT side of the street,",
-  ". Head to MAIN_PIVOT and go NUMBER_INTERSECTIONS intersections further",
-  ". Go to MAIN_PIVOT and walk NUMBER_INTERSECTIONS intersections past it",
+  ". MAIN_PIVOT is NUMBER_BLOCKS blocks away, on the SPATIAL_REL_PIVOT side of the street,",
+  ". Head to MAIN_PIVOT and go INTERSECTIONS intersections further",
+  ". Go to MAIN_PIVOT and walk INTERSECTIONS intersections past it",
   ". Travel to MAIN_PIVOT and continue NUMBER_BLOCKS blocks further",
   ". Walk to MAIN_PIVOT and proceed NUMBER_BLOCKS blocks past it",
-  ". After you reach MAIN_PIVOT, you'll need to go NUMBER_INTERSECTIONS intersections further",
-  ". After you reach MAIN_PIVOT on your SPATIAL_RELATION_PIVOT, "+
-  "you'll need to go NUMBER_INTERSECTIONS intersections further",
-  ". When you get to MAIN_PIVOT, you have NUMBER_INTERSECTIONS intersections more to walk",
-  ". When you see to MAIN_PIVOT on your SPATIAL_RELATION_PIVOT, "+
-  "you have NUMBER_INTERSECTIONS intersections more to walk",
+  ". After you reach MAIN_PIVOT, you'll need to go INTERSECTIONS intersections further",
+  ". After you reach MAIN_PIVOT on your SPATIAL_REL_PIVOT, "+
+  "you'll need to go INTERSECTIONS intersections further",
+  ". When you get to MAIN_PIVOT, you have INTERSECTIONS intersections more to walk",
+  ". When you see to MAIN_PIVOT on your SPATIAL_REL_PIVOT, "+
+  "you have INTERSECTIONS intersections more to walk",
   ". After you pass MAIN_PIVOT, go NUMBER_BLOCKS blocks more",
-  ". After you pass MAIN_PIVOT on your SPATIAL_RELATION_PIVOT, go NUMBER_BLOCKS blocks more",
+  ". After you pass MAIN_PIVOT on your SPATIAL_REL_PIVOT, go NUMBER_BLOCKS blocks more",
   ". Once you reach MAIN_PIVOT, continue for NUMBER_BLOCKS blocks",
-  ". Once you see MAIN_PIVOT on your SPATIAL_RELATION_PIVOT, continue for NUMBER_BLOCKS blocks",
+  ". Once you see MAIN_PIVOT on your SPATIAL_REL_PIVOT, continue for NUMBER_BLOCKS blocks",
 
 ]
 
 V1 = ['Go', 'Walk', 'Head', 'Proceed', 'Travel']
 
 V2 = [
-  'Meet at the GOAL_LOCATION.', 
-  'Come to the GOAL_LOCATION.',
-  'Head over to the GOAL_LOCATION.',
-  'The GOAL_LOCATION is the meeting point.'
+  'Meet at the END_POINT.',
+  'Come to the END_POINT.',
+  'Head over to the END_POINT.',
+  'The END_POINT is the meeting point.'
 ]
 
 NEAR_GOAL_END = [
-  ". The GOAL_LOCATION will be near a NEAR_PIVOT.",
-  ". The GOAL_LOCATION will be on your SPATIAL_RELATION_GOAL, near a NEAR_PIVOT.",
-  ". A NEAR_PIVOT is quite close to the GOAL_LOCATION.",
-  ". Meet at the GOAL_LOCATION, which is right next to a NEAR_PIVOT.",
-  ". Meet at the GOAL_LOCATION, which will be on your SPATIAL_RELATION_GOAL, right next to a NEAR_PIVOT.",
-  ". If you see a NEAR_PIVOT, you should find the GOAL_LOCATION close by.",
-  ". If you see a NEAR_PIVOT, you should find on the SPATIAL_RELATION_GOAL side of the street"+
-  " the GOAL_LOCATION close by."
+  ". The END_POINT will be near a NEAR_PIVOT.",
+  ". The END_POINT will be on your SPATIAL_REL_GOAL, near a NEAR_PIVOT.",
+  ". A NEAR_PIVOT is quite close to the END_POINT.",
+  ". Meet at the END_POINT, which is right next to a NEAR_PIVOT.",
+  ". Meet at the END_POINT, which will be on your SPATIAL_REL_GOAL, right next to a NEAR_PIVOT.",
+  ". If you see a NEAR_PIVOT, you should find the END_POINT close by.",
+  ". If you see a NEAR_PIVOT, you should find on the SPATIAL_REL_GOAL side of the street"+
+  " the END_POINT close by."
 
 ]
 NEAR_GOAL_START = [
   ". It will be near a NEAR_PIVOT.",
-  ". It will be on your SPATIAL_RELATION_GOAL, near a NEAR_PIVOT.",
+  ". It will be on your SPATIAL_REL_GOAL, near a NEAR_PIVOT.",
   ". It is close to a NEAR_PIVOT.",
-  ". It is on the SPATIAL_RELATION_GOAL side of the street, close to a NEAR_PIVOT.",
+  ". It is on the SPATIAL_REL_GOAL side of the street, close to a NEAR_PIVOT.",
   ". A NEAR_PIVOT is close by."
 ]
 AVOID = [
@@ -98,13 +98,13 @@ AVOID = [
   ""]
 
 GOAL_END = [
-  'and meet at the GOAL_LOCATION.',
-  'and come to the GOAL_LOCATION.',
-  'to reach the GOAL_LOCATION.',
-  'to arrive at the GOAL_LOCATION.'
+  'and meet at the END_POINT.',
+  'and come to the END_POINT.',
+  'to reach the END_POINT.',
+  'to arrive at the END_POINT.'
 ]
 
-GOAL = ["the GOAL_LOCATION"]
+GOAL = ["the END_POINT"]
 
 
 def add_rules(nonterminal_name: Text,
@@ -231,32 +231,35 @@ def create_templates():
   return templates_df
 
 
-def add_features_to_template(template: Text, entity: item.RVSPath) -> Text:
+def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Text:
   '''Add the entity features to the picked template to create an instruction:
     template: The choosen template.
     entity: The features of the path to add to the template.
   '''
-  intersections = int(entity.intersections)
+
+  intersections = int(entity.geo_features['intersections'])
   blocks = str(intersections-1)
-  intersections = str(intersections)
-  if entity.end_point.main_tag[0].isupper():
-    template = template.replace('The GOAL_LOCATION', 'GOAL_LOCATION')
-    template = template.replace('the GOAL_LOCATION', 'GOAL_LOCATION')
-  if entity.near_pivot.main_tag[0].isupper():
+
+  if entity.geo_landmarks['end_point'].main_tag[0].isupper():
+    template = template.replace('The END_POINT', 'END_POINT')
+    template = template.replace('the END_POINT', 'END_POINT')
+  if entity.geo_landmarks['near_pivot'].main_tag[0].isupper():
     template = template.replace('A NEAR_PIVOT', 'NEAR_PIVOT')
     template = template.replace('a NEAR_PIVOT', 'NEAR_PIVOT')
-  template = template.replace('GOAL_LOCATION', entity.end_point.main_tag)
-  template = template.replace('MAIN_PIVOT', entity.main_pivot.main_tag)
-  template = template.replace('NEAR_PIVOT', entity.near_pivot.main_tag)
-  template = template.replace('BEYOND_PIVOT', entity.beyond_pivot.main_tag)
-  template = template.replace('NUMBER_INTERSECTIONS', intersections)
   template = template.replace('NUMBER_BLOCKS', blocks)
-  template = template.replace(
-    'CARDINAL_DIRECTION', entity.cardinal_direction)
-  template = template.replace(
-    'SPATIAL_RELATION_GOAL', entity.spatial_rel_goal)
-  template = template.replace(
-    'SPATIAL_RELATION_PIVOT', entity.spatial_rel_pivot)
+
+
+  for lanndamrk_type, landmark in entity.geo_landmarks.items():
+
+    if landmark.main_tag is None:
+      continue
+    template = template.replace(lanndamrk_type.upper(),
+                                landmark.main_tag)
+
+  for feature_type, feature in entity.geo_features.items():
+
+    template = template.replace(feature_type.upper(),
+                                str(feature))
 
   # Fix text.
   template = template.replace('The The', 'The')

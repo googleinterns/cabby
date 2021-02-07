@@ -38,8 +38,7 @@ from absl import flags
 
 from cabby.geo import walk
 from cabby.rvs import templates
-from cabby.rvs import rvs_item
-
+from cabby.geo import geo_item
 
 FLAGS = flags.FLAGS
 
@@ -69,78 +68,88 @@ def main(argv):
   # Get templates.
   gen_templates = templates.create_templates()
 
-  logging.info(f"Number of templates: {gen_templates.shape[0]}")
-
   # Generate instructions.
   gen_samples = []
   for entity_idx, entity in enumerate(entities):
     current_templates = gen_templates.copy()  # Candidate templates.
-    if entity.beyond_pivot.main_tag is '':
-      # Filter out templates with the beyond pivot mention.
-      current_templates = gen_templates[
-        current_templates['beyond_pivot'] == False]
-    else:
-      # Filter out templates without the beyond pivot mention.
-      current_templates = gen_templates[current_templates['beyond_pivot'] == True]
 
-    if entity.intersections > 0:
-      # Pick templates with either blocks or intersections.
-      is_block = randint(0, 1)
-      blocks = entity.intersections-1 if is_block else -1
-      if entity.intersections == 1:
-        # Filter out templates without the next intersection mention.
+    # Use only landmarks that have a main tag.
+    for landmark_type, landmark in entity.geo_landmarks.items():
+      if landmark_type not in current_templates:
+        continue
+      if landmark.main_tag is '':
         current_templates = current_templates[
-          current_templates['next_intersection'] == True]
-      elif blocks == 1:
-        # Filter out templates without the next block mention.
-        current_templates = current_templates[
-          current_templates['next_block'] == True]
+          current_templates[landmark_type] == False]
       else:
-        if blocks > 1:
-          # Filter out templates without mentions of the number of blocks
-          # that should be passed.
+        current_templates = current_templates[current_templates[landmark_type] == True]
+
+    # Use features that exist.
+    for feature_type, feature in entity.geo_features.items():
+      if feature_type not in current_templates:
+        continue
+      if int(feature) == -1:
+        # print(current_templates[current_templates['intersections'] == False][['intersections', 'blocks']])
+        # print (feature_type)
+        current_templates = current_templates[
+          current_templates[feature_type] == False]
+      else:
+        current_templates = current_templates[current_templates[feature_type] == True]
+
+      if int(entity.geo_features['intersections']) > 0:
+
+        # Pick templates with either blocks or intersections.
+        is_block = randint(0, 1)
+        blocks = int(entity.geo_features['intersections']) - 1 \
+          if is_block else -1
+        if int(entity.geo_features['intersections']) == 1:
+          # Filter out templates without the next intersection mention.
           current_templates = current_templates[
-            current_templates['blocks'] == True]
+            current_templates['next_intersection'] == True]
+        elif blocks == 1:
+          # Filter out templates without the next block mention.
+          current_templates = current_templates[
+            current_templates['next_block'] == True]
         else:
-          # Filter out templates without mentions of the number of
-          # intersections that should be passed.
-          current_templates = current_templates[
-            current_templates['intersections'] == True]
-    else:
-      # Filter out templates with mentions of intersection\block.
-      current_templates = current_templates[
-        (current_templates['intersections'] == False) &
-        (current_templates['blocks'] == False) &
-        (current_templates['next_intersection'] == False) &
-        (current_templates['next_block'] == False)]
+          if blocks > 1:
+            # Filter out templates without mentions of the number of blocks
+            # that should be passed.
+            current_templates = current_templates[
+              current_templates['blocks'] == True]
+          else:
+            # Filter out templates without mentions of the number of
+            # intersections that should be passed.
+            current_templates = current_templates[
+              current_templates['intersections'] == True]
+      else:
 
-    # From the candidates left, pick randomly one template.
-    choosen_template = current_templates.sample(1)['sentence'].iloc[0]
+        # Filter out templates with mentions of intersection\block.
+        current_templates = current_templates[
+          (current_templates['intersections'] == False) &
+          (current_templates['blocks'] == False) &
+          (current_templates['next_intersection'] == False) &
+          (current_templates['next_block'] == False)]
 
-    gen_instructions = templates.add_features_to_template(
-      choosen_template, entity)
-    rvs_entity = rvs_item.RVSData.from_geo_entities(
-      start=entity.start_point.geometry,
-      start_osmid=entity.start_point.osmid,
-      end_osmid=entity.end_point.osmid,
-      end=entity.end_point.geometry,
-      main_pivot=entity.main_pivot.geometry,
-      main_pivot_osmid=entity.main_pivot.osmid,
-      near_pivot=entity.near_pivot.geometry,
-      near_pivot_osmid=entity.near_pivot.osmid,
-      beyond_pivot=entity.beyond_pivot.geometry,
-      beyond_pivot_osmid=entity.beyond_pivot.osmid,
-      route=entity.route,
-      instructions=gen_instructions,
-      id=entity_idx,
-    )
-    gen_samples.append(rvs_entity)
+      # From the candidates left, pick randomly one template.
+      choosen_template = current_templates.sample(1)['sentence'].iloc[0]
+
+      gen_instructions = templates.add_features_to_template(
+        choosen_template, entity)
+      rvs_entity = entity.rvs_sample(
+        instructions=gen_instructions,
+        id=entity_idx,
+      )
+      gen_samples.append(rvs_entity)
 
   logging.info(f"RVS generated: {len(gen_samples)}")
 
   uniq_samples = {}
   for gen in gen_samples:
-    uniq_samples[gen.instructions] = gen
+    uniq_samples[gen['instructions']] = gen
+  logging.info(f"RVS generated: {len(gen_samples)}")
+
+  uniq_samples = {}
+  for gen in gen_samples:
+    uniq_samples[gen['instructions']] = gen
   logging.info(f"Unique RVS generated: {len(uniq_samples)}")
 
   logging.info(

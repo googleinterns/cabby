@@ -26,10 +26,10 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.getcwd() )))
 from cabby.geo import util
 from cabby.geo import walk
-from cabby.rvs import item
+from cabby.geo import geo_item
 
  
-def get_osm_map(entity: item.RVSPath) -> Sequence[folium.Map]:
+def get_osm_map(entity: geo_item.GeoEntity) -> Sequence[folium.Map]:
     '''Create the OSM maps.
     Arguments:
       gdf: the GeoDataFrame from which to create the OSM map.
@@ -38,7 +38,8 @@ def get_osm_map(entity: item.RVSPath) -> Sequence[folium.Map]:
     '''
 
     mid_point = util.midpoint(
-      entity.end_point.geometry, entity.start_point.geometry)
+      entity.geo_landmarks['end_point'].geometry,
+      entity.geo_landmarks['start_point'].geometry)
     zoom_location = util.list_yx_from_point(mid_point)
 
     # create a map
@@ -46,31 +47,16 @@ def get_osm_map(entity: item.RVSPath) -> Sequence[folium.Map]:
                          zoom_start=15, tiles='OpenStreetMap')
 
     # draw the points
-    start_point_geom = util.list_yx_from_point(entity.start_point.geometry)
-    end_point_geom = util.list_yx_from_point(entity.end_point.geometry)
-    main_pivot_geom = util.list_yx_from_point(
-      entity.main_pivot.geometry)
-    near_pivot_geom = util.list_yx_from_point(
-      entity.near_pivot.geometry)
-
-    folium.Marker(
-      start_point_geom, popup=f'start: {entity.start_point.main_tag}' , 
-      icon=folium.Icon(color='pink')).add_to(map_osm)
-    folium.Marker(end_point_geom, popup=f'end: {entity.end_point.main_tag}', 
-      icon=folium.Icon(color='black')).add_to(map_osm)
-    folium.Marker(main_pivot_geom, 
-      popup=f'main pivot: {entity.main_pivot.main_tag}', icon=folium.Icon(
-        color='orange', icon='info-sign')).add_to(map_osm)
-    folium.Marker(
-      near_pivot_geom, popup=f'near pivot: {entity.near_pivot.main_tag}', 
-       icon=folium.Icon(color='red', icon='info-sign')).add_to(map_osm)
-    
-    if not entity.beyond_pivot.geometry is None: 
-      beyond_pivot_geom = util.list_yx_from_point(entity.beyond_pivot.geometry)
+    colors = [
+      'pink', 'black', 'white', 'yellow', 'red', 'green', 'blue', 'orange']
+    for landmark_type, landmark in entity.geo_landmarks.items():
+      if landmark.geometry is None:
+        continue
+      landmark_geom = util.list_yx_from_point(landmark.geometry)
       folium.Marker(
-        beyond_pivot_geom, popup=f'beyond pivot: {entity.beyond_pivot.main_tag}', 
-        icon=folium.Icon(
-          color='green', icon='info-sign')).add_to(map_osm)
+        landmark_geom,
+        popup=f'{landmark_type}: {landmark.main_tag}',
+        icon=folium.Icon(color=colors.pop(0))).add_to(map_osm)
 
     lat_lng_list = []
     for coord in entity.route.coords:
@@ -81,6 +67,7 @@ def get_osm_map(entity: item.RVSPath) -> Sequence[folium.Map]:
                        radius = 5,
                       color='crimson',
                       ).add_to(map_osm)
+
 
     return map_osm
 
@@ -98,7 +85,12 @@ def get_maps_and_instructions(path: Text
     entities = walk.load_entities(path)
     for entity in entities:
       map_osm = get_osm_map(entity)
-      map_osms_instructions.append((map_osm, entity.instructions))
+      features_list = []
+      for feature_type, feature in entity.geo_features.items():
+        features_list.append(feature_type + ": " + str(feature))
+
+      instruction = '; '.join(features_list)
+      map_osms_instructions.append((map_osm, instruction))
 
     return map_osms_instructions
 
