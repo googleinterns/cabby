@@ -28,7 +28,7 @@ data file.
 '''
 
 import json
-from random import randint
+import random 
 import sys
 
 from absl import logging
@@ -95,39 +95,40 @@ def main(argv):
       else:
         current_templates = current_templates[current_templates[feature_type] == True]
 
-      if int(entity.geo_features['intersections']) > 0:
+    intersection = int(entity.geo_features['intersections'])
 
-        # Pick templates with either blocks or intersections.
-        is_block = randint(0, 1)
-        blocks = int(entity.geo_features['intersections']) - 1 \
-          if is_block else -1
-        if int(entity.geo_features['intersections']) == 1:
-          # Filter out templates without the next intersection mention.
-          current_templates = current_templates[
-            current_templates['next_intersection'] == True]
-        elif blocks == 1:
-          # Filter out templates without the next block mention.
-          current_templates = current_templates[
-            current_templates['next_block'] == True]
-        else:
-          if blocks > 1:
-            # Filter out templates without mentions of the number of blocks
-            # that should be passed.
-            current_templates = current_templates[
-              current_templates['blocks'] == True]
-          else:
-            # Filter out templates without mentions of the number of
-            # intersections that should be passed.
-            current_templates = current_templates[
-              current_templates['intersections'] == True]
-      else:
+    if intersection > 0:
 
-        # Filter out templates with mentions of intersection\block.
+      # Pick templates with either blocks or intersections.
+      is_block = random.randint(0, 1)
+      blocks = intersection - 1 if is_block else -1
+      if intersection == 1:
+        # Filter out templates without the next intersection mention.
         current_templates = current_templates[
-          (current_templates['intersections'] == False) &
-          (current_templates['blocks'] == False) &
-          (current_templates['next_intersection'] == False) &
-          (current_templates['next_block'] == False)]
+          current_templates['next_intersection'] == True]
+      elif blocks == 1:
+        # Filter out templates without the next block mention.
+        current_templates = current_templates[
+          current_templates['next_block'] == True]
+      else:
+        if blocks > 1:
+          # Filter out templates without mentions of the number of blocks
+          # that should be passed.
+          current_templates = current_templates[
+            current_templates['blocks'] == True]
+        else:
+          # Filter out templates without mentions of the number of
+          # intersections that should be passed.
+          current_templates = current_templates[
+            current_templates['intersections'] == True]
+    else:
+
+      # Filter out templates with mentions of intersection\block.
+      current_templates = current_templates[
+        (current_templates['intersections'] == False) &
+        (current_templates['blocks'] == False) &
+        (current_templates['next_intersection'] == False) &
+        (current_templates['next_block'] == False)]
 
       # From the candidates left, pick randomly one template.
       choosen_template = current_templates.sample(1)['sentence'].iloc[0]

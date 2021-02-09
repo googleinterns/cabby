@@ -13,6 +13,7 @@
 # limitations under the License.
 '''Define templates for RVS.'''
 
+import inflect
 from typing import Dict, Sequence, Text
 import nltk
 from nltk import CFG, Production
@@ -21,6 +22,8 @@ import pandas as pd
 
 from cabby.geo import geo_item
 
+
+inflect_engine = inflect.engine()
 
 
 # Terminals in the grammar.
@@ -220,9 +223,7 @@ def create_templates():
   templates_df['blocks'] = templates_df['sentence'].apply(
     lambda x: 'NUMBER_BLOCKS' in x)
   templates_df['intersections'] = templates_df['sentence'].apply(
-    lambda x: 'NUMBER_INTERSECTIONS' in x)
-  templates_df['beyond_pivot'] = templates_df['sentence'].apply(
-    lambda x: 'BEYOND_PIVOT' in x)
+    lambda x: 'INTERSECTIONS' in x)
   templates_df['next_block'] = templates_df['sentence'].apply(
     lambda x: 'next block' in x)
   templates_df['next_intersection'] = templates_df['sentence'].apply(
@@ -243,9 +244,14 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Text
   if entity.geo_landmarks['end_point'].main_tag[0].isupper():
     template = template.replace('The END_POINT', 'END_POINT')
     template = template.replace('the END_POINT', 'END_POINT')
-  if entity.geo_landmarks['near_pivot'].main_tag[0].isupper():
+  near_landmark = entity.geo_landmarks['near_pivot'].main_tag
+  if near_landmark[0].isupper():
     template = template.replace('A NEAR_PIVOT', 'NEAR_PIVOT')
     template = template.replace('a NEAR_PIVOT', 'NEAR_PIVOT')
+  if inflect_engine.singular_noun(near_landmark):
+    template = template.replace('a NEAR_PIVOT', 'NEAR_PIVOT')
+    template = template.replace('A NEAR_PIVOT', '?UP?NEAR_PIVOT')
+    template = template.replace('NEAR_PIVOT is', 'NEAR_PIVOT are')
   template = template.replace('NUMBER_BLOCKS', blocks)
 
 
@@ -253,6 +259,10 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Text
 
     if landmark.main_tag is None:
       continue
+
+    template = template.replace("?UP?"+lanndamrk_type.upper(),
+                                landmark.main_tag.capitalize())
+
     template = template.replace(lanndamrk_type.upper(),
                                 landmark.main_tag)
 
