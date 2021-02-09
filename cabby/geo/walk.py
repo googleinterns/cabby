@@ -204,7 +204,7 @@ class Walker:
           count_by_tag = new_pois_uniq.main_tag.value_counts()
           chosen_tag = random.choice(count_by_tag.keys())
           chosen_count = count_by_tag.loc[chosen_tag]
-          by_word = self.randomize_boolean() 
+          by_word = self.randomize_boolean()
           if by_word:
             chosen_count = inflect_engine.number_to_words(chosen_count)
           new_pois_uniq = new_pois_uniq[new_pois_uniq['main_tag']==chosen_tag][:1]
@@ -867,4 +867,3 @@ def load_entities(path: Text) -> Sequence[geo_item.GeoEntity]:
 
   logging.info(f"Loaded entities {len(geo_entities)} from <= {path}")
   return geo_entities
-
