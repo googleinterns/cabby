@@ -33,7 +33,6 @@ import random
 from shapely.geometry.point import Point
 from shapely.geometry import LineString
 import sys
-    
 
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
