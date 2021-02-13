@@ -13,10 +13,12 @@
 # limitations under the License.
 '''Basic classes and functions for RVSPath items.'''
 
+from absl import logging
 import geopandas as gpd
 import pandas as pd
 from typing import Any, Dict, Sequence
 import os
+from shapely.geometry.base import BaseGeometry
 from shapely.geometry import LineString, Polygon
 
 from cabby.geo import util
@@ -32,11 +34,12 @@ class GeoEntity:
 
   `geo_landmarks` the geo landmarks (start and end points + pivots).
   `geo_features` the spatial features of the path.
+  Dictionary values can be of either type str or int.
   `route` the path from the start to end point.
   """
 
-  geo_landmarks: Dict = attr.ib()
-  geo_features: Dict = attr.ib()
+  geo_landmarks: Dict[str, gpd.GeoDataFrame] = attr.ib()
+  geo_features: Dict[str, Any] = attr.ib()
   route: gpd.GeoDataFrame = attr.ib()
 
   @classmethod
@@ -46,51 +49,9 @@ class GeoEntity:
                  geo_features: Dict[str, Any]):
     geo_entity = GeoEntity({}, geo_features, route)
     for landmark_type, landmark in geo_landmarks.items():
-      geo_landmark = GeoLandmark.add_pivot(landmark, landmark_type)
+      geo_landmark = GeoLandmark.create_from_pivot(landmark, landmark_type)
       geo_entity.geo_landmarks[geo_landmark.landmark_type] = geo_landmark
     return geo_entity
-
-  @staticmethod
-  def save(entities: Sequence, path_to_save: str):
-    landmark_types = entities[0].geo_landmarks.keys()
-    geo_types_all = {}
-    empty_gdf = gpd.GeoDataFrame(
-      columns=['osmid', 'geometry', 'main_tag'])
-    for landmark_type in landmark_types:
-      geo_types_all[landmark_type] = empty_gdf
-    columns = ['geometry'] + list(entities[0].geo_features.keys())
-    geo_types_all['path_features'] = gpd.GeoDataFrame(columns=columns)
-    for entity in entities:
-      for pivot_type, pivot in entity.geo_landmarks.items():
-        geo_types_all[pivot_type] = geo_types_all[pivot_type].append(pivot.pivot_gdf)
-      dict_features = {k: [v] for k,v in entity.geo_features.items()}
-      pd_features = pd.DataFrame(dict_features)
-      geometry = Polygon(LineString(entity.route['geometry'].tolist()))
-      features_gdf = gpd.GeoDataFrame(pd_features, geometry=[geometry])
-      geo_types_all['path_features'] = geo_types_all['path_features'].append(features_gdf)
-
-    # Save pivots.
-    if os.path.exists(path_to_save):
-      mode = 'a'
-    else:
-      mode = 'w'
-    for geo_type, pivots_gdf in geo_types_all.items():
-      pivots_gdf.to_file(
-          path_to_save, layer=geo_type, mode=mode, driver=_Geo_DataFrame_Driver)
-
-
-  def rvs_sample(self, instructions: str, id: int):
-    """Reformat a GeoEntity into an RVS sample."""
-    geo_dict = {'instructions': instructions,
-                'id': id,
-                'version': VERSION}
-    landmark_list = []
-    for type_landmark, landmark in self.geo_landmarks.items():
-      landmark_list.append(landmark.rvs_format())
-    geo_dict['landmarks'] = landmark_list
-    geo_dict['features'] = self.geo_features
-    geo_dict['route_len'] = round(util.get_linestring_distance(self.route))
-    return geo_dict
 
 
 @attr.s
@@ -105,17 +66,16 @@ class GeoLandmark:
   """
   landmark_type: str = attr.ib()
   osmid: int = attr.ib()
-  geometry: Any = attr.ib()
+  geometry: BaseGeometry = attr.ib()
   main_tag: str = attr.ib()
   pivot_gdf: gpd.GeoDataFrame = attr.ib()
 
   def __attrs_post_init__(self):
     columns_remove = self.pivot_gdf.keys().difference(['osmid', 'geometry', 'main_tag'])
-    if len(columns_remove) == 0:
-      return
-    self.pivot_gdf.drop(columns_remove, inplace=True)
+    if len(columns_remove) > 0:
+      self.pivot_gdf.drop(columns_remove, inplace=True)
 
-  def rvs_format(self):
+  def to_rvs_format(self):
     """Reformat a GeoLandmark into an RVS style."""
 
     return [self.landmark_type,
@@ -123,7 +83,7 @@ class GeoLandmark:
       self.main_tag]
 
   @classmethod
-  def add_pivot(cls, pivot: gpd.GeoDataFrame, pivot_type: str):
+  def create_from_pivot(cls, pivot: gpd.GeoDataFrame, pivot_type: str):
     """Construct a GeoLandmark."""
     return GeoLandmark(
       pivot_type,
@@ -132,6 +92,72 @@ class GeoLandmark:
       pivot['main_tag'],
       pivot
     )
+
+
+@attr.s
+class RVSSample:
+  """Construct a RVS sample.
+
+  `geo_landmarks` the geo landmarks (start and end points + pivots).
+  `geo_features` the spatial features of the path.
+  Dictionary values can be of either type str or int.
+  `route` the path from the start to end point.
+  """
+
+  geo_landmarks: Dict[str, gpd.GeoDataFrame] = attr.ib()
+  geo_features: Dict[str, Any] = attr.ib()
+  route_len: int = attr.ib()
+  instructions: str = attr.ib()
+  id: int = attr.ib()
+  version: float = attr.ib()
+
+  @classmethod
+  def to_rvs_sample(self, instructions: str, id: int, geo_entity: GeoEntity):
+    """Construct a RVS sample from GeoEntity."""
+    landmark_list = {}
+    for type_landmark, landmark in geo_entity.geo_landmarks.items():
+      landmark_list[type_landmark]= landmark.to_rvs_format()
+    route_length = round(util.get_linestring_distance(geo_entity.route))
+    return RVSSample(
+              landmark_list,
+              geo_entity.geo_features,
+              route_length,
+              instructions,
+              id,
+              VERSION)
+
+
+
+def save(entities: Sequence[GeoEntity], path_to_save: str):
+  path_to_save = os.path.abspath(path_to_save)
+
+  landmark_types = entities[0].geo_landmarks.keys()
+  geo_types_all = {}
+  empty_gdf = gpd.GeoDataFrame(
+    columns=['osmid', 'geometry', 'main_tag'])
+  for landmark_type in landmark_types:
+    geo_types_all[landmark_type] = empty_gdf
+  columns = ['geometry'] + list(entities[0].geo_features.keys())
+  geo_types_all['path_features'] = gpd.GeoDataFrame(columns=columns)
+  for entity in entities:
+    for pivot_type, pivot in entity.geo_landmarks.items():
+      geo_types_all[pivot_type] = geo_types_all[pivot_type].append(pivot.pivot_gdf)
+    dict_features = {k: [v] for k,v in entity.geo_features.items()}
+    pd_features = pd.DataFrame(dict_features)
+    geometry = Polygon(LineString(entity.route['geometry'].tolist()))
+    features_gdf = gpd.GeoDataFrame(pd_features, geometry=[geometry])
+    geo_types_all['path_features'] = geo_types_all['path_features'].append(features_gdf)
+
+  # Save pivots.
+  if os.path.exists(path_to_save):
+    mode = 'a'
+  else:
+    mode = 'w'
+  for geo_type, pivots_gdf in geo_types_all.items():
+    pivots_gdf.to_file(
+        path_to_save, layer=geo_type, mode=mode, driver=_Geo_DataFrame_Driver)
+
+  logging.info(f"Saved {len(entities)} entities to => {path_to_save}")
 
 
 
