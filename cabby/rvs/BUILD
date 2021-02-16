@@ -7,13 +7,6 @@ py_library(
     srcs = ['observe.py'],
 )
 
-py_library(
-    name = 'item',
-    srcs = ['item.py'],
-)
-
-
-
 py_test(
     name = "observe_test",
     srcs = ["observe_test.py"],
@@ -50,7 +43,9 @@ py_test(
     python_version = "PY3",
     deps = [
         ":templates",
-        ':item',
+        '//cabby/geo:geo_item',
+        '//cabby/geo:util',
+
     ],
 )
 
@@ -60,7 +55,7 @@ py_binary(
     srcs = ['generate_rvs.py'],
     deps = [
         ":templates",
-        ":rvs_item",
+        '//cabby/geo:geo_item',
         "//cabby/geo:walk",
 
 
@@ -70,9 +65,9 @@ py_binary(
 py_library(
     name = 'templates',
     srcs = ['templates.py'],
-)
+        deps = [
+        '//cabby/geo:geo_item',
+         '//cabby/geo:util',
 
-py_library(
-    name = 'rvs_item',
-    srcs = ['rvs_item.py'],
+    ],
 )

@@ -14,15 +14,13 @@
 
 '''Tests for speak.py'''
 
-
-from typing import Dict, Text
 import unittest
 
 import geopandas as gpd
 from shapely.geometry.point import Point
 
 from cabby.rvs import templates
-from cabby.rvs import item
+from cabby.geo import geo_item
 
 class ObserveTest(unittest.TestCase):
 
@@ -31,33 +29,32 @@ class ObserveTest(unittest.TestCase):
     all_templates = templates.create_templates()
     picked_template = all_templates.iloc[0]['sentence']
 
-    # Create RVSPath entity.
-    start = gpd.GeoSeries({'osmid': 1, 'geometry': Point(), 'main_tag': 'START'})
-    end = gpd.GeoSeries({'osmid': 2, 'geometry': Point(), 'main_tag': 'Target Coffee Shop'})
-    main = gpd.GeoSeries({'osmid': 3, 'geometry': Point(), 'main_tag': 'Food On The Way'})
-    near = gpd.GeoSeries({'osmid': 4, 'geometry': Point(), 'main_tag': 'Far is Near Travel Agency'})
-    beyond = gpd.GeoSeries({'osmid': 5, 'geometry': Point(), 'main_tag': 'Beyond The Rainbow Fairy Shop'})
-    route = gpd.GeoSeries({'geometry': Point(),
-                           'intersections': 2,
-                           'cardinal_direction': 'North-North',
-                           'spatial_rel_goal': 'right',
-                           'spatial_rel_pivot': 'left'
-                           })
+    # Create geo entity .
+    geo_landmarks = {}
+    geo_features = {}
+    geo_landmarks['start_point'] = gpd.GeoSeries(
+      {'osmid': 1, 'geometry': Point(), 'main_tag': 'START'})
+    geo_landmarks['end_point'] = gpd.GeoSeries(
+      {'osmid': 2, 'geometry': Point(), 'main_tag': 'Target Coffee Shop'})
+    geo_landmarks['main_pivot'] = gpd.GeoSeries(
+      {'osmid': 3, 'geometry': Point(), 'main_tag': 'Food On The Way'})
+    geo_landmarks['near_pivot'] = gpd.GeoSeries(
+      {'osmid': 4, 'geometry': Point(), 'main_tag': 'Far is Near Travel Agency'})
+    geo_landmarks['beyond_pivot'] = gpd.GeoSeries(
+      {'osmid': 5, 'geometry': Point(), 'main_tag': 'Beyond The Rainbow Fairy Shop'})
+    route = gpd.GeoSeries({'geometry': Point()})
+    geo_features['intersections'] = 2
+    geo_features['cardinal_direction'] = 'North-North'
+    geo_features['spatial_rel_goal'] = 'right'
+    geo_features['spatial_rel_pivot'] = 'left'
 
-    entity = item.RVSPath.from_file(
-      start,
-      end,
-      route,
-      main,
-      near,
-      beyond,
-      route.cardinal_direction,
-      route.spatial_rel_goal,
-      route.spatial_rel_pivot,
-      route.intersections)
+    entity = geo_item.GeoEntity.add_entity(
+      geo_landmarks=geo_landmarks,
+      geo_features=geo_features,
+      route=route
+    )
 
-    instruction = templates.add_features_to_template(picked_template,entity)
-
+    instruction = templates.add_features_to_template(picked_template, entity)
     expected = "Meet at Target Coffee Shop. Go North-North from Food On The Way for 2 intersections. It will be near Far is Near Travel Agency. If you reach Beyond The Rainbow Fairy Shop, you have gone too far."
     self.assertEqual(instruction, expected)
 
