@@ -48,12 +48,16 @@ class WalkTest(unittest.TestCase):
     geo_entity = self.walker.get_sample()
     if geo_entity is None:
       return
-      
+
     self.assertIsNotNone(geo_entity)
     self.assertEqual(geo_entity.geo_landmarks['start_point'].osmid, '#2975908873')
     self.assertEqual(geo_entity.geo_landmarks['end_point'].osmid, '#739653657')
     self.assertEqual(geo_entity.geo_landmarks['main_pivot'].osmid, '#2975908873')
+<<<<<<< HEAD
     self.assertEqual(geo_entity.geo_landmarks['near_pivot'].osmid, '#2984602438')
+=======
+    self.assertEqual(geo_entity.geo_landmarks['near_pivot'].osmid, '#2984603460')
+>>>>>>> master
     self.assertEqual(geo_entity.geo_features['intersections'], 2)
 
 

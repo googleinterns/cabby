@@ -50,13 +50,12 @@ def get_osm_map(entity: geo_item.GeoEntity) -> Sequence[folium.Map]:
     colors = [
       'pink', 'black', 'white', 'yellow', 'red', 'green', 'blue', 'orange']
     for landmark_type, landmark in entity.geo_landmarks.items():
-      if landmark.geometry is None:
-        continue
-      landmark_geom = util.list_yx_from_point(landmark.geometry)
-      folium.Marker(
-        landmark_geom,
-        popup=f'{landmark_type}: {landmark.main_tag}',
-        icon=folium.Icon(color=colors.pop(0))).add_to(map_osm)
+      if landmark.geometry is not None:
+        landmark_geom = util.list_yx_from_point(landmark.geometry)
+        folium.Marker(
+          landmark_geom,
+          popup=f'{landmark_type}: {landmark.main_tag}',
+          icon=folium.Icon(color=colors.pop(0))).add_to(map_osm)
 
     lat_lng_list = []
     for coord in entity.route.coords:

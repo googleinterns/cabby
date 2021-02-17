@@ -137,9 +137,11 @@ def main(argv):
 
       gen_instructions = templates.add_features_to_template(
         choosen_template, entity)
-      rvs_entity = entity.rvs_sample(
+
+      rvs_entity = geo_item.RVSSample.to_rvs_sample(
         instructions=gen_instructions,
         id=entity_idx,
+        geo_entity=entity
       )
       gen_samples.append(rvs_entity)
 
@@ -147,12 +149,7 @@ def main(argv):
 
   uniq_samples = {}
   for gen in gen_samples:
-    uniq_samples[gen['instructions']] = gen
-  logging.info(f"RVS generated: {len(gen_samples)}")
-
-  uniq_samples = {}
-  for gen in gen_samples:
-    uniq_samples[gen['instructions']] = gen
+    uniq_samples[gen.instructions] = gen
   logging.info(f"Unique RVS generated: {len(uniq_samples)}")
 
   logging.info(

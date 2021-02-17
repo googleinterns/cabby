@@ -16,7 +16,7 @@
 along the path and near the goal.'''
 
 
-from typing import Tuple, Sequence, Optional, Dict, Text, Any
+from typing import Tuple, Sequence, Optional, Dict, Any
 
 from absl import logging
 import geopandas as gpd
@@ -322,10 +322,17 @@ class Walker:
     # Filter non-specific tags.
     return self.select_generic_poi(small_poi)
 
+<<<<<<< HEAD
   def get_landmark_if_tag_exists(self,
                                 gdf: GeoDataFrame,
                                 tag: Text, main_tag: Text,
                                 alt_main_tag: Text
+=======
+  def get_landmark_if_tag_exists(self, 
+                                gdf: GeoDataFrame, 
+                                tag: str, main_tag: str,
+                                alt_main_tag: str
+>>>>>>> master
   ) -> GeoSeries:
     '''Check if tag exists, set main tag name and choose pivot.
     Arguments:
@@ -692,7 +699,7 @@ class Walker:
 
 
   def get_cardinal_direction(self, start_point: Point, end_point: Point
-  ) -> Text:
+  ) -> str:
     '''Calculate the cardinal direction between start and and points.
     Arguments:
       start_point: The starting point.
@@ -759,8 +766,12 @@ class Walker:
 
     return number_intersection
 
+<<<<<<< HEAD
   def get_sample(self,
   ) -> Optional[geo_item.GeoEntity]:
+=======
+  def get_sample(self) -> Optional[geo_item.GeoEntity]:
+>>>>>>> master
     '''Sample start and end point, a pivot landmark and route.
     Returns:
       A start and end point, a pivot landmark and route.
@@ -850,7 +861,7 @@ class Walker:
 
 
   def generate_and_save_rvs_routes(self,
-                                  path_rvs_path: Text, 
+                                  path_rvs_path: str,
                                   n_samples: int,
                                   n_cpu: int = multiprocessing.cpu_count()-1
                                   ):
@@ -884,28 +895,13 @@ class Walker:
       new_entities += [entity for idx_entity, entity in return_dict.items()]
 
       if len(new_entities)>SAVE_ENTITIES_EVERY:
-        self.save_entities(new_entities, path_rvs_path)
+        geo_item.save(new_entities, path_rvs_path)
         new_entities = []
     if len(new_entities)>0:
-      self.save_entities(new_entities, path_rvs_path)
+      geo_item.save(new_entities, path_rvs_path)
 
-    
-  def save_entities(
-    self, entities: Sequence[geo_item.GeoEntity], path_rvs_path: Text
-  ):
-    '''Save entities to path. If the path already exists append.
-    Arguments:
-      entities: RVSPath entities to add to path
-      path_rvs_path: the path to add the entities too.
-    '''
 
-    path = os.path.abspath(path_rvs_path)
-
-    geo_item.GeoEntity.save(entities, path)
-
-    logging.info(f"Saved {len(entities)} entities to => {path}")
-
-def load_entities(path: Text) -> Sequence[geo_item.GeoEntity]:
+def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
   if not os.path.exists(path):
     return []
   geo_types_all = {}
@@ -930,5 +926,4 @@ def load_entities(path: Text) -> Sequence[geo_item.GeoEntity]:
 
   logging.info(f"Loaded entities {len(geo_entities)} from <= {path}")
   return geo_entities
-
 
