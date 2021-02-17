@@ -53,7 +53,14 @@ PIVOT_ALONG_ROUTE_MAX_DIST = 0.0001
 ADD_POI_DISTANCE = 5000
 MAX_NUM_BEYOND_TRY = 50
 
-LANDMARK_TYPES = ["end_point", "start_point", "main_pivot", "near_pivot", "beyond_pivot"]
+LANDMARK_TYPES = [
+  "end_point", "start_point", "main_pivot", "near_pivot", "beyond_pivot"]
+
+FEATURES_TYPES = ["cardinal_direction",
+                  "spatial_rel_goal",
+                  "spatial_rel_pivot",
+                  "intersections",
+                  "goal_position"]
 
 inflect_engine = inflect.engine()
 
@@ -557,6 +564,60 @@ class Walker:
     beyond_pivot = self.pick_prominent_pivot(df_pivots, end_point)
     return beyond_pivot
 
+
+  def get_position_goal(self,
+                        end_point: GeoSeries,
+                        route: GeoDataFrame
+  ) -> Optional[str]:
+    '''Return the position of the goal in the last block:
+    middle of the block\ near the closest intersection\ near the farther intersection
+    Arguments:
+      end_point: The goal location.
+      route: The route along which a landmark will be chosen.
+    Returns:
+      The position of the goal in last block. '''
+
+    street = self.map.edges[self.map.edges['u'] == end_point['osmid']].iloc[0]['osmid']
+    nodes_u = self.map.edges[self.map.edges['osmid']==street]['u']
+    condition_intersection = self.map.edges['osmid'] != street
+    condition_not_poi = self.map.edges['name'] != 'poi'
+    intersections_nodes_osmid = self.map.edges[
+      condition_not_poi & condition_intersection & self.map.edges['u'].isin(nodes_u)]['u']
+    intersections_nodes = self.map.nodes[self.map.nodes['osmid'].isin(intersections_nodes_osmid)]
+    distances = intersections_nodes.apply(
+      lambda x: util.get_distance_between_geometries(x.geometry, end_point.centroid), axis=1)
+    intersections_nodes.insert(0, "distances", distances, True)
+
+    bearing = intersections_nodes.apply(
+      lambda x: util.get_bearing(x.geometry.centroid, end_point.centroid), axis=1)
+    intersections_nodes.insert(0, "bearing", bearing, True)
+    min_distance_idx = intersections_nodes['distances'].idxmin()
+    bearing = intersections_nodes['bearing'].loc[min_distance_idx]
+    distance_closest = intersections_nodes['distances'].loc[min_distance_idx]
+
+    # Get second bearing in opposite direction.
+    opposite_bearing = (bearing+180)%360
+    intersection_opposite = intersections_nodes[(intersections_nodes['bearing']-opposite_bearing)%360<30]
+    if intersection_opposite.shape[0]==0:
+      return None
+    intersection_opposite_idx = intersection_opposite['distances'].idxmin()
+    intersection_opposite_distance = intersection_opposite.loc[intersection_opposite_idx]['distances']
+
+    # Check the proportions.
+    total_distance = intersection_opposite_distance + distance_closest
+    closest_propotion = distance_closest/total_distance
+    if closest_propotion>0.4:
+      return "in the middle of the block"
+
+    if closest_propotion>0.3:
+      return None
+    # Check to which intersection it is closer.
+    closest_inter_node_osmid = intersections_nodes.loc[min_distance_idx]['osmid']
+    if closest_inter_node_osmid in route['osmid'].tolist():
+      return "near the last intersection passed"
+
+    return "near the next intersection"
+
   def get_pivots(self,
                 route: GeoDataFrame,
                 end_point: Dict,
@@ -663,7 +724,7 @@ class Walker:
                                     main_pivot: GeoSeries,
                                     route: GeoDataFrame,
                                     end_point: Point
-  ) -> int:
+  ) -> Optional[int]:
     '''Return the number of intersections between the main_pivot and goal.
     Arguments:
       main_pivot: The pivot along the route.
@@ -671,7 +732,7 @@ class Walker:
       end_point: The goal location.
     Returns:
       The number of intersections between the main_pivot and goal.
-      If the main_pivot and goal are on different streets return -1.
+      If the main_pivot and goal are on different streets return None.
     '''
 
     pivot_goal_route = self.compute_route_from_nodes(
@@ -688,7 +749,7 @@ class Walker:
     goal_streets = edges_in_pivot_goal_route.iloc[-1]
     common_streets = pivot_streets & goal_streets
     if not common_streets:
-      return -1
+      return None
 
     number_intersection = edges_in_pivot_goal_route.apply(
       lambda x: len(x - common_streets) > 0).sum()
@@ -750,6 +811,9 @@ class Walker:
     # Get number of intersections between main pivot and goal location.
     geo_features['intersections'] = self.get_number_intersections_past(
       geo_landmarks['main_pivot'], route, geo_landmarks['end_point'])
+
+    geo_features['goal_position'] = self.get_position_goal(
+      geo_landmarks['end_point'], route)
 
     rvs_path_entity = geo_item.GeoEntity.add_entity(
       route=route,
@@ -866,3 +930,5 @@ def load_entities(path: Text) -> Sequence[geo_item.GeoEntity]:
 
   logging.info(f"Loaded entities {len(geo_entities)} from <= {path}")
   return geo_entities
+
+

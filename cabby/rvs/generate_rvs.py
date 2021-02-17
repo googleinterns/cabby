@@ -73,11 +73,12 @@ def main(argv):
   for entity_idx, entity in enumerate(entities):
     current_templates = gen_templates.copy()  # Candidate templates.
 
+
     # Use only landmarks that have a main tag.
     for landmark_type, landmark in entity.geo_landmarks.items():
-      if landmark_type not in current_templates:
+      if landmark_type not in current_templates or landmark_type == "start_point":
         continue
-      if landmark.main_tag is '':
+      if not landmark.main_tag:
         current_templates = current_templates[
           current_templates[landmark_type] == False]
       else:
@@ -85,17 +86,18 @@ def main(argv):
 
     # Use features that exist.
     for feature_type, feature in entity.geo_features.items():
-      if feature_type not in current_templates:
+
+      if feature_type not in current_templates or \
+        feature_type=='intersections':
         continue
-      if int(feature) == -1:
-        # print(current_templates[current_templates['intersections'] == False][['intersections', 'blocks']])
-        # print (feature_type)
+      if not feature:
         current_templates = current_templates[
           current_templates[feature_type] == False]
       else:
         current_templates = current_templates[current_templates[feature_type] == True]
 
-    intersection = int(entity.geo_features['intersections'])
+    intersection = entity.geo_features['intersections']
+    intersection = -1 if intersection is None else int(intersection)
 
     if intersection > 0:
 
@@ -105,11 +107,11 @@ def main(argv):
       if intersection == 1:
         # Filter out templates without the next intersection mention.
         current_templates = current_templates[
-          current_templates['next_intersection'] == True]
+          current_templates['next intersection'] == True]
       elif blocks == 1:
         # Filter out templates without the next block mention.
         current_templates = current_templates[
-          current_templates['next_block'] == True]
+          current_templates['next block'] == True]
       else:
         if blocks > 1:
           # Filter out templates without mentions of the number of blocks
@@ -122,15 +124,15 @@ def main(argv):
           current_templates = current_templates[
             current_templates['intersections'] == True]
     else:
-
       # Filter out templates with mentions of intersection\block.
       current_templates = current_templates[
         (current_templates['intersections'] == False) &
         (current_templates['blocks'] == False) &
-        (current_templates['next_intersection'] == False) &
-        (current_templates['next_block'] == False)]
+        (current_templates['next intersection'] == False) &
+        (current_templates['next block'] == False)]
 
       # From the candidates left, pick randomly one template.
+
       choosen_template = current_templates.sample(1)['sentence'].iloc[0]
 
       gen_instructions = templates.add_features_to_template(

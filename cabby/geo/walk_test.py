@@ -36,7 +36,7 @@ class WalkTest(unittest.TestCase):
                    nx_graph, self.map.nodes)
 
     # Check the size of the route.
-    self.assertEqual(route['geometry'].shape[0], 25)
+    self.assertEqual(route['geometry'].shape[0], 22)
 
     # Check that the correct points are in the route.
     first_point = util.tuple_from_point(route.iloc[0]['geometry'])
@@ -54,7 +54,7 @@ class WalkTest(unittest.TestCase):
     self.assertEqual(geo_entity.geo_landmarks['end_point'].osmid, '#739653657')
     self.assertEqual(geo_entity.geo_landmarks['main_pivot'].osmid, '#2975908873')
     self.assertEqual(geo_entity.geo_landmarks['near_pivot'].osmid, '#2984602438')
-    self.assertEqual(geo_entity.geo_features['intersections'], 1)
+    self.assertEqual(geo_entity.geo_features['intersections'], 2)
 
 
 if __name__ == "__main__":
