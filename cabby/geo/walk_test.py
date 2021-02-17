@@ -48,7 +48,7 @@ class WalkTest(unittest.TestCase):
     geo_entity = self.walker.get_sample()
     if geo_entity is None:
       return
-      
+
     self.assertIsNotNone(geo_entity)
     self.assertEqual(geo_entity.geo_landmarks['start_point'].osmid, '#2975908873')
     self.assertEqual(geo_entity.geo_landmarks['end_point'].osmid, '#739653657')
