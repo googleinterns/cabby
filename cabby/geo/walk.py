@@ -322,17 +322,10 @@ class Walker:
     # Filter non-specific tags.
     return self.select_generic_poi(small_poi)
 
-<<<<<<< HEAD
-  def get_landmark_if_tag_exists(self,
-                                gdf: GeoDataFrame,
-                                tag: Text, main_tag: Text,
-                                alt_main_tag: Text
-=======
   def get_landmark_if_tag_exists(self, 
                                 gdf: GeoDataFrame, 
                                 tag: str, main_tag: str,
                                 alt_main_tag: str
->>>>>>> master
   ) -> GeoSeries:
     '''Check if tag exists, set main tag name and choose pivot.
     Arguments:
@@ -766,12 +759,8 @@ class Walker:
 
     return number_intersection
 
-<<<<<<< HEAD
-  def get_sample(self,
-  ) -> Optional[geo_item.GeoEntity]:
-=======
   def get_sample(self) -> Optional[geo_item.GeoEntity]:
->>>>>>> master
+
     '''Sample start and end point, a pivot landmark and route.
     Returns:
       A start and end point, a pivot landmark and route.
