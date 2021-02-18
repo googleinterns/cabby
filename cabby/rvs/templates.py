@@ -31,8 +31,8 @@ from cabby.geo import geo_item
 from cabby.geo import walk
 
 inflect_engine = inflect.engine()
-SPATIAL_FEATURES = ["next block", "next intersection", "blocks"] \
-                   + walk.FEATURES_TYPES + walk.LANDMARK_TYPES
+STREET_FEATURES = ["next block", "next intersection", "blocks"] \
+                  + walk.FEATURES_TYPES + walk.LANDMARK_TYPES
 
 # Terminals in the grammar.
 MAIN_NO_V = [
@@ -246,7 +246,7 @@ def create_templates():
   templates_df.to_csv('templates.csv', index=False, header = False)
 
   # Flag features.
-  for column in SPATIAL_FEATURES:
+  for column in STREET_FEATURES:
     templates_df[column] = templates_df['sentence'].apply(
     lambda x: column.upper() in x)
 
@@ -277,14 +277,14 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Text
   template = template.replace('BLOCKS', blocks)
 
 
-  for lanndamrk_type, landmark in entity.geo_landmarks.items():
+  for landmark_type, landmark in entity.geo_landmarks.items():
 
     if landmark.main_tag:
 
-      template = template.replace("?UP?"+lanndamrk_type.upper(),
+      template = template.replace("?UP?"+landmark_type.upper(),
                                   landmark.main_tag.capitalize())
 
-      template = template.replace(lanndamrk_type.upper(),
+      template = template.replace(landmark_type.upper(),
                                   landmark.main_tag)
 
   for feature_type, feature in entity.geo_features.items():

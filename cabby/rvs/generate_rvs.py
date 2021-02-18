@@ -100,25 +100,25 @@ def main(argv):
     intersection = -1 if intersection is None else int(intersection)
 
     if intersection > 0:
-
-      # Pick templates with either blocks or intersections.
-      is_block = random.randint(0, 1)
-      blocks = intersection - 1 if is_block else -1
       if intersection == 1:
         # Filter out templates without the next intersection mention.
         current_templates = current_templates[
           current_templates['next intersection'] == True]
-      elif blocks == 1:
-        # Filter out templates without the next block mention.
-        current_templates = current_templates[
-          current_templates['next block'] == True]
       else:
-        if blocks > 1:
-          # Filter out templates without mentions of the number of blocks
-          # that should be passed.
-          current_templates = current_templates[
-            current_templates['blocks'] == True]
-        else:
+        # Pick templates with either blocks or intersections. X blocks = X intersection - 1.
+        # Randomly pick if the feature is a block or an intersection.
+        # If 1 - treat it as a block feature, else as an intersection.
+        if random.randint(0, 1):
+          if intersection == 2:  # one block
+            # Filter out templates without the next block mention.
+            current_templates = current_templates[
+              current_templates['next block'] == True]
+          else: # Multiple blocks.
+            # Filter out templates without mentions of the number of blocks
+            # that should be passed.
+            current_templates = current_templates[
+              current_templates['blocks'] == True]
+        else: # Multiple intersections.
           # Filter out templates without mentions of the number of
           # intersections that should be passed.
           current_templates = current_templates[
@@ -137,7 +137,6 @@ def main(argv):
 
       gen_instructions = templates.add_features_to_template(
         choosen_template, entity)
-
       rvs_entity = geo_item.RVSSample.to_rvs_sample(
         instructions=gen_instructions,
         id=entity_idx,
@@ -145,6 +144,11 @@ def main(argv):
       )
       gen_samples.append(rvs_entity)
 
+  logging.info(f"RVS generated: {len(gen_samples)}")
+
+  uniq_samples = {}
+  for gen in gen_samples:
+    uniq_samples[gen.instructions] = gen
   logging.info(f"RVS generated: {len(gen_samples)}")
 
   uniq_samples = {}
