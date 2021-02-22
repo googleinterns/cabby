@@ -76,9 +76,6 @@ class Map:
 
       self.poi['osmid'] = self.poi['osmid'].astype(str)
 
-      
-      self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
-
     else:
       logging.info("Loading map from directory.")
       self.load_map(load_directory)
@@ -87,6 +84,8 @@ class Map:
     logging.info("Calculate S2Cell covering.")
     self.calc_s2cells(level)
 
+    self.nodes, self.edges = ox.graph_to_gdfs(self.nx_graph)
+
     self.process_param()
 
   def process_param(self):
@@ -94,7 +93,7 @@ class Map:
 
     # Drop columns with list type.
     self.edges.drop(self.edges.columns.difference(
-      ['osmid', 'true_length', 'length', 'geometry', 'u', 'v', 'key']), 
+      ['osmid', 'true_length', 'length', 'geometry', 'u', 'v', 'key', 'name']),
       1, inplace=True)
     self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
 
@@ -499,19 +498,6 @@ class Map:
     else:
       logging.info(f"path {path} already exist.")
 
-    # Write nodes.
-    path = self.get_valid_path(dir_name, '_nodes', '.geojson')
-    if not os.path.exists(path):
-      self.nodes.to_file(path, driver='GeoJSON')
-    else:
-      logging.info(f"path {path} already exist.")
-
-    # Write edges.
-    path = self.get_valid_path(dir_name, '_edges', '.geojson')
-    if not os.path.exists(path):
-      self.edges.to_file(path, driver='GeoJSON')
-    else:
-      logging.info(f"path {path} already exist.")
 
   def load_map(self, dir_name: Text):
     '''Load POI from disk.'''
@@ -530,19 +516,6 @@ class Map:
       path), f"path {path} doesn't exists"
     self.nx_graph = nx.read_gpickle(path)
 
-    # Load nodes.
-    path = self.get_valid_path(dir_name, '_nodes', '.geojson')
-    assert os.path.exists(
-      path), f"path {path} doesn't exist."
-    self.nodes = gpd.read_file(path, driver='GeoJSON')
-
-    # Load edges.
-    path = self.get_valid_path(dir_name, '_edges', '.geojson')
-    assert os.path.exists(
-      path), f"path {path} doesn't exist."
-    self.edges = gpd.read_file(path, driver='GeoJSON')
-    self.edges['osmid_list'] = self.edges['osmid'].apply(
-      lambda x: convert_string_to_list(x))
 
 def load_poi(path: Text):
     '''Load POI from disk.'''

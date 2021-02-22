@@ -21,6 +21,7 @@ from typing import Tuple, Sequence, Optional, Dict, Any
 from absl import logging
 import geopandas as gpd
 from geopandas import GeoDataFrame, GeoSeries
+import inflect
 import multiprocessing
 from multiprocessing import Semaphore
 import numpy as np
@@ -32,7 +33,6 @@ import random
 from shapely.geometry.point import Point
 from shapely.geometry import LineString
 import sys
-    
 
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
@@ -53,8 +53,16 @@ PIVOT_ALONG_ROUTE_MAX_DIST = 0.0001
 ADD_POI_DISTANCE = 5000
 MAX_NUM_BEYOND_TRY = 50
 
+LANDMARK_TYPES = [
+  "end_point", "start_point", "main_pivot", "near_pivot", "beyond_pivot"]
 
-LANDMARK_TYPES = ["end_point", "start_point", "main_pivot", "near_pivot", "beyond_pivot"]
+FEATURES_TYPES = ["cardinal_direction",
+                  "spatial_rel_goal",
+                  "spatial_rel_pivot",
+                  "intersections",
+                  "goal_position"]
+
+inflect_engine = inflect.engine()
 
 
 class Walker:
@@ -63,11 +71,9 @@ class Walker:
     self.rand_sample = rand_sample
     self.map = map
 
-
-
   def compute_route_from_nodes(self,
-                               origin_id: str, 
-                               goal_id: str, 
+                               origin_id: str,
+                               goal_id: str,
                                graph: nx.MultiDiGraph,
                                nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''Returns the shortest path between a starting and end point.
@@ -102,8 +108,8 @@ class Walker:
     return route_nodes
 
   def compute_route_from_points(self,
-                                start_point: Point, 
-                                end_point: Point, 
+                                start_point: Point,
+                                end_point: Point,
                                 graph: nx.MultiDiGraph,
                                 nodes: GeoDataFrame) -> Optional[GeoDataFrame]:
     '''Returns the shortest path between a starting and end point.
@@ -141,7 +147,7 @@ class Walker:
     return route_nodes
 
   def get_generic_tag(self, poi: pd.Series) -> Optional[str]:
-    '''Selects a non-specific tag (e.g., museum instead of "Austin Museum of 
+    '''Selects a non-specific tag (e.g., museum instead of "Austin Museum of
     Popular Culture") instead of a POI.
     Arguments:
       poi: The POI to select a non-specific tag for.
@@ -162,12 +168,12 @@ class Walker:
       if addition == 'after':
         new_tag = tag_value_clean + " " + tag
       elif addition == "before":
-        new_tag = tag + " " + tag_value_clean 
+        new_tag = tag + " " + tag_value_clean
       elif addition == False:
         new_tag = tag_value_clean
       elif tag_value not in addition:
         continue
-      else: 
+      else:
         new_tag = tag_value_clean
       if new_tag in osm.CORRECTIONS:
         new_tag = osm.CORRECTIONS[new_tag]
@@ -175,7 +181,7 @@ class Walker:
         continue
       return new_tag
     return None
-  
+
   def select_generic_unique_pois(self, pois: pd.DataFrame, is_unique: bool = False):
     '''Returns a non-specific POIs with main tag being the non-specific tag.
     Arguments:
@@ -184,16 +190,36 @@ class Walker:
     Returns:
       A number of non-specific POIs which are unique.
     '''
-    # Assign main tag. 
+    # Assign main tag.
     main_tags = pois.apply(self.get_generic_tag, axis=1)
     new_pois = pois.assign(main_tag = main_tags)
     new_pois.dropna(subset=['main_tag'], inplace=True)
 
     # Get Unique main tags.
     if is_unique:
-      uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==False
-      new_pois = new_pois[uniqueness]
-
+      # Randomly select whether the near by pivot would be
+      # a single pivot (e.g., `a toy shop` or
+      # a group of unique landmark (e.g, `3 toy shops`)
+      is_group = self.randomize_boolean()
+      if is_group:
+        uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==True
+        new_pois_uniq = new_pois[uniqueness]
+        if new_pois_uniq.shape[0]==0:
+          is_group = False
+        else:
+          count_by_tag = new_pois_uniq.main_tag.value_counts()
+          chosen_tag = random.choice(count_by_tag.keys())
+          chosen_count = count_by_tag.loc[chosen_tag]
+          by_word = self.randomize_boolean()
+          if by_word:
+            chosen_count = inflect_engine.number_to_words(chosen_count)
+          new_pois_uniq = new_pois_uniq[new_pois_uniq['main_tag']==chosen_tag][:1]
+          new_pois_uniq['main_tag'] = str(chosen_count) + \
+                                 " " + inflect_engine.plural(chosen_tag)
+      if not is_group:
+        uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==False
+        new_pois_uniq = new_pois[uniqueness]
+      return new_pois_uniq
     return new_pois
 
   def select_generic_poi(self, pois: pd.DataFrame):
@@ -203,13 +229,13 @@ class Walker:
     Returns:
       A single sample of a POI with main tag being the non-specific tag.
     '''
-    
+
     pois_generic = self.select_generic_unique_pois(pois)
-    
+
     if pois_generic.shape[0]==0:
       return None
     # Sample POI.
-    poi =  self.sample_point(pois_generic)
+    poi = self.sample_point(pois_generic)
     poi['geometry'] = poi.centroid
     return poi
 
@@ -219,16 +245,22 @@ class Walker:
     Returns:
       A single POI.
     '''
-    
+
     # Filter large POI.
     small_poi = self.map.poi[self.map.poi['s2cellids'].str.len() <= SMALL_POI]
 
     if small_poi.shape[0]==0:
       return None
-      
+
     # Filter non-specific tags.
     return self.select_generic_poi(small_poi)
 
+  def randomize_boolean(self) -> bool:
+    '''Returns a random\non random boolean value.
+    '''
+    if self.rand_sample:
+      return bool(random.getrandbits(1))
+    return True
 
   def sample_point(self,
       df: gpd.GeoDataFrame
@@ -245,7 +277,7 @@ class Walker:
 
 
   def get_start_poi(self,
-                    end_point: Dict  
+                    end_point: Dict
   ) -> Optional[GeoSeries]:
     '''Returns the a random POI within distance of a given POI.
     Arguments:
@@ -261,7 +293,7 @@ class Walker:
     try:
       # Find nodes within 2000 meter path distance.
       outer_circle_graph = ox.truncate.truncate_graph_dist(
-        self.map.nx_graph, dest_osmid, 
+        self.map.nx_graph, dest_osmid,
         max_dist=(MAX_PATH_DIST + 2 * ADD_POI_DISTANCE), weight='length')
 
       outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
@@ -271,7 +303,7 @@ class Walker:
     try:
       # Get graph that is too close (less than 200 meter path distance)
       inner_circle_graph = ox.truncate.truncate_graph_dist(
-        self.map.nx_graph, dest_osmid, 
+        self.map.nx_graph, dest_osmid,
         max_dist=MIN_PATH_DIST + 2 * ADD_POI_DISTANCE, weight='length')
       inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
@@ -333,7 +365,10 @@ class Walker:
     '''
 
     # Remove goal location.
-    df_pivots = df_pivots[df_pivots['osmid']!=end_point['osmid']]
+    try:
+     df_pivots = df_pivots[df_pivots['osmid']!=end_point['osmid']]
+    except:
+      pass
 
     if df_pivots.shape[0]==0:
       return None
@@ -346,8 +381,8 @@ class Walker:
     pivot = None
 
     for main_tag, named_tag in tag_pairs:
-      pivot = self.get_landmark_if_tag_exists(df_pivots, 
-                                              main_tag, 
+      pivot = self.get_landmark_if_tag_exists(df_pivots,
+                                              main_tag,
                                               'name',
                                               named_tag)
       if pivot is not None:
@@ -358,7 +393,7 @@ class Walker:
     return pivot
 
 
-  def get_pivot_near_goal(self, 
+  def get_pivot_near_goal(self,
                           end_point: GeoSeries
   ) -> Optional[GeoSeries]:
     '''Return a picked landmark near the end_point.
@@ -370,11 +405,11 @@ class Walker:
 
     near_poi_con = self.map.poi.apply(
       lambda x: util.get_distance_between_geometries(
-        x.geometry, 
+        x.geometry,
         end_point['centroid']) < NEAR_PIVOT_DIST, axis=1)
 
     poi = self.map.poi[near_poi_con]
-    
+
     if poi.shape[0]==0:
       return None
 
@@ -396,7 +431,7 @@ class Walker:
 
 
   def get_pivot_along_route(self,
-                            route: GeoDataFrame, 
+                            route: GeoDataFrame,
                             end_point: Dict
   ) -> Optional[GeoSeries]:
     '''Return a picked landmark on a given route.
@@ -415,24 +450,24 @@ class Walker:
       lambda x: poly.intersects(x['geometry']), axis=1)]
     if df_pivots.shape[0]==0:
       return None
-      
+
     # Remove streets.
     if 'highway' in df_pivots.columns:
       df_pivots = df_pivots[(df_pivots['highway'].isnull())]
-    
+
     # Remove POI near goal.
     far_poi_con = df_pivots.apply(
     lambda x: util.get_distance_between_geometries(
-      x.geometry, 
+      x.geometry,
       end_point['centroid']) > NEAR_PIVOT_DIST, axis=1)
     far_poi = df_pivots[far_poi_con]
 
     main_pivot = self.pick_prominent_pivot(far_poi, end_point)
     return main_pivot
 
-  def get_pivot_beyond_goal(self, 
+  def get_pivot_beyond_goal(self,
                             end_point: GeoSeries,
-                            route: GeoDataFrame, 
+                            route: GeoDataFrame,
   ) -> Optional[GeoSeries]:
     '''Return a picked landmark on a given route.
     Arguments:
@@ -529,7 +564,61 @@ class Walker:
     beyond_pivot = self.pick_prominent_pivot(df_pivots, end_point)
     return beyond_pivot
 
-  def get_pivots(self, 
+
+  def get_position_goal(self,
+                        end_point: GeoSeries,
+                        route: GeoDataFrame
+  ) -> Optional[str]:
+    '''Return the position of the goal in the last block:
+    middle of the block\ near the closest intersection\ near the farther intersection
+    Arguments:
+      end_point: The goal location.
+      route: The route along which a landmark will be chosen.
+    Returns:
+      The position of the goal in last block. '''
+
+    street = self.map.edges[self.map.edges['u'] == end_point['osmid']].iloc[0]['osmid']
+    nodes_u = self.map.edges[self.map.edges['osmid']==street]['u']
+    condition_intersection = self.map.edges['osmid'] != street
+    condition_not_poi = self.map.edges['name'] != 'poi'
+    intersections_nodes_osmid = self.map.edges[
+      condition_not_poi & condition_intersection & self.map.edges['u'].isin(nodes_u)]['u']
+    intersections_nodes = self.map.nodes[self.map.nodes['osmid'].isin(intersections_nodes_osmid)]
+    distances = intersections_nodes.apply(
+      lambda x: util.get_distance_between_geometries(x.geometry, end_point.centroid), axis=1)
+    intersections_nodes.insert(0, "distances", distances, True)
+
+    bearing = intersections_nodes.apply(
+      lambda x: util.get_bearing(x.geometry.centroid, end_point.centroid), axis=1)
+    intersections_nodes.insert(0, "bearing", bearing, True)
+    min_distance_idx = intersections_nodes['distances'].idxmin()
+    bearing = intersections_nodes['bearing'].loc[min_distance_idx]
+    distance_closest = intersections_nodes['distances'].loc[min_distance_idx]
+
+    # Get second bearing in opposite direction.
+    opposite_bearing = (bearing+180)%360
+    intersection_opposite = intersections_nodes[(intersections_nodes['bearing']-opposite_bearing)%360<30]
+    if intersection_opposite.shape[0]==0:
+      return None
+    intersection_opposite_idx = intersection_opposite['distances'].idxmin()
+    intersection_opposite_distance = intersection_opposite.loc[intersection_opposite_idx]['distances']
+
+    # Check the proportions.
+    total_distance = intersection_opposite_distance + distance_closest
+    closest_propotion = distance_closest/total_distance
+    if closest_propotion>0.4:
+      return "in the middle of the block"
+
+    if closest_propotion>0.3:
+      return None
+    # Check to which intersection it is closer.
+    closest_inter_node_osmid = intersections_nodes.loc[min_distance_idx]['osmid']
+    if closest_inter_node_osmid in route['osmid'].tolist():
+      return "near the last intersection passed"
+
+    return "near the next intersection"
+
+  def get_pivots(self,
                 route: GeoDataFrame,
                 end_point: Dict,
   ) -> Optional[Tuple[GeoSeries, GeoSeries, GeoSeries]]:
@@ -631,36 +720,36 @@ class Walker:
     return cardinal
 
 
-  def get_number_intersections_past(self, 
-                                    main_pivot: GeoSeries, 
+  def get_number_intersections_past(self,
+                                    main_pivot: GeoSeries,
                                     route: GeoDataFrame,
                                     end_point: Point
-  ) -> int:
-    '''Return the number of intersections between the main_pivot and goal. 
+  ) -> Optional[int]:
+    '''Return the number of intersections between the main_pivot and goal.
     Arguments:
       main_pivot: The pivot along the route.
       route: The route along which a landmark will be chosen.
       end_point: The goal location.
     Returns:
-      The number of intersections between the main_pivot and goal. 
-      If the main_pivot and goal are on different streets return -1.
+      The number of intersections between the main_pivot and goal.
+      If the main_pivot and goal are on different streets return None.
     '''
 
     pivot_goal_route = self.compute_route_from_nodes(
-            main_pivot['osmid'], 
-            end_point['osmid'], 
+            main_pivot['osmid'],
+            end_point['osmid'],
             self.map.nx_graph,
             self.map.nodes)
 
-  
+
     edges_in_pivot_goal_route = pivot_goal_route['osmid'].apply(
       lambda x: set(self.map.edges[self.map.edges['u'] == x]['osmid'].tolist()))
-    
+
     pivot_streets = edges_in_pivot_goal_route.iloc[0]
     goal_streets = edges_in_pivot_goal_route.iloc[-1]
     common_streets = pivot_streets & goal_streets
     if not common_streets:
-      return -1
+      return None
 
     number_intersection = edges_in_pivot_goal_route.apply(
       lambda x: len(x - common_streets) > 0).sum()
@@ -671,6 +760,7 @@ class Walker:
     return number_intersection
 
   def get_sample(self) -> Optional[geo_item.GeoEntity]:
+
     '''Sample start and end point, a pivot landmark and route.
     Returns:
       A start and end point, a pivot landmark and route.
@@ -691,11 +781,11 @@ class Walker:
     route = self.compute_route_from_nodes(
           geo_landmarks['start_point']['osmid'],
           geo_landmarks['end_point']['osmid'],
-          self.map.nx_graph, 
+          self.map.nx_graph,
           self.map.nodes)
     if route is None:
       return None
-    
+
     # Select pivots.
     result = self.get_pivots(route, geo_landmarks['end_point'])
     if result is None:
@@ -722,6 +812,9 @@ class Walker:
     geo_features['intersections'] = self.get_number_intersections_past(
       geo_landmarks['main_pivot'], route, geo_landmarks['end_point'])
 
+    geo_features['goal_position'] = self.get_position_goal(
+      geo_landmarks['end_point'], route)
+
     rvs_path_entity = geo_item.GeoEntity.add_entity(
       route=route,
       geo_features=geo_features,
@@ -730,10 +823,10 @@ class Walker:
     return rvs_path_entity
 
   def get_single_sample(
-            self, 
-            index: int, 
-            sema: Any, 
-            n_samples: int, 
+            self,
+            index: int,
+            sema: Any,
+            n_samples: int,
             return_dict: Dict[int, geo_item.GeoEntity]):
     '''Sample exactly one RVS path sample.
     Arguments:

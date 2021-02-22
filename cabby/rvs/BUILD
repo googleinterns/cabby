@@ -67,6 +67,7 @@ py_library(
     srcs = ['templates.py'],
         deps = [
         '//cabby/geo:geo_item',
+        '//cabby/geo:walk',
          '//cabby/geo:util',
 
     ],

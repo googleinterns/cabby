@@ -11,8 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-'''Define templates for RVS.'''
+'''
+Define templates for RVS.
+When adding a feature or landmark this file needs to be updated.
+The update should be in adding terminals and\or rules.
+The pivot or landmark should be the same as their name in
+cabby.geo.walk.py file but with upper case.
+E.g., 'end_point' should appear as 'END_POINT'.
+'''
 
+import inflect
 from typing import Dict, Sequence, Text
 import nltk
 from nltk import CFG, Production
@@ -20,21 +28,34 @@ from nltk.parse.generate import Nonterminal
 import pandas as pd
 
 from cabby.geo import geo_item
+from cabby.geo import walk
 
-
+inflect_engine = inflect.engine()
+STREET_FEATURES = ["next block", "next intersection", "blocks"] \
+                  + walk.FEATURES_TYPES + walk.LANDMARK_TYPES
 
 # Terminals in the grammar.
 MAIN_NO_V = [
   "CARDINAL_DIRECTION from MAIN_PIVOT for INTERSECTIONS intersections",
-  "CARDINAL_DIRECTION from MAIN_PIVOT for NUMBER_BLOCKS blocks",
-  "NUMBER_BLOCKS blocks past MAIN_PIVOT",
+  "CARDINAL_DIRECTION from MAIN_PIVOT for BLOCKS blocks",
+  "CARDINAL_DIRECTION from MAIN_PIVOT, which will be your SPATIAL_REL_PIVOT, for BLOCKS blocks",
+  "BLOCKS blocks past MAIN_PIVOT",
+  "BLOCKS blocks past MAIN_PIVOT, which will be on your SPATIAL_REL_PIVOT",
   "INTERSECTIONS intersections past MAIN_PIVOT",
   "past MAIN_PIVOT",
+  "past MAIN_PIVOT on your SPATIAL_REL_PIVOT",
   "CARDINAL_DIRECTION and past MAIN_PIVOT",
+  "CARDINAL_DIRECTION and past MAIN_PIVOT (on your SPATIAL_REL_PIVOT)",
   "past MAIN_PIVOT and continue to the next intersection",
+  "past MAIN_PIVOT on your SPATIAL_REL_PIVOT, and continue to the next intersection",
+  "past MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and continue to the next intersection",
   "past MAIN_PIVOT and continue to the next block",
+  "past MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and continue to the next block",
   "to MAIN_PIVOT and go CARDINAL_DIRECTION",
-  "to MAIN_PIVOT and turn CARDINAL_DIRECTION"
+  "to MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and go CARDINAL_DIRECTION",
+  "to MAIN_PIVOT and turn CARDINAL_DIRECTION",
+  "to MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and turn CARDINAL_DIRECTION"
+
   ""
 ]
 
@@ -42,25 +63,29 @@ MAIN_NO_V = [
 
 MAIN = [
   ". When you pass MAIN_PIVOT, you'll be just INTERSECTIONS intersections away",
-  ". When you pass MAIN_PIVOT, you'll be just NUMBER_BLOCKS blocks away",
+  ". When you pass MAIN_PIVOT on your SPATIAL_REL_PIVOT, you'll be just INTERSECTIONS intersections away",
+  ". When you pass MAIN_PIVOT, you'll be just BLOCKS blocks away",
+  ". When you pass MAIN_PIVOT on your SPATIAL_REL_PIVOT, you'll be just BLOCKS blocks away",
   ". MAIN_PIVOT is INTERSECTIONS intersections away",
   ". MAIN_PIVOT is INTERSECTIONS intersections away on the SPATIAL_REL_PIVOT side of the street",
-  ". MAIN_PIVOT is NUMBER_BLOCKS blocks away",
-  ". MAIN_PIVOT is NUMBER_BLOCKS blocks away, on the SPATIAL_REL_PIVOT side of the street,",
+  ". MAIN_PIVOT is BLOCKS blocks away",
+  ". MAIN_PIVOT is BLOCKS blocks away, on the SPATIAL_REL_PIVOT side of the street,",
   ". Head to MAIN_PIVOT and go INTERSECTIONS intersections further",
+  ". Head to MAIN_PIVOT. Pass MAIN_PIVOT on your SPATIAL_REL_PIVOT and go INTERSECTIONS intersections further",
   ". Go to MAIN_PIVOT and walk INTERSECTIONS intersections past it",
-  ". Travel to MAIN_PIVOT and continue NUMBER_BLOCKS blocks further",
-  ". Walk to MAIN_PIVOT and proceed NUMBER_BLOCKS blocks past it",
+  ". Go to MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and walk INTERSECTIONS intersections past it",
+  ". Travel to MAIN_PIVOT and continue BLOCKS blocks further",
+  ". Walk to MAIN_PIVOT and proceed BLOCKS blocks past it",
   ". After you reach MAIN_PIVOT, you'll need to go INTERSECTIONS intersections further",
   ". After you reach MAIN_PIVOT on your SPATIAL_REL_PIVOT, "+
   "you'll need to go INTERSECTIONS intersections further",
   ". When you get to MAIN_PIVOT, you have INTERSECTIONS intersections more to walk",
   ". When you see to MAIN_PIVOT on your SPATIAL_REL_PIVOT, "+
   "you have INTERSECTIONS intersections more to walk",
-  ". After you pass MAIN_PIVOT, go NUMBER_BLOCKS blocks more",
-  ". After you pass MAIN_PIVOT on your SPATIAL_REL_PIVOT, go NUMBER_BLOCKS blocks more",
-  ". Once you reach MAIN_PIVOT, continue for NUMBER_BLOCKS blocks",
-  ". Once you see MAIN_PIVOT on your SPATIAL_REL_PIVOT, continue for NUMBER_BLOCKS blocks",
+  ". After you pass MAIN_PIVOT, go BLOCKS blocks more",
+  ". After you pass MAIN_PIVOT on your SPATIAL_REL_PIVOT, go BLOCKS blocks more",
+  ". Once you reach MAIN_PIVOT, continue for BLOCKS blocks",
+  ". Once you see MAIN_PIVOT on your SPATIAL_REL_PIVOT, continue for BLOCKS blocks",
 
 ]
 
@@ -98,9 +123,13 @@ AVOID = [
   ""]
 
 GOAL_END = [
+  'and meet at the END_POINT, right GOAL_POSITION.',
   'and meet at the END_POINT.',
+  'and come to the END_POINT, right GOAL_POSITION.',
   'and come to the END_POINT.',
+  'to reach the END_POINT, right GOAL_POSITION.',
   'to reach the END_POINT.',
+  'to arrive at the END_POINT, right GOAL_POSITION.'
   'to arrive at the END_POINT.'
 ]
 
@@ -217,16 +246,9 @@ def create_templates():
   templates_df.to_csv('templates.csv', index=False, header = False)
 
   # Flag features.
-  templates_df['blocks'] = templates_df['sentence'].apply(
-    lambda x: 'NUMBER_BLOCKS' in x)
-  templates_df['intersections'] = templates_df['sentence'].apply(
-    lambda x: 'NUMBER_INTERSECTIONS' in x)
-  templates_df['beyond_pivot'] = templates_df['sentence'].apply(
-    lambda x: 'BEYOND_PIVOT' in x)
-  templates_df['next_block'] = templates_df['sentence'].apply(
-    lambda x: 'next block' in x)
-  templates_df['next_intersection'] = templates_df['sentence'].apply(
-    lambda x: 'next intersection' in x)
+  for column in STREET_FEATURES:
+    templates_df[column] = templates_df['sentence'].apply(
+    lambda x: column.upper() in x)
 
   return templates_df
 
@@ -237,24 +259,33 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Text
     entity: The features of the path to add to the template.
   '''
 
-  intersections = int(entity.geo_features['intersections'])
+  intersections = entity.geo_features['intersections']
+  intersections = -1 if not intersections else int(intersections)
   blocks = str(intersections-1)
 
   if entity.geo_landmarks['end_point'].main_tag[0].isupper():
     template = template.replace('The END_POINT', 'END_POINT')
     template = template.replace('the END_POINT', 'END_POINT')
-  if entity.geo_landmarks['near_pivot'].main_tag[0].isupper():
+  near_landmark = entity.geo_landmarks['near_pivot'].main_tag
+  if near_landmark[0].isupper():
     template = template.replace('A NEAR_PIVOT', 'NEAR_PIVOT')
     template = template.replace('a NEAR_PIVOT', 'NEAR_PIVOT')
-  template = template.replace('NUMBER_BLOCKS', blocks)
+  if inflect_engine.singular_noun(near_landmark):
+    template = template.replace('a NEAR_PIVOT', 'NEAR_PIVOT')
+    template = template.replace('A NEAR_PIVOT', '?UP?NEAR_PIVOT')
+    template = template.replace('NEAR_PIVOT is', 'NEAR_PIVOT are')
+  template = template.replace('BLOCKS', blocks)
 
 
-  for lanndamrk_type, landmark in entity.geo_landmarks.items():
+  for landmark_type, landmark in entity.geo_landmarks.items():
 
-    if landmark.main_tag is None:
-      continue
-    template = template.replace(lanndamrk_type.upper(),
-                                landmark.main_tag)
+    if landmark.main_tag:
+
+      template = template.replace("?UP?"+landmark_type.upper(),
+                                  landmark.main_tag.capitalize())
+
+      template = template.replace(landmark_type.upper(),
+                                  landmark.main_tag)
 
   for feature_type, feature in entity.geo_features.items():
 
@@ -268,5 +299,7 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Text
   template = template.replace(' a e', ' an e')
   template = template.replace(' a u', ' an u')
   template = template.replace(' a o', ' an o')
+  template = template.replace('_', ' ')
 
   return template
+
