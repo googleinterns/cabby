@@ -54,7 +54,7 @@ class ObserveTest(unittest.TestCase):
       route=route
     )
 
-    instruction = templates.add_features_to_template(picked_template, entity)
+    instruction, entity_span = templates.add_features_to_template(picked_template, entity)
     expected = "Meet at Target Coffee Shop. Go North-North from Food On The Way for 2 intersections. It will be near Far is Near Travel Agency. If you reach Beyond The Rainbow Fairy Shop, you have gone too far."
     self.assertEqual(instruction, expected)
 

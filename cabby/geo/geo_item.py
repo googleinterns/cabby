@@ -16,7 +16,7 @@
 from absl import logging
 import geopandas as gpd
 import pandas as pd
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, Tuple
 import os
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry import LineString, Polygon
@@ -26,7 +26,7 @@ from cabby.geo import util
 import attr
 
 _Geo_DataFrame_Driver = "GPKG"
-VERSION = 0.4
+VERSION = 0.5
 
 @attr.s
 class GeoEntity:
@@ -110,9 +110,14 @@ class RVSSample:
   instructions: str = attr.ib()
   id: int = attr.ib()
   version: float = attr.ib()
+  entity_span: Dict[str, Tuple[int, int]] = attr.ib()
 
   @classmethod
-  def to_rvs_sample(self, instructions: str, id: int, geo_entity: GeoEntity):
+  def to_rvs_sample(self,
+                    instructions: str,
+                    id: int,
+                    geo_entity: GeoEntity,
+                    entity_span: Dict[str, Tuple[int, int]]):
     """Construct a RVS sample from GeoEntity."""
     landmark_list = {}
     for type_landmark, landmark in geo_entity.geo_landmarks.items():
@@ -124,7 +129,8 @@ class RVSSample:
               route_length,
               instructions,
               id,
-              VERSION)
+              VERSION,
+              entity_span)
 
 
 
