@@ -141,7 +141,7 @@ def main(argv):
         instructions=gen_instructions,
         id=entity_idx,
         geo_entity=entity,
-        entity_span = entity_span
+        entity_span=entity_span
       )
       gen_samples.append(rvs_entity)
 
