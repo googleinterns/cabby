@@ -77,10 +77,14 @@ class GeoLandmark:
 
   def to_rvs_format(self):
     """Reformat a GeoLandmark into an RVS style."""
-
-    return [self.landmark_type,
+    centroid = util.tuple_from_point(
+      self.geometry.centroid) if self.geometry else None
+    return [
+      self.landmark_type,
       self.osmid,
-      self.main_tag]
+      self.main_tag,
+      centroid
+    ]
 
   @classmethod
   def create_from_pivot(cls, pivot: gpd.GeoDataFrame, pivot_type: str):
