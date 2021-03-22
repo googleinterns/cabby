@@ -309,21 +309,25 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
   template = template.replace(' a o', ' an o')
   template = template.replace('_', ' ')
 
-  entities_span_list = {}
+  entities_span_dict = {}
   for entity_tag in entities_tags:
-    add_entity_span(entities_span_list, entity_tag, template)
+    entities_span_dict.update(add_entity_span(entity_tag, template))
 
-  return template, entities_span_list
+  return template, entities_span_dict
 
-def add_entity_span(entities_span_list: Dict, entity_tag: str, instruction: str):
+def add_entity_span(entity_tag: str, instruction: str) -> Dict[str, Tuple[int, int]]:
   '''Adds the entity span to a dictionary of entites (keys) and spans (value).
     Args:
-      entities_span_list: The choosen template.
       entity_tag: The entity tag name.
       instruction: instruction with entity.
+    Returns:
+      A dictionary of entities (keys) and spans (values).
   '''
   pattern = re.compile(entity_tag, re.IGNORECASE)
 
+  entities_span_dict = {}
   for m in pattern.finditer(instruction):
-    entities_span_list[m.group()] = (m.start(), m.end())
+    entities_span_dict[m.group()] = (m.start(), m.end())
+
+  return entities_span_dict
 

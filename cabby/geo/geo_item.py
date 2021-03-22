@@ -77,10 +77,15 @@ class GeoLandmark:
 
   def to_rvs_format(self):
     """Reformat a GeoLandmark into an RVS style."""
+    centroid = util.tuple_from_point(
+      self.geometry.centroid) if self.geometry else None
 
-    return [self.landmark_type,
+    return [
+      self.landmark_type,
       self.osmid,
-      self.main_tag]
+      self.main_tag,
+      centroid
+    ]
 
   @classmethod
   def create_from_pivot(cls, pivot: gpd.GeoDataFrame, pivot_type: str):
@@ -101,7 +106,12 @@ class RVSSample:
   `geo_landmarks` the geo landmarks (start and end points + pivots).
   `geo_features` the spatial features of the path.
   Dictionary values can be of either type str or int.
-  `route` the path from the start to end point.
+  `route_len` the length of the path from the start to end point.
+  `instructions` the text instructing how to get from start location to goal location.
+  `id` the sample id.
+  `version` the datasets version.
+  `entity_span` the entity span in the instruction.
+  Key: entity name. Value: tuple of start and end of the span.
   """
 
   geo_landmarks: Dict[str, gpd.GeoDataFrame] = attr.ib()
