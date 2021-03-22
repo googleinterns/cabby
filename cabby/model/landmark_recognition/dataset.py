@@ -12,15 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Dict
-
 from absl import logging
 from nltk.tokenize import word_tokenize
 import pandas as pd
-
 import torch
-from transformers import AutoModelForTokenClassification, AutoTokenizer
-
+from transformers import AutoTokenizer
 
 from cabby.model import datasets
 
@@ -169,7 +165,7 @@ class PadSequence:
         lengths = [len(x) for x in input_ids_padded]
 
         lengths = torch.LongTensor(lengths)
-        labels = [torch.tensor(x['labels']).clone().detach()  for x in sorted_batch]
+        labels = [torch.tensor(x['labels']).clone().detach() for x in sorted_batch]
         labels_padded = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True)
 
         attention_masks = torch.tensor([[float(i != 0.0) for i in ii] for ii in input_ids_padded])
