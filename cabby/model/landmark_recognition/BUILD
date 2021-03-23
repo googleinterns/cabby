@@ -10,8 +10,8 @@ package(
 
 
 py_library(
-    name = 'dataset',
-    srcs = ['dataset.py'],
+    name = 'dataset_bert',
+    srcs = ['dataset_bert.py'],
     deps = [
           "//cabby/model:datasets",
     ],
@@ -30,7 +30,7 @@ py_binary(
     srcs = ['entity_recognition.py'],
     deps = [
           "//cabby/geo:regions",
-          "//cabby/model/landmark_recognition:dataset",
+          "//cabby/model/landmark_recognition:dataset_bert",
           "//cabby/model/landmark_recognition:run",
 
     ],

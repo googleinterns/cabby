@@ -29,10 +29,10 @@ from absl import flags
 
 import os
 from torch.utils.data import DataLoader
-from transformers import BertForTokenClassification
+from transformers import BertForTokenClassification, T5ForConditionalGeneration
 
 from cabby.geo import regions
-from cabby.model.landmark_recognition import dataset
+from cabby.model.landmark_recognition import dataset_bert as dataset
 from cabby.model.landmark_recognition import run
 
 
@@ -73,15 +73,10 @@ flags.mark_flag_as_required("max_grad_norm")
 flags.mark_flag_as_required("region")
 flags.mark_flag_as_required("s2_level")
 
+
+
 def main(argv):
   del argv  # Unused.
-
-  padSequence = dataset.PadSequence()
-  ds_train, ds_val, ds_test = dataset.create_dataset(FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
-
-  train_dataloader = DataLoader(ds_train, batch_size=FLAGS.batch_size, collate_fn=padSequence)
-  val_dataloader = DataLoader(ds_val, batch_size=FLAGS.batch_size, collate_fn=padSequence)
-  test_dataloader = DataLoader(ds_test, batch_size=FLAGS.batch_size, collate_fn=padSequence)
 
   model = BertForTokenClassification.from_pretrained(
     "bert-base-cased",
@@ -89,6 +84,16 @@ def main(argv):
     output_attentions=False,
     output_hidden_states=False
   )
+
+  padSequence = dataset.PadSequence()
+
+
+  ds_train, ds_val, ds_test = dataset.create_dataset(FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
+
+  train_dataloader = DataLoader(ds_train, batch_size=FLAGS.batch_size, collate_fn=padSequence)
+  val_dataloader = DataLoader(ds_val, batch_size=FLAGS.batch_size, collate_fn=padSequence)
+  test_dataloader = DataLoader(ds_test, batch_size=FLAGS.batch_size, collate_fn=padSequence)
+
 
   model_trained = run.train(model, train_dataloader, val_dataloader, FLAGS)
 

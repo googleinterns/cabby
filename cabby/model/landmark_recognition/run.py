@@ -15,6 +15,7 @@
 import copy
 import numpy as np
 from seqeval.metrics import f1_score, accuracy_score
+from rouge import Rouge
 from tqdm import trange
 import torch
 from transformers import AdamW
@@ -22,9 +23,12 @@ from transformers import get_linear_schedule_with_warmup
 
 tag_values_idx = {0: 'O', 1: 'I', -100: 'PAD'}
 
+rouge = Rouge()
+
 device = torch.device(
   'cuda') if torch.cuda.is_available() else torch.device('cpu')
 
+print (f"Device used {device}")
 
 def train(model, train_dataloader, val_dataloader, args):
 
@@ -73,17 +77,18 @@ def train(model, train_dataloader, val_dataloader, args):
       # Training loop
       for step, batch in enumerate(train_dataloader):
           # add batch to gpu
-          b_input_ids = batch['input_ids'].to(device)
-          b_input_mask = batch['attention_masks'].to(device)
-          b_labels = batch['labels'].to(device)
+          for param_k, param_v in batch.items():
+            if torch.is_tensor(param_v):
+              batch[param_k] = param_v.to(device)
 
           # Always clear any previously calculated gradients before performing a backward pass.
           model.zero_grad()
           # forward pass
           # This will return the loss (rather than the model output)
           # because we have provided the `labels`.
-          outputs = model(b_input_ids, token_type_ids=None,
-                          attention_mask=b_input_mask, labels=b_labels)
+
+          outputs = model(**batch)
+
           # get the loss
           loss = outputs[0]
           # Perform a backward pass to calculate the gradients.
@@ -118,29 +123,27 @@ def train(model, train_dataloader, val_dataloader, args):
       # Reset the validation loss for this epoch.
       eval_loss, eval_accuracy = 0, 0
       predictions , true_labels = [], []
-      instruction_list = []
       for batch in val_dataloader:
-          b_input_ids = batch['input_ids'].to(device)
-          b_input_mask = batch['attention_masks'].to(device)
-          b_labels = batch['labels'].to(device)
-          instructions = batch['instructions']
+          for param_k, param_v in batch.items():
+            if torch.is_tensor(param_v):
+              batch[param_k] = param_v.to(device)
 
           # Telling the model not to compute or store gradients,
           # saving memory and speeding up validation
           with torch.no_grad():
               # Forward pass, calculate logit predictions.
               # This will return the logits rather than the loss because we have not provided labels.
-              outputs = model(b_input_ids, token_type_ids=None,
-                              attention_mask=b_input_mask, labels=b_labels)
+
+              outputs = model(**batch)
+
           # Move logits and labels to CPU
           logits = outputs[1].detach().cpu().numpy()
-          label_ids = b_labels.to('cpu').numpy()
+          label_ids = batch['labels'].to('cpu').numpy()
 
           # Calculate the accuracy for this batch of test sentences.
           eval_loss += outputs[0].mean().item()
           predictions.extend([list(p) for p in np.argmax(logits, axis=2)])
           true_labels.extend(label_ids)
-          instruction_list.extend(instructions)
 
       eval_loss = eval_loss / len(val_dataloader)
       validation_loss_values.append(eval_loss)
@@ -148,7 +151,7 @@ def train(model, train_dataloader, val_dataloader, args):
 
       f1, accuracy = metrics_score(predictions, true_labels)
 
-      if best_score['f1_score']<f1:
+      if best_score['f1_score'] < f1:
         best_score = {'model': copy.deepcopy(model),
                       'f1_score': f1,
                       'epoch': epoch,
@@ -156,7 +159,6 @@ def train(model, train_dataloader, val_dataloader, args):
 
   torch.save(best_score, args.model_path)
   return best_score['model']
-
 
 
 def test(model, test_dataloader):
@@ -169,30 +171,26 @@ def test(model, test_dataloader):
   # Reset the validation loss for this epoch.
   eval_loss, eval_accuracy = 0, 0
   predictions , true_labels = [], []
-  instruction_list = []
 
   for batch in test_dataloader:
-      b_input_ids = batch['input_ids'].to(device)
-      b_input_mask = batch['attention_masks'].to(device)
-      b_labels = batch['labels'].to(device)
-      instructions = batch['instructions']
+    for param_k, param_v in batch.items():
+      if torch.is_tensor(param_v):
+        batch[param_k] = param_v.to(device)
 
-      # Telling the model not to compute or store gradients,
-      # saving memory and speeding up validation
-      with torch.no_grad():
-          # Forward pass, calculate logit predictions.
-          # This will return the logits rather than the loss because we have not provided labels.
-          outputs = model(b_input_ids, token_type_ids=None,
-                          attention_mask=b_input_mask, labels=b_labels)
-      # Move logits and labels to CPU
-      logits = outputs[1].detach().cpu().numpy()
-      label_ids = b_labels.to('cpu').numpy()
+    # Telling the model not to compute or store gradients,
+    # saving memory and speeding up validation
+    with torch.no_grad():
+        # Forward pass, calculate logit predictions.
+        # This will return the logits rather than the loss because we have not provided labels.
+        outputs = model(**batch)
+    # Move logits and labels to CPU
+    logits = outputs[1].detach().cpu().numpy()
+    label_ids = batch['labels'].to('cpu').numpy()
 
-      # Calculate the accuracy for this batch of test sentences.
-      eval_loss += outputs[0].mean().item()
-      predictions.extend([list(p) for p in np.argmax(logits, axis=2)])
-      true_labels.extend(label_ids)
-      instruction_list.extend(instructions)
+    # Calculate the accuracy for this batch of test sentences.
+    eval_loss += outputs[0].mean().item()
+    predictions.extend([list(p) for p in np.argmax(logits, axis=2)])
+    true_labels.extend(label_ids)
 
   eval_loss = eval_loss / len(test_dataloader)
   test_loss_values.append(eval_loss)
@@ -202,14 +200,15 @@ def test(model, test_dataloader):
 
 
 def metrics_score(predictions, true_labels, split="Validation"):
-  pred_tags = [tag_values_idx[p_i] for p, l in zip(predictions, true_labels)
+  predictions = [tag_values_idx[p_i] for p, l in zip(predictions, true_labels)
                for p_i, l_i in zip(p, l) if tag_values_idx[l_i] != "PAD"]
 
-  valid_tags = [tag_values_idx[l_i] for l in true_labels
+  true_labels = [tag_values_idx[l_i] for l in true_labels
                 for l_i in l if tag_values_idx[l_i] != "PAD"]
 
-  accuracy = accuracy_score(pred_tags, valid_tags)
-  f1 = f1_score([pred_tags], [valid_tags])
+  f1 = f1_score([predictions], [true_labels])
+
+  accuracy = accuracy_score(predictions, true_labels)
   print(f"{split} Accuracy: {accuracy}")
   print(f"{split} F1-Score: {f1}")
 
