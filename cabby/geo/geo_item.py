@@ -16,7 +16,7 @@
 from absl import logging
 import geopandas as gpd
 import pandas as pd
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, Tuple
 import os
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry import LineString, Polygon
@@ -26,7 +26,7 @@ from cabby.geo import util
 import attr
 
 _Geo_DataFrame_Driver = "GPKG"
-VERSION = 0.4
+VERSION = 0.5
 
 @attr.s
 class GeoEntity:
@@ -77,10 +77,15 @@ class GeoLandmark:
 
   def to_rvs_format(self):
     """Reformat a GeoLandmark into an RVS style."""
+    centroid = util.tuple_from_point(
+      self.geometry.centroid) if self.geometry else None
 
-    return [self.landmark_type,
+    return [
+      self.landmark_type,
       self.osmid,
-      self.main_tag]
+      self.main_tag,
+      centroid
+    ]
 
   @classmethod
   def create_from_pivot(cls, pivot: gpd.GeoDataFrame, pivot_type: str):
@@ -101,7 +106,12 @@ class RVSSample:
   `geo_landmarks` the geo landmarks (start and end points + pivots).
   `geo_features` the spatial features of the path.
   Dictionary values can be of either type str or int.
-  `route` the path from the start to end point.
+  `route_len` the length of the path from the start to end point.
+  `instructions` the text instructing how to get from start location to goal location.
+  `id` the sample id.
+  `version` the datasets version.
+  `entity_span` the entity span in the instruction.
+  Key: entity name. Value: tuple of start and end of the span.
   """
 
   geo_landmarks: Dict[str, gpd.GeoDataFrame] = attr.ib()
@@ -110,9 +120,14 @@ class RVSSample:
   instructions: str = attr.ib()
   id: int = attr.ib()
   version: float = attr.ib()
+  entity_span: Dict[str, Tuple[int, int]] = attr.ib()
 
   @classmethod
-  def to_rvs_sample(self, instructions: str, id: int, geo_entity: GeoEntity):
+  def to_rvs_sample(self,
+                    instructions: str,
+                    id: int,
+                    geo_entity: GeoEntity,
+                    entity_span: Dict[str, Tuple[int, int]]):
     """Construct a RVS sample from GeoEntity."""
     landmark_list = {}
     for type_landmark, landmark in geo_entity.geo_landmarks.items():
@@ -124,7 +139,8 @@ class RVSSample:
               route_length,
               instructions,
               id,
-              VERSION)
+              VERSION,
+              entity_span)
 
 
 

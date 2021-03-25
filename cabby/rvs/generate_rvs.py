@@ -135,12 +135,13 @@ def main(argv):
 
       choosen_template = current_templates.sample(1)['sentence'].iloc[0]
 
-      gen_instructions = templates.add_features_to_template(
+      gen_instructions, entity_span = templates.add_features_to_template(
         choosen_template, entity)
       rvs_entity = geo_item.RVSSample.to_rvs_sample(
         instructions=gen_instructions,
         id=entity_idx,
-        geo_entity=entity
+        geo_entity=entity,
+        entity_span=entity_span
       )
       gen_samples.append(rvs_entity)
 

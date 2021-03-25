@@ -21,11 +21,12 @@ E.g., 'end_point' should appear as 'END_POINT'.
 '''
 
 import inflect
-from typing import Dict, Sequence, Text
+from typing import Dict, Sequence, Text, Tuple
 import nltk
 from nltk import CFG, Production
 from nltk.parse.generate import Nonterminal
 import pandas as pd
+import re
 
 from cabby.geo import geo_item
 from cabby.geo import walk
@@ -140,7 +141,7 @@ def add_rules(nonterminal_name: Text,
         list_terminals: Sequence[Text]) -> Sequence[Production]:
   """Create the production rules for a givn nonterminal and a
    list of terminals corresponding to it.
-  Args:
+  Arguments:
     nonterminal_name: The name of the nonterminal.
     list_terminals: The list of terminals that for each one a rule with 
     the nonterminal will be produced.
@@ -253,10 +254,14 @@ def create_templates():
   return templates_df
 
 
-def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Text:
-  '''Add the entity features to the picked template to create an instruction:
-    template: The choosen template.
+def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tuple[Text, Dict[str, Tuple[int, int]]]:
+  '''Add the entity features to the picked template to create an instruction.
+  Arguments:
+    template: The chosen template.
     entity: The features of the path to add to the template.
+  Returns:
+    The instruction created and a dictionary of the landmarks(keys)
+    and spans(values) in the instruction.
   '''
 
   intersections = entity.geo_features['intersections']
@@ -276,6 +281,7 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Text
     template = template.replace('NEAR_PIVOT is', 'NEAR_PIVOT are')
   template = template.replace('BLOCKS', blocks)
 
+  entities_tags = []
 
   for landmark_type, landmark in entity.geo_landmarks.items():
 
@@ -286,6 +292,8 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Text
 
       template = template.replace(landmark_type.upper(),
                                   landmark.main_tag)
+
+      entities_tags.append(landmark.main_tag)
 
   for feature_type, feature in entity.geo_features.items():
 
@@ -301,5 +309,25 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Text
   template = template.replace(' a o', ' an o')
   template = template.replace('_', ' ')
 
-  return template
+  entities_span_dict = {}
+  for entity_tag in entities_tags:
+    entities_span_dict.update(add_entity_span(entity_tag, template))
+
+  return template, entities_span_dict
+
+def add_entity_span(entity_tag: str, instruction: str) -> Dict[str, Tuple[int, int]]:
+  '''Adds the entity span to a dictionary of entites (keys) and spans (value).
+    Args:
+      entity_tag: The entity tag name.
+      instruction: instruction with entity.
+    Returns:
+      A dictionary of entities (keys) and spans (values).
+  '''
+  pattern = re.compile(entity_tag, re.IGNORECASE)
+
+  entities_span_dict = {}
+  for m in pattern.finditer(instruction):
+    entities_span_dict[m.group()] = (m.start(), m.end())
+
+  return entities_span_dict
 
