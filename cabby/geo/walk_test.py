@@ -36,7 +36,8 @@ class WalkTest(unittest.TestCase):
                    nx_graph, self.map.nodes)
 
     # Check the size of the route.
-    self.assertEqual(route['geometry'].shape[0], 24)
+    ROUTE_SIZE_INDEX = 24
+    self.assertEqual(route['geometry'].shape[0], ROUTE_SIZE_INDEX)
 
     # Check that the correct points are in the route.
     first_point = util.tuple_from_point(route.iloc[0]['geometry'])
