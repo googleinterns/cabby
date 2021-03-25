@@ -29,6 +29,7 @@ class EntityRecognitionSplit(torch.utils.data.Dataset):
 
   def __init__(self, data: pd.DataFrame):
     # Tokenize instructions and corresponding labels.
+    self.ds = data
     basic_tokenization = [
       basic_tokenize_and_align_labels(sent, labs)
       for sent, labs in zip(data.instructions.tolist(), data.entity_span)
@@ -69,16 +70,13 @@ def create_dataset(
   '''
   rvs_dataset = datasets.RVSDataset(data_dir, s2level, region)
 
-  train_dataset = EntityRecognitionSplit(
-    rvs_dataset.train)
+  train_dataset = EntityRecognitionSplit(rvs_dataset.train)
   logging.info(
     f"Finished to create the train-set with {len(train_dataset)} samples")
-  val_dataset = EntityRecognitionSplit(
-    rvs_dataset.valid)
+  val_dataset = EntityRecognitionSplit(rvs_dataset.valid)
   logging.info(
     f"Finished to create the valid-set with {len(val_dataset)} samples")
-  test_dataset = EntityRecognitionSplit(
-    rvs_dataset.test)
+  test_dataset = EntityRecognitionSplit(rvs_dataset.test)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
 
@@ -106,21 +104,31 @@ def basic_tokenize_and_align_labels(
   cur_index = 0
   span = spans.pop(0)
   start, end = span[0], span[1]
+
   for word in sentence_words:
+    # If the word is in the span of landmark then add the
+    # corresponding label 1 indicating it is a landmark.
     if cur_index >= start:
       labels.append(1)
-    else:
+    else: # Label 0 for non-landmark token.
       labels.append(0)
 
+    # Change the start of the current position.
     cur_index += len(word)
-    if cur_index<len(sentence) and sentence[cur_index] == ' ':
-      cur_index+=1
+    if cur_index < len(sentence) and sentence[cur_index] == ' ':
+      cur_index += 1
+
+    # If the landmark span is finished remove the landmark span.
     if cur_index >= end:
-      if len(spans)>0:
+      # If the list of entity spans is not empty, then remove the next span and
+      # set it as the current span (start and end).
+      # If the list of entity spans are done the set the current
+      # entity span to a position beyond the sentence length.
+      if len(spans) > 0:
         span = spans.pop(0)
         start, end = span[0], span[1]
       else:
-        start = len(sentence)+1
+        start = len(sentence) + 1
 
   return sentence_words, labels
 

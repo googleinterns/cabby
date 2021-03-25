@@ -17,8 +17,8 @@ import numpy as np
 from seqeval.metrics import f1_score, accuracy_score
 from tqdm import trange
 import torch
-from transformers import AdamW
-from transformers import get_linear_schedule_with_warmup
+from transformers import AdamW, pipeline, get_linear_schedule_with_warmup
+from termcolor import colored
 
 tag_values_idx = {0: 'O', 1: 'I', -100: 'PAD'}
 
@@ -192,3 +192,53 @@ def metrics_score(predictions, true_labels, split="Validation"):
   print(f"{split} F1-Score: {f1}")
 
   return f1, accuracy
+
+
+def test_samples(instructions, tokenizer, model):
+
+  model = model.to(device)
+  nlp = pipeline("ner",
+                 model=model,
+                 tokenizer=tokenizer,
+                 device=torch.cuda.current_device())
+
+  ner_results = nlp(instructions)
+  for result in ner_results:
+    list_words = []
+    for word_dic in result:
+      assert word_dic['entity'] in ['LABEL_0', 'LABEL_1']
+      if word_dic['entity'] == "LABEL_1":
+        word = colored(word_dic['word'], 'green')
+      else:
+        word = colored(word_dic['word'], 'white')
+      list_words.append(word)
+
+    print(' '.join(list_words))
+
+
+  # print ("111")
+  # print(ner_results)
+  #
+  # examples = ["Orient yourself so that the bus stop is on your right",  "Go forward and turn right at the next intersection. Continue forward and you will see a red store on your right. "]
+  #
+  # ner_results = nlp(examples)
+  # print ("222")
+  # print(ner_results)
+  #
+  # model = model.to(device)
+  #
+  # instructions = ds.navigation_text.sample(n_samples).tolist()
+  # tokenized_instructions = tokenizer(instructions, truncation=True, return_tensors='pt', padding=True)
+  # tokenized_instructions = {
+  #   param_k: param_v.to(device) for param_k, param_v in tokenized_instructions.items()}
+  #
+  # with torch.no_grad():
+  #   # Forward pass, calculate logit predictions.
+  #   outputs = model(**tokenized_instructions)
+  #
+  # # Move logits and labels to CPU.
+  # logits = outputs.logits.detach().cpu()
+  # is_landmark = torch.argmax(logits, dim=2)
+  #
+  #
+  # print (logits.shape)

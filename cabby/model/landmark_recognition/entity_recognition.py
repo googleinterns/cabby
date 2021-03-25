@@ -17,17 +17,21 @@
 
 Example command line call:
 $ bazel-bin/cabby/model/landmark_recognition/entity_recognition \
-  --data_dir ~/data/wikigeo/pittsburgh  \
+  --data_dir ~/data/RVS/Manhattan  \
   --batch_size 32 \
   --epochs 4 \
   --max_grad_norm 1.0 \
   --region Manhattan
+  --data_dir_touchdown ~/data/Touchdown/
+  --data_dir_run ~/data/RUN/
+  --n_samples 5
 """
 
 from absl import app
 from absl import flags
 
 import os
+import pandas as pd
 from torch.utils.data import DataLoader
 from transformers import BertForTokenClassification, T5ForConditionalGeneration
 
@@ -64,15 +68,21 @@ flags.DEFINE_integer(
   "s2_level", default=18, help=("S2 level of the S2Cells."))
 
 
+flags.DEFINE_integer(
+  "n_samples", default=5, help=("Number of samples to test on."))
+
+
+
+flags.DEFINE_string("data_dir_touchdown", None,
+          "The directory from which to load the Touchdown dataset for testing.")
+
+flags.DEFINE_string("data_dir_run", None,
+          "The directory from which to load the RUN dataset for testing.")
+
+
 # Required flags.
 flags.mark_flag_as_required("data_dir")
 flags.mark_flag_as_required("model_path")
-flags.mark_flag_as_required("batch_size")
-flags.mark_flag_as_required("epochs")
-flags.mark_flag_as_required("max_grad_norm")
-flags.mark_flag_as_required("region")
-flags.mark_flag_as_required("s2_level")
-
 
 
 def main(argv):
@@ -94,10 +104,42 @@ def main(argv):
   val_dataloader = DataLoader(ds_val, batch_size=FLAGS.batch_size, collate_fn=padSequence)
   test_dataloader = DataLoader(ds_test, batch_size=FLAGS.batch_size, collate_fn=padSequence)
 
-
   model_trained = run.train(model, train_dataloader, val_dataloader, FLAGS)
 
   run.test(model_trained, test_dataloader)
+
+  print ("\n Samples from RVS:")
+  instructions = ds_test.ds.instructions.sample(FLAGS.n_samples).tolist()
+  run.test_samples(
+    instructions=instructions,
+    tokenizer=dataset.tokenizer,
+    model=model_trained
+  )
+
+  print ("\n Samples from RUN:")
+  if os.path.exists(FLAGS.data_dir_run):
+    path_run = os.path.join(FLAGS.data_dir_run, 'dataset.json')
+    if os.path.exists(path_run):
+      run_ds = pd.read_json(path_run, lines=True)
+      instructions = run_ds.instruction.sample(FLAGS.n_samples).tolist()
+      run.test_samples(
+        instructions=instructions,
+        tokenizer=dataset.tokenizer,
+        model=model_trained
+      )
+
+  print ("\n Samples from Touchdown:")
+  # Test against Touchdown dataset (no labels for landmarks).
+  if os.path.exists(FLAGS.data_dir_touchdown):
+    path_touchdown = os.path.join(FLAGS.data_dir_touchdown, 'test.json')
+    if os.path.exists(path_touchdown):
+      touchdown_ds = pd.read_json(path_touchdown, lines=True)
+      instructions = touchdown_ds.navigation_text.sample(FLAGS.n_samples).tolist()
+      run.test_samples(
+        instructions=instructions,
+        tokenizer=dataset.tokenizer,
+        model=model_trained
+      )
 
 
 if __name__ == '__main__':
