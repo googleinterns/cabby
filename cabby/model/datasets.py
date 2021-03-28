@@ -25,8 +25,8 @@ from cabby.geo import util as gutil
 
 
 class RUNDataset:
-  def __init__(self, data_dir: str, s2level: int):
-    train_ds, valid_ds, test_ds, ds = self.load_data(data_dir)
+  def __init__(self, data_dir: str, s2level: int, lines: bool = False):
+    train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=lines)
 
     # Get labels.
     map_1 = regions.get_region("RUN-map1")
@@ -54,8 +54,8 @@ class RUNDataset:
     self.label_to_cellid = label_to_cellid
     self.cellid_to_label = cellid_to_label
 
-  def load_data(self, data_dir: str):
-    ds = pd.read_json(os.path.join(data_dir, 'dataset.json'))
+  def load_data(self, data_dir: str, lines: bool):
+    ds = pd.read_json(os.path.join(data_dir, 'dataset.json'), lines=lines)
     ds['instructions'] = ds.groupby(
       ['id'])['instruction'].transform(lambda x: ' '.join(x))
 
@@ -80,9 +80,14 @@ class RUNDataset:
 
 
 class RVSDataset:
-  def __init__(self, data_dir: str, s2level: int, region: str):
-    ds = pd.read_json(os.path.join(data_dir, 'dataset.json'))
+  def __init__(self, data_dir: str, s2level: int, region: str, lines: bool = True):
+    ds = pd.read_json(os.path.join(data_dir, 'dataset.json'), lines=lines)
     logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
+    ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
+    ds['end_osmid'] = ds.end_point.apply(lambda x: x[1])
+    ds['start_osmid'] = ds.start_point.apply(lambda x: x[1])
+    ds['end_point'] = ds.end_point.apply(lambda x: x[3])
+    ds['start_point'] = ds.start_point.apply(lambda x: x[3])
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
     logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
     dataset_size = ds.shape[0]
