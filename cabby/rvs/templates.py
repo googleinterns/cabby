@@ -20,6 +20,7 @@ cabby.geo.walk.py file but with upper case.
 E.g., 'end_point' should appear as 'END_POINT'.
 '''
 
+import flashtext
 import inflect
 from typing import Dict, Sequence, Text, Tuple
 import nltk
@@ -287,13 +288,22 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
 
     if landmark.main_tag:
 
-      template = template.replace("?UP?"+landmark_type.upper(),
+      template_after = template.replace("?UP?"+landmark_type.upper(),
                                   landmark.main_tag.capitalize())
 
-      template = template.replace(landmark_type.upper(),
+
+
+      template_after_2 = template.replace(landmark_type.upper(),
                                   landmark.main_tag)
 
-      entities_tags.append(landmark.main_tag)
+      if landmark.landmark_type != "start_point":
+
+        if template_after == template and template_after_2 == template:
+          print("22222222222", landmark, template)
+        entities_tags.append(landmark.main_tag)
+
+      template = template_after if template_after!=template else template_after_2
+
 
   for feature_type, feature in entity.geo_features.items():
 
@@ -307,11 +317,12 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
   template = template.replace(' a e', ' an e')
   template = template.replace(' a u', ' an u')
   template = template.replace(' a o', ' an o')
-  template = template.replace('_', ' ')
 
   entities_span_dict = {}
   for entity_tag in entities_tags:
     entities_span_dict.update(add_entity_span(entity_tag, template))
+
+  template = template.replace('_', ' ')
 
   return template, entities_span_dict
 
@@ -323,11 +334,15 @@ def add_entity_span(entity_tag: str, instruction: str) -> Dict[str, Tuple[int, i
     Returns:
       A dictionary of entities (keys) and spans (values).
   '''
-  pattern = re.compile(entity_tag, re.IGNORECASE)
+
+  keyword_processor = flashtext.KeywordProcessor(case_sensitive=False)
+  keyword_processor.add_keyword(entity_tag)
+
+  keywords_found = keyword_processor.extract_keywords(instruction, span_info=True)
 
   entities_span_dict = {}
-  for m in pattern.finditer(instruction):
-    entities_span_dict[m.group()] = (m.start(), m.end())
+  for m in keywords_found:
+    entities_span_dict[m[0]] = (m[1], m[2])
 
   return entities_span_dict
 

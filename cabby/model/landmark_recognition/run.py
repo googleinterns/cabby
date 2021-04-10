@@ -215,30 +215,3 @@ def test_samples(instructions, tokenizer, model):
 
     print(' '.join(list_words))
 
-
-  # print ("111")
-  # print(ner_results)
-  #
-  # examples = ["Orient yourself so that the bus stop is on your right",  "Go forward and turn right at the next intersection. Continue forward and you will see a red store on your right. "]
-  #
-  # ner_results = nlp(examples)
-  # print ("222")
-  # print(ner_results)
-  #
-  # model = model.to(device)
-  #
-  # instructions = ds.navigation_text.sample(n_samples).tolist()
-  # tokenized_instructions = tokenizer(instructions, truncation=True, return_tensors='pt', padding=True)
-  # tokenized_instructions = {
-  #   param_k: param_v.to(device) for param_k, param_v in tokenized_instructions.items()}
-  #
-  # with torch.no_grad():
-  #   # Forward pass, calculate logit predictions.
-  #   outputs = model(**tokenized_instructions)
-  #
-  # # Move logits and labels to CPU.
-  # logits = outputs.logits.detach().cpu()
-  # is_landmark = torch.argmax(logits, dim=2)
-  #
-  #
-  # print (logits.shape)

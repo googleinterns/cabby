@@ -35,3 +35,16 @@ py_binary(
 
     ],
 )
+
+
+py_binary(
+    name = 'pivot_recognition',
+    main = 'pivot_recognition.py',
+    srcs = ['pivot_recognition.py'],
+    deps = [
+          "//cabby/geo:regions",
+          "//cabby/model/landmark_recognition:dataset_bert",
+          "//cabby/model/landmark_recognition:run",
+
+    ],
+)

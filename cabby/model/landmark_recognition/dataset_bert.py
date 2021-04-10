@@ -21,22 +21,31 @@ from typing import Dict, Tuple, Any, List
 
 from cabby.model import datasets
 
-tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+tokenizer = AutoTokenizer.from_pretrained("bert-base-cased", padding=True, truncation=True)
 
 
 class EntityRecognitionSplit(torch.utils.data.Dataset):
   """A split of the Entity Recognition dataset ."""
 
-  def __init__(self, data: pd.DataFrame):
+  def __init__(self, data: pd.DataFrame, pivot_name: str):
     # Tokenize instructions and corresponding labels.
     self.ds = data
+
+    pivot_span_func = lambda x: {
+      pivot_name: x.entity_span[x[pivot_name][2]]} if x[pivot_name][2] else {pivot_name: [0, 0]}
+    if pivot_name != "all":
+      self.ds['pivot_span'] = self.ds.apply(pivot_span_func, axis=1)
+      labels = self.ds.pivot_span
+    else:
+      labels = data.entity_span
     basic_tokenization = [
       basic_tokenize_and_align_labels(sent, labs)
-      for sent, labs in zip(data.instructions.tolist(), data.entity_span)
+      for sent, labs in zip(self.ds.instructions.tolist(), labels)
     ]
-    self.inputs = [bert_tokenize_and_align_labels(sent, labs) for sent, labs in basic_tokenization]
-    self.sent = data.instructions.tolist()
 
+    self.inputs = [bert_tokenize_and_align_labels(sent, labs) for sent, labs in basic_tokenization]
+
+    self.sent = data.instructions.tolist()
 
   def __getitem__(self, idx: int):
     '''Supports indexing such that TextGeoDataset[i] can be used to get
@@ -49,7 +58,9 @@ class EntityRecognitionSplit(torch.utils.data.Dataset):
     '''
 
     input = {k: torch.tensor(v) for k, v in self.inputs[idx].items()}
+
     input['instructions'] = self.sent[idx]
+
     return input
 
   def __len__(self):
@@ -59,24 +70,25 @@ def create_dataset(
   data_dir: str,
   region: str,
   s2level: int,
+  pivot_name: str = "all"
 ) -> Tuple[EntityRecognitionSplit, EntityRecognitionSplit, EntityRecognitionSplit]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.
     region: The region of the data.
     s2level: The s2level of the cells.
+    pivot_name: name of the pivot to be extracted.
   Returns:
     The train, validate and test sets.
   '''
   rvs_dataset = datasets.RVSDataset(data_dir, s2level, region)
-
-  train_dataset = EntityRecognitionSplit(rvs_dataset.train)
+  train_dataset = EntityRecognitionSplit(rvs_dataset.train, pivot_name)
   logging.info(
     f"Finished to create the train-set with {len(train_dataset)} samples")
-  val_dataset = EntityRecognitionSplit(rvs_dataset.valid)
+  val_dataset = EntityRecognitionSplit(rvs_dataset.valid, pivot_name)
   logging.info(
     f"Finished to create the valid-set with {len(val_dataset)} samples")
-  test_dataset = EntityRecognitionSplit(rvs_dataset.test)
+  test_dataset = EntityRecognitionSplit(rvs_dataset.test, pivot_name)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
 
@@ -180,6 +192,7 @@ class PadSequence:
 
     attention_masks = torch.tensor(
       [[float(i != 0.0) for i in ii] for ii in input_ids_padded])
+
 
     sample = {'labels': labels_padded,
               'input_ids': input_ids_padded,

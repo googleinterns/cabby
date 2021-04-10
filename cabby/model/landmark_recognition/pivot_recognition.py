@@ -25,6 +25,7 @@ $ bazel-bin/cabby/model/landmark_recognition/entity_recognition \
   --data_dir_touchdown ~/data/Touchdown/
   --data_dir_run ~/data/RUN/
   --n_samples 5
+  --pivot_name end_pivot
 """
 
 from absl import app
@@ -33,7 +34,7 @@ from absl import flags
 import os
 import pandas as pd
 from torch.utils.data import DataLoader
-from transformers import BertForTokenClassification, T5ForConditionalGeneration
+from transformers import BertForTokenClassification
 
 from cabby.geo import regions
 from cabby.model.landmark_recognition import dataset_bert as dataset
@@ -42,11 +43,16 @@ from cabby.model.landmark_recognition import run
 
 FLAGS = flags.FLAGS
 
+model_path = "/home/nlp/tzufar/Pycharm/second_year/cabby-tmp-data/model"
+
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
 
 flags.DEFINE_string("model_path", None,
           "The path to save the model.")
+
+flags.DEFINE_string("pivot_name", None,
+          "Pivot name: 'all'|main_pivot|near_pivot|end_pivot|beyond_pivot.")
 
 flags.DEFINE_integer(
   'batch_size', default=32,
@@ -83,10 +89,14 @@ flags.DEFINE_string("data_dir_run", None,
 # Required flags.
 flags.mark_flag_as_required("data_dir")
 flags.mark_flag_as_required("model_path")
+flags.mark_flag_as_required("pivot_name")
 
 
 def main(argv):
   del argv  # Unused.
+
+  FLAGS.model_path = FLAGS.model_path + FLAGS.pivot_name + ".pt"
+
 
   model = BertForTokenClassification.from_pretrained(
     "bert-base-cased",
@@ -98,9 +108,11 @@ def main(argv):
   padSequence = dataset.PadSequence()
 
 
-  ds_train, ds_val, ds_test = dataset.create_dataset(FLAGS.data_dir, FLAGS.region, FLAGS.s2_level)
+  ds_train, ds_val, ds_test = dataset.create_dataset(
+    FLAGS.data_dir, FLAGS.region, FLAGS.s2_level, FLAGS.pivot_name)
 
-  train_dataloader = DataLoader(ds_train, batch_size=FLAGS.batch_size, collate_fn=padSequence)
+  train_dataloader = DataLoader(
+    ds_train, batch_size=FLAGS.batch_size, collate_fn=padSequence)
   val_dataloader = DataLoader(ds_val, batch_size=FLAGS.batch_size, collate_fn=padSequence)
   test_dataloader = DataLoader(ds_test, batch_size=FLAGS.batch_size, collate_fn=padSequence)
 

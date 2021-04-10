@@ -32,7 +32,7 @@ class RUNDataset:
     map_1 = regions.get_region("RUN-map1")
     map_2 = regions.get_region("RUN-map2")
     map_3 = regions.get_region("RUN-map3")
-    # map_polygon = map_1.polygon.union(map_2.polygon).union(map_3.polygon)
+
     logging.info(map_1.polygon.wkt)
     logging.info(map_2.polygon.wkt)
     logging.info(map_3.polygon.wkt)
@@ -84,8 +84,10 @@ class RVSDataset:
     ds = pd.read_json(os.path.join(data_dir, 'dataset.json'), lines=lines)
     logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
     ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
+    lengths = ds.end_point.apply(lambda x: x if len(x)==3 else "").tolist()
     ds['end_osmid'] = ds.end_point.apply(lambda x: x[1])
     ds['start_osmid'] = ds.start_point.apply(lambda x: x[1])
+    ds['end_pivot'] = ds.end_point
     ds['end_point'] = ds.end_point.apply(lambda x: x[3])
     ds['start_point'] = ds.start_point.apply(lambda x: x[3])
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
@@ -116,3 +118,5 @@ class RVSDataset:
     self.unique_cellid = unique_cellid
     self.label_to_cellid = label_to_cellid
     self.cellid_to_label = cellid_to_label
+
+
