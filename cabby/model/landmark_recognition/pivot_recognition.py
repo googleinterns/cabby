@@ -43,8 +43,6 @@ from cabby.model.landmark_recognition import run
 
 FLAGS = flags.FLAGS
 
-model_path = "/home/nlp/tzufar/Pycharm/second_year/cabby-tmp-data/model"
-
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
 
