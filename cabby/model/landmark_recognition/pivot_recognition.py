@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-"""Entity recognition with Bert encoding.
+"""Pivot recognition with Bert encoding.
 
 Example command line call:
 $ bazel-bin/cabby/model/landmark_recognition/entity_recognition \
@@ -95,7 +95,7 @@ flags.mark_flag_as_required("pivot_name")
 def main(argv):
   del argv  # Unused.
 
-  FLAGS.model_path = FLAGS.model_path + FLAGS.pivot_name + ".pt"
+  FLAGS.model_path = FLAGS.model_path + "_" + FLAGS.pivot_name + ".pt"
 
 
   model = BertForTokenClassification.from_pretrained(
