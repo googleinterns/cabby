@@ -40,7 +40,6 @@ from cabby.geo import regions
 from cabby.model.landmark_recognition import dataset_bert as dataset
 from cabby.model.landmark_recognition import run
 
-
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string("data_dir", None,
