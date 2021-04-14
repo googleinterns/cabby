@@ -40,7 +40,7 @@ from cabby.geo import geo_item
 from cabby.geo import osm
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
-SEED = 0
+SEED = 3
 SAVE_ENTITIES_EVERY = 1000
 MAX_BATCH_GEN = 100
 MAX_SEED = 2**32 - 1
@@ -240,7 +240,7 @@ class Walker:
     return poi
 
 
-  def get_end_poi(self,) -> Optional[GeoSeries]:
+  def get_end_poi(self) -> Optional[GeoSeries]:
     '''Returns a random POI.
     Returns:
       A single POI.
@@ -355,11 +355,13 @@ class Walker:
   def pick_prominent_pivot(self,
                            df_pivots: GeoDataFrame,
                            end_point: Dict[str, Any],
+                           path_geom: LineString
   ) -> Optional[GeoSeries]:
     '''Select a landmark from a set of landmarks by priority.
     Arguments:
       df_pivots: The set of landmarks.
       end_point: The goal location.
+      path_geom: The geometry of the path.
     Returns:
       A single landmark.
     '''
@@ -387,18 +389,20 @@ class Walker:
                                               named_tag)
       if pivot is not None:
         if not isinstance(pivot['geometry'], Point):
-          pivot['geometry'] = pivot['geometry'].centroid
+          pivot['geometry'] = util.get_closest_point_to_path(
+            pivot['geometry'], path_geom)
         return pivot
 
     return pivot
 
-
   def get_pivot_near_goal(self,
-                          end_point: GeoSeries
+                          end_point: GeoSeries,
+                          path_geom: LineString
   ) -> Optional[GeoSeries]:
     '''Return a picked landmark near the end_point.
     Arguments:
       end_point: The goal location.
+      path_geom: The geometry of the path selected.
     Returns:
       A single landmark near the goal location.
     '''
@@ -426,7 +430,7 @@ class Walker:
     if unique_poi.shape[0]==0:
       return None
 
-    prominent_poi = self.pick_prominent_pivot(unique_poi, end_point)
+    prominent_poi = self.pick_prominent_pivot(unique_poi, end_point, path_geom)
     return prominent_poi
 
 
@@ -462,7 +466,8 @@ class Walker:
       end_point['centroid']) > NEAR_PIVOT_DIST, axis=1)
     far_poi = df_pivots[far_poi_con]
 
-    main_pivot = self.pick_prominent_pivot(far_poi, end_point)
+    path_geom = LineString(points_route)
+    main_pivot = self.pick_prominent_pivot(far_poi, end_point, path_geom)
     return main_pivot
 
   def get_pivot_beyond_goal(self,
@@ -561,7 +566,8 @@ class Walker:
       # Return Empty.
       return None
 
-    beyond_pivot = self.pick_prominent_pivot(df_pivots, end_point)
+    path_geom = LineString(points_route)
+    beyond_pivot = self.pick_prominent_pivot(df_pivots, end_point, path_geom)
     return beyond_pivot
 
 
@@ -635,8 +641,10 @@ class Walker:
     if main_pivot is None:
       return None
 
+    path_geom = LineString(route['geometry'].tolist())
+
     # Get pivot near the goal location.
-    near_pivot = self.get_pivot_near_goal(end_point)
+    near_pivot = self.get_pivot_near_goal(end_point, path_geom)
 
     if near_pivot is None:
       return None
@@ -806,7 +814,6 @@ class Walker:
     # Get Egocentric spatial relation from main pivot.
     geo_features['spatial_rel_pivot'] = self.get_egocentric_spatial_relation_pivot(
       geo_landmarks['main_pivot']['geometry'].centroid, route)
-
 
     # Get number of intersections between main pivot and goal location.
     geo_features['intersections'] = self.get_number_intersections_past(
