@@ -290,18 +290,16 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
 
     if landmark.main_tag:
 
-      template_after = template.replace("?UP?"+landmark_type.upper(),
+      template = template.replace("?UP?"+landmark_type.upper(),
                                   landmark.main_tag.capitalize())
 
 
 
-      template_after_2 = template.replace(landmark_type.upper(),
+      template = template.replace(landmark_type.upper(),
                                   landmark.main_tag)
 
       if landmark.landmark_type != "start_point":
         entities_tags.append(landmark.main_tag)
-
-      template = template_after if template_after!=template else template_after_2
 
 
   for feature_type, feature in entity.geo_features.items():
