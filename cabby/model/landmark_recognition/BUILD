@@ -25,19 +25,6 @@ py_library(
 
 
 py_binary(
-    name = 'entity_recognition',
-    main = 'entity_recognition.py',
-    srcs = ['entity_recognition.py'],
-    deps = [
-          "//cabby/geo:regions",
-          "//cabby/model/landmark_recognition:dataset_bert",
-          "//cabby/model/landmark_recognition:run",
-
-    ],
-)
-
-
-py_binary(
     name = 'pivot_recognition',
     main = 'pivot_recognition.py',
     srcs = ['pivot_recognition.py'],
@@ -45,6 +32,7 @@ py_binary(
           "//cabby/geo:regions",
           "//cabby/model/landmark_recognition:dataset_bert",
           "//cabby/model/landmark_recognition:run",
+          "//cabby/geo:walk"
 
     ],
 )

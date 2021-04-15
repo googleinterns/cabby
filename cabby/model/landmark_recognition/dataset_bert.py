@@ -23,18 +23,17 @@ from cabby.model import datasets
 
 tokenizer = AutoTokenizer.from_pretrained("bert-base-cased", padding=True, truncation=True)
 
+EXTRACT_ALL_PIVOTS = "all"
 
 class EntityRecognitionSplit(torch.utils.data.Dataset):
   """A split of the Entity Recognition dataset ."""
 
-  def __init__(self, data: pd.DataFrame, pivot_name: str):
+  def __init__(self, data: pd.DataFrame, pivot_type: str):
     # Tokenize instructions and corresponding labels.
     self.ds = data
 
-    pivot_span_func = lambda x: {
-      pivot_name: x.entity_span[x[pivot_name][2]]} if x[pivot_name][2] else {pivot_name: [0, 0]}
-    if pivot_name != "all":
-      self.ds['pivot_span'] = self.ds.apply(pivot_span_func, axis=1)
+    if pivot_type != EXTRACT_ALL_PIVOTS:
+      self.ds['pivot_span'] = self.ds.apply(get_pivot_span_by_name, args=(pivot_type,), axis=1)
       labels = self.ds.pivot_span
     else:
       labels = data.entity_span
@@ -70,25 +69,25 @@ def create_dataset(
   data_dir: str,
   region: str,
   s2level: int,
-  pivot_name: str = "all"
+  pivot_type: str = EXTRACT_ALL_PIVOTS
 ) -> Tuple[EntityRecognitionSplit, EntityRecognitionSplit, EntityRecognitionSplit]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.
     region: The region of the data.
     s2level: The s2level of the cells.
-    pivot_name: name of the pivot to be extracted.
+    pivot_type: name of the pivot to be extracted.
   Returns:
     The train, validate and test sets.
   '''
   rvs_dataset = datasets.RVSDataset(data_dir, s2level, region)
-  train_dataset = EntityRecognitionSplit(rvs_dataset.train, pivot_name)
+  train_dataset = EntityRecognitionSplit(rvs_dataset.train, pivot_type)
   logging.info(
     f"Finished to create the train-set with {len(train_dataset)} samples")
-  val_dataset = EntityRecognitionSplit(rvs_dataset.valid, pivot_name)
+  val_dataset = EntityRecognitionSplit(rvs_dataset.valid, pivot_type)
   logging.info(
     f"Finished to create the valid-set with {len(val_dataset)} samples")
-  test_dataset = EntityRecognitionSplit(rvs_dataset.test, pivot_name)
+  test_dataset = EntityRecognitionSplit(rvs_dataset.test, pivot_type)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
 
@@ -143,6 +142,20 @@ def basic_tokenize_and_align_labels(
         start = len(sentence) + 1
 
   return sentence_words, labels
+
+def get_pivot_span_by_name(sample: pd.Series, pivot_type: str
+  ) -> List[int]:
+  '''Get the entity span for a specific sample and a specific type of entity.
+  Arguments:
+    sample: the sample from which the span should be extracted.
+    pivot_type: the type of the pivot.
+  Returns:
+    A span of an entity includes a start and end of the span positions.
+  '''
+  pivot_name = sample[pivot_type][2]
+  if pivot_name:
+    return {pivot_type: sample.entity_span[pivot_name]}
+  return {pivot_type: [0, 0]}  # The pivot doesn't appear in the instructions.
 
 def bert_tokenize_and_align_labels(
   tokenized_sentence: List[int], tags: List[int]

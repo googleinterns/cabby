@@ -25,7 +25,7 @@ $ bazel-bin/cabby/model/landmark_recognition/entity_recognition \
   --data_dir_touchdown ~/data/Touchdown/
   --data_dir_run ~/data/RUN/
   --n_samples 5
-  --pivot_name end_pivot
+  --pivot_type end_pivot
 """
 
 from absl import app
@@ -39,17 +39,20 @@ from transformers import BertForTokenClassification
 from cabby.geo import regions
 from cabby.model.landmark_recognition import dataset_bert as dataset
 from cabby.model.landmark_recognition import run
+from cabby.geo import walk
 
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
 
-flags.DEFINE_string("model_path", None,
+flags.DEFINE_string("model_prefix", None,
           "The path to save the model.")
 
-flags.DEFINE_string("pivot_name", None,
-          "Pivot name: 'all'|main_pivot|near_pivot|end_pivot|beyond_pivot.")
+flags.DEFINE_enum(
+  "pivot_type", None,
+   walk.LANDMARK_TYPES + [dataset.EXTRACT_ALL_PIVOTS],
+  "Pivot type: 'all'|main_pivot|near_pivot|end_pivot|beyond_pivot.")
 
 flags.DEFINE_integer(
   'batch_size', default=32,
@@ -85,14 +88,14 @@ flags.DEFINE_string("data_dir_run", None,
 
 # Required flags.
 flags.mark_flag_as_required("data_dir")
-flags.mark_flag_as_required("model_path")
-flags.mark_flag_as_required("pivot_name")
+flags.mark_flag_as_required("model_prefix")
+flags.mark_flag_as_required("pivot_type")
 
 
 def main(argv):
   del argv  # Unused.
 
-  FLAGS.model_path = FLAGS.model_path + "_" + FLAGS.pivot_name + ".pt"
+  FLAGS.model_prefix = FLAGS.model_prefix + "_" + FLAGS.pivot_type + ".pt"
 
 
   model = BertForTokenClassification.from_pretrained(
@@ -106,7 +109,7 @@ def main(argv):
 
 
   ds_train, ds_val, ds_test = dataset.create_dataset(
-    FLAGS.data_dir, FLAGS.region, FLAGS.s2_level, FLAGS.pivot_name)
+    FLAGS.data_dir, FLAGS.region, FLAGS.s2_level, FLAGS.pivot_type)
 
   train_dataloader = DataLoader(
     ds_train, batch_size=FLAGS.batch_size, collate_fn=padSequence)
