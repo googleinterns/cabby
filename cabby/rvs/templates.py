@@ -314,7 +314,6 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
   re_indef_vowel  = re.compile(r'\ba ([aeiou])')
   template = re_indef_vowel.sub(r'an \1', template)
 
-
   entities_span_dict = {}
   for entity_tag in entities_tags:
     entities_span_dict.update(add_entity_span(entity_tag, template))

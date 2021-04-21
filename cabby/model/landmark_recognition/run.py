@@ -141,7 +141,7 @@ def train(model, train_dataloader, val_dataloader, args):
                       'epoch': epoch,
                       }
 
-  torch.save(best_score, args.model_prefix)
+  torch.save(best_score, args.model_path)
   return best_score['model']
 
 

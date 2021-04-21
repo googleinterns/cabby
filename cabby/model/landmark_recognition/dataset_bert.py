@@ -144,7 +144,7 @@ def basic_tokenize_and_align_labels(
   return sentence_words, labels
 
 def get_pivot_span_by_name(sample: pd.Series, pivot_type: str
-  ) -> List[int]:
+  ) -> Dict[str, List[int]]:
   '''Get the entity span for a specific sample and a specific type of entity.
   Arguments:
     sample: the sample from which the span should be extracted.
