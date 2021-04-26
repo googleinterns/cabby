@@ -20,6 +20,7 @@ cabby.geo.walk.py file but with upper case.
 E.g., 'end_point' should appear as 'END_POINT'.
 '''
 
+import flashtext
 import inflect
 from typing import Dict, Sequence, Text, Tuple
 import nltk
@@ -237,8 +238,10 @@ def create_templates():
     sentence = sentence.replace(" .", ".")
     sentence = sentence.replace(" ,", ",")
     sentence = sentence.replace("..", ".")
-    sentence = sentence.replace("   ", " ")
-    sentence = sentence.replace("  ", " ")
+
+    re_space = re.compile(r'[\s]+')
+    sentence = re_space.sub(r' ', sentence)
+
     templates.append(sentence)
 
   templates_df = pd.DataFrame(
@@ -290,10 +293,14 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
       template = template.replace("?UP?"+landmark_type.upper(),
                                   landmark.main_tag.capitalize())
 
+
+
       template = template.replace(landmark_type.upper(),
                                   landmark.main_tag)
 
-      entities_tags.append(landmark.main_tag)
+      if landmark.landmark_type != "start_point":
+        entities_tags.append(landmark.main_tag)
+
 
   for feature_type, feature in entity.geo_features.items():
 
@@ -303,15 +310,15 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
   # Fix text.
   template = template.replace('The The', 'The')
   template = template.replace('the The', 'the')
-  template = template.replace(' a a', ' an a')
-  template = template.replace(' a e', ' an e')
-  template = template.replace(' a u', ' an u')
-  template = template.replace(' a o', ' an o')
-  template = template.replace('_', ' ')
+
+  re_indef_vowel  = re.compile(r'\ba ([aeiou])')
+  template = re_indef_vowel.sub(r'an \1', template)
 
   entities_span_dict = {}
   for entity_tag in entities_tags:
     entities_span_dict.update(add_entity_span(entity_tag, template))
+
+  template = template.replace('_', ' ')
 
   return template, entities_span_dict
 
@@ -323,11 +330,16 @@ def add_entity_span(entity_tag: str, instruction: str) -> Dict[str, Tuple[int, i
     Returns:
       A dictionary of entities (keys) and spans (values).
   '''
-  pattern = re.compile(entity_tag, re.IGNORECASE)
+
+  keyword_processor = flashtext.KeywordProcessor(case_sensitive=False)
+  keyword_processor.add_keyword(entity_tag)
+
+  keywords_found = keyword_processor.extract_keywords(instruction, span_info=True)
 
   entities_span_dict = {}
-  for m in pattern.finditer(instruction):
-    entities_span_dict[m.group()] = (m.start(), m.end())
+  for keyword_found in keywords_found:
+    start_position, end_position = keyword_found[1], keyword_found[2]
+    entities_span_dict[entity_tag] = (start_position, end_position)
 
   return entities_span_dict
 

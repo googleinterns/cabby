@@ -23,6 +23,7 @@ import re
 from shapely.geometry.point import Point
 from shapely.geometry import box, mapping, LineString
 import sys
+import swifter
 from typing import Any, Dict, Text 
 import torch
 from transformers import DistilBertTokenizerFast
@@ -36,7 +37,6 @@ from cabby.model.text import util
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
 CELLID_DIM = 64
-
 
 @attr.s
 class TextGeoDataset:
@@ -121,54 +121,56 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int], 
     dprob: mutil.DistanceProbability):
-    # Tokenize instructions.
-    self.encodings = tokenizer(
-      data.instructions.tolist(), truncation=True,
-      padding=True, add_special_tokens=True)
 
-    start_points = data.start_point.apply(
-      lambda x: gutil.point_from_list_coord(x))
-    
-    dist_lists = start_points.apply(
-      lambda start: unique_cells_df.point.apply(
-        lambda end: gutil.get_distance_between_points(start, end))
-        ).values.tolist()
-    
 
-    self.prob = []
-    for dist_list in dist_lists:
-      prob = []
-      for dist in dist_list:
-        prob.append(dprob(dist))
-      self.prob.append(prob)
-
-    points = data.end_point.apply(
+    points = data.end_point.swifter.apply(
       lambda x: gutil.point_from_list_coord(x))
 
     data = data.assign(point=points)
 
-    data['cellid'] = data.point.apply(
+    data['cellid'] = data.point.swifter.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
 
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.neighbor_cellid(x))
 
-    data['far_cells'] = data.cellid.apply(
+    start_points = data.start_point.swifter.apply(
+      lambda x: gutil.point_from_list_coord(x))
+
+    dist_lists = start_points.apply(
+      lambda start: calc_dist(start, unique_cells_df)
+    )
+
+    # Tokenize instructions.
+    self.encodings = tokenizer(
+      data.instructions.tolist(), truncation=True,
+      padding=True, add_special_tokens=True)
+
+    self.prob = dist_lists.swifter.apply(
+      lambda row: [dprob(dist) for dist in row.values.tolist()], axis=1) #.tolist()
+
+    self.prob = self.prob.tolist()
+
+    data['far_cells'] = data.cellid.swifter.apply(
       lambda cellid: unique_cells_df[unique_cells_df['cellid']==cellid].far.iloc[0])
 
     cellids_array = np.array(data.cellid.tolist())
     neighbor_cells_array = np.array(data.neighbor_cells.tolist())
     far_cells_array = np.array(data.far_cells.tolist())
 
-
     self.points = data.point.apply(
       lambda x: gutil.tuple_from_point(x)).tolist()
+
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
+
     self.cellids = util.binary_representation(cellids_array, dim = CELLID_DIM)
+
     self.neighbor_cells =  util.binary_representation(
       neighbor_cells_array, dim = CELLID_DIM)
+
     self.far_cells =  util.binary_representation(
       far_cells_array, dim = CELLID_DIM)
+
 
   def __getitem__(self, idx: int):
     '''Supports indexing such that TextGeoDataset[i] can be used to get 
@@ -195,4 +197,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
   def __len__(self):
     return len(self.cellids)
+
+def calc_dist(start, unique_cells_df):
+  return unique_cells_df.swifter.apply(
+    lambda end: gutil.get_distance_between_points(start, end.point), axis=1)
+
 

@@ -21,22 +21,30 @@ from typing import Dict, Tuple, Any, List
 
 from cabby.model import datasets
 
-tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+tokenizer = AutoTokenizer.from_pretrained("bert-base-cased", padding=True, truncation=True)
 
+EXTRACT_ALL_PIVOTS = "all"
 
 class EntityRecognitionSplit(torch.utils.data.Dataset):
   """A split of the Entity Recognition dataset ."""
 
-  def __init__(self, data: pd.DataFrame):
+  def __init__(self, data: pd.DataFrame, pivot_type: str):
     # Tokenize instructions and corresponding labels.
     self.ds = data
+
+    if pivot_type != EXTRACT_ALL_PIVOTS:
+      self.ds['pivot_span'] = self.ds.apply(get_pivot_span_by_name, args=(pivot_type,), axis=1)
+      labels = self.ds.pivot_span
+    else:
+      labels = data.entity_span
     basic_tokenization = [
       basic_tokenize_and_align_labels(sent, labs)
-      for sent, labs in zip(data.instructions.tolist(), data.entity_span)
+      for sent, labs in zip(self.ds.instructions.tolist(), labels)
     ]
-    self.inputs = [bert_tokenize_and_align_labels(sent, labs) for sent, labs in basic_tokenization]
-    self.sent = data.instructions.tolist()
 
+    self.inputs = [bert_tokenize_and_align_labels(sent, labs) for sent, labs in basic_tokenization]
+
+    self.sent = data.instructions.tolist()
 
   def __getitem__(self, idx: int):
     '''Supports indexing such that TextGeoDataset[i] can be used to get
@@ -49,7 +57,9 @@ class EntityRecognitionSplit(torch.utils.data.Dataset):
     '''
 
     input = {k: torch.tensor(v) for k, v in self.inputs[idx].items()}
+
     input['instructions'] = self.sent[idx]
+
     return input
 
   def __len__(self):
@@ -59,24 +69,25 @@ def create_dataset(
   data_dir: str,
   region: str,
   s2level: int,
+  pivot_type: str = EXTRACT_ALL_PIVOTS
 ) -> Tuple[EntityRecognitionSplit, EntityRecognitionSplit, EntityRecognitionSplit]:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
     data_dir: The directory of the data.
     region: The region of the data.
     s2level: The s2level of the cells.
+    pivot_type: name of the pivot to be extracted.
   Returns:
     The train, validate and test sets.
   '''
   rvs_dataset = datasets.RVSDataset(data_dir, s2level, region)
-
-  train_dataset = EntityRecognitionSplit(rvs_dataset.train)
+  train_dataset = EntityRecognitionSplit(rvs_dataset.train, pivot_type)
   logging.info(
     f"Finished to create the train-set with {len(train_dataset)} samples")
-  val_dataset = EntityRecognitionSplit(rvs_dataset.valid)
+  val_dataset = EntityRecognitionSplit(rvs_dataset.valid, pivot_type)
   logging.info(
     f"Finished to create the valid-set with {len(val_dataset)} samples")
-  test_dataset = EntityRecognitionSplit(rvs_dataset.test)
+  test_dataset = EntityRecognitionSplit(rvs_dataset.test, pivot_type)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
 
@@ -132,6 +143,20 @@ def basic_tokenize_and_align_labels(
 
   return sentence_words, labels
 
+def get_pivot_span_by_name(sample: pd.Series, pivot_type: str
+  ) -> Dict[str, List[int]]:
+  '''Get the entity span for a specific sample and a specific type of entity.
+  Arguments:
+    sample: the sample from which the span should be extracted.
+    pivot_type: the type of the pivot.
+  Returns:
+    A span of an entity includes a start and end of the span positions.
+  '''
+  pivot_name = sample[pivot_type][2]
+  if pivot_name:
+    return {pivot_type: sample.entity_span[pivot_name]}
+  return {pivot_type: [0, 0]}  # The pivot doesn't appear in the instructions.
+
 def bert_tokenize_and_align_labels(
   tokenized_sentence: List[int], tags: List[int]
 ) -> Dict[str, torch.Tensor]:
@@ -180,6 +205,7 @@ class PadSequence:
 
     attention_masks = torch.tensor(
       [[float(i != 0.0) for i in ii] for ii in input_ids_padded])
+
 
     sample = {'labels': labels_padded,
               'input_ids': input_ids_padded,
