@@ -32,6 +32,7 @@ py_binary(
           "//cabby/geo:regions",
           "//cabby/model/landmark_recognition:dataset_bert",
           "//cabby/model/landmark_recognition:run",
+          "//cabby/geo:walk"
 
     ],
 )

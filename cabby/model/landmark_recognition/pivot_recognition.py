@@ -25,12 +25,13 @@ $ bazel-bin/cabby/model/landmark_recognition/entity_recognition \
   --data_dir_touchdown ~/data/Touchdown/
   --data_dir_run ~/data/RUN/
   --n_samples 5
-  --pivot_name end_pivot
+  --pivot_type end_pivot
 """
 
 from absl import app
 from absl import flags
 
+import enum
 import os
 import pandas as pd
 from torch.utils.data import DataLoader
@@ -39,17 +40,22 @@ from transformers import BertForTokenClassification
 from cabby.geo import regions
 from cabby.model.landmark_recognition import dataset_bert as dataset
 from cabby.model.landmark_recognition import run
+from cabby.geo import walk
 
 FLAGS = flags.FLAGS
+
+landmark_list = walk.LANDMARK_TYPES + [dataset.EXTRACT_ALL_PIVOTS]
+landmark_msg = "Landmark type: " + ','.join(landmark_list)
 
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
 
-flags.DEFINE_string("model_path", None,
+flags.DEFINE_string("model_prefix", None,
           "The path to save the model.")
 
-flags.DEFINE_string("pivot_name", None,
-          "Pivot name: 'all'|main_pivot|near_pivot|end_pivot|beyond_pivot.")
+flags.DEFINE_enum(
+  "pivot_type", None, landmark_list,
+  landmark_msg)
 
 flags.DEFINE_integer(
   'batch_size', default=32,
@@ -85,15 +91,16 @@ flags.DEFINE_string("data_dir_run", None,
 
 # Required flags.
 flags.mark_flag_as_required("data_dir")
-flags.mark_flag_as_required("model_path")
-flags.mark_flag_as_required("pivot_name")
+flags.mark_flag_as_required("model_prefix")
+flags.mark_flag_as_required("pivot_type")
 
 
 def main(argv):
   del argv  # Unused.
 
-  FLAGS.model_path = FLAGS.model_path + "_" + FLAGS.pivot_name + ".pt"
-
+  train_config = FLAGS.flag_values_dict()
+  train_config['model_path'] = FLAGS.model_prefix + "_" + FLAGS.pivot_type + ".pt"
+  train_config = type('Config', (object,), train_config)
 
   model = BertForTokenClassification.from_pretrained(
     "bert-base-cased",
@@ -106,14 +113,14 @@ def main(argv):
 
 
   ds_train, ds_val, ds_test = dataset.create_dataset(
-    FLAGS.data_dir, FLAGS.region, FLAGS.s2_level, FLAGS.pivot_name)
+    FLAGS.data_dir, FLAGS.region, FLAGS.s2_level, FLAGS.pivot_type)
 
   train_dataloader = DataLoader(
     ds_train, batch_size=FLAGS.batch_size, collate_fn=padSequence)
   val_dataloader = DataLoader(ds_val, batch_size=FLAGS.batch_size, collate_fn=padSequence)
   test_dataloader = DataLoader(ds_test, batch_size=FLAGS.batch_size, collate_fn=padSequence)
 
-  model_trained = run.train(model, train_dataloader, val_dataloader, FLAGS)
+  model_trained = run.train(model, train_dataloader, val_dataloader, train_config)
 
   run.test(model_trained, test_dataloader)
 

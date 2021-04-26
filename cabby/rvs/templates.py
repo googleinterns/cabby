@@ -238,8 +238,10 @@ def create_templates():
     sentence = sentence.replace(" .", ".")
     sentence = sentence.replace(" ,", ",")
     sentence = sentence.replace("..", ".")
-    sentence = sentence.replace("   ", " ")
-    sentence = sentence.replace("  ", " ")
+
+    re_space = re.compile(r'[\s]+')
+    sentence = re_space.sub(r' ', sentence)
+
     templates.append(sentence)
 
   templates_df = pd.DataFrame(
@@ -288,21 +290,16 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
 
     if landmark.main_tag:
 
-      template_after = template.replace("?UP?"+landmark_type.upper(),
+      template = template.replace("?UP?"+landmark_type.upper(),
                                   landmark.main_tag.capitalize())
 
 
 
-      template_after_2 = template.replace(landmark_type.upper(),
+      template = template.replace(landmark_type.upper(),
                                   landmark.main_tag)
 
       if landmark.landmark_type != "start_point":
-
-        if template_after == template and template_after_2 == template:
-          print("22222222222", landmark, template)
         entities_tags.append(landmark.main_tag)
-
-      template = template_after if template_after!=template else template_after_2
 
 
   for feature_type, feature in entity.geo_features.items():
@@ -313,10 +310,9 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
   # Fix text.
   template = template.replace('The The', 'The')
   template = template.replace('the The', 'the')
-  template = template.replace(' a a', ' an a')
-  template = template.replace(' a e', ' an e')
-  template = template.replace(' a u', ' an u')
-  template = template.replace(' a o', ' an o')
+
+  re_indef_vowel  = re.compile(r'\ba ([aeiou])')
+  template = re_indef_vowel.sub(r'an \1', template)
 
   entities_span_dict = {}
   for entity_tag in entities_tags:
@@ -341,8 +337,9 @@ def add_entity_span(entity_tag: str, instruction: str) -> Dict[str, Tuple[int, i
   keywords_found = keyword_processor.extract_keywords(instruction, span_info=True)
 
   entities_span_dict = {}
-  for m in keywords_found:
-    entities_span_dict[m[0]] = (m[1], m[2])
+  for keyword_found in keywords_found:
+    start_position, end_position = keyword_found[1], keyword_found[2]
+    entities_span_dict[entity_tag] = (start_position, end_position)
 
   return entities_span_dict
 
