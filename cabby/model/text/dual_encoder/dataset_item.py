@@ -38,6 +38,7 @@ tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
 CELLID_DIM = 64
 
+
 @attr.s
 class TextGeoDataset:
   """Construct a RVSPath sample.

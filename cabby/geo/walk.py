@@ -239,7 +239,6 @@ class Walker:
     poi['geometry'] = poi.centroid
     return poi
 
-
   def get_end_poi(self) -> Optional[GeoSeries]:
     '''Returns a random POI.
     Returns:

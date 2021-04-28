@@ -111,7 +111,6 @@ def main(argv):
 
   padSequence = dataset.PadSequence()
 
-
   ds_train, ds_val, ds_test = dataset.create_dataset(
     FLAGS.data_dir, FLAGS.region, FLAGS.s2_level, FLAGS.pivot_type)
 

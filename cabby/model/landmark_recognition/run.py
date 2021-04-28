@@ -214,4 +214,3 @@ def test_samples(instructions, tokenizer, model):
       list_words.append(word)
 
     print(' '.join(list_words))
-

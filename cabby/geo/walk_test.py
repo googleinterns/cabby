@@ -20,6 +20,7 @@ from cabby.geo import regions
 from cabby.geo import walk
 from cabby.geo import util
 
+
 class WalkTest(unittest.TestCase):
 
   @classmethod

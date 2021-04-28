@@ -28,7 +28,6 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry import box, mapping, LineString, LinearRing
 from shapely.geometry.base import BaseGeometry
-
 import sys
 from typing import List, Optional, Tuple, Sequence, Any, Text
 import webbrowser
