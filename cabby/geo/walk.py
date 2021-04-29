@@ -29,7 +29,8 @@ import networkx as nx
 import os
 import osmnx as ox
 import pandas as pd
-import random 
+import random
+from shapely.ops import nearest_points
 from shapely.geometry.point import Point
 from shapely.geometry import LineString
 import sys
@@ -239,6 +240,7 @@ class Walker:
     poi['geometry'] = poi.centroid
     return poi
 
+
   def get_end_poi(self) -> Optional[GeoSeries]:
     '''Returns a random POI.
     Returns:
@@ -388,8 +390,7 @@ class Walker:
                                               named_tag)
       if pivot is not None:
         if not isinstance(pivot['geometry'], Point):
-          pivot['geometry'] = util.get_closest_point_to_path(
-            pivot['geometry'], path_geom)
+          pivot['geometry'] = nearest_points(pivot['geometry'], path_geom)[0]
         return pivot
 
     return pivot

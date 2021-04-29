@@ -28,6 +28,7 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry import box, mapping, LineString, LinearRing
 from shapely.geometry.base import BaseGeometry
+
 import sys
 from typing import List, Optional, Tuple, Sequence, Any, Text
 import webbrowser
@@ -620,62 +621,3 @@ def point_str_to_shapely_point(point_str: Text) -> Point:
   coords = point_str.split(" ")
   x, y = float(coords[0]), float(coords[1])
   return Point(x,y)
-
-def closest_point_point2polygon(poly_goal: Polygon, point_ref: Point) -> Point:
-  ''' Calculate the closest point on a polygon to a given point.
-  Arguments:
-    poly_goal: The polygon which the closest point should be on.
-    point_ref: The given point outside the polygon.
-  Returns:
-    A closest point on the polygon and the distance.
-  '''
-  pol_ext = LinearRing(poly_goal.exterior.coords)
-  dist = pol_ext.project(point_ref)
-  line = pol_ext.interpolate(dist)
-  return Point(list(line.coords)[0]), dist
-
-def closest_point_linestring2polygon(
-  poly_goal: Polygon, line_ref: LineString) -> Point:
-  ''' Calculate the closest point between a line and a polygon.
-  Arguments:
-    poly_goal: The polygon which the closest point should be on.
-    line_ref: The given line the point on poly1 should be close to.
-  Returns:
-    A closest point on the polygon and distance.
-  '''
-
-  min_dist = np.Inf
-  for coord_ref in line_ref.coords:
-    point_ref = Point(coord_ref)
-    point_found, dist = closest_point_point2polygon(poly_goal, point_ref)
-    if dist < min_dist:
-      min_dist = dist
-      closest_point = point_found
-
-  return closest_point, min_dist
-
-def get_closest_point_to_path(geom: BaseGeometry, path: LineString) -> Point:
-  ''' Calculate the closest point between a line and a geomtery.
-  Arguments:
-    geom: The geometry which the closest point should be on.
-    line_ref: The given line the point on poly1 should be close to.
-  Returns:
-    A closest point on the geometry.
-  '''
-  if isinstance(geom, Point):
-    return geom
-  elif isinstance(geom, LineString):
-    geom = geom.buffer(0.00001)
-  elif isinstance(geom, MultiPolygon):
-    min_dist = np.Inf
-    for poly in geom:
-      point_found, dist = closest_point_linestring2polygon(poly, path)
-      if dist < min_dist:
-        min_dist = dist
-        closest_point = point_found
-    return closest_point
-
-  closest_point, _ = closest_point_linestring2polygon(geom, path)
-  return  closest_point
-
-
