@@ -294,7 +294,6 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
                                   landmark.main_tag.capitalize())
 
 
-
       template = template.replace(landmark_type.upper(),
                                   landmark.main_tag)
 
@@ -342,4 +341,3 @@ def add_entity_span(entity_tag: str, instruction: str) -> Dict[str, Tuple[int, i
     entities_span_dict[entity_tag] = (start_position, end_position)
 
   return entities_span_dict
-

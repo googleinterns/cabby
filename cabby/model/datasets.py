@@ -111,5 +111,3 @@ class RVSDataset:
     self.unique_cellid = unique_cellid
     self.label_to_cellid = label_to_cellid
     self.cellid_to_label = cellid_to_label
-
-

@@ -25,6 +25,7 @@ tokenizer = AutoTokenizer.from_pretrained("bert-base-cased", padding=True, trunc
 
 EXTRACT_ALL_PIVOTS = "all"
 
+
 class EntityRecognitionSplit(torch.utils.data.Dataset):
   """A split of the Entity Recognition dataset ."""
 

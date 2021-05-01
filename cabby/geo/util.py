@@ -26,7 +26,9 @@ from s2geometry import pywraps2 as s2
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
-from shapely.geometry import box, mapping, LineString
+from shapely.geometry import box, mapping, LineString, LinearRing
+from shapely.geometry.base import BaseGeometry
+
 import sys
 from typing import List, Optional, Tuple, Sequence, Any, Text
 import webbrowser
@@ -66,14 +68,14 @@ def far_cellid(
       sys.exit(
         f"Reached max number of failed attempts in far cell calculation for point: {(Point.y, Point.x)}.")
     sample_cell = cells.sample(1).iloc[0]
-    distance = get_distance_between_points(point, sample_cell.point) 
+    distance = get_distance_between_points(point, sample_cell.point)
     if distance > far_distance:
       far_cell_found = sample_cell.cellid
-    
+
   return far_cell_found
 
 def neighbor_cellid(cellid: int) -> int:
-  '''Get a neighbor cell id. 
+  '''Get a neighbor cell id.
   Arguments:
     cellid: The cellid of the cell to return a neighbor cellid for.
   Returns:
@@ -84,7 +86,7 @@ def neighbor_cellid(cellid: int) -> int:
   return cell.next().id()
 
 def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]:
-  '''Converts a sequence of S2CellIds to a sequence of ids of the S2CellIds. 
+  '''Converts a sequence of S2CellIds to a sequence of ids of the S2CellIds.
   Arguments:
     list_s2cells(S2CellIds): The list of S2CellIds to be converted to ids.
   Returns:
@@ -95,7 +97,7 @@ def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]
 
 
 def s2cellids_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2CellId]:
-  '''Converts a sequence of ids of S2CellIds to a sequence of S2CellIds. 
+  '''Converts a sequence of ids of S2CellIds to a sequence of S2CellIds.
   Arguments:
     list_ids(list): The list of S2CellIds ids to be converted to S2CellIds.
   Returns:
@@ -107,9 +109,9 @@ def s2cellids_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2CellId]:
 
 def get_s2cover_for_s2polygon(s2polygon: s2.S2Polygon,
                 level: int) -> Optional[List]:
-  '''Returns the cellids that cover the shape (point/polygon/polyline). 
+  '''Returns the cellids that cover the shape (point/polygon/polyline).
   Arguments:
-    s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be 
+    s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be
     performed.
   Returns:
     A sequence of S2Cells that completely cover the provided S2Polygon.
@@ -171,7 +173,7 @@ def s2point_from_coord_xy(coord: CoordsXY) -> s2.S2Point:
 
 
 def s2polygon_from_shapely_polygon(shapely_polygon: Polygon) -> s2.S2Polygon:
-  '''Convert a Shapely Polygon to S2Polygon. 
+  '''Convert a Shapely Polygon to S2Polygon.
   Arguments:
     shapely_polygon(Polygon): The Shapely Polygon to be
     converted to S2Polygon.
@@ -193,7 +195,7 @@ def s2polygon_from_shapely_polygon(shapely_polygon: Polygon) -> s2.S2Polygon:
 
 
 def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> s2.S2Polygon:
-  '''Convert a shapely polyline to s2polygon. 
+  '''Convert a shapely polyline to s2polygon.
   Arguments:
     shapely_polyine(Polygon): The Shapely Polygon which
     is a line to be converted to S2Polygon.
@@ -213,8 +215,8 @@ def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> s2.S2Polygon:
   return line
 
 def cut(line: LineString, distance: float) -> Sequence[LineString]:
-  '''Cut line in two at a distance from its 
-  starting point. 
+  '''Cut line in two at a distance from its
+  starting point.
   Arguments:
     line: The to to be cut.
     distance: distance between line and its starting point.
@@ -222,7 +224,7 @@ def cut(line: LineString, distance: float) -> Sequence[LineString]:
     A list of lines.
   '''
   if distance <= 0.0 or distance >= line.length:
-      return [LineString(line)] 
+      return [LineString(line)]
   coords = list(line.coords)
   for i, p in enumerate(coords):
       pd = line.project(Point(p))
@@ -235,14 +237,14 @@ def cut(line: LineString, distance: float) -> Sequence[LineString]:
           return [
               LineString(coords[:i] + [(cp.x, cp.y)]),
               LineString([(cp.x, cp.y)] + coords[i:])]
-  
+
   if coords[0]==coords[-1]: # It is a loop.
     cp = line.interpolate(distance)
     return [
             LineString(coords[:-1] + [(cp.x, cp.y)]),
             LineString([(cp.x, cp.y)] + coords[-1:])]
 
-  return [LineString(line)] 
+  return [LineString(line)]
 
 def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
   '''Plot the S2Cell covering.'''
@@ -276,7 +278,7 @@ def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
 
 
 def s2cellids_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
-  '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
+  '''Get s2cell covering from shapely point (OpenStreetMaps Nodes).
   Arguments:
     point(Point): a Shapely Point to which S2Cells.
     covering will be performed.
@@ -290,7 +292,7 @@ def s2cellids_from_point(point: Point, level: int) -> Sequence[s2.S2CellId]:
 
 
 def cellid_from_point(point: Point, level: int) -> int:
-  '''Get s2cell covering from shapely point (OpenStreetMaps Nodes). 
+  '''Get s2cell covering from shapely point (OpenStreetMaps Nodes).
   Arguments:
     point(Point): a Shapely Point to which S2Cells.
     covering will be performed.
@@ -307,7 +309,7 @@ def cellid_from_point(point: Point, level: int) -> int:
 
 
 def s2cellids_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
-  '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
+  '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways).
   Arguments:
     polygon(Polygon): a Shapely Polygon to which S2Cells.
     covering will be performed..
@@ -320,7 +322,7 @@ def s2cellids_from_polygon(polygon: Polygon, level: int) -> Optional[Sequence]:
 
 
 def cellids_from_polygon(polygon: Polygon, level: int) -> Optional[List]:
-  '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways). 
+  '''Get s2cell covering from shapely polygon (OpenStreetMaps Ways).
   Arguments:
     polygon(Polygon): a Shapely Polygon to which S2Cells.
     covering will be performed..
@@ -335,11 +337,11 @@ def cellids_from_polygon(polygon: Polygon, level: int) -> Optional[List]:
 
 def cellid_from_polyline(polyline: Polygon, level: int) -> Optional[Sequence]:
   '''Get s2cell covering from shapely polygon that are lines (OpenStreetMaps
-  Ways of streets).  
-  Arguments: 
+  Ways of streets).
+  Arguments:
     polyline(Polygon): The Shapely Polygon of a line to which S2Cells
-    covering will be performed. 
-  Returns: 
+    covering will be performed.
+  Returns:
     A sequence of s2Cells that cover the provided Shapely Polygon.
   '''
 
@@ -353,8 +355,8 @@ def get_bearing(start: Point, goal: Point) -> float:
     start: The starting point.
     goal: The goal point.
   Returns:
-    The geospatial bearing when heading from the start to the goal. The 
-    bearing angle given by azi1 (azimuth) is clockwise relative to north, so 
+    The geospatial bearing when heading from the start to the goal. The
+    bearing angle given by azi1 (azimuth) is clockwise relative to north, so
     a bearing of 90 degrees is due east, 180 is south, and 270 is west.
   """
   solution = geographiclib.geodesic.Geodesic.WGS84.Inverse(
@@ -388,7 +390,7 @@ def get_distance_m(start: Point, goal: Point) -> float:
   return geodesic(start.coords, goal.coords).m
 
 def tuple_from_point(point: Point) -> CoordsYX:
-  '''Convert a Point into a tuple, with latitude as first element, and 
+  '''Convert a Point into a tuple, with latitude as first element, and
   longitude as second.
   Arguments:
     point(Point): A lat-lng point.
@@ -400,7 +402,7 @@ def tuple_from_point(point: Point) -> CoordsYX:
 
 
 def list_xy_from_point(point: Point) -> Sequence[float]:
-  '''Convert a Point into a sequence, with longitude as first element, and 
+  '''Convert a Point into a sequence, with longitude as first element, and
   latitude as second.
   Arguments:
     point(Point): A lat-lng point.
@@ -412,7 +414,7 @@ def list_xy_from_point(point: Point) -> Sequence[float]:
 
 
 def list_yx_from_point(point: Point) -> Sequence[float]:
-  '''Convert a Point into a sequence, with latitude as first element, and 
+  '''Convert a Point into a sequence, with latitude as first element, and
   longitude as second.
   Arguments:
     point(Point): A lat-lng point.
@@ -434,7 +436,7 @@ def midpoint(p1: Point, p2: Point) -> Point:
   return Point((p1.x+p2.x)/2, (p1.y+p2.y)/2)
 
 
-def check_if_geometry_in_polygon(geometry: Any, poly: Polygon) -> Polygon:
+def check_if_geometry_in_polygon(geometry: BaseGeometry, poly: Polygon) -> Polygon:
   '''Check if geometry is intersects with polygon.
   Arguments:
     geometry: The geometry to check intersection against a polygon.
@@ -447,7 +449,7 @@ def check_if_geometry_in_polygon(geometry: Any, poly: Polygon) -> Polygon:
   else:
     geometry['geometry'].intersects(poly)
 
-def get_distance_between_geometries(geometry: Any, point: Point) -> float:
+def get_distance_between_geometries(geometry: BaseGeometry, point: Point) -> float:
   '''Calculate the distance between point and polygon in meters.
   Arguments:
     route: The line that length calculation will be performed on.
@@ -461,7 +463,7 @@ def get_distance_between_geometries(geometry: Any, point: Point) -> float:
     return get_distance_between_point_to_geometry(geometry, point)
 
 def get_distance_between_point_to_geometry(
-  geometry: Any, point: Point) -> float:
+  geometry: BaseGeometry, point: Point) -> float:
   '''Calculate the distance between point and polygon in meters.
   Arguments:
     route: The line that length calculation will be performed on.
@@ -502,7 +504,7 @@ def get_line_length(line: LineString) -> float:
 
 
 def point_from_list_coord(coord: Sequence) -> Point:
-  '''Converts coordinates in list format (latitude and longtitude) to Point. 
+  '''Converts coordinates in list format (latitude and longtitude) to Point.
   E.g, of list [40.715865, -74.037258].
   Arguments:
     coord: A lat-lng coordinate to be converted to a point.
@@ -516,7 +518,7 @@ def point_from_list_coord(coord: Sequence) -> Point:
 
 
 def point_from_str_coord(coord_str: Text) -> Point:
-  '''Converts coordinates in string format (latitude and longtitude) to Point. 
+  '''Converts coordinates in string format (latitude and longtitude) to Point.
   E.g, of string '(40.715865, -74.037258)'.
   Arguments:
     coord: A lat-lng coordinate to be converted to a point.
@@ -530,8 +532,8 @@ def point_from_str_coord(coord_str: Text) -> Point:
 
 
 def coords_from_str_coord(coord_str: Text) -> CoordsYX:
-  '''Converts coordinates in string format (latitude and longtitude) to 
-  coordinates in a tuple format. 
+  '''Converts coordinates in string format (latitude and longtitude) to
+  coordinates in a tuple format.
   E.g, of string '(40.715865, -74.037258)'.
   Arguments:
     coord: A lat-lng coordinate to be converted to a tuple.
@@ -574,7 +576,7 @@ def get_center_from_s2cellids(
     lng = s2_latlng.lng().degrees()
     prediction_coords.append([lat, lng])
   return np.array(prediction_coords)
-  
+
 def get_linestring_distance(line: LineString) -> int:
   '''Calculate the line length in meters.
   Arguments:
@@ -599,17 +601,17 @@ def get_distance_between_points(point_1: Point, point_2: Point) -> int:
   Returns:
     Distance length in meters.
   '''
-  
+
   dist = ox.distance.great_circle_vec(
     point_1.y, point_1.x, point_2.y, point_2.x)
-  
+
   return dist
 
 
 def point_str_to_shapely_point(point_str: Text) -> Point:
-  '''Converts point string to shapely point. 
+  '''Converts point string to shapely point.
   Arguments:
-    point_str: The point string to be converted to shapely point. E.g, of 
+    point_str: The point string to be converted to shapely point. E.g, of
     string 'Point(-74.037258 40.715865)'.
   Returns:
     A Point.
