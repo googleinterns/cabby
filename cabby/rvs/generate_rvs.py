@@ -27,8 +27,6 @@ See cabby/geo/map_processing/README.md for instructions to generate the gpkg
 data file.
 '''
 
-import json
-import random 
 import sys
 
 from absl import logging
@@ -45,12 +43,12 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("rvs_data_path", None,
           "The path of the RVS data file to use for generating the RVS instructions.")
 
-flags.DEFINE_string("save_instruction_path", None,
+flags.DEFINE_string("save_instruction_dir", None,
           "The path of the file where the generated instructions will be saved. ")
 
 # Required flags.
 flags.mark_flag_as_required('rvs_data_path')
-flags.mark_flag_as_required('save_instruction_path')
+flags.mark_flag_as_required('save_instruction_dir')
 
 
 def main(argv):
@@ -68,106 +66,28 @@ def main(argv):
   # Get templates.
   gen_templates = templates.create_templates()
 
-  # Generate instructions.
-  gen_samples = []
-  for entity_idx, entity in enumerate(entities):
-    current_templates = gen_templates.copy()  # Candidate templates.
+  # Split into Train, Dev and Test sets.
+  size_templates = gen_templates.shape[0]
+  train_size = round(size_templates*80/100)
+  dev_size = round(size_templates*10/100)
 
+  train_gen_templates = gen_templates[:train_size]
+  dev_gen_templates = gen_templates[train_size:train_size+dev_size]
+  test_gen_templates = gen_templates[train_size+dev_size:]
 
-    # Use only landmarks that have a main tag.
-    for landmark_type, landmark in entity.geo_landmarks.items():
-      if landmark_type not in current_templates or landmark_type == "start_point":
-        continue
-      if not landmark.main_tag:
-        current_templates = current_templates[
-          current_templates[landmark_type] == False]
-      else:
-        current_templates = current_templates[current_templates[landmark_type] == True]
+  size_entities = len(entities)
+  train_size = round(size_entities*80/100)
+  dev_size = round(size_entities*10/100)
 
-    # Use features that exist.
-    for feature_type, feature in entity.geo_features.items():
+  train_entities = entities[:train_size]
+  dev_entities = entities[train_size:train_size+dev_size]
+  test_entities = entities[train_size+dev_size:]
 
-      if feature_type not in current_templates or \
-        feature_type=='intersections':
-        continue
-      if not feature:
-        current_templates = current_templates[
-          current_templates[feature_type] == False]
-      else:
-        current_templates = current_templates[current_templates[feature_type] == True]
+  templates.generate_instruction_by_split(train_entities, train_gen_templates, "train", FLAGS.save_instruction_dir)
+  templates.generate_instruction_by_split(dev_entities, dev_gen_templates, "dev", FLAGS.save_instruction_dir)
+  templates.generate_instruction_by_split(test_entities, test_gen_templates, "test", FLAGS.save_instruction_dir)
 
-    intersection = entity.geo_features['intersections']
-    intersection = -1 if intersection is None else int(intersection)
-
-    if intersection > 0:
-      if intersection == 1:
-        # Filter out templates without the next intersection mention.
-        current_templates = current_templates[
-          current_templates['next intersection'] == True]
-      else:
-        # Pick templates with either blocks or intersections. X blocks = X intersection - 1.
-        # Randomly pick if the feature is a block or an intersection.
-        # If 1 - treat it as a block feature, else as an intersection.
-        if random.randint(0, 1):
-          if intersection == 2:  # one block
-            # Filter out templates without the next block mention.
-            current_templates = current_templates[
-              current_templates['next block'] == True]
-          else: # Multiple blocks.
-            # Filter out templates without mentions of the number of blocks
-            # that should be passed.
-            current_templates = current_templates[
-              current_templates['blocks'] == True]
-        else: # Multiple intersections.
-          # Filter out templates without mentions of the number of
-          # intersections that should be passed.
-          current_templates = current_templates[
-            current_templates['intersections'] == True]
-    else:
-      # Filter out templates with mentions of intersection\block.
-      current_templates = current_templates[
-        (current_templates['intersections'] == False) &
-        (current_templates['blocks'] == False) &
-        (current_templates['next intersection'] == False) &
-        (current_templates['next block'] == False)]
-
-      # From the candidates left, pick randomly one template.
-
-      choosen_template = current_templates.sample(1)['sentence'].iloc[0]
-
-      gen_instructions, entity_span = templates.add_features_to_template(
-        choosen_template, entity)
-      rvs_entity = geo_item.RVSSample.to_rvs_sample(
-        instructions=gen_instructions,
-        id=entity_idx,
-        geo_entity=entity,
-        entity_span=entity_span
-      )
-      gen_samples.append(rvs_entity)
-
-  logging.info(f"RVS generated: {len(gen_samples)}")
-
-  uniq_samples = {}
-  for gen in gen_samples:
-    uniq_samples[gen.instructions] = gen
-  logging.info(f"RVS generated: {len(gen_samples)}")
-
-  uniq_samples = {}
-  for gen in gen_samples:
-    uniq_samples[gen.instructions] = gen
-  logging.info(f"Unique RVS generated: {len(uniq_samples)}")
-
-  logging.info(
-    f"Writing {len(uniq_samples)} samples to file => " +
-    f"{FLAGS.save_instruction_path}")
-  # Save to file.
-  with open(FLAGS.save_instruction_path, 'a') as outfile:
-    for sample in uniq_samples.values():
-      json.dump(sample, outfile, default=lambda o: o.__dict__)
-      outfile.write('\n')
-      outfile.flush()
-
-  logging.info("Finished writing to file.")
 
 if __name__ == '__main__':
   app.run(main)
+

@@ -20,6 +20,11 @@ cabby.geo.walk.py file but with upper case.
 E.g., 'end_point' should appear as 'END_POINT'.
 '''
 
+from absl import logging
+import json
+import os
+import random
+
 import flashtext
 import inflect
 from typing import Dict, Sequence, Text, Tuple
@@ -28,6 +33,7 @@ from nltk import CFG, Production
 from nltk.parse.generate import Nonterminal
 import pandas as pd
 import re
+
 
 from cabby.geo import geo_item
 from cabby.geo import walk
@@ -144,7 +150,7 @@ def add_rules(nonterminal_name: Text,
    list of terminals corresponding to it.
   Arguments:
     nonterminal_name: The name of the nonterminal.
-    list_terminals: The list of terminals that for each one a rule with 
+    list_terminals: The list of terminals that for each one a rule with
     the nonterminal will be produced.
   Returns:
     A sequence of productions rules.
@@ -294,6 +300,7 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
                                   landmark.main_tag.capitalize())
 
 
+
       template = template.replace(landmark_type.upper(),
                                   landmark.main_tag)
 
@@ -341,3 +348,111 @@ def add_entity_span(entity_tag: str, instruction: str) -> Dict[str, Tuple[int, i
     entities_span_dict[entity_tag] = (start_position, end_position)
 
   return entities_span_dict
+
+
+
+def generate_instruction_by_split(entities, gen_templates, split, save_instruction_dir):
+  '''Generate from entities the entity span to a dictionary of entites (keys) and spans (value).
+    Args:
+      entity_tag: The entity tag name.
+      instruction: instruction with entity.
+    Returns:
+      A dictionary of entities (keys) and spans (values).
+  '''
+  # Generate instructions.
+  gen_samples = []
+  for entity_idx, entity in enumerate(entities):
+    current_templates = gen_templates.copy()  # Candidate templates.
+
+
+    # Use only landmarks that have a main tag.
+    for landmark_type, landmark in entity.geo_landmarks.items():
+      if landmark_type not in current_templates or landmark_type == "start_point":
+        continue
+      if not landmark.main_tag:
+        current_templates = current_templates[
+          current_templates[landmark_type] == False]
+      else:
+        current_templates = current_templates[current_templates[landmark_type] == True]
+
+    # Use features that exist.
+    for feature_type, feature in entity.geo_features.items():
+
+      if feature_type not in current_templates or \
+        feature_type=='intersections':
+        continue
+      if not feature:
+        current_templates = current_templates[
+          current_templates[feature_type] == False]
+      else:
+        current_templates = current_templates[current_templates[feature_type] == True]
+
+    intersection = entity.geo_features['intersections']
+    intersection = -1 if intersection is None else int(intersection)
+
+    if intersection > 0:
+      if intersection == 1:
+        # Filter out templates without the next intersection mention.
+        current_templates = current_templates[
+          current_templates['next intersection'] == True]
+      else:
+        # Pick templates with either blocks or intersections. X blocks = X intersection - 1.
+        # Randomly pick if the feature is a block or an intersection.
+        # If 1 - treat it as a block feature, else as an intersection.
+        if random.randint(0, 1):
+          if intersection == 2:  # one block
+            # Filter out templates without the next block mention.
+            current_templates = current_templates[
+              current_templates['next block'] == True]
+          else: # Multiple blocks.
+            # Filter out templates without mentions of the number of blocks
+            # that should be passed.
+            current_templates = current_templates[
+              current_templates['blocks'] == True]
+        else: # Multiple intersections.
+          # Filter out templates without mentions of the number of
+          # intersections that should be passed.
+          current_templates = current_templates[
+            current_templates['intersections'] == True]
+    else:
+      # Filter out templates with mentions of intersection\block.
+      current_templates = current_templates[
+        (current_templates['intersections'] == False) &
+        (current_templates['blocks'] == False) &
+        (current_templates['next intersection'] == False) &
+        (current_templates['next block'] == False)]
+
+      # From the candidates left, pick randomly one template.
+
+      choosen_template = current_templates.sample(1)['sentence'].iloc[0]
+
+      gen_instructions, entity_span = add_features_to_template(
+        choosen_template, entity)
+      rvs_entity = geo_item.RVSSample.to_rvs_sample(
+        instructions=gen_instructions,
+        id=entity_idx,
+        geo_entity=entity,
+        entity_span=entity_span
+      )
+      gen_samples.append(rvs_entity)
+
+  logging.info(f"RVS {split}-set generated: {len(gen_samples)}")
+
+  uniq_samples = {}
+  for gen in gen_samples:
+    uniq_samples[gen.instructions] = gen
+  logging.info(f"Unique RVS {split}-set generated: {len(uniq_samples)}")
+
+  save_instruction_path = os.path.join(save_instruction_dir, f"ds_{split}.json")
+
+  logging.info(
+    f"Writing {len(uniq_samples)} samples to file => " +
+    f"{save_instruction_path}")
+  # Save to file.
+  with open(save_instruction_path, 'a') as outfile:
+    for sample in uniq_samples.values():
+      json.dump(sample, outfile, default=lambda o: o.__dict__)
+      outfile.write('\n')
+      outfile.flush()
+
+  logging.info(f"Finished writing {split}-set to file.")
