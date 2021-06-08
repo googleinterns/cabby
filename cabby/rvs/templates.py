@@ -364,8 +364,6 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
   for entity_idx, entity in enumerate(entities):
     current_templates = gen_templates.copy()  # Candidate templates.
 
-
-    # Use only landmarks that have a main tag.
     for landmark_type, landmark in entity.geo_landmarks.items():
       if landmark_type not in current_templates or landmark_type == "start_point":
         continue
@@ -378,20 +376,20 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
     # Use features that exist.
     for feature_type, feature in entity.geo_features.items():
 
-      if feature_type not in current_templates or \
-        feature_type=='intersections':
+      if feature_type not in current_templates or feature_type == 'intersections':
         continue
+
       if not feature:
         current_templates = current_templates[
           current_templates[feature_type] == False]
       else:
         current_templates = current_templates[current_templates[feature_type] == True]
 
-    intersection = entity.geo_features['intersections']
-    intersection = -1 if intersection is None else int(intersection)
+    num_intersections = entity.geo_features['intersections']
+    num_intersections = -1 if num_intersections  is None else int(num_intersections )
 
-    if intersection > 0:
-      if intersection == 1:
+    if num_intersections > 0:
+      if num_intersections == 1:
         # Filter out templates without the next intersection mention.
         current_templates = current_templates[
           current_templates['next intersection'] == True]
@@ -400,7 +398,7 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
         # Randomly pick if the feature is a block or an intersection.
         # If 1 - treat it as a block feature, else as an intersection.
         if random.randint(0, 1):
-          if intersection == 2:  # one block
+          if num_intersections == 2:  # one block
             # Filter out templates without the next block mention.
             current_templates = current_templates[
               current_templates['next block'] == True]

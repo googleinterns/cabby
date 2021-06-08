@@ -46,6 +46,12 @@ flags.DEFINE_string("rvs_data_path", None,
 flags.DEFINE_string("save_instruction_dir", None,
           "The path of the file where the generated instructions will be saved. ")
 
+flags.DEFINE_float("train_proportion", 0.8,
+          "The train proportion of the dataset (0,1)")
+
+flags.DEFINE_float("dev_proportion", 0.1,
+          "The dev proportion of the dataset (0,1)")
+
 # Required flags.
 flags.mark_flag_as_required('rvs_data_path')
 flags.mark_flag_as_required('save_instruction_dir')
@@ -53,6 +59,9 @@ flags.mark_flag_as_required('save_instruction_dir')
 
 def main(argv):
   del argv  # Unused.
+
+  if not FLAGS.train_proportion + FLAGS.dev_proportion < 1:
+    sys.exit("Proportion of train and dev combined should be less then 1.")
 
   logging.info(f"Starting to generate RVS samples")
 
@@ -68,20 +77,20 @@ def main(argv):
 
   # Split into Train, Dev and Test sets.
   size_templates = gen_templates.shape[0]
-  train_size = round(size_templates*80/100)
-  dev_size = round(size_templates*10/100)
+  train_size = round(size_templates*FLAGS.train_proportion)
+  dev_size = round(size_templates*FLAGS.dev_proportion)
 
   train_gen_templates = gen_templates[:train_size]
   dev_gen_templates = gen_templates[train_size:train_size+dev_size]
   test_gen_templates = gen_templates[train_size+dev_size:]
 
   size_entities = len(entities)
-  train_size = round(size_entities*80/100)
-  dev_size = round(size_entities*10/100)
+  entities_train_size = round(size_entities*FLAGS.train_proportion)
+  entities_dev_size = round(size_entities*FLAGS.dev_proportion)
 
-  train_entities = entities[:train_size]
-  dev_entities = entities[train_size:train_size+dev_size]
-  test_entities = entities[train_size+dev_size:]
+  train_entities = entities[:entities_train_size]
+  dev_entities = entities[entities_train_size:entities_train_size+entities_dev_size]
+  test_entities = entities[entities_train_size+entities_dev_size:]
 
   templates.generate_instruction_by_split(train_entities, train_gen_templates, "train", FLAGS.save_instruction_dir)
   templates.generate_instruction_by_split(dev_entities, dev_gen_templates, "dev", FLAGS.save_instruction_dir)
