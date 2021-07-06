@@ -17,10 +17,24 @@ py_library(
     ],
 )
 
+py_library(
+    name = 'dataset_t5',
+    srcs = ['dataset_t5.py'],
+    deps = [
+          "//cabby/model:datasets",
+    ],
+)
+
 
 py_library(
     name = 'run',
     srcs = ['run.py'],
+)
+
+
+py_library(
+    name = 'run_t5',
+    srcs = ['run_t5.py'],
 )
 
 
@@ -36,3 +50,17 @@ py_binary(
 
     ],
 )
+
+py_binary(
+    name = 'pivot_recognition_t5',
+    main = 'pivot_recognition_t5.py',
+    srcs = ['pivot_recognition_t5.py'],
+    deps = [
+          "//cabby/geo:regions",
+          "//cabby/model/landmark_recognition:dataset_t5",
+          "//cabby/model/landmark_recognition:run_t5",
+          "//cabby/geo:walk"
+
+    ],
+)
+
