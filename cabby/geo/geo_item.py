@@ -16,9 +16,10 @@
 from absl import logging
 import geopandas as gpd
 import pandas as pd
-from typing import Any, Dict, Sequence, Tuple
+from typing import Any, Dict, Sequence, Tuple, List
 import os
 from shapely.geometry.base import BaseGeometry
+from shapely.geometry.point import Point
 from shapely.geometry import LineString, Polygon
 
 from cabby.geo import util
@@ -32,22 +33,25 @@ VERSION = 0.5
 class GeoEntity:
   """Construct a geo entity.
 
-  `geo_landmarks` the geo landmarks (start and end points + pivots).
+  `geo_landmarks` the geo landmarks (start and end points and pivots).
   `geo_features` the spatial features of the path.
   Dictionary values can be of either type str or int.
   `route` the path from the start to end point.
+  `states` a sequence of states (Point and bearing).
   """
 
   geo_landmarks: Dict[str, gpd.GeoDataFrame] = attr.ib()
   geo_features: Dict[str, Any] = attr.ib()
   route: gpd.GeoDataFrame = attr.ib()
+  states: List[Tuple[Point,float]] = attr.ib()
 
   @classmethod
   def add_entity(cls,
                  route: gpd.GeoDataFrame,
                  geo_landmarks: Dict[str, gpd.GeoDataFrame],
-                 geo_features: Dict[str, Any]):
-    geo_entity = GeoEntity({}, geo_features, route)
+                 geo_features: Dict[str, Any],
+                 states: List[Tuple[Point, float]]):
+    geo_entity = GeoEntity({}, geo_features, route, states)
     for landmark_type, landmark in geo_landmarks.items():
       geo_landmark = GeoLandmark.create_from_pivot(landmark, landmark_type)
       geo_entity.geo_landmarks[geo_landmark.landmark_type] = geo_landmark
@@ -112,6 +116,7 @@ class RVSSample:
   `version` the datasets version.
   `entity_span` the entity span in the instruction.
   Key: entity name. Value: tuple of start and end of the span.
+  `states` a list of states.
   """
 
   geo_landmarks: Dict[str, gpd.GeoDataFrame] = attr.ib()
@@ -121,18 +126,24 @@ class RVSSample:
   id: int = attr.ib()
   version: float = attr.ib()
   entity_span: Dict[str, Tuple[int, int]] = attr.ib()
+  states: str = attr.ib()
 
   @classmethod
   def to_rvs_sample(self,
                     instructions: str,
                     id: int,
                     geo_entity: GeoEntity,
-                    entity_span: Dict[str, Tuple[int, int]]):
+                    entity_span: Dict[str, Tuple[int, int]],
+):
     """Construct a RVS sample from GeoEntity."""
     landmark_list = {}
     for type_landmark, landmark in geo_entity.geo_landmarks.items():
       landmark_list[type_landmark]= landmark.to_rvs_format()
     route_length = round(util.get_linestring_distance(geo_entity.route))
+    positions = list(geo_entity.states[1].coords)
+    bearings = geo_entity.states[0]
+    states = [(p, b) for p, b in zip(positions, bearings)]
+
     return RVSSample(
               landmark_list,
               geo_entity.geo_features,
@@ -140,7 +151,9 @@ class RVSSample:
               instructions,
               id,
               VERSION,
-              entity_span)
+              entity_span,
+              states
+)
 
 
 
@@ -155,14 +168,23 @@ def save(entities: Sequence[GeoEntity], path_to_save: str):
     geo_types_all[landmark_type] = empty_gdf
   columns = ['geometry'] + list(entities[0].geo_features.keys())
   geo_types_all['path_features'] = gpd.GeoDataFrame(columns=columns)
+  geo_types_all['states'] = gpd.GeoDataFrame(columns=['geometry', 'angle'])
+
   for entity in entities:
     for pivot_type, pivot in entity.geo_landmarks.items():
       geo_types_all[pivot_type] = geo_types_all[pivot_type].append(pivot.pivot_gdf)
     dict_features = {k: [v] for k,v in entity.geo_features.items()}
     pd_features = pd.DataFrame(dict_features)
-    geometry = Polygon(LineString(entity.route['geometry'].tolist()))
+    geometry = LineString(entity.route['geometry'].tolist())
     features_gdf = gpd.GeoDataFrame(pd_features, geometry=[geometry])
     geo_types_all['path_features'] = geo_types_all['path_features'].append(features_gdf)
+
+    geometry = LineString([e[0] for e in entity.states])
+    angle_str = ','.join([str(e[1]) for e in entity.states])
+    pd_angles = pd.DataFrame({'angle': [angle_str]})
+    states_gdf = gpd.GeoDataFrame(pd_angles, geometry=[geometry])
+
+    geo_types_all['states'] = geo_types_all['states'].append(states_gdf)
 
   # Save pivots.
   if os.path.exists(path_to_save):
@@ -174,8 +196,5 @@ def save(entities: Sequence[GeoEntity], path_to_save: str):
         path_to_save, layer=geo_type, mode=mode, driver=_Geo_DataFrame_Driver)
 
   logging.info(f"Saved {len(entities)} entities to => {path_to_save}")
-
-
-
 
 

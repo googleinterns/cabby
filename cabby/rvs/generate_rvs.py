@@ -14,16 +14,13 @@
 
 '''
 Output RVS instructions by templates.
-
 Example command line call:
 $ bazel-bin/cabby/rvs/generate_rvs \
   --rvs_data_path /path/to/REGION_geo_paths.gpkg \
   --save_instruction_path /tmp/pittsburgh_instructions.json
-
-Example output: 
+Example output:
   "Meet at Swirl Crepe. Walk past Wellington. Swirl Crepe will be near Gyros."
-
-See cabby/geo/map_processing/README.md for instructions to generate the gpkg 
+See cabby/geo/map_processing/README.md for instructions to generate the gpkg
 data file.
 '''
 
@@ -99,4 +96,3 @@ def main(argv):
 
 if __name__ == '__main__':
   app.run(main)
-

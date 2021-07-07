@@ -654,6 +654,35 @@ class Walker:
 
     return main_pivot, near_pivot, beyond_pivot
 
+  def get_states(self,
+                 route: GeoDataFrame
+                 ) -> str:
+
+    list_current_state = []
+    # Orientation:
+    angle = 0
+    start = route.iloc[0]['geometry'].centroid
+
+    list_current_state.append((start, angle))
+
+    route_len = route.shape[0]
+    for i in range(route_len-1):
+      curr_point = route.iloc[i]['geometry'].centroid
+      next_point = route.iloc[i+1]['geometry'].centroid
+
+      bearing = util.get_bearing(curr_point, next_point)
+      bearing = round(bearing, 3)
+
+      current_state = (curr_point, bearing)
+      list_current_state.append(current_state)
+
+    curr_point = route.iloc[-1]['geometry'].centroid
+    current_state = (curr_point, bearing)
+    list_current_state.append(current_state)
+
+    return list_current_state
+
+
   def get_egocentric_spatial_relation_pivot(self,
                                             ref_point: Point,
                                             route: GeoDataFrame
@@ -666,6 +695,7 @@ class Walker:
     return self.calc_spatial_relation_for_line(
       ref_point, Point(coords[-1]), Point(coords[-2]))
 
+
   def calc_spatial_relation_for_line(self,
                                      ref_point: Point,
                                      line_point_last_part: Point,
@@ -677,8 +707,7 @@ class Walker:
       line_point_second_from_last, line_point_last_part)
 
     # Calculate the angle between the last segment of the route and the goal.
-    azim_ref_point = util.get_bearing(
-      line_point_last_part, ref_point)
+    azim_ref_point = util.get_bearing(line_point_last_part, ref_point)
 
     diff_azim = (azim_ref_point-azim_route) % 360
 
@@ -794,6 +823,9 @@ class Walker:
     if route is None:
       return None
 
+    # Get list of states (point and the bearing).
+    states = self.get_states(route)
+
     # Select pivots.
     result = self.get_pivots(route, geo_landmarks['end_point'])
     if result is None:
@@ -825,7 +857,8 @@ class Walker:
     rvs_path_entity = geo_item.GeoEntity.add_entity(
       route=route,
       geo_features=geo_features,
-      geo_landmarks=geo_landmarks)
+      geo_landmarks=geo_landmarks,
+      states=states)
 
     return rvs_path_entity
 
@@ -905,6 +938,9 @@ def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
     geo_types_all[landmark_type] = gpd.read_file(path, layer=landmark_type)
   geo_types_all['route'] = gpd.read_file(path, layer='path_features')['geometry']
   geo_types_all['path_features'] = gpd.read_file(path, layer='path_features')
+  geo_types_all['states'] = gpd.read_file(path, layer='states')
+  geo_types_all['states']['angle'] = [list(map(float, x.split(','))) for x in geo_types_all['states']['angle'].tolist()]
+
   geo_entities = []
   for row_idx in range(geo_types_all[LANDMARK_TYPES[0]].shape[0]):
     landmarks = {}
@@ -913,10 +949,12 @@ def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
     features = geo_types_all['path_features'].iloc[row_idx].to_dict()
     del features['geometry']
     route = geo_types_all['route'].iloc[row_idx]
+    states = geo_types_all['states'] .iloc[row_idx]
     geo_item_cur = geo_item.GeoEntity.add_entity(
       geo_landmarks=landmarks,
       geo_features=features,
-      route=LineString(route.exterior.coords[:-1])
+      route=route,
+      states=states
       )
     geo_entities.append(geo_item_cur)
 

@@ -28,7 +28,7 @@ class WalkTest(unittest.TestCase):
 
     # Load map from disk.
     cls.map = map_structure.Map(regions.get_region('DC'), 18)
-    cls.walker = walk.Walker(rand_sample = False, map = cls.map)
+    cls.walker = walk.Walker(rand_sample=False, map=cls.map)
 
   def testRouteCalculation(self):
     orig = '#1360050503'
