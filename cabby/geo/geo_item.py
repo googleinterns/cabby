@@ -155,8 +155,6 @@ class RVSSample:
               states
 )
 
-
-
 def save(entities: Sequence[GeoEntity], path_to_save: str):
   path_to_save = os.path.abspath(path_to_save)
 

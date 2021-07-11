@@ -21,6 +21,10 @@ from cabby.geo import walk
 from cabby.geo import util
 
 
+import os,sys
+sys.path.append(os.getcwd())
+
+
 class WalkTest(unittest.TestCase):
 
   @classmethod
@@ -29,6 +33,10 @@ class WalkTest(unittest.TestCase):
     # Load map from disk.
     cls.map = map_structure.Map(regions.get_region('DC'), 18)
     cls.walker = walk.Walker(rand_sample=False, map=cls.map)
+    path = "/home/nlp/tzufar/Pycharm/second_year/cabby-tmp-action3/try.gpkg"
+    cls.walker.generate_and_save_rvs_routes(path, 1, 1)
+    entities = walk.load_entities(path)
+
 
   def testRouteCalculation(self):
     orig = '#1360050503'

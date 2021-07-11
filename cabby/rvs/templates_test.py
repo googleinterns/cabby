@@ -48,10 +48,13 @@ class ObserveTest(unittest.TestCase):
     geo_features['spatial_rel_goal'] = 'right'
     geo_features['spatial_rel_pivot'] = 'left'
 
+    states = [((40.0, -70.0), 0.0)]
+
     entity = geo_item.GeoEntity.add_entity(
       geo_landmarks=geo_landmarks,
       geo_features=geo_features,
-      route=route
+      route=route,
+      states=states
     )
 
     instruction, entity_span = templates.add_features_to_template(picked_template, entity)

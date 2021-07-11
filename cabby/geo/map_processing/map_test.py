@@ -48,6 +48,11 @@ class MapTest(unittest.TestCase):
     node = self.map.nx_graph.nodes['1#1360050503']
     self.assertEqual('primary', node['highway'])
 
+  def testImgInGraph(self):
+    self.assertIn('1#1360050503', self.map.nx_graph.nodes)
+    node = self.map.nx_graph.nodes['1#1360050503']
+    self.assertEqual('krHcHNYmkgO05qSdnHSvQQ', node['img_id'])
+
   def testSingleOutput(self):
     # Verify that a known POI is present.
 

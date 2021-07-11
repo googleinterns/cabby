@@ -23,7 +23,9 @@ py_library(
         '//cabby/geo:regions',
         '//cabby/geo:osm'
 
-    ]
+    ],
+    data = ["img_nodes.txt"],
+
 )
 
 py_test(
@@ -51,4 +53,6 @@ py_binary(
         '//cabby:logger',
         '//cabby/geo:regions'
     ],
+    data = ["img_nodes.txt"],
+
 )

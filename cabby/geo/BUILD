@@ -10,7 +10,9 @@ py_library(
         ':geo_item',
         ':osm',
         '//cabby/geo/map_processing:map_structure',
-        '//cabby/geo:regions'
+        '//cabby/geo:regions',
+        '//cabby/data:osm_item',
+
 
     ],
 

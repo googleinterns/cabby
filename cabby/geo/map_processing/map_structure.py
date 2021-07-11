@@ -28,13 +28,20 @@ from shapely.geometry.multipolygon import MultiPolygon
 
 
 import swifter
-from typing import Tuple, Sequence, Text, Optional, List, Any
+from typing import Tuple, Sequence, Text, Optional, List, Any, Dict
 
 
 from cabby.geo import util
 from cabby.geo.map_processing import edge
 from cabby.geo import regions
 from cabby.geo import osm
+
+import sys
+setattr(sys.modules[__name__], '__file__ ', '__file__ ')
+
+
+
+PATH_NODES = os.path.abspath('cabby/geo/map_processing/img_nodes.txt')
 
 POI_PREFIX = '#'
 SHOW_PROGRESS_EVERY = 100
@@ -55,6 +62,12 @@ class Map:
     self.polygon_area = region.polygon
     self.num_poi_add = 0
 
+    self.ds_img = pd.read_csv(
+      PATH_NODES, names=["panoid", "heading", "lat", "lon"], header=None)
+
+    self.ds_img['point'] = self.ds_img.apply(
+      lambda x: util.point_from_list_coord([x.lat, x.lon]), axis=1)
+
     if load_directory is None:
       logging.info("Preparing map.")
       logging.info("Extracting POI.")
@@ -68,6 +81,7 @@ class Map:
       
       logging.info("Add POI to graph.")
       self.add_poi_to_graph()
+      self.add_img_to_graph()
 
       osmid = nx.get_node_attributes(self.nx_graph, 'osmid')
       osmid_str = dict(zip(osmid, map(str, osmid.values())))
@@ -96,6 +110,17 @@ class Map:
       ['osmid', 'true_length', 'length', 'geometry', 'u', 'v', 'key', 'name']),
       1, inplace=True)
     self.edges['osmid'] = self.edges['osmid'].apply(lambda x: str(x))
+
+  def add_img_to_graph(self):
+    '''Add images to the graph. '''
+
+    for node_id in self.nx_graph.nodes:
+      node = self.nx_graph.nodes[node_id]
+      point = Point(node['x'], node['y'])
+      self.ds_img['dist'] = self.ds_img.apply(
+        lambda x: point.distance(x.point), axis=1)
+      node['img_id'] = self.ds_img.sort_values(by=['dist']).iloc[0]['panoid']
+
 
   def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
     '''Extract point of interests (POI) for the defined region. 

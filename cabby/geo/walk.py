@@ -39,6 +39,7 @@ from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 from cabby.geo import geo_item
 from cabby.geo import osm
+from cabby.data import osm_item
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 3
@@ -48,6 +49,8 @@ MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
+VERY_NEAR_PIVOT_DIST = 30
+
 # The max number of failed tries to generate a single path entities.
 MAX_NUM_GEN_FAILED = 10
 PIVOT_ALONG_ROUTE_MAX_DIST = 0.0001
@@ -62,6 +65,8 @@ FEATURES_TYPES = ["cardinal_direction",
                   "spatial_rel_pivot",
                   "intersections",
                   "goal_position"]
+
+VISUAL_TAGS = ['building:material', 'roof:material', 'roof:shape', 'roof:colour']
 
 inflect_engine = inflect.engine()
 
@@ -654,6 +659,33 @@ class Walker:
 
     return main_pivot, near_pivot, beyond_pivot
 
+  def get_state_descriptions(self,
+                             route: GeoDataFrame
+                             ) -> str:
+
+    route_len = route.shape[0]
+    for i in range(route_len):
+      point = route.iloc[i]['geometry'].centroid
+
+      near_poi_con = self.map.poi.apply(
+        lambda x: util.get_distance_between_geometries(
+          x.geometry,
+          point) < VERY_NEAR_PIVOT_DIST, axis=1)
+
+      poi = self.map.poi[near_poi_con]
+
+      generic_tags = poi.apply(self.get_generic_tag, axis=1)
+
+      # descriptions = poi[VISUAL_TAGS]
+
+      descriptions = poi.apply(
+        lambda p: osm_item.concat_dictionary(p.to_dict()), axis=1)
+
+      print (descriptions)
+      print (generic_tags)
+
+
+
   def get_states(self,
                  route: GeoDataFrame
                  ) -> str:
@@ -825,6 +857,7 @@ class Walker:
 
     # Get list of states (point and the bearing).
     states = self.get_states(route)
+    state_descriptions = self.get_state_descriptions(route)
 
     # Select pivots.
     result = self.get_pivots(route, geo_landmarks['end_point'])

@@ -13,6 +13,7 @@
 # limitations under the License.
 '''Defines OSM entities adaptations.'''
 
+
 CORRECTIONS = {'fuel': 'gas station', 'parking': 'parking lot', 
   'taxi': 'taxi stand', 'doctors': 'doctor\'s office', 
   'dentist': 'dentist\'s office', 'gambling': 'gambling place', 
@@ -23,7 +24,7 @@ CORRECTIONS = {'fuel': 'gas station', 'parking': 'parking lot',
 
 BLOCK_LIST = ['place of worship']
 
-TOURISM_INTERESTING = [ 'aquarium', 'gallery', 'guest_house', 'hostel', 'hotel',
+TOURISM_INTERESTING = ['aquarium', 'gallery', 'guest_house', 'hostel', 'hotel',
   'motel','museum', 'picnic_site', 'theme_park', 'viewpoint', 'zoo']
            
 LEISURE_INTERESTING = ['dog_park', 'fitness_centre', 'garden', 'golfcourse', 
@@ -40,6 +41,8 @@ MAN_MADE_INTERESTING = ['tower', 'obelisk', 'bridge', 'lighthouse']
 
 PLACE = ['square']
 
+VISUAL_DESC = ['building:material', 'roof:material', 'roof:shape', 'roof:colour']
+
 INTERESTING_TAGS =  {'name': True,
                     'amenity': True,
                     'wikidata': True,
@@ -51,6 +54,11 @@ INTERESTING_TAGS =  {'name': True,
                     'building': BUILDING_INTERESTING,
                     'craft': CRAFT_INTERESTING,
                     'man_made': MAN_MADE_INTERESTING}
+
+
+visual_desc_dic = {k: True for k in VISUAL_DESC}
+
+INTERESTING_TAGS.update(visual_desc_dic)
 
 NON_SPECIFIC_TAGS = {'amenity': False, 'brand': False, 'shop': 'after', 
   'historic	': 'before', 'tourism': TOURISM_INTERESTING, 'bridge': True,
