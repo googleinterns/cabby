@@ -53,6 +53,11 @@ class MapTest(unittest.TestCase):
     node = self.map.nx_graph.nodes['1#1360050503']
     self.assertEqual('krHcHNYmkgO05qSdnHSvQQ', node['img_id'])
 
+    edges_id = ('1#502878564', '2#91900570', 0)
+    self.assertIn(edges_id, self.map.nx_graph.edges)
+    edge = self.map.nx_graph.edges[edges_id]
+    self.assertEqual(183.61814880172128, edge['bearing'])
+
   def testSingleOutput(self):
     # Verify that a known POI is present.
 

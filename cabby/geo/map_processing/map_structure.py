@@ -121,6 +121,15 @@ class Map:
         lambda x: point.distance(x.point), axis=1)
       node['img_id'] = self.ds_img.sort_values(by=['dist']).iloc[0]['panoid']
 
+    for edge_id in self.nx_graph.edges:
+      edge = self.nx_graph.edges[edge_id]
+      node_1 = self.nx_graph.nodes[edge_id[0]]
+      point_1 = Point(node_1['x'], node_1['y'])
+      node_2 = self.nx_graph.nodes[edge_id[1]]
+      point_2 = Point(node_2['x'], node_2['y'])
+      bearing = util.get_bearing(point_1, point_2)
+
+      edge['bearing'] = bearing
 
   def get_poi(self) -> Tuple[GeoSeries, GeoSeries]:
     '''Extract point of interests (POI) for the defined region. 
