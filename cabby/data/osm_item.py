@@ -72,6 +72,9 @@ def concat_dictionary(dictionary: Dict) -> Text:
       v = v.replace("_", " ")
       if k in ['building','historic', 'diplomatic']:  
         tag_list.append(k)
+      elif ':' in k:
+        k = k.split(':')
+        tag_list.append(f"the {k[0]} is {v}")
       elif v in ['yes']:
         tag_list.append(k)
       elif v in ['no']:
@@ -79,7 +82,7 @@ def concat_dictionary(dictionary: Dict) -> Text:
       else:
         tag_list.append(v)      
 
-  return ' and '.join(tag_list) + "."
+  return ' and '.join(tag_list)
 
 
 def closest_color(hex_color: Text) -> Text:
@@ -91,7 +94,7 @@ def closest_color(hex_color: Text) -> Text:
     '''
     rgb_color = webcolors.hex_to_rgb(hex_color)
     min_colors = {}
-    for key, name in webcolors.css21_hex_to_names.items():
+    for key, name in webcolors.CSS21_HEX_TO_NAMES.items():
         r_c, g_c, b_c = webcolors.hex_to_rgb(key)
         rd = (r_c - rgb_color[0]) ** 2
         gd = (g_c - rgb_color[1]) ** 2
@@ -109,7 +112,7 @@ def get_colour_name(hex_color: Text) -> Text:
     '''
 
     try:
-        closest_name = webcolors.css21_hex_to_names[hex_color]
+        closest_name = webcolors.CSS21_HEX_TO_NAMES[hex_color]
     except KeyError:
         closest_name = closest_color(hex_color)
     return closest_name

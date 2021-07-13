@@ -41,7 +41,11 @@ MAN_MADE_INTERESTING = ['tower', 'obelisk', 'bridge', 'lighthouse']
 
 PLACE = ['square']
 
-VISUAL_DESC = ['building:material', 'roof:material', 'roof:shape', 'roof:colour']
+VISUAL_DESC = ['building:material',
+               'building:shape',
+               'building:colour',
+               'building:color',
+               'building:architecture']
 
 INTERESTING_TAGS =  {'name': True,
                     'amenity': True,

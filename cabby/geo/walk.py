@@ -35,6 +35,7 @@ from shapely.geometry.point import Point
 from shapely.geometry import LineString
 import sys
 
+
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
 from cabby.geo import geo_item
@@ -49,11 +50,12 @@ MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
-VERY_NEAR_PIVOT_DIST = 30
+VERY_NEAR_PIVOT_DIST = 20
 
 # The max number of failed tries to generate a single path entities.
 MAX_NUM_GEN_FAILED = 10
 PIVOT_ALONG_ROUTE_MAX_DIST = 0.0001
+PIVOT_ALONG_ROUTE_MAX_DIST_FAR = 0.001
 ADD_POI_DISTANCE = 5000
 MAX_NUM_BEYOND_TRY = 50
 
@@ -662,45 +664,79 @@ class Walker:
   def get_state_descriptions(self,
                              route: GeoDataFrame
                              ) -> str:
-
+    descriptions = []
     route_len = route.shape[0]
-    for i in range(route_len):
-      point = route.iloc[i]['geometry'].centroid
 
-      near_poi_con = self.map.poi.apply(
+    points_route = route['geometry'].tolist()
+    poly = LineString(points_route).buffer(PIVOT_ALONG_ROUTE_MAX_DIST_FAR)
+
+    org_poi = self.map.poi[self.map.poi.apply(
+      lambda x: poly.intersects(x['geometry']), axis=1)]
+
+
+    for route_idx in range(route_len):
+      point = route.iloc[route_idx]['geometry'].centroid
+
+
+      near_poi_con = org_poi.apply(
         lambda x: util.get_distance_between_geometries(
           x.geometry,
           point) < VERY_NEAR_PIVOT_DIST, axis=1)
 
-      poi = self.map.poi[near_poi_con]
+      poi_near = org_poi[near_poi_con]
 
-      generic_tags = poi.apply(self.get_generic_tag, axis=1)
+      if poi_near.shape[0]==0:
+        descriptions += [""]
+        continue
 
-      # descriptions = poi[VISUAL_TAGS]
+      main_tags = poi_near.apply(self.get_generic_tag, axis=1)
 
-      descriptions = poi.apply(
-        lambda p: osm_item.concat_dictionary(p.to_dict()), axis=1)
+      if not any(x in poi_near for x in osm.VISUAL_DESC):
+        descriptions += [""]
+        continue
 
-      print (descriptions)
-      print (generic_tags)
+      poi = poi_near[osm.VISUAL_DESC]
+      poi = poi[poi.notna()].drop_duplicates()
+
+      if poi.shape[0]==0:
+        descriptions += [""]
+        continue
+
+      description = poi.apply(
+        lambda p: osm_item.concat_dictionary(p.to_dict()), axis=1).tolist()
+
+      sen_des = []
+      for idx, (d, t) in enumerate(zip(description, main_tags)):
+        if d!="":
+          if not t:
+            t = "building"
+          sen_des_current = t + ", " + d
+          sen_des.append(sen_des_current)
+        elif t:
+          sen_des_current = t
+          sen_des.append(sen_des_current)
+
+      if len(sen_des) == 0:
+        sen_des = ""
+      else:
+        sen_des = ', there is also a '.join(sen_des)
+
+      descriptions.append(sen_des)
+
+    return descriptions
 
 
 
   def get_states(self,
                  route: GeoDataFrame
-                 ) -> str:
-
+                 ) -> Sequence[Tuple[Point, float, str]]:
     list_current_state = []
-    # Orientation:
-    angle = 0
-    start = route.iloc[0]['geometry'].centroid
-
-    list_current_state.append((start, angle))
 
     route_len = route.shape[0]
-    for i in range(route_len-1):
-      curr_point = route.iloc[i]['geometry'].centroid
-      next_point = route.iloc[i+1]['geometry'].centroid
+    for route_idx in range(route_len-1):
+      logging.info(route.iloc[route_idx])
+      curr_point = route.iloc[route_idx]['geometry'].centroid
+      next_point = route.iloc[route_idx+1]['geometry'].centroid
 
       bearing = util.get_bearing(curr_point, next_point)
       bearing = round(bearing, 3)
@@ -711,8 +747,15 @@ class Walker:
     curr_point = route.iloc[-1]['geometry'].centroid
     current_state = (curr_point, bearing)
     list_current_state.append(current_state)
+    assert route.shape[0]==len(list_current_state)
 
-    return list_current_state
+    state_descriptions = self.get_state_descriptions(route)
+    assert len(state_descriptions) == len(list_current_state)
+
+    list_current_state_with_des = [
+      (p, b, d) for (p, b), d in zip(list_current_state, state_descriptions)]
+
+    return list_current_state_with_des
 
 
   def get_egocentric_spatial_relation_pivot(self,
@@ -857,7 +900,7 @@ class Walker:
 
     # Get list of states (point and the bearing).
     states = self.get_states(route)
-    state_descriptions = self.get_state_descriptions(route)
+    assert len(states) == route.shape[0]
 
     # Select pivots.
     result = self.get_pivots(route, geo_landmarks['end_point'])
@@ -891,7 +934,8 @@ class Walker:
       route=route,
       geo_features=geo_features,
       geo_landmarks=geo_landmarks,
-      states=states)
+      states=states
+      )
 
     return rvs_path_entity
 
@@ -972,7 +1016,10 @@ def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
   geo_types_all['route'] = gpd.read_file(path, layer='path_features')['geometry']
   geo_types_all['path_features'] = gpd.read_file(path, layer='path_features')
   geo_types_all['states'] = gpd.read_file(path, layer='states')
-  geo_types_all['states']['angle'] = [list(map(float, x.split(','))) for x in geo_types_all['states']['angle'].tolist()]
+  geo_types_all['states']['angle'] = [
+    list(map(float, x.split(','))) for x in geo_types_all['states']['angle'].tolist()]
+  geo_types_all['states']['descriptions'] = [
+    x.split(';') for x in geo_types_all['states']['descriptions'].tolist()]
 
   geo_entities = []
   for row_idx in range(geo_types_all[LANDMARK_TYPES[0]].shape[0]):
