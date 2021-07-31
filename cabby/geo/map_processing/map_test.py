@@ -48,11 +48,7 @@ class MapTest(unittest.TestCase):
     node = self.map.nx_graph.nodes['1#1360050503']
     self.assertEqual('primary', node['highway'])
 
-  def testImgInGraph(self):
-    self.assertIn('1#1360050503', self.map.nx_graph.nodes)
-    node = self.map.nx_graph.nodes['1#1360050503']
-    self.assertEqual('krHcHNYmkgO05qSdnHSvQQ', node['img_id'])
-
+  def testStatesInGraph(self):
     edges_id = ('1#502878564', '2#91900570', 0)
     self.assertIn(edges_id, self.map.nx_graph.edges)
     edge = self.map.nx_graph.edges[edges_id]

@@ -21,10 +21,6 @@ from cabby.geo import walk
 from cabby.geo import util
 
 
-# import os,sys
-# sys.path.append(os.getcwd())
-#
-
 class WalkTest(unittest.TestCase):
 
   @classmethod

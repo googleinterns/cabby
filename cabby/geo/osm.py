@@ -44,7 +44,6 @@ PLACE = ['square']
 VISUAL_DESC = ['building:material',
                'building:shape',
                'building:colour',
-               'building:color',
                'building:architecture']
 
 INTERESTING_TAGS =  {'name': True,

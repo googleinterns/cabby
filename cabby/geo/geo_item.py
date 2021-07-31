@@ -144,7 +144,7 @@ class RVSSample:
     bearings = geo_entity.states['angle']
     descriptions = geo_entity.states['descriptions']
 
-    states = [(util.tuple_from_point(p), b, d) for p, b, d in zip(positions, bearings, descriptions)]
+    states = [(p, b, d) for p, b, d in zip(positions, bearings, descriptions)]
 
     return RVSSample(
               landmark_list,

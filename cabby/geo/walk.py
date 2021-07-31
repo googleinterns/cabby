@@ -734,7 +734,6 @@ class Walker:
 
     route_len = route.shape[0]
     for route_idx in range(route_len-1):
-      logging.info(route.iloc[route_idx])
       curr_point = route.iloc[route_idx]['geometry'].centroid
       next_point = route.iloc[route_idx+1]['geometry'].centroid
 
@@ -977,7 +976,6 @@ class Walker:
       map: The map of a specific region.
       n_samples: the max number of samples to generate.
     '''
-
     manager = multiprocessing.Manager()
     
     sema = Semaphore(n_cpu)

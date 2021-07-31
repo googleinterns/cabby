@@ -43,7 +43,7 @@ class GeoSetTest(unittest.TestCase):
     self.assertEqual(wikidata_sample.sample_type, 'Wikidata')
     self.assertEqual(
         wikidata_sample.text,
-        ('Renaissance Revival architecture, building, building in '
+        ('Renaissance Revival architecture, school building, building in '
          'Pennsylvania, United States, Birmingham Public School.')
     )
 
@@ -54,7 +54,7 @@ class GeoSetTest(unittest.TestCase):
         self.assertEqual(sample.sample_type, 'OSM')
         self.assertEqual(
           sample.text, 
-          'Figleaf and building and East Carson Street.')
+          'Figleaf and building and addr is East Carson Street.')
     self.assertTrue(foundFigleaf)
 
 

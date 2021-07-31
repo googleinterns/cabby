@@ -14,6 +14,7 @@
 
 '''Tests for speak.py'''
 
+
 import unittest
 
 import geopandas as gpd
@@ -33,22 +34,22 @@ class ObserveTest(unittest.TestCase):
     geo_landmarks = {}
     geo_features = {}
     geo_landmarks['start_point'] = gpd.GeoSeries(
-      {'osmid': 1, 'geometry': Point(), 'main_tag': 'START'})
+      {'osmid': 1, 'geometry': Point(0,0), 'main_tag': 'START'})
     geo_landmarks['end_point'] = gpd.GeoSeries(
-      {'osmid': 2, 'geometry': Point(), 'main_tag': 'Target Coffee Shop'})
+      {'osmid': 2, 'geometry': Point(0,0), 'main_tag': 'Target Coffee Shop'})
     geo_landmarks['main_pivot'] = gpd.GeoSeries(
-      {'osmid': 3, 'geometry': Point(), 'main_tag': 'Food On The Way'})
+      {'osmid': 3, 'geometry': Point(0,0), 'main_tag': 'Food On The Way'})
     geo_landmarks['near_pivot'] = gpd.GeoSeries(
-      {'osmid': 4, 'geometry': Point(), 'main_tag': 'Far is Near Travel Agency'})
+      {'osmid': 4, 'geometry': Point(0,0), 'main_tag': 'Far is Near Travel Agency'})
     geo_landmarks['beyond_pivot'] = gpd.GeoSeries(
-      {'osmid': 5, 'geometry': Point(), 'main_tag': 'Beyond The Rainbow Fairy Shop'})
+      {'osmid': 5, 'geometry': Point(0,0), 'main_tag': 'Beyond The Rainbow Fairy Shop'})
     route = gpd.GeoSeries({'geometry': Point()})
     geo_features['intersections'] = 2
     geo_features['cardinal_direction'] = 'North-North'
     geo_features['spatial_rel_goal'] = 'right'
     geo_features['spatial_rel_pivot'] = 'left'
 
-    states = [((40.0, -70.0), 0.0)]
+    states = [((40.0, -70.0), 0.0, "")]
 
     entity = geo_item.GeoEntity.add_entity(
       geo_landmarks=geo_landmarks,
