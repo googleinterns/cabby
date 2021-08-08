@@ -10,21 +10,45 @@
 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
 
-    {% if title %}
-        <title>Navigation Task 🌏 - {{ title }}</title>
-    {% else %}
-        <title>Navigation Task 🌏</title>
-    {% endif %}
 </head>
 <body>
+<!--onload="flashMessage()">-->
+<!--  <script>-->
+<!--    function flashMessage() {-->
+<!--      if ("{{ flash_message }}" == "True") {-->
+<!--        alert("[YOUR_MESSAGE_HERE]");-->
+<!--      }-->
+<!--    }-->
+<!--  </script>-->
     <header class="site-header">
     </header>
+
+<div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+            {% if category == 'message' %}
+              <div class="alert alert-warning" role="alert">
+            {% else %}
+              <div class="alert alert-{{ category }}" role="alert">
+            {% endif %}
+              {{ message }}
+            </div>
+        {% endfor %}
+      {% endif %}
+  {% endwith %}
+</div>
     <main role="main" class="container">
-         <h1 style="text-align:center">Navigation Task 🌏</h1>
+            {% if title %}
+                 <h1 style="text-align:center">Navigation Task - {{ title }} 🌏</h1>
+        {% else %}
+          <h1 style="text-align:center">Navigation Task 🌏</h1>
+    {% endif %}
     </main>
     {% block content %} {% endblock %}
 
 
+</div>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>

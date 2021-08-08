@@ -58,6 +58,7 @@ def index():
     sample_number = random.randint(0, size_dataset)
     return redirect(url_for('task', sample=sample_number))
   else:
+    session.pop('_flashes', None)
     return render_template('end.html')
 
 
@@ -77,12 +78,11 @@ def task(sample):
     db.session.add(path)
     db.session.commit()
 
-    in_data = Instruction.query.all()
-
-    flash(f'Account created {in_data}!', 'success')
+    flash(f'Do the next task!', 'success')
     return redirect(url_for('index'))
 
-  return render_template('task.html', form=form)
+  progress_task = round(session["task"]/N_TASKS_PER_USER*100)
+  return render_template('task.html', form=form, bar=progress_task, title=session["task"])
 
   # return folium_map._repr_html_()
 
@@ -92,4 +92,4 @@ def map():
 
 if __name__ == '__main__':
   sess = Session()
-  app.run(debug=True)
+  app.run(host='0.0.0.0', port=5000, debug=True)
