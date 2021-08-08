@@ -1,0 +1,46 @@
+.float-container {
+    border: 3px solid white;
+    padding: 20px;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+
+
+}
+
+.float-child {
+    width: 50%;
+    height: 70%;
+    float: left;
+    padding: 20px;
+    border-color: white;
+
+
+}
+
+.form-group{
+   height:100%;
+ }
+
+textarea.form-control {
+  height: 100%;
+}
+
+div.form-control {
+  height: 100%;
+}
+
+.page {
+    height: 10%;
+
+}
+
+#myForm {
+    width: 100%;
+    height: 100%;
+}
+
+.map {
+    width: 100%;
+    height: 100%;
+}
