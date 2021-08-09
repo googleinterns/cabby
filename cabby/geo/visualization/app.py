@@ -59,7 +59,7 @@ def index():
     return redirect(url_for('task', sample=sample_number))
   else:
     session.pop('_flashes', None)
-    return render_template('end.html')
+    return render_template('end.html', bar=100)
 
 
 
@@ -78,11 +78,19 @@ def task(sample):
     db.session.add(path)
     db.session.commit()
 
-    flash(f'Do the next task!', 'success')
+    flash(session["task"], 'success')
     return redirect(url_for('index'))
 
-  progress_task = round(session["task"]/N_TASKS_PER_USER*100)
-  return render_template('task.html', form=form, bar=progress_task, title=session["task"])
+  if session["task"]==0:
+    task = 0
+  else:
+    task = session["task"]-1
+  progress_task = round(task/N_TASKS_PER_USER*100)
+  return render_template('task.html',
+                         form=form,
+                         bar=progress_task,
+                         title=session["task"],
+                         )
 
   # return folium_map._repr_html_()
 

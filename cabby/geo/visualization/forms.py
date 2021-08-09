@@ -4,5 +4,5 @@ from wtforms.validators import DataRequired, Length
 
 
 class NavigationForm(FlaskForm):
-    content = TextAreaField('Content', validators=[DataRequired(), Length(min=50)])
+    content = TextAreaField('Content', validators=[DataRequired(), Length(min=10)])
     submit = SubmitField('Submit Navigation Description')
