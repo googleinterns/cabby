@@ -6,62 +6,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+            integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"></script>
 
 </head>
 <body>
-<!--onload="flashMessage()">-->
-<!--  <script>-->
-<!--    function flashMessage() {-->
-<!--      if ("{{ flash_message }}" == "True") {-->
-<!--        alert("[YOUR_MESSAGE_HERE]");-->
-<!--      }-->
-<!--    }-->
-<!--  </script>-->
-    <header class="site-header">
-    </header>
 
-<div>
-<!--  {% with messages = get_flashed_messages(with_categories=true) %}-->
-<!--      {% if messages %}-->
-<!--        {% for category, message in messages %}-->
-<!--            {% if category == 'message' %}-->
-<!--              <div class="alert alert-warning" role="alert">-->
-<!--            {% else %}-->
-<!--              <div class="alert alert-{{ category }}" role="alert">-->
-<!--            {% endif %}-->
-<!--              {{ message }}-->
-<!--            </div>-->
-<!--        {% endfor %}-->
-<!--      {% endif %}-->
-<!--  {% endwith %}-->
-</div>
-    <main role="main" class="container">
-            {% if title %}
-                 <h1 style="text-align:center">Navigation Task - {{ title }} 🌏</h1>
-        {% else %}
-          <h1 style="text-align:center">Navigation Tasks 🌏</h1>
+<header class="site-header">
+</header>
+
+<main role="main" class="container">
+    {% if title %}
+    <h1 style="text-align:center">Navigation Task - {{ title }} 🌏</h1>
+    {% else %}
+    <h1 style="text-align:center">Navigation Tasks 🌏</h1>
     {% endif %}
-    </main>
-    {% block content %} {% endblock %}
+</main>
+{% block content %} {% endblock %}
 
-                 <div class="progress" style="width: 99%; margin: 10px; bottom: 0px; position:absolute;" >
-        <div id = 'progressBar' class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow=0 aria-valuemin="0" aria-valuemax="100" style="width: 0%" id="prog_{{bar}}">
-                <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
-                <script> $("#progressBar").css("width",'{{bar}}%'); </script>
-            <span class="progress-bar-label" id="prog_{{bar}}_label">{{ bar }}%</span>
-        </div>
+<div class="progress" style="width: 99%; margin: 10px; bottom: 0px; position:absolute;">
+    <div id='progressBar' class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+         aria-valuenow=0 aria-valuemin="0" aria-valuemax="100" style="width: 0%" id="prog_{{bar}}">
+        <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script> $("#progressBar").css("width", '{{bar}}%'); </script>
+        <span class="progress-bar-label" id="prog_{{bar}}_label">{{ bar }}%</span>
     </div>
-
-
+</div>
 
 
 </div>

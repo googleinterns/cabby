@@ -17,7 +17,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SECRET_KEY'] = '5791628bb0b13ce0c676dfde280ba245'
 app.config['SESSION_TYPE'] = 'filesystem'
 
-
 app.config['SECRET_KEY'] = '5791628bb0b13ce0c676dfde280ba245'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 
@@ -26,11 +25,10 @@ path_manhattan = os.path.join(par_dir, "pathData/manhattan_geo_paths.gpkg")
 osm_maps_instructions_manhattan = visualize.get_maps_and_instructions(path_manhattan)
 size_dataset = len(osm_maps_instructions_manhattan)
 
-
-
 db = SQLAlchemy(app)
 
 N_TASKS_PER_USER = 5
+
 
 class Instruction(db.Model):
   id = db.Column(db.Integer, primary_key=True)
@@ -43,7 +41,6 @@ class Instruction(db.Model):
     return f"Path Descriptions('{self.id}', '{self.sample_number}', '{self.date_finish}')"
 
 
-
 @app.route("/")
 @app.route("/home")
 def home():
@@ -54,13 +51,12 @@ def home():
 @app.route("/index")
 def index():
   session["task"] += 1
-  if session["task"]<=N_TASKS_PER_USER:
+  if session["task"] <= N_TASKS_PER_USER:
     sample_number = random.randint(0, size_dataset)
     return redirect(url_for('task', sample=sample_number))
   else:
     session.pop('_flashes', None)
     return render_template('end.html', bar=100)
-
 
 
 @app.route("/task/<sample>", methods=['GET', 'POST'])
@@ -81,11 +77,11 @@ def task(sample):
     flash(session["task"], 'success')
     return redirect(url_for('index'))
 
-  if session["task"]==0:
+  if session["task"] == 0:
     task = 0
   else:
-    task = session["task"]-1
-  progress_task = round(task/N_TASKS_PER_USER*100)
+    task = session["task"] - 1
+  progress_task = round(task / N_TASKS_PER_USER * 100)
   return render_template('task.html',
                          form=form,
                          bar=progress_task,
@@ -94,9 +90,11 @@ def task(sample):
 
   # return folium_map._repr_html_()
 
+
 @app.route('/map')
 def map():
-    return render_template('map.html')
+  return render_template('map.html')
+
 
 if __name__ == '__main__':
   sess = Session()
