@@ -48,28 +48,35 @@ def get_osm_map(entity: geo_item.GeoEntity) -> Sequence[folium.Map]:
 
     # draw the points
     colors = [
-      'red', 'green', 'white', 'blue', 'black', 'purple', 'orange']
+      'red', 'green', 'pink', 'blue', 'black', 'purple', 'orange']
     for landmark_type, landmark in entity.geo_landmarks.items():
       if landmark.geometry is not None:
         landmark_geom = util.list_yx_from_point(landmark.geometry)
         folium.Marker(
           landmark_geom,
-          popup=f'{landmark_type}: {landmark.main_tag}',
+          popup=f'{landmark_type.replace("_", " ")}: {landmark.main_tag.replace("_", " ")}',
           icon=folium.Icon(color=colors.pop(0))).add_to(map_osm)
+    #
+    # lat_lng_list = []
+    # for coord in entity.route.coords:
+    #     lat_lng_list.append([coord[1], coord[0]])
+    #
+    # for index, coord_lat_lng in enumerate(lat_lng_list):
+    #     folium.Circle(location = coord_lat_lng,
+    #                    radius = 5,
+    #                   color='crimson',
+    #                   ).add_to(map_osm)
+    #
 
-    lat_lng_list = []
-    for coord in entity.route.coords:
-        lat_lng_list.append([coord[1], coord[0]])
-
-    for index, coord_lat_lng in enumerate(lat_lng_list):
-        folium.Circle(location = coord_lat_lng,
-                       radius = 5,
-                      color='crimson',
-                      ).add_to(map_osm)
-
+    line = LineString(entity.route)
+    folium.GeoJson(data=line, style_function=lambda feature: {
+        'fillColor': 'crimson',
+        'color' : 'crimson',
+        'weight' : 5,
+        'fillOpacity' : 1,
+        }).add_to(map_osm)
 
     return map_osm
-
 
 def get_maps_and_instructions(path: Text
 ) -> Sequence[Tuple[folium.Map, str]]:

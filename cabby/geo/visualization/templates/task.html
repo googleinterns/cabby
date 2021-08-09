@@ -15,7 +15,13 @@
       </div>
   <div class="float-child">
            <h3>Navigation Description</h3>
-            <p>Enter a description of the end-position (red) relative to the landmarks (blue, black and white markers), the path (red line) and the start position (green marker). </p>
+            <p>Enter a description of the end-position (red) relative to the landmarks (blue, black and pink markers), the path (red line) and the start position (green marker).
+            You can press on the markers to see their role (e.g., 'start position') and their description (e.g., 'theater').
+                Use only the description by name.
+                Do put the role in name in the description, but you can use it to understand the relationship to the goal.
+                You can use the path to describe blocks\intersections to pass from a landmark (e.g., 'the goal will be 2 blocks from the theater').
+            </p>
+
 
         <form method="POST" action="">
             {{ form.hidden_tag() }}
@@ -41,11 +47,7 @@
         </div>
                 </div>
 
-<!-- <div class="progress" style="width: 50%; margin: 50px; bottom: 0px; position:absolute;" >-->
-<!--        <div class="progress-bar" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" style="width: 70%" id="prog_{{bar}}">-->
-<!--            <span class="progress-bar-label" id="prog_{{bar}}_label">70%</span>-->
-<!--        </div>-->
-<!--    </div>-->
+
 {% endblock content %}
 
 
