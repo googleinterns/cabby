@@ -87,9 +87,9 @@ def get_maps_and_instructions(path: Text
 
     landmark_list = []
     for landmark_type, landmark in entity.geo_landmarks.items():
-      landmark_list.append(landmark_type + ": " + str(landmark.main_tag))
+      landmark_list.append(str(landmark.main_tag))
 
     instruction = '; '.join(features_list) + '; '.join(landmark_list)
-    map_osms_instructions.append((map_osm, instruction))
+    map_osms_instructions.append((map_osm, instruction, landmark_list))
 
   return map_osms_instructions

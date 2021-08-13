@@ -20,8 +20,9 @@ app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SECRET_KEY'] = '5791628bb0b13ce0c676dfde280ba245'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 
-par_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-path_manhattan = os.path.join(par_dir, "pathData/manhattan_geo_paths.gpkg")
+parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+# path_manhattan = os.path.join(parent_dir, "pathData/manhattan_geo_paths.gpkg")
+path_manhattan = "/home/nlp/tzufar/Pycharm/second_year/cabby-tmp4/spatial_samples.gpkg"
 osm_maps_instructions_manhattan = visualize.get_maps_and_instructions(path_manhattan)
 size_dataset = len(osm_maps_instructions_manhattan)
 
@@ -62,10 +63,11 @@ def index():
 @app.route("/task/<sample>", methods=['GET', 'POST'])
 def task(sample):
   sample = int(sample)
-  folium_map, instruction = osm_maps_instructions_manhattan[sample]
+  folium_map, instruction, landmarks = osm_maps_instructions_manhattan[sample]
 
   folium_map.save('templates/map.html')
   form = NavigationForm()
+  form.landmarks = landmarks
 
   if form.validate_on_submit():
     content = request.form['content']
