@@ -9,7 +9,7 @@ def check_second_person(form, field):
     raise ValidationError('Describe the goal as if you are telling a friend about it.')
 
 def check_no_first_person(form, field):
-  if 'We ' in field.data or 'I' in field.data:
+  if 'We ' in field.data or 'I ' in field.data:
     raise ValidationError('Describe the goal as if you are telling a friend about it.')
 
 def check_verbs(form, field):
