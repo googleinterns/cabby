@@ -90,8 +90,6 @@ def task(sample):
                          title=session["task"],
                          )
 
-  # return folium_map._repr_html_()
-
 
 @app.route('/map')
 def map():
