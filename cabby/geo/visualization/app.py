@@ -93,7 +93,7 @@ def task(sample):
     return redirect(url_for('index'))
 
   if session["task"] == 0:
-    task = 0
+    task = 0 
   else:
     task = session["task"] - 1
   progress_task = round(task / N_TASKS_PER_USER * 100)

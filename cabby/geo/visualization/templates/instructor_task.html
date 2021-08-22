@@ -7,19 +7,10 @@
 
 <div class="float-container">
     <div class="float-child">
-        
         <h3>Navigation Map</h3>
 
-        <b>Map Instructions: </b>
 
-    </p>
-    <ul>
-        <li>You can zoom in and out by clicking on the +/- button.</li>
-        <li>You can click on the markers to display their names/description (e.g., 'theater').</li>
-    </ul>
-
-
-        <iframe class="map" , src="/map"></iframe>
+        <iframe class="map" , src="/map"></ififrame>
     </div>
     <div class="float-child">
         <h3>Navigation Description</h3>
@@ -28,19 +19,20 @@
             and you would like to meet your friend at the location marked in red. 
             You need to communicate the meeting location quickly, 
             so you must describe it precisely using only information about the meeting point 
-            (e.g. that it is a "bicycle rental") and descriptions of a few significant landmarks that your friend 
-            is familiar with (black markers), and that relate your friend's location and the meeting point.
-            
+            (e.g. that it is a "bicycle rental") and descriptions of a few significant landmarks 
+            (buildings, parks, statues, etc) that relate your friend's location and the meeting point.
 
         </p>
         <p>
-        <b>Task Instructions: </b>  
-            <ul>
-                <li>Please do not mention more than one street by its name. </li>
-                <li>Please use for the goal and landmarks the description in the marker 
-                    and not the name which appears in the map.</li>
-            </ul>
-        
+            <b>Map Instructions: </b>
+
+        </p>
+        <ul>
+            <li>You can zoom in and out by clicking on the +/- button.</li>
+            <li>You can click on the markers to display their names/description (e.g., 'theater').</li>
+        </ul>
+
+
         <form method="POST" action="">
             {{ form.hidden_tag() }}
 
@@ -67,5 +59,3 @@
 
 
 {% endblock content %}
-
-
