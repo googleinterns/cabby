@@ -8,40 +8,28 @@ import random
 
 from forms import NavigationForm
 import visualize
+from database import Instruction, Goal, db, create_app
+
 
 app = Flask(__name__)
 
-sess = Session()
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
-app.config['SECRET_KEY'] = '5791628bb0b13ce0c676dfde280ba245'
-app.config['SESSION_TYPE'] = 'filesystem'
+app = create_app()
+app.app_context().push()
 
+
+db.init_app(app)
+
+
+with app.app_context():
+    db.create_all()
 
 parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 rvs_path = os.path.join(parent_dir, "pathData/manhattan_geo_paths.gpkg")
 osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
 size_dataset = len(osm_maps_instructions)
 
-db = SQLAlchemy(app)
-
-with app.app_context():
-    db.create_all()
-
 N_TASKS_PER_USER = 5
-
-
-class Instruction(db.Model):
-  id = db.Column(db.Integer, primary_key=True)
-  rvs_sample_number = db.Column(db.Integer, nullable=False)
-  content = db.Column(db.Text, nullable=False)
-  date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-  date_finish = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-  rvs_path = db.Column(db.Text, nullable=False)
-  rvs_goal = db.Column(db.Text, nullable=False)
-  rvs_start = db.Column(db.Text, nullable=False)
-  def __repr__(self):
-    return f"Path Descriptions('{self.id}', '{self.rvs_sample_number}', '{self.date_finish}', '{self.rvs_path}')"
 
 
 @app.route("/")
