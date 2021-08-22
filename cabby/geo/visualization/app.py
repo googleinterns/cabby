@@ -22,7 +22,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 
 parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 path_manhattan = os.path.join(parent_dir, "pathData/manhattan_geo_paths.gpkg")
-# path_manhattan = "/home/nlp/tzufar/Pycharm/second_year/cabby-tmp4/spatial_samples.gpkg"
 osm_maps_instructions_manhattan = visualize.get_maps_and_instructions(path_manhattan)
 size_dataset = len(osm_maps_instructions_manhattan)
 
