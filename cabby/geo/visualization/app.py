@@ -97,7 +97,7 @@ def task(sample):
   else:
     task = session["task"] - 1
   progress_task = round(task / N_TASKS_PER_USER * 100)
-  return render_template('task.html',
+  return render_template('instructor_task.html',
                          form=form,
                          bar=progress_task,
                          title=session["task"],
