@@ -17,14 +17,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SECRET_KEY'] = '5791628bb0b13ce0c676dfde280ba245'
 app.config['SESSION_TYPE'] = 'filesystem'
 
-app.config['SECRET_KEY'] = '5791628bb0b13ce0c676dfde280ba245'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 
 parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-path_manhattan = os.path.join(parent_dir, "pathData/manhattan_geo_paths.gpkg")
-# path_manhattan = "/home/nlp/tzufar/Pycharm/second_year/cabby-tmp4/spatial_samples.gpkg"
-osm_maps_instructions_manhattan = visualize.get_maps_and_instructions(path_manhattan)
-size_dataset = len(osm_maps_instructions_manhattan)
+rvs_path = os.path.join(parent_dir, "pathData/manhattan_geo_paths.gpkg")
+osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
+size_dataset = len(osm_maps_instructions)
 
 db = SQLAlchemy(app)
 
@@ -34,13 +31,13 @@ with app.app_context():
 N_TASKS_PER_USER = 5
 
 
-
 class Instruction(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   rvs_sample_number = db.Column(db.Integer, nullable=False)
   content = db.Column(db.Text, nullable=False)
   date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
   date_finish = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+  rvs_path = db.Column(db.Text, nullable=False)
   rvs_goal = db.Column(db.Text, nullable=False)
   rvs_start = db.Column(db.Text, nullable=False)
   def __repr__(self):
@@ -68,7 +65,7 @@ def index():
 @app.route("/task/<sample>", methods=['GET', 'POST'])
 def task(sample):
   sample = int(sample)
-  folium_map, instruction, landmarks, entity = osm_maps_instructions_manhattan[sample]
+  folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
 
   folium_map.save('templates/map.html')
   form = NavigationForm()
@@ -83,6 +80,7 @@ def task(sample):
       rvs_sample_number=sample, 
       content=content, 
       date_finish=datetime.utcnow(),
+      rvs_path = rvs_path,
       rvs_goal = str(goal),
       rvs_start = str(start))
 
