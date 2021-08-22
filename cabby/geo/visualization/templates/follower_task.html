@@ -1,0 +1,100 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<br>
+
+
+<div class="float-container">
+    <div class="float-child">
+        <h3>Navigation Map</h3>
+
+
+        
+<div id="mapid" style="width: 600px; height: 400px;"></div>
+<script>
+
+    var map = L.map('mapid').setView({{start_point|tojson}}, 16);
+
+
+	L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ' +
+			'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+		id: 'mapbox/streets-v11',
+		tileSize: 512,
+		zoomOffset: -1
+	}).addTo(map);
+
+
+    var greenIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+    L.marker({{start_point|tojson}}, {icon: greenIcon}).addTo(map).bindPopup('Start');
+
+
+    var markers = new Array();
+
+	function onMapClick(e) {
+        if (markers.length > 0) {
+              marker = markers.pop()
+              map.removeLayer(marker)
+
+        }
+        
+    
+    var redIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+    });
+    marker = new L.marker(e.latlng, {draggable:'true', icon: redIcon}).bindPopup('Goal');
+    marker.on('dragend', function(event){
+        var marker = event.target;
+        var position = marker.getLatLng();
+        marker.setLatLng(new L.LatLng(position.lat, position.lng),{draggable:'true'});
+        map.panTo(new L.LatLng(position.lat, position.lng))
+        });
+    map.addLayer(marker);
+    markers.push(marker);
+
+
+	}
+
+	map.on('click', onMapClick);
+
+    
+
+</script>
+
+
+    </div>
+    <div class="float-child">
+        <h3>Navigation Description</h3>
+        <p><b>Your task </b>
+            is to read the following navigation instructions and pin the goal on the map:
+        </p>
+        
+        <p style="color:blue">{{ nav_instruction }}</p>
+
+        <p>
+            <b>Map Instructions: </b>
+
+        </p>
+        <ul>
+            <li>You can zoom in and out by clicking on the +/- button.</li>
+            <li>You can click on the markers to display their names/description (e.g., 'theater').</li>
+        </ul>
+    </div>
+</div>
+
+{% endblock content %}
+
+
