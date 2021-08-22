@@ -21,25 +21,30 @@ app.config['SECRET_KEY'] = '5791628bb0b13ce0c676dfde280ba245'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 
 parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-# path_manhattan = os.path.join(parent_dir, "pathData/manhattan_geo_paths.gpkg")
-path_manhattan = "/home/nlp/tzufar/Pycharm/second_year/cabby-tmp4/spatial_samples.gpkg"
+path_manhattan = os.path.join(parent_dir, "pathData/manhattan_geo_paths.gpkg")
+# path_manhattan = "/home/nlp/tzufar/Pycharm/second_year/cabby-tmp4/spatial_samples.gpkg"
 osm_maps_instructions_manhattan = visualize.get_maps_and_instructions(path_manhattan)
 size_dataset = len(osm_maps_instructions_manhattan)
 
 db = SQLAlchemy(app)
 
+with app.app_context():
+    db.create_all()
+
 N_TASKS_PER_USER = 5
+
 
 
 class Instruction(db.Model):
   id = db.Column(db.Integer, primary_key=True)
-  sample_number = db.Column(db.Integer, nullable=False)
+  rvs_sample_number = db.Column(db.Integer, nullable=False)
   content = db.Column(db.Text, nullable=False)
   date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
   date_finish = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-
+  rvs_goal = db.Column(db.Text, nullable=False)
+  rvs_start = db.Column(db.Text, nullable=False)
   def __repr__(self):
-    return f"Path Descriptions('{self.id}', '{self.sample_number}', '{self.date_finish}')"
+    return f"Path Descriptions('{self.id}', '{self.rvs_sample_number}', '{self.date_finish}', '{self.rvs_path}')"
 
 
 @app.route("/")
@@ -63,16 +68,24 @@ def index():
 @app.route("/task/<sample>", methods=['GET', 'POST'])
 def task(sample):
   sample = int(sample)
-  folium_map, instruction, landmarks = osm_maps_instructions_manhattan[sample]
+  folium_map, instruction, landmarks, entity = osm_maps_instructions_manhattan[sample]
 
   folium_map.save('templates/map.html')
   form = NavigationForm()
   form.landmarks = landmarks
 
+
   if form.validate_on_submit():
     content = request.form['content']
+    goal = entity.geo_landmarks['end_point'].geometry
+    start = entity.geo_landmarks['start_point'].geometry
+    path = Instruction(
+      rvs_sample_number=sample, 
+      content=content, 
+      date_finish=datetime.utcnow(),
+      rvs_goal = str(goal),
+      rvs_start = str(start))
 
-    path = Instruction(sample_number=sample, content=content)
     db.session.add(path)
     db.session.commit()
 

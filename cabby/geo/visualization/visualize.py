@@ -36,15 +36,24 @@ def get_osm_map(entity: geo_item.GeoEntity) -> Sequence[folium.Map]:
   Returns:
     OSM maps from the GeoDataFrame.
   '''
+  goal_point = entity.geo_landmarks['end_point'].geometry
+  start_point = entity.geo_landmarks['start_point'].geometry
 
-  mid_point = util.midpoint(
-    entity.geo_landmarks['end_point'].geometry,
-    entity.geo_landmarks['start_point'].geometry)
+  mid_point = util.midpoint(goal_point, start_point)
   zoom_location = util.list_yx_from_point(mid_point)
 
+  dist = util.get_distance_m(goal_point, start_point)
+  if dist>2500:
+    zoom_start = 12
+  elif dist>1800:
+    zoom_start = 13
+  elif dist>400:
+    zoom_start = 14
+  else:
+    zoom_start = 15
   # create a map
   map_osm = folium.Map(location=zoom_location,
-                       zoom_start=15, tiles='OpenStreetMap')
+                       zoom_start=zoom_start  , tiles='OpenStreetMap')
 
   # draw the points
   colors = [
@@ -90,6 +99,6 @@ def get_maps_and_instructions(path: Text
       landmark_list.append(str(landmark.main_tag))
 
     instruction = '; '.join(features_list) + '; '.join(landmark_list)
-    map_osms_instructions.append((map_osm, instruction, landmark_list))
+    map_osms_instructions.append((map_osm, instruction, landmark_list, entity))
 
   return map_osms_instructions

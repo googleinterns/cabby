@@ -23,7 +23,7 @@ def check_verbs(form, field):
 
 
 def check_landmarks(form, field):
-  if all(landmark not in field.data for landmark in form.landmarks):
+  if all(landmark.lower() not in field.data.lower() for landmark in form.landmarks):
     raise ValidationError('Describe the goal relative to the landmarks.')
 
 document = 'The little brown dog barked at the black cat'
