@@ -4,12 +4,8 @@ from flask import *
 from flask_sqlalchemy import SQLAlchemy
 from geoalchemy2 import Geometry
 
-from sqlalchemy.ext.declarative import declarative_base
-
 
 db = SQLAlchemy()
-
-Base = declarative_base()
 
 def create_app():
     app = Flask(__name__)
@@ -21,16 +17,16 @@ def create_app():
     
     return app
 
-class Goal(Base):
-  __tablename__ = 'goal'
+class Goal(db.Model):
   id = db.Column(db.Integer, primary_key=True)
   instruction_id = db.Column(db.Integer, nullable=False)
   date_start = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
   date_finish = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-  goal_point = db.Column(Geometry(geometry_type='POLYGON', management=True))
+  goal_lat = db.Column(db.Integer, nullable=False)
+  goal_lng = db.Column(db.Integer, nullable=False)
 
   def __repr__(self):
-    return f"Goal('{self.id}', '{self.sample_number}', '{self.date_finish}')"
+    return f"Goal('{self.id}', '{self.instruction_id}', '{self.goal_lat}', '{self.goal_lng}')"
 
 
 

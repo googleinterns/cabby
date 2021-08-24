@@ -9,9 +9,17 @@
     <div class="float-child">
         <h3>Navigation Map</h3>
 
+        <b>Map Instructions: </b>
+
+        <ul>
+            <li>You can zoom in and out by clicking on the +/- button.</li>
+            <li>You can press and hold to move on the map.</li>
+
+        </ul>
+
 
         
-<div id="mapid" style="width: 600px; height: 400px;"></div>
+<div id="mapid" class=map></div>
 <script>
 
     var map = L.map('mapid').setView({{start_point|tojson}}, 16);
@@ -35,7 +43,6 @@
   shadowSize: [41, 41]
 });
     L.marker({{start_point|tojson}}, {icon: greenIcon}).addTo(map).bindPopup('Start');
-
 
     var markers = new Array();
 
@@ -66,7 +73,9 @@
     markers.push(marker);
 
 
+
 	}
+
 
 	map.on('click', onMapClick);
 
@@ -85,15 +94,52 @@
         <p style="color:blue">{{ nav_instruction }}</p>
 
         <p>
-            <b>Map Instructions: </b>
+            <b>Task Instructions: </b>
+            <ul>
+                <li>The green marker is the start point of the instructions.</li>
+                <li>You can click on the map to pin a red marker for the goal.</li>
+                <li>You can click on a different place on the map to move the goal.</li>
+                <li>Once you finish, click on the submit button.</li>
+            </ul>
+            
 
-        </p>
-        <ul>
-            <li>You can zoom in and out by clicking on the +/- button.</li>
-            <li>You can click on the markers to display their names/description (e.g., 'theater').</li>
-        </ul>
+        <script>
+
+
+            $(document).ready(function() {
+
+            $("#button").click(function(e) {
+            e.preventDefault();
+            var coords =  markers.pop().getLatLng();
+            var lat = coords.lat.toString(10);
+            var lng = coords.lng.toString(10);
+
+            var data = JSON.stringify({lat: lat, lng: lng});
+
+            $.ajax({
+                type: "POST",
+                data : data,
+                contentType: "application/json; charset=utf-8",
+                // dataType: "json",
+                url:  "{{ url_for('button') }}",
+                success: function(result) {
+                    window.location.href = '/index';
+                },
+                error: function(result) {
+                    alert(result.responseText);
+                }
+            });
+        });    
+    });
+      
+        </script>
+        <button id="button" class="btn btn-outline-info" >Submit and go to next task</button>
+
     </div>
+
 </div>
+
+
 
 {% endblock content %}
 

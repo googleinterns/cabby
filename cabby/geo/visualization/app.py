@@ -59,7 +59,6 @@ def task(sample):
   form = NavigationForm()
   form.landmarks = landmarks
 
-
   if form.validate_on_submit():
     content = request.form['content']
     goal = entity.geo_landmarks['end_point'].geometry

@@ -40,16 +40,17 @@ def home():
 def index():
   session["task"] += 1
   if session["task"] <= N_TASKS_PER_USER:
-    sample_number = random.randint(0, size_dataset)
-    return redirect(url_for('task', sample=sample_number))
+    sample_number = random.randint(0, size_dataset-1)
+    session["sample"] = sample_number
+    return redirect(url_for('task'))
   else:
     session.pop('_flashes', None)
     return render_template('end.html', bar=100)
 
 
-@app.route("/task/<sample>", methods=['GET', 'POST'])
-def task(sample):
-  sample = int(sample)
+@app.route("/task", methods=['GET', 'POST'])
+def task():
+  sample = int(session["sample"])
   row = db.session.query(Instruction)[sample]
   entities = walk.load_entities(row.rvs_path)
   entity = entities[row.rvs_sample_number]
@@ -63,6 +64,10 @@ def task(sample):
 
   progress_task = round(task / N_TASKS_PER_USER * 100)
 
+  if request.method == "POST":
+          return redirect(url_for('index'))
+
+
   return render_template('follower_task.html',
                          start_point=start_point,
                          nav_instruction=nav_instruction,
@@ -70,33 +75,25 @@ def task(sample):
                          title=session["task"],
                          )
 
-
-  # if submit(): #############
-  #   goal = map.goal ##################
-
-  #   path = Goal()
-  #   db.session.add(path)
-  #   db.session.commit()
-
-  #   flash(session["task"], 'success')
-  #   return redirect(url_for('index'))
-
-  # if session["task"] == 0:
-  #   task = 0
-  # else:
-  #   task = session["task"] - 1
-  # progress_task = round(task / N_TASKS_PER_USER * 100)
-  # return render_template('task.html',
-  #                        form=form,
-  #                        bar=progress_task,
-  #                        title=session["task"],
-  #                        )
-
-
 @app.route('/map')
 def map():
   return render_template('map.html')
 
+@app.route("/button", methods=['GET', 'POST'])
+def button():
+  sample = int(session["sample"])
+  row = db.session.query(Instruction)[sample]
+  lat = request.json['lat']
+  lng = request.json['lng']
+  goal_row = Goal(
+    instruction_id=row.id, 
+    date_finish=datetime.utcnow(),
+    goal_lat =lat,
+    goal_lng = lng
+    )
+  db.session.add(goal_row)
+  db.session.commit()
+  return redirect(url_for('task'))
 
 if __name__ == '__main__':
   sess = Session()
