@@ -34,8 +34,6 @@ class NavigationForm(FlaskForm):
   content = TextAreaField('Content', validators=[
     DataRequired(),
     Length(min=80),
-    check_second_person,
-    check_no_first_person,
     check_verbs,
     check_landmarks
   ])
