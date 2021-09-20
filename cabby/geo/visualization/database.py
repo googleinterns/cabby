@@ -5,14 +5,15 @@ from flask_sqlalchemy import SQLAlchemy
 from geoalchemy2 import Geometry
 
 
+
 db = SQLAlchemy()
 
 def create_app():
     app = Flask(__name__)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False    
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
-    app.config['SECRET_KEY'] = '5791628bb0b13ce0c676dfde280ba245'
     app.config['SESSION_TYPE'] = 'filesystem'
+
     db.init_app(app)
     
     return app
@@ -31,7 +32,7 @@ class Goal(db.Model):
 
 
 class Instruction(db.Model):
-  
+
   id = db.Column(db.Integer, primary_key=True)
   rvs_sample_number = db.Column(db.Integer, nullable=False)
   content = db.Column(db.Text, nullable=False)
@@ -43,5 +44,7 @@ class Instruction(db.Model):
 
 
   def __repr__(self):
-    return f"Path Descriptions('{self.id}', '{self.rvs_sample_number}', '{self.date_finish}', '{self.rvs_path}')"
-
+    return "Path Descriptions: \n" + \
+      f"id: {self.id}, \n" + \
+      f"time: {self.date_start} - {self.date_finish}, \n" + \
+      f"rvs_sample_number: {self.rvs_sample_number} \n \n" 

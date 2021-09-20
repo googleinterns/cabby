@@ -26,16 +26,16 @@ def check_landmarks(form, field):
   if all(landmark.lower() not in field.data.lower() for landmark in form.landmarks):
     raise ValidationError('Describe the goal relative to the landmarks.')
 
-document = 'The little brown dog barked at the black cat'
-tokens = [nltk.word_tokenize(sent) for sent in [document]]
-postag = [nltk.pos_tag(sent) for sent in tokens][0]
-
 class NavigationForm(FlaskForm):
-  content = TextAreaField('Content', validators=[
+  class Meta:
+    csrf = True
+  content = TextAreaField('Content', 
+  validators=[
     DataRequired(),
     Length(min=80),
     check_verbs,
     check_landmarks
-  ])
+  ]
+  )
   submit = SubmitField('Submit and go to next task')
 
