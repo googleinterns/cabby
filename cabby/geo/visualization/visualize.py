@@ -19,7 +19,7 @@ import geopandas as gpd
 import pandas as pd
 import shapely.geometry as geom
 from shapely.geometry import Polygon, Point, LineString
-from typing import Tuple, Sequence, Optional, Dict, Text
+from typing import Tuple, Sequence, Optional, Dict, Text, List
 import sys
 import os
 
@@ -78,7 +78,7 @@ def get_osm_map(entity: geo_item.GeoEntity) -> Sequence[folium.Map]:
 
 
 def get_maps_and_instructions(path: Text
-                              ) -> Sequence[Tuple[folium.Map, str]]:
+) -> List[Tuple[Sequence, str, List[str], geo_item.GeoEntity]]:
   '''Create the OSM maps and instructions.
   Arguments:
     path: The path from the start point to the goal location.
