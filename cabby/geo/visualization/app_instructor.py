@@ -138,8 +138,8 @@ def task(sample, task):
 def map():
   return render_template('map.html')
 
+port = int(os.environ.get('PORT', 8080))
 
 if __name__ == '__main__':
-  sess = Session()
 
-  app.run()
+  app.run(threaded=True, host='0.0.0.0', port=port)
