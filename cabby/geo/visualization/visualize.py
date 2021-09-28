@@ -20,16 +20,12 @@ import pandas as pd
 import shapely.geometry as geom
 from shapely.geometry import Polygon, Point, LineString
 from typing import Tuple, Sequence, Optional, Dict, Text
-import sys
-import os
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd()))))
-from cabby.geo import util
-from cabby.geo import walk
-from cabby.geo import geo_item
+import util
+import geo_item
 
 
-def get_osm_map(entity: geo_item.GeoEntity) -> Sequence[folium.Map]:
+def get_osm_map(entity) -> Sequence[folium.Map]:
   '''Create the OSM maps.
   Arguments:
     gdf: the GeoDataFrame from which to create the OSM map.
@@ -87,7 +83,7 @@ def get_maps_and_instructions(path: Text
   '''
 
   map_osms_instructions = []
-  entities = walk.load_entities(path)
+  entities = util.load_entities(path)
   for entity in entities:
     map_osm = get_osm_map(entity)
     features_list = []

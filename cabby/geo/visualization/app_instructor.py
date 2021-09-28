@@ -6,14 +6,6 @@ from flask_sqlalchemy import SQLAlchemy
 import folium
 import os
 import random
-from OpenSSL import SSL
-from jinja2.utils import contextfunction
-from OpenSSL import crypto
-# from flask_wtf import CSRFProtect
-from flask_wtf import csrf
-# from flask_wtf.csrf import CSRFProtect
-from flask_wtf.csrf import CSRFProtect
-import psiturk 
 import uuid
 
 from forms import NavigationForm
@@ -22,9 +14,6 @@ from database import Instruction, Goal, db, create_app
 
 
 app = Flask(__name__)
-csrf = CSRFProtect()
-csrf.init_app(app)
-
 
 app = create_app()
 SECRET_KEY = '5791628bb0b13ce0c676dfde280ba245'
@@ -51,7 +40,6 @@ N_TASKS_PER_USER = 2
 @app.route("/")
 @app.route("/pub")
 def home():
-  print ("???????????????????????????????????????????????????????????????")
   task = 0
   
   return redirect(url_for(
@@ -95,10 +83,6 @@ def task(sample, task):
 
   form.landmarks = landmarks
 
-
-  print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-  print (form.errors)
-  print (len(form.errors))
 
   if flask.request.method == 'POST' and len(form.errors)==0:
 

@@ -2,7 +2,6 @@
 from datetime import datetime
 from flask import *
 from flask_sqlalchemy import SQLAlchemy
-from geoalchemy2 import Geometry
 
 
 

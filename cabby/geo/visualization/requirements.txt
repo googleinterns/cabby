@@ -1,0 +1,12 @@
+# requirements.txt
+flask
+firebase_admin
+flask_sqlalchemy
+folium
+flask_wtf
+nltk
+geopandas
+geopy
+shapely
+pandas
+attr
