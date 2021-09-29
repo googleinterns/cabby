@@ -899,6 +899,7 @@ class Walker:
 
 def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
   if not os.path.exists(path):
+    logging.info(f"Path: {path} does not exist")
     return []
   geo_types_all = {}
   for landmark_type in LANDMARK_TYPES:

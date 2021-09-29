@@ -201,7 +201,7 @@ def test_samples(instructions, tokenizer, model):
                  model=model,
                  tokenizer=tokenizer,
                  device=torch.cuda.current_device())
-
+  
   ner_results = nlp(instructions)
   for result in ner_results:
     list_words = []

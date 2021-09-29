@@ -21,7 +21,8 @@ from typing import Dict, Tuple, Any, List
 
 from cabby.model import datasets
 
-tokenizer = AutoTokenizer.from_pretrained("bert-base-cased", padding=True, truncation=True)
+tokenizer = AutoTokenizer.from_pretrained(
+  "bert-base-cased", max_length=512, padding='max_length', truncation=True)
 
 EXTRACT_ALL_PIVOTS = "all"
 
@@ -81,7 +82,7 @@ def create_dataset(
   Returns:
     The train, validate and test sets.
   '''
-  rvs_dataset = datasets.RVSDataset(data_dir, s2level, region)
+  rvs_dataset = datasets.RVSDataset(data_dir, s2level, region, split_data = True)
   train_dataset = EntityRecognitionSplit(rvs_dataset.train, pivot_type)
   logging.info(
     f"Finished to create the train-set with {len(train_dataset)} samples")
@@ -169,7 +170,7 @@ def bert_tokenize_and_align_labels(
   Returns:
     A dictionary of Bert-tokenized sentences and corresponding labels.
   '''
-  tokenized_inputs = tokenizer(tokenized_sentence, truncation=True, is_split_into_words=True)
+  tokenized_inputs = tokenizer(tokenized_sentence, truncation=True, max_length=512, padding='max_length', is_split_into_words=True)
   word_ids = tokenized_inputs.word_ids(batch_index=0)
   previous_word_idx = None
   label_ids = []
