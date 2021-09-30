@@ -22,7 +22,7 @@ from typing import Dict, Tuple, Any, List
 from cabby.model import datasets
 
 tokenizer = AutoTokenizer.from_pretrained(
-  "bert-base-cased", max_length=512, padding='max_length', truncation=True)
+  "bert-base-cased", truncation=True)
 
 EXTRACT_ALL_PIVOTS = "all"
 
@@ -171,6 +171,7 @@ def bert_tokenize_and_align_labels(
     A dictionary of Bert-tokenized sentences and corresponding labels.
   '''
   tokenized_inputs = tokenizer(tokenized_sentence, truncation=True, max_length=512, padding='max_length', is_split_into_words=True)
+
   word_ids = tokenized_inputs.word_ids(batch_index=0)
   previous_word_idx = None
   label_ids = []
@@ -201,7 +202,6 @@ class PadSequence:
     # Get each sequence and pad it.
     input_ids = [x['input_ids'] for x in sorted_batch]
     input_ids_padded = torch.nn.utils.rnn.pad_sequence(input_ids, batch_first=True)
-
     labels = [torch.tensor(x['labels']).clone().detach() for x in sorted_batch]
     labels_padded = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True)
 

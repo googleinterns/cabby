@@ -24,7 +24,7 @@ $ bazel-bin/cabby/model/landmark_recognition/entity_recognition \
   --region Manhattan
   --data_dir_touchdown ~/data/Touchdown/
   --data_dir_run ~/data/RUN/
-  --n_samples 5
+  --n_samples 1
   --pivot_type end_pivot
 """
 
@@ -78,7 +78,7 @@ flags.DEFINE_integer(
 
 
 flags.DEFINE_integer(
-  "n_samples", default=5, help=("Number of samples to test on."))
+  "n_samples", default=1, help=("Number of samples to test on."))
 
 
 
@@ -131,8 +131,8 @@ def main(argv):
     model=model_trained
   )
 
-  print ("\n Samples from RUN:")
-  if os.path.exists(FLAGS.data_dir_run):
+  if FLAGS.data_dir_run and os.path.exists(FLAGS.data_dir_run):
+    print ("\n Samples from RUN:")
     path_run = os.path.join(FLAGS.data_dir_run, 'dataset.json')
     if os.path.exists(path_run):
       run_ds = pd.read_json(path_run, lines=True)
@@ -143,9 +143,9 @@ def main(argv):
         model=model_trained
       )
 
-  print ("\n Samples from Touchdown:")
   # Test against Touchdown dataset (no labels for landmarks).
-  if os.path.exists(FLAGS.data_dir_touchdown):
+  if FLAGS.data_dir_touchdown and os.path.exists(FLAGS.data_dir_touchdown):
+    print ("\n Samples from Touchdown:")
     path_touchdown = os.path.join(FLAGS.data_dir_touchdown, 'test.json')
     if os.path.exists(path_touchdown):
       touchdown_ds = pd.read_json(path_touchdown, lines=True)
