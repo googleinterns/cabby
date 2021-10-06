@@ -162,7 +162,6 @@ dependencies:
   - libcblas=3.8.0=17_openblas
   - libclang=9.0.1=default_hde54327_0
   - libcurl=7.71.1=hcdd3856_4
-  - libdap4=3.20.6=h1d1bd15_1
   - libedit=3.1.20191231=h46ee950_1
   - libev=4.33=h516909a_0
   - libffi=3.2.1=he1b5a44_1007

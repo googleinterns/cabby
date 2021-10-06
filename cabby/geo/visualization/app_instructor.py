@@ -7,11 +7,19 @@ import folium
 import os
 import random
 import uuid
+from firebase_admin import credentials, firestore, initialize_app
+
 
 from forms import NavigationForm
 import visualize
 from database import Instruction, Goal, db, create_app
 
+
+# Initialize Firestore DB
+cred = credentials.Certificate('key.json')
+default_app = initialize_app(cred)
+db = firestore.client()
+todo_ref = db.collection('todos')
 
 app = Flask(__name__)
 
@@ -23,25 +31,26 @@ app.app_context().push()
 
 
 
-db.init_app(app)
+# db.init_app(app)
 
 
-with app.app_context():
-    db.create_all()
+# with app.app_context():
+#     db.create_all()
 
-parent_dir = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-rvs_path = os.path.join(parent_dir, "pathData/manhattan_geo_paths.gpkg")
+rvs_path = os.path.abspath("./data/manhattan_geo_paths.gpkg")
 osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
 size_dataset = len(osm_maps_instructions)
 
 N_TASKS_PER_USER = 2
 
 
+
 @app.route("/")
 @app.route("/pub")
 def home():
   task = 0
-  
+
+
   return redirect(url_for(
     'index', 
     task=task,
@@ -52,6 +61,7 @@ def home():
 @app.route("/index/<task>", methods=['GET', 'POST'])
 def index(task):
   task = int(task)
+  
 
   task +=1
   if task <= N_TASKS_PER_USER:
@@ -76,31 +86,42 @@ def index(task):
 def task(sample, task):
   sample = int(sample)
   task = int(task)
+
   folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
 
   folium_map.save('templates/map.html')
-  form = NavigationForm(secret_key=SECRET_KEY)
+  form_nav = NavigationForm()
 
-  form.landmarks = landmarks
+  form_nav.landmarks = landmarks
+  date_start = datetime.utcnow()
 
-
-  if flask.request.method == 'POST' and len(form.errors)==0:
+  if form_nav.validate_on_submit():
 
     session['task'] = task
     content = request.form['content']
-    goal = entity.geo_landmarks['end_point'].geometry
-    start = entity.geo_landmarks['start_point'].geometry
+    goal_point = entity.geo_landmarks['end_point'].geometry
+    start_point = entity.geo_landmarks['start_point'].geometry
+  
 
-    path = Instruction(
-        date_start = datetime.utcnow(),
-        rvs_sample_number=task, 
-        content=content, 
-        rvs_path = rvs_path,
-        rvs_goal = str(goal),
-        rvs_start = str(start))
+    try:
+      # j_req = {
+      # 'hit_id': '1',
+      # 'work_id': 's', 
+      # 'rvs_sample_number': str(task),
+      # 'content': content,
+      # 'rvs_path': rvs_path,
+      # 'rvs_goal_point': str(goal_point),
+      # 'rvs_start_point': str(start_point),
+      # 'date_start': str(date_start),
+      # 'date_finish': str(datetime.utcnow())}
 
-    db.session.add(path)
-    db.session.commit()
+      j_req={'id': '1', 'title': 'Write a blog post'}
+
+      id = uuid.uuid4().hex
+      todo_ref.document(id).set(j_req)
+    except Exception as e:
+      return f"An Error Occured: {e}"
+
     return redirect(url_for(
       'index', 
       task=task, 
@@ -112,18 +133,27 @@ def task(sample, task):
     task = task - 1
   progress_task = round(task / N_TASKS_PER_USER * 100)
   return render_template('instructor_task.html',
-                         form=form,
+                         form=form_nav,
                          bar=progress_task,
                          title=task,
                          )
 
 
+
+@app.errorhandler(500)
+def internal_server_error(e):
+  return jsonify(error=str(e)), 500
+
+@app.errorhandler(404)
+def page_not_found(e):
+  return render_template("404.html")
+
 @app.route('/map')
 def map():
   return render_template('map.html')
 
-port = int(os.environ.get('PORT', 8080))
+port = int(os.environ.get('PORT', 5000))
 
 if __name__ == '__main__':
 
-  app.run(threaded=True, host='0.0.0.0', port=port)
+  app.run(threaded=True, host='0.0.0.0', port=port, debug=True)
