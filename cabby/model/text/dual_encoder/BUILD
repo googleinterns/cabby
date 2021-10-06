@@ -60,9 +60,9 @@ py_library(
 )
 
 py_binary(
-    name = 'train',
-    main = 'train.py',
-    srcs = ['train.py'],
+    name = 'run',
+    main = 'run.py',
+    srcs = ['run.py'],
     deps = [
           "//cabby/model/text:util",
           "//cabby/evals:utils",
@@ -75,7 +75,7 @@ py_binary(
     main = 'model_trainer.py',
     srcs = ['model_trainer.py'],
     deps = [
-        ':train',
+        ':run',
         ':dataset_wikigeo',
         ':dataset_rvs',
         ':dataset_run',

@@ -37,7 +37,8 @@ def create_dataset(
                   data_dir: str, 
                   region: str, 
                   s2level: int, 
-                  infer_only: bool = False
+                  infer_only: bool = False,
+                  is_prob: bool = False
 ) -> dataset_item.TextGeoDataset:
   '''Loads data and creates datasets and train, validate and test sets.
   Arguments:
@@ -67,17 +68,17 @@ def create_dataset(
   if infer_only == False:
     train_dataset = dataset_item.TextGeoSplit(
       rvs_dataset.train, s2level, unique_cells_df, 
-      rvs_dataset.cellid_to_label, dprob)
+      rvs_dataset.cellid_to_label, dprob, is_prob)
     logging.info(
       f"Finished to create the train-set with {len(train_dataset)} samples")
     val_dataset = dataset_item.TextGeoSplit(
       rvs_dataset.valid, s2level, unique_cells_df, 
-      rvs_dataset.cellid_to_label, dprob)
+      rvs_dataset.cellid_to_label, dprob, is_prob)
     logging.info(
       f"Finished to create the valid-set with {len(val_dataset)} samples")
   test_dataset = dataset_item.TextGeoSplit(
     rvs_dataset.test, s2level, unique_cells_df, 
-    rvs_dataset.cellid_to_label, dprob)
+    rvs_dataset.cellid_to_label, dprob, is_prob)
   logging.info(
     f"Finished to create the test-set with {len(test_dataset)} samples")
 

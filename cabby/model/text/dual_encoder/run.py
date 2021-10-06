@@ -26,6 +26,7 @@ from torch.utils.data import DataLoader
 
 from cabby.evals import utils as eu
 from cabby.model.text import util
+from cabby.model.landmark_recognition import run as run_pivot
 
 criterion = nn.CosineEmbeddingLoss()
 
@@ -66,7 +67,47 @@ class Trainer:
     self.model_path = os.path.join(self.file_path, 'model.pt')
     self.metrics_path = os.path.join(self.file_path, 'metrics.tsv')
     self.is_distance_distribution = is_distance_distribution
-    
+
+
+  def evaluate_landmark(
+    self, model_pivot, val_dataloader_geo, val_dataloader_pivot):
+    # Put the model into evaluation mode.
+    self.model.eval() 
+    model_pivot.eval()
+    true_points_list, predictions_list, true_vals = [], [], []
+    for batch_geo, batch_pivot in zip(val_dataloader_geo, val_dataloader_pivot):
+      output = run_pivot.run_single(
+        batch_pivot, model_pivot, self.device, is_train=False)
+      
+      hidden_states_pivot = output.hidden_states[-1][:,-1,:]
+      text_geo = {key: val.to(self.device) for key, val in batch_geo['text'].items()}
+      landmark_encode = self.model.landmark_main(hidden_states_pivot)
+      cellid_embedding = self.model(self.cells_tensor)
+      text_embedding = self.model.text_embed(text_geo)
+      full_text_representation = torch.cat((text_embedding, landmark_encode), axis=-1)
+      batch_dim = text_embedding.shape[0]
+      cell_dim = cellid_embedding.shape[0]
+      output_dim  = cellid_embedding.shape[1]
+      cellid_embedding_exp = cellid_embedding.expand(
+        batch_dim, cell_dim, output_dim)
+      output = self.cos(
+        cellid_embedding_exp, full_text_representation.unsqueeze(1))
+      output = output.detach().cpu().numpy()
+      predictions = np.argmax(output, axis=1)
+      predictions_list.append(predictions)
+      labels = batch_geo['label'].numpy()
+      true_vals.append(labels)
+      true_points_list.append(batch_geo['point'])
+
+      true_points_list = np.concatenate(true_points_list, axis=0)
+      predictions_list = np.concatenate(predictions_list, axis=0)
+      pred_points_list = util.predictions_to_points(
+        predictions_list, self.label_to_cellid)
+      true_vals = np.concatenate(true_vals, axis=0)
+
+      return (predictions_list, true_vals, 
+      true_points_list, pred_points_list)
+
 
   def evaluate(self, validation_set: bool = True):
     '''Validate the model.'''
@@ -95,7 +136,8 @@ class Trainer:
 
         loss = self.compute_loss(text, cellids, neighbor_cells, far_cells)
         loss_val_total+=loss
-        text_embedding, cellid_embedding = self.model(text, self.cells_tensor)
+        cellid_embedding = self.model(self.cells_tensor)
+        text_embedding = self.model.text_main(text)
         batch_dim = text_embedding.shape[0]
         cell_dim = cellid_embedding.shape[0]
         output_dim  = cellid_embedding.shape[1]
@@ -122,6 +164,64 @@ class Trainer:
 
     return (average_valid_loss, predictions_list, true_vals, 
     true_points_list, pred_points_list)
+    
+  def compute_embed(
+          self,
+          text: Dict, 
+          cellids: torch.tensor, 
+          neighbor_cells: torch.tensor, 
+          far_cells: torch.tensor):
+
+    text_embedding = self.model.text_embed(text)
+    # Correct cellid.
+    cellid_embedding = self.model(cellids)
+
+    # Neighbor cellid.
+    cellid_embedding_neighbor = self.model(neighbor_cells)
+
+    # Far cellid.
+    cellid_embedding_far = self.model(far_cells)
+
+    return (
+      text_embedding, 
+      cellid_embedding, 
+      cellid_embedding_neighbor, 
+      cellid_embedding_far)
+
+  def get_targets(self, cell_size):
+    positive = torch.ones(cell_size).to(self.device)
+    negative = -1*torch.ones(cell_size).to(self.device)
+    return positive, negative
+
+  def compute_loss_raw(
+          self,
+          text_embedding: torch.tensor, 
+          cellid_embedding: torch.tensor, 
+          cellid_embedding_neighbor: torch.tensor,
+          cellid_embedding_far: torch.tensor,
+          target_positive: torch.tensor, 
+          target_negative: torch.tensor, 
+
+):
+
+    
+    # Correct cellid.
+    loss_cellid = criterion(text_embedding, cellid_embedding, target_positive)
+
+    # Neighbor cellid.
+    loss_neighbor = criterion(
+      text_embedding, 
+      cellid_embedding_neighbor, 
+      target_negative)
+
+    # Far cellid.
+    loss_far = criterion(
+      text_embedding, 
+      cellid_embedding_far, 
+      target_negative)
+
+    return loss_cellid, loss_neighbor, loss_far
+  
 
   def compute_loss(
           self,
@@ -130,21 +230,25 @@ class Trainer:
           neighbor_cells: torch.tensor, 
           far_cells: torch.tensor):
     
-    # Correct cellid.
-    target = torch.ones(cellids.shape[0]).to(self.device)
-    text_embedding, cellid_embedding = self.model(text, cellids)
-    loss_cellid = criterion(text_embedding, cellid_embedding, target)
+    (
+      text_embedding, 
+      cellid_embedding, 
+      cellid_embedding_neighbor, 
+      cellid_embedding_far) = self.compute_embed(
+        text, cellids, neighbor_cells, far_cells)
 
-    # Neighbor cellid.
-    target_neighbor = -1*torch.ones(cellids.shape[0]).to(self.device)
-    text_embedding_neighbor, cellid_embedding = self.model(text, neighbor_cells)
-    loss_neighbor = criterion(text_embedding_neighbor, 
-    cellid_embedding, target_neighbor)
+    
+    target_positive, target_negative = self.get_targets(cellids.shape[0])
 
-    # Far cellid.
-    target_far = -1*torch.ones(cellids.shape[0]).to(self.device)
-    text_embedding_far, cellid_embedding = self.model(text, far_cells)
-    loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
+
+
+    loss_cellid, loss_neighbor, loss_far = self.compute_loss_raw(
+      text_embedding, 
+      cellid_embedding, 
+      cellid_embedding_neighbor,
+      cellid_embedding_far,
+      target_positive, 
+      target_negative)
 
     loss = loss_cellid + loss_neighbor + loss_far
 
@@ -251,11 +355,3 @@ def infer_text(model: torch.nn.Module, text: str):
     return model.module.text_embed(text)
   else:
     return model.text_embed(text)
-    
-  
-
-
-  
-
-
-

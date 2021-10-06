@@ -27,6 +27,20 @@ device = torch.device(
 
 print (f"Device used: {device}.")
 
+def run_single(batch, model, device, is_train = True):
+  for param_k, param_v in batch.items():
+    if torch.is_tensor(param_v):
+      batch[param_k] = param_v.to(device)
+
+  if is_train:
+    model.zero_grad()
+    model.train()
+  else:
+    model.eval()
+
+  outputs = model(**batch)
+  return outputs
+
 def train(model, train_dataloader, val_dataloader, args):
 
   model = model.to(device)
@@ -71,14 +85,8 @@ def train(model, train_dataloader, val_dataloader, args):
       # Training loop.
       for step, batch in enumerate(train_dataloader):
           # Set device (GPU or CPU) to each element in batch.
-          for param_k, param_v in batch.items():
-            if torch.is_tensor(param_v):
-              batch[param_k] = param_v.to(device)
-
-          model.zero_grad()
-          # Forward pass for calculate loss.
-
-          outputs = model(**batch)
+        
+          outputs = run_single(batch, model, device)
 
           loss = outputs[0]
 

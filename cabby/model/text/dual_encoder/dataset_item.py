@@ -121,7 +121,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
   """
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int], 
-    dprob: mutil.DistanceProbability):
+    dprob: mutil.DistanceProbability, is_prob: bool = False):
 
 
     points = data.end_point.swifter.apply(
@@ -138,26 +138,28 @@ class TextGeoSplit(torch.utils.data.Dataset):
     start_points = data.start_point.swifter.apply(
       lambda x: gutil.point_from_list_coord(x))
 
-    dist_lists = start_points.apply(
-      lambda start: calc_dist(start, unique_cells_df)
-    )
-
     # Tokenize instructions.
     self.encodings = tokenizer(
       data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
 
-    self.prob = dist_lists.swifter.apply(
-      lambda row: [dprob(dist) for dist in row.values.tolist()], axis=1) #.tolist()
+    if is_prob:
+      dist_lists = start_points.apply(
+        lambda start: calc_dist(start, unique_cells_df))
 
-    self.prob = self.prob.tolist()
+      self.prob = dist_lists.swifter.apply(
+        lambda row: [dprob(dist) for dist in row.values.tolist()], axis=1) #.tolist()
+
+      self.prob = self.prob.tolist()
 
     data['far_cells'] = data.cellid.swifter.apply(
       lambda cellid: unique_cells_df[unique_cells_df['cellid']==cellid].far.iloc[0])
+    far_cells_array = np.array(data.far_cells.tolist())
+    self.far_cells =  util.binary_representation(
+      far_cells_array, dim = CELLID_DIM)
 
     cellids_array = np.array(data.cellid.tolist())
     neighbor_cells_array = np.array(data.neighbor_cells.tolist())
-    far_cells_array = np.array(data.far_cells.tolist())
 
     self.points = data.point.apply(
       lambda x: gutil.tuple_from_point(x)).tolist()
@@ -168,9 +170,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.neighbor_cells =  util.binary_representation(
       neighbor_cells_array, dim = CELLID_DIM)
-
-    self.far_cells =  util.binary_representation(
-      far_cells_array, dim = CELLID_DIM)
 
 
   def __getitem__(self, idx: int):
@@ -189,7 +188,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
     far_cells = torch.tensor(self.far_cells[idx])
     point = torch.tensor(self.points[idx])
     label = torch.tensor(self.labels[idx])
-    prob = torch.tensor(self.prob[idx])
+    try:
+      prob = torch.tensor(self.prob[idx])
+    except:
+      prob = torch.zeros_like(cellid)
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
       'far_cells': far_cells, 'point': point, 'label': label, 'prob': prob}

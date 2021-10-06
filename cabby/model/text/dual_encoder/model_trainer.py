@@ -55,7 +55,7 @@ from torch.utils.data import DataLoader
 from transformers import AdamW
 
 from cabby.evals import utils as eu
-from cabby.model.text.dual_encoder import train
+from cabby.model.text.dual_encoder import run
 from cabby.model.text.dual_encoder import dataset_wikigeo
 from cabby.model.text.dual_encoder import dataset_rvs
 from cabby.model.text.dual_encoder import dataset_run
@@ -204,7 +204,7 @@ def main(argv):
     sys.exit("Wikigeo does not have a distance distribution option.")
 
 
-  trainer = train.Trainer(
+  trainer = run.Trainer(
     model=dual_encoder,
     device=device,
     num_epochs=FLAGS.num_epochs,

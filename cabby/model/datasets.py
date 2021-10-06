@@ -84,7 +84,7 @@ class RUNDataset:
 
 class RVSDataset:
   def __init__(
-    self, data_dir: str, s2level: int, region: str, lines: bool = True, split_data = False):
+    self, data_dir: str, s2level: int, region: str, lines: bool = True, split_data = True):
 
     if split_data:
       func_load = self.load_data_split
@@ -129,22 +129,23 @@ class RVSDataset:
     test_ds = pd.read_json(os.path.join(data_dir, 'ds_test.json'), lines=lines)
     valid_ds = pd.read_json(os.path.join(data_dir, 'ds_dev.json'), lines=lines)
 
-    self.columns_process(train_ds)
-    self.columns_process(test_ds)
-    self.columns_process(valid_ds)
+    train_ds = self.columns_process(train_ds)
+    test_ds = self.columns_process(test_ds)
+    valid_ds = self.columns_process(valid_ds)
 
     return train_ds, valid_ds, test_ds
 
   
   def columns_process(self, ds):
     logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
-    
     ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
-    lengths = ds.end_point.apply(lambda x: x if len(x) == 3 else "").tolist()
     ds['end_osmid'] = ds.end_point.apply(lambda x: x[1])
     ds['start_osmid'] = ds.start_point.apply(lambda x: x[1])
     ds['end_pivot'] = ds.end_point
     ds['end_point'] = ds.end_point.apply(lambda x: x[3])
     ds['start_point'] = ds.start_point.apply(lambda x: x[3])
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
+
     logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
+
+    return ds
