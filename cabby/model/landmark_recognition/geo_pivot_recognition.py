@@ -71,6 +71,7 @@ from cabby.model.landmark_recognition import run as run_pivot
 from cabby.model.text import util
 from cabby.geo import regions
 from cabby.geo import walk
+from cabby.evals import utils as evaluation
 
 # FLAGS = flags.FLAGS
 
@@ -144,6 +145,8 @@ FLAGS.output_dir = "/home/onlp_gcp_biu/tmp/output/model/"
 FLAGS.is_distance_distribution = False
 FLAGS.pivot_type = 'main_pivot'
 FLAGS.max_grad_norm = 1.0
+
+metrics_path = 'metrics.tsv'
 
 # def main(argv):
 def main():
@@ -342,12 +345,30 @@ def main():
     print (f"Epoch {epoch_idx}, Loss: {running_loss/batch_idx}")
   
     # Evaluation step.
-    predictions, true_vals, _, _ = trainer_geo.evaluate_landmark(
+    predictions, true_vals, true_points, pred_points = trainer_geo.evaluate_landmark(
       model_pivot, valid_loader_geo, val_pivot_dataloader)
 
     accuracy = accuracy_score(true_vals, predictions)
 
     logging.info(f'Epoch: {epoch_idx}/{FLAGS.num_epochs}, accuracy: {accuracy}')
+
+    util.save_metrics_last_only(
+      metrics_path, 
+      true_points, 
+      pred_points)
+
+    evaluator = evaluation.Evaluator()
+    error_distances = evaluator.get_error_distances(metrics_path)
+    _, mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
+
+    logging.info(f"Test Accuracy: {accuracy},\
+          Mean distance: {mean_distance}, \
+          Median distance: {median_distance}, \
+          Max error: {max_error}, \
+          Norm AUC: {norm_auc}")
+    
+    trainer_geo.model.train()
+    model_pivot.train()
       
 
     #     def train_single(self):
