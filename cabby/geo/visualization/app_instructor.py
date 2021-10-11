@@ -19,7 +19,7 @@ from database import Instruction, Goal, db, create_app
 cred = credentials.Certificate('key.json')
 default_app = initialize_app(cred)
 db = firestore.client()
-todo_ref = db.collection('todos')
+instructions_ref = db.collection('instructions')
 
 app = Flask(__name__)
 
@@ -48,12 +48,20 @@ N_TASKS_PER_USER = 2
 @app.route("/")
 @app.route("/pub/")
 def home():
+  assignmentId = request.args.get("assignmentId")
+  hitId = request.args.get("hitId")
+  turkSubmitTo = request.args.get("turkSubmitTo")
+  workerId = request.args.get("workerId")
+
   task = 0
 
 
   return redirect(url_for(
     'index', 
     task=task,
+    assignmentId=assignmentId,
+    hitId=hitId,
+    workerId=workerId,
     ))
     
 
@@ -61,7 +69,9 @@ def home():
 @app.route("/index/<task>", methods=['GET', 'POST'])
 def index(task):
   task = int(task)
-  
+  assignmentId = request.args.get("assignmentId")
+  hitId = request.args.get("hitId")
+  workerId = request.args.get("workerId")
 
   task +=1
   if task <= N_TASKS_PER_USER:
@@ -70,6 +80,9 @@ def index(task):
       'task', 
       sample=sample_number, 
       task=task, 
+      assignmentId=assignmentId,
+      hitId=hitId,
+      workerId=workerId,
      ))
   else:
     session.pop('_flashes', None)
@@ -86,6 +99,10 @@ def index(task):
 def task(sample, task):
   sample = int(sample)
   task = int(task)
+
+  assignmentId = request.args.get("assignmentId")
+  hitId = request.args.get("hitId")
+  workerId = request.args.get("workerId")
 
   folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
 
@@ -108,9 +125,10 @@ def task(sample, task):
 
       try:
         j_req = {
-        'hit_id': '1',
-        'work_id': 's', 
-        'rvs_sample_number': str(task),
+        'hit_id': hitId,
+        'work_id': workerId,
+        'assignmentId': assignmentId, 
+        'rvs_sample_number': str(sample),
         'content': content,
         'rvs_path': rvs_path,
         'rvs_goal_point': str(goal_point),
@@ -118,16 +136,18 @@ def task(sample, task):
         'date_start': str(date_start),
         'date_finish': str(datetime.utcnow())}
 
-        # j_req={'id': '1', 'title': 'Write a blog post'}
-
+        # save to database
         id = uuid.uuid4().hex
-        todo_ref.document(id).set(j_req)
+        instructions_ref.document(id).set(j_req)
       except Exception as e:
         return f"An Error Occured: {e}"
 
       return redirect(url_for(
         'index', 
         task=task, 
+        assignmentId=assignmentId,
+        hitId=hitId,
+        workerId=workerId,
         )) 
 
   if task == 0:
