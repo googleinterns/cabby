@@ -46,7 +46,7 @@ N_TASKS_PER_USER = 2
 
 
 @app.route("/")
-@app.route("/pub")
+@app.route("/pub/")
 def home():
   task = 0
 
@@ -95,37 +95,40 @@ def task(sample, task):
   form_nav.landmarks = landmarks
   date_start = datetime.utcnow()
 
-  if form_nav.validate_on_submit():
+  if request.method == 'POST':
+    
+    if form_nav.validate_on_submit() or (
+      len(form_nav.errors)==1 and 'csrf_token' in form_nav.errors):
 
-    session['task'] = task
-    content = request.form['content']
-    goal_point = entity.geo_landmarks['end_point'].geometry
-    start_point = entity.geo_landmarks['start_point'].geometry
-  
+      session['task'] = task
+      content = request.form['content']
+      goal_point = entity.geo_landmarks['end_point'].geometry
+      start_point = entity.geo_landmarks['start_point'].geometry
+    
 
-    try:
-      # j_req = {
-      # 'hit_id': '1',
-      # 'work_id': 's', 
-      # 'rvs_sample_number': str(task),
-      # 'content': content,
-      # 'rvs_path': rvs_path,
-      # 'rvs_goal_point': str(goal_point),
-      # 'rvs_start_point': str(start_point),
-      # 'date_start': str(date_start),
-      # 'date_finish': str(datetime.utcnow())}
+      try:
+        j_req = {
+        'hit_id': '1',
+        'work_id': 's', 
+        'rvs_sample_number': str(task),
+        'content': content,
+        'rvs_path': rvs_path,
+        'rvs_goal_point': str(goal_point),
+        'rvs_start_point': str(start_point),
+        'date_start': str(date_start),
+        'date_finish': str(datetime.utcnow())}
 
-      j_req={'id': '1', 'title': 'Write a blog post'}
+        # j_req={'id': '1', 'title': 'Write a blog post'}
 
-      id = uuid.uuid4().hex
-      todo_ref.document(id).set(j_req)
-    except Exception as e:
-      return f"An Error Occured: {e}"
+        id = uuid.uuid4().hex
+        todo_ref.document(id).set(j_req)
+      except Exception as e:
+        return f"An Error Occured: {e}"
 
-    return redirect(url_for(
-      'index', 
-      task=task, 
-      )) 
+      return redirect(url_for(
+        'index', 
+        task=task, 
+        )) 
 
   if task == 0:
     task = 0
