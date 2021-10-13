@@ -16,25 +16,15 @@
 recognition in process.
 
 Example command line call:
-$ bazel-bin/cabby/model/text/dual_encoder/geo_pivot_recognition \
-  --data_dir ~/data/wikigeo/pittsburgh  \
-  --dataset_dir ~/model/dual_encoder/dataset/pittsburgh \
-  --region Pittsburgh \ 
-  --s2_level 12 \
-  --output_dir ~/tmp/output/dual\
-  --train_batch_size 32 \
-  --test_batch_size 32 \
+$ bazel-bin/cabby/model/landmark_recognition/geo_pivot_recognition \
+  --data_dir /mnt/hackney/geo_data/  \
+  --dataset_dir /mnt/hackney/model/geo_pivot_recognition \
+  --region Manhattan \ 
+  --s2_level 18 \
+  --output_dir /mnt/hackney/model/geo_pivot_recognition\
+  --train_batch_size 4 \
+  --test_batch_size 16 \
 
-For infer:
-$ bazel-bin/cabby/model/text/dual_encoder/geo_pivot_recognition \
-  --data_dir ~/data/wikigeo/pittsburgh  \
-  --dataset_dir ~/model/dual_encoder/dataset/pittsburgh \
-  --region Pittsburgh \
-  --s2_level 12 \
-  --test_batch_size 32 \
-  --infer_only True \
-  --model_path ~/tmp/model/dual \
-  --output_dir ~/tmp/output/dual\
 
 
 
@@ -59,8 +49,6 @@ from transformers import AdamW, pipeline, get_linear_schedule_with_warmup
 import random
 
 
-
-sys.path.append("/home/onlp_gcp_biu/cabby")
 from cabby.evals import utils as eu
 from cabby.model.text.dual_encoder import run as run_geo
 from cabby.model.text.dual_encoder import dataset_rvs
@@ -73,54 +61,59 @@ from cabby.geo import regions
 from cabby.geo import walk
 from cabby.evals import utils as evaluation
 
-# FLAGS = flags.FLAGS
+FLAGS = flags.FLAGS
 
 landmark_list = walk.LANDMARK_TYPES + [dataset_bert_pivot.EXTRACT_ALL_PIVOTS]
 landmark_msg = "Landmark type: " + ','.join(landmark_list)
 
-# flags.DEFINE_string("data_dir", None,
-#           "The directory from which to load the dataset.")
-# flags.DEFINE_string("dataset_dir", None,
-#           "The directory to save\load dataloader.")
-# flags.DEFINE_enum(
-#   "region", None, regions.SUPPORTED_REGION_NAMES, 
-#   regions.REGION_SUPPORT_MESSAGE)
-# flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
-# flags.DEFINE_string("output_dir", None,
-#           "The directory where the model and results will be save to.")
-# flags.DEFINE_float(
-#   'learning_rate', default=5e-5,
-#   help=('The learning rate for the Adam optimizer.'))
+flags.DEFINE_string("data_dir", None,
+          "The directory from which to load the dataset.")
+flags.DEFINE_string("dataset_dir", None,
+          "The directory to save\load dataloader.")
+flags.DEFINE_enum(
+  "region", None, regions.SUPPORTED_REGION_NAMES, 
+  regions.REGION_SUPPORT_MESSAGE)
+flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
+flags.DEFINE_string("output_dir", None,
+          "The directory where the model and results will be save to.")
+flags.DEFINE_float(
+  'learning_rate', default=5e-5,
+  help=('The learning rate for the Adam optimizer.'))
 
-# flags.DEFINE_string("model_path", None,
-#           "A path of a model the model to be fine tuned\ evaluated.")
+flags.DEFINE_string("model_path", None,
+          "A path of a model the model to be fine tuned\ evaluated.")
 
 
-# flags.DEFINE_enum(
-#   "pivot_type", None, landmark_list,
-#   landmark_msg)
+flags.DEFINE_enum(
+  "pivot_type", 'main_pivot', landmark_list,
+  landmark_msg)
 
-# flags.DEFINE_integer(
-#   'train_batch_size', default=4,
-#   help=('Batch size for training.'))
+flags.DEFINE_integer(
+  'train_batch_size', default=4,
+  help=('Batch size for training.'))
 
-# flags.DEFINE_integer(
-#   'test_batch_size', default=4,
-#   help=('Batch size for testing and validating.'))
+flags.DEFINE_integer(
+  'test_batch_size', default=4,
+  help=('Batch size for testing and validating.'))
 
-# flags.DEFINE_integer(
-#   'num_epochs', default=5,
-#   help=('Number of training epochs.'))
+flags.DEFINE_integer(
+  'num_epochs', default=5,
+  help=('Number of training epochs.'))
 
-# flags.DEFINE_bool(
-#   'infer_only', default=False,
-#   help=('Train and infer\ just infer.'))
+flags.DEFINE_float(
+  'max_grad_norm', default=1.0,
+  help=('Max norm for clipping.'))
 
-# flags.DEFINE_bool(
-#   'is_distance_distribution', default=False,
-#   help=(
-#     'Add probability over cells according to the distance from start point.'+ 
-#     'This is optional only for RVS and RUN.'))
+
+flags.DEFINE_bool(
+  'infer_only', default=False,
+  help=('Train and infer\ just infer.'))
+
+flags.DEFINE_bool(
+  'is_distance_distribution', default=False,
+  help=(
+    'Add probability over cells according to the distance from start point.'+ 
+    'This is optional only for RVS and RUN.'))
 
 
 # # Required flags.
@@ -129,27 +122,9 @@ landmark_msg = "Landmark type: " + ','.join(landmark_list)
 # flags.mark_flag_as_required("region")
 # flags.mark_flag_as_required("s2_level")
 
-import pandas as pd
-FLAGS = pd.DataFrame({})
-FLAGS.data_dir = "/home/onlp_gcp_biu/cabby/cabby/rvs/sample_instructions/manhattan/"
-FLAGS.dataset_dir = "/home/onlp_gcp_biu/tmp/output/model/datasets/geo_pivot_recognition"
-FLAGS.region = "Manhattan"
-FLAGS.s2_level = 18
-FLAGS.infer_only = False
-FLAGS.train_batch_size = 4
-FLAGS.test_batch_size = 16
-FLAGS.model_path = None #"/home/onlp_gcp_biu/tmp/output/model/geo_pivot_recognition.pt"
-FLAGS.learning_rate = 0.001
-FLAGS.num_epochs = 2
-FLAGS.output_dir = "/home/onlp_gcp_biu/tmp/output/model/"
-FLAGS.is_distance_distribution = False
-FLAGS.pivot_type = 'main_pivot'
-FLAGS.max_grad_norm = 1.0
-
 metrics_path = 'metrics.tsv'
 
-# def main(argv):
-def main():
+def main(argv):
 
   if not os.path.exists(FLAGS.dataset_dir):
     sys.exit("Dataset path doesn't exist: {}.".format(FLAGS.dataset_dir))
@@ -414,9 +389,8 @@ def main():
   print("END")  
 
 
-main()
-# if __name__ == '__main__':
-#   app.run(main)
+if __name__ == '__main__':
+  app.run(main)
 
 
 

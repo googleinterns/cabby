@@ -70,7 +70,11 @@ class Trainer:
 
 
   def evaluate_landmark(
-    self, model_pivot, val_dataloader_geo, val_dataloader_pivot):
+            self, 
+            model_pivot: torch.nn.Module, 
+            val_dataloader_geo: DataLoader, 
+            val_dataloader_pivot: DataLoader):
+
     # Put the model into evaluation mode.
     self.model.eval() 
     model_pivot.eval()
@@ -99,14 +103,14 @@ class Trainer:
       true_vals.append(labels)
       true_points_list.append(batch_geo['point'])
 
-      true_points_list = np.concatenate(true_points_list, axis=0)
-      predictions_list = np.concatenate(predictions_list, axis=0)
-      pred_points_list = util.predictions_to_points(
-        predictions_list, self.label_to_cellid)
-      true_vals = np.concatenate(true_vals, axis=0)
+    true_points_list = np.concatenate(true_points_list, axis=0)
+    predictions_list = np.concatenate(predictions_list, axis=0)
+    pred_points_list = util.predictions_to_points(
+      predictions_list, self.label_to_cellid)
+    true_vals = np.concatenate(true_vals, axis=0)
 
-      return (predictions_list, true_vals, 
-      true_points_list, pred_points_list)
+    return (predictions_list, true_vals, 
+    true_points_list, pred_points_list)
 
 
   def evaluate(self, validation_set: bool = True):

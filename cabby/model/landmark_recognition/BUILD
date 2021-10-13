@@ -51,6 +51,7 @@ py_binary(
           "//cabby/model/text/dual_encoder:dataset_item",
           "//cabby/model/text/dual_encoder:model",
           "//cabby/model/text:util",
+          "//cabby/evals:utils"
 
     ],
 )

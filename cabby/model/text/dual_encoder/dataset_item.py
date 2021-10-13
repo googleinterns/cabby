@@ -124,18 +124,17 @@ class TextGeoSplit(torch.utils.data.Dataset):
     dprob: mutil.DistanceProbability, is_prob: bool = False):
 
 
-    points = data.end_point.swifter.apply(
-      lambda x: gutil.point_from_list_coord(x))
+    points = data.end_point.apply(gutil.point_from_list_coord)
 
     data = data.assign(point=points)
 
-    data['cellid'] = data.point.swifter.apply(
-      lambda x: gutil.cellid_from_point(x, s2level))
+    data['cellid'] = data.apply(
+      lambda x: gutil.cellid_from_point(x.point, s2level), axis=1)
 
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.neighbor_cellid(x))
 
-    start_points = data.start_point.swifter.apply(
+    start_points = data.start_point.apply(
       lambda x: gutil.point_from_list_coord(x))
 
     # Tokenize instructions.
@@ -147,12 +146,12 @@ class TextGeoSplit(torch.utils.data.Dataset):
       dist_lists = start_points.apply(
         lambda start: calc_dist(start, unique_cells_df))
 
-      self.prob = dist_lists.swifter.apply(
+      self.prob = dist_lists.apply(
         lambda row: [dprob(dist) for dist in row.values.tolist()], axis=1) #.tolist()
 
       self.prob = self.prob.tolist()
 
-    data['far_cells'] = data.cellid.swifter.apply(
+    data['far_cells'] = data.cellid.apply(
       lambda cellid: unique_cells_df[unique_cells_df['cellid']==cellid].far.iloc[0])
     far_cells_array = np.array(data.far_cells.tolist())
     self.far_cells =  util.binary_representation(
