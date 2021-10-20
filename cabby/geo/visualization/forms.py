@@ -41,3 +41,9 @@ class NavigationForm(FlaskForm):
   )
   submit = SubmitField('Submit and go to next task')
 
+class ReviewForm(FlaskForm):
+  class Meta:
+    csrf = True
+  content = TextAreaField('Content', )
+  submit = SubmitField('Submit review and finish assignment')
+
