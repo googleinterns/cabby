@@ -226,7 +226,6 @@ def page_not_found(e):
 
 @app.route('/map/<n_sample>', methods=['GET', 'POST'])
 @app.route('/map/')
-
 def map():
   n_sample = request.args.get("n_sample") 
 
