@@ -44,10 +44,6 @@ N_TASKS_PER_USER = 2
 
 dir_map = os.path.join(app.root_path,"templates")
 
-# path_map = os.path.join(app.root_path,"templates", secure_filename('map.html'))
-# if os.path.exists(path_map):
-#     os.remove(path_map)
-
 @app.route("/")
 @app.route("/pub/")
 def home():
@@ -169,7 +165,6 @@ def task(sample, task):
     if form_nav.validate_on_submit() or (
       len(form_nav.errors)==1 and 'csrf_token' in form_nav.errors):
 
-      # session['task'] = task
       content = request.form['content']
       goal_point = entity.geo_landmarks['end_point'].geometry
       start_point = entity.geo_landmarks['start_point'].geometry
