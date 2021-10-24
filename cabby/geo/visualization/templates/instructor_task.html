@@ -2,11 +2,13 @@
 
 {% block content %}
 
+<br>
+
 
 <div class="float-container">
     <div class="float-child">
         
-        <h4>Navigation Map</h4>
+        <h3>Navigation Map</h3>
 
         <b>Map Instructions: </b>
 
@@ -17,10 +19,10 @@
     </ul>
 
 
-        <iframe class="map" , src="/map"></iframe>
+        <iframe class="map" , src="/map?n_sample={{n_sample}}"></iframe>
     </div>
     <div class="float-child">
-        <h4>Navigation Description</h4>
+        <h3>Navigation Description</h3>
         <p><b>Your task: </b>
             A friend of yours is at the location indicated by the green marker, 
             and you would like to meet your friend at the location marked in red. 
@@ -41,8 +43,6 @@
         
         <form method="POST" action="">
             {{ form.hidden_tag() }}
-            {{ form.csrf_token }}
-            
 
             <div class="form-group">
 

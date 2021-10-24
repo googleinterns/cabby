@@ -1,4 +1,5 @@
 from datetime import datetime
+from genericpath import exists
 import flask
 from flask import *
 from flask import session
@@ -41,9 +42,11 @@ size_dataset = len(osm_maps_instructions)
 
 N_TASKS_PER_USER = 2
 
-path_map = os.path.join(app.root_path,"templates", secure_filename('map.html'))
-if os.path.exists(path_map):
-    os.remove(path_map)
+dir_map = os.path.join(app.root_path,"templates")
+
+# path_map = os.path.join(app.root_path,"templates", secure_filename('map.html'))
+# if os.path.exists(path_map):
+#     os.remove(path_map)
 
 @app.route("/")
 @app.route("/pub/")
@@ -87,14 +90,14 @@ def index(task):
   turkSubmitTo = request.args.get("turkSubmitTo")
   turkSubmitTo = turkSubmitTo if turkSubmitTo else "https://www.mturk.com/"
 
-  if os.path.exists(path_map):
-    os.remove(path_map)
 
   if task <= N_TASKS_PER_USER:
     sample_number = random.randint(0, size_dataset)
     
     folium_map, instruction, landmarks, entity = osm_maps_instructions[sample_number]
-    folium_map.save(path_map)
+    path_map = os.path.join(dir_map,f"map_{sample_number}.html")
+    if not os.path.exists(path_map):
+      folium_map.save(path_map)
 
     return redirect(url_for(
       'task', 
@@ -149,11 +152,10 @@ def task(sample, task):
   turkSubmitTo = request.args.get("turkSubmitTo")
   
   folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
+  path_map = os.path.join(dir_map,f"map_{sample}.html")
 
-  if os.path.exists(path_map):
-    os.remove(path_map)
-
-  folium_map.save(path_map)
+  if not os.path.exists(path_map):
+    folium_map.save(path_map)
 
   form_nav = NavigationForm()
 
@@ -161,9 +163,8 @@ def task(sample, task):
   date_start = datetime.utcnow()
   
   if request.method == 'POST': 
-    if os.path.exists(path_map):
-      os.remove(path_map)
-    folium_map.save(path_map)
+    if not os.path.exists(path_map):
+      folium_map.save(path_map)
     
     if form_nav.validate_on_submit() or (
       len(form_nav.errors)==1 and 'csrf_token' in form_nav.errors):
@@ -207,11 +208,15 @@ def task(sample, task):
     task_bar = 0
   else:
     task_bar = task - 1
+
+  if not os.path.exists(path_map):
+    folium_map.save(path_map)
   progress_task = round(task_bar / N_TASKS_PER_USER * 100)
   return render_template('instructor_task.html',
                          form=form_nav,
                          bar=progress_task,
                          title=task,
+                         n_sample = sample
                          )
 
 
@@ -224,9 +229,13 @@ def internal_server_error(e):
 def page_not_found(e):
   return render_template("404.html", exc = e)
 
-@app.route('/map')
+@app.route('/map/<n_sample>', methods=['GET', 'POST'])
+@app.route('/map/')
+
 def map():
-  return render_template('map.html')
+  n_sample = request.args.get("n_sample") 
+
+  return render_template(f'map_{n_sample}.html')
 
 port = int(os.environ.get('PORT', 5000))
 
