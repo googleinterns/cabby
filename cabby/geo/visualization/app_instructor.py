@@ -40,7 +40,7 @@ except Exception as e:
 osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
 size_dataset = len(osm_maps_instructions)
 
-N_TASKS_PER_USER = 2
+N_TASKS_PER_USER = 1
 
 dir_map = os.path.join(app.root_path,"templates")
 
@@ -48,9 +48,7 @@ dir_map = os.path.join(app.root_path,"templates")
 @app.route("/pub/")
 def home():
   assignmentId = request.args.get("assignmentId") 
-  assignmentId = assignmentId if assignmentId else 0
   hitId = request.args.get("hitId")
-  hitId = hitId if hitId else 1
   turkSubmitTo = request.args.get("turkSubmitTo")
   workerId = request.args.get("workerId")
 
@@ -76,15 +74,15 @@ def index(task):
 
 
   assignmentId = request.args.get("assignmentId") 
-  assignmentId = assignmentId if assignmentId else "0"
+  assignmentId = assignmentId if assignmentId else uuid.uuid4().hex
   hitId = request.args.get("hitId")
-  hitId = hitId if hitId else "1"
+  hitId = hitId if hitId else uuid.uuid4().hex
   turkSubmitTo = request.args.get("turkSubmitTo")
   workerId = request.args.get("workerId")
-  workerId = workerId if workerId else "2"
+  workerId = workerId if workerId else uuid.uuid4().hex
 
   turkSubmitTo = request.args.get("turkSubmitTo")
-  turkSubmitTo = turkSubmitTo if turkSubmitTo else "https://www.mturk.com/"
+  turkSubmitTo = turkSubmitTo if turkSubmitTo else "https://workersandbox.mturk.com"
 
 
   if task <= N_TASKS_PER_USER:
@@ -95,6 +93,8 @@ def index(task):
     if not os.path.exists(path_map):
       folium_map.save(path_map)
 
+    date_start = datetime.utcnow()
+
     return redirect(url_for(
       'task', 
       sample=sample_number, 
@@ -102,7 +102,8 @@ def index(task):
       assignmentId=assignmentId,
       hitId=hitId,
       workerId=workerId,
-      turkSubmitTo=turkSubmitTo
+      turkSubmitTo=turkSubmitTo,
+      date_start=date_start
      ))
   else:
     address = turkSubmitTo + '/mturk/externalSubmit'
@@ -156,7 +157,6 @@ def task(sample, task):
   form_nav = NavigationForm()
 
   form_nav.landmarks = landmarks
-  date_start = datetime.utcnow()
   
   if request.method == 'POST': 
     if not os.path.exists(path_map):
@@ -169,7 +169,7 @@ def task(sample, task):
       goal_point = entity.geo_landmarks['end_point'].geometry
       start_point = entity.geo_landmarks['start_point'].geometry
     
-
+      date_start = request.args.get("date_start")
       try:
         j_req = {
         'hit_id': hitId,
