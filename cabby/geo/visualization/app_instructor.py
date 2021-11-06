@@ -1,5 +1,4 @@
 from datetime import datetime
-from genericpath import exists
 import flask
 from flask import *
 from flask import session
@@ -22,7 +21,7 @@ cred = credentials.Certificate('key.json')
 default_app = initialize_app(cred)
 db = firestore.client()
 instructions_ref = db.collection('instructions')
-reviews_ref = db.collection('reviews')
+instructions_ref_sandbox = db.collection('instructions_sandbox')
 
 app = Flask(__name__)
 
@@ -40,37 +39,23 @@ except Exception as e:
 osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
 size_dataset = len(osm_maps_instructions)
 
-N_TASKS_PER_USER = 1
+N_TASKS_PER_USER = 2
 
-dir_map = os.path.join(app.root_path,"templates")
+path_map = os.path.join(app.root_path,"templates", secure_filename('map.html'))
+if os.path.exists(path_map):
+    os.remove(path_map)
 
-@app.route("/")
-@app.route("/pub/")
+
+task=1
+sample = random.randint(0, size_dataset)
+date_start = datetime.utcnow()
+
+
+@app.route("/", methods=['GET', 'POST'])
+@app.route("/pub/", methods=['GET', 'POST'])
 def home():
-  assignmentId = request.args.get("assignmentId") 
-  hitId = request.args.get("hitId")
-  turkSubmitTo = request.args.get("turkSubmitTo")
-  workerId = request.args.get("workerId")
-
-  task = 0
-
-
-  return redirect(url_for(
-    'index', 
-    task=task,
-    assignmentId=assignmentId,
-    hitId=hitId,
-    workerId=workerId,
-    turkSubmitTo=turkSubmitTo
-    ))
-    
-
-
-@app.route("/index/<task>", methods=['GET', 'POST'])
-@app.route("/index/", methods=['GET', 'POST'])
-def index(task):
-  task = int(task)
-  task +=1
+  global sample
+  global date_start
 
 
   assignmentId = request.args.get("assignmentId") 
@@ -83,93 +68,35 @@ def index(task):
 
   turkSubmitTo = request.args.get("turkSubmitTo")
   turkSubmitTo = turkSubmitTo if turkSubmitTo else "https://workersandbox.mturk.com"
-
-
-  if task <= N_TASKS_PER_USER:
-    sample_number = random.randint(0, size_dataset)
-    
-    folium_map, instruction, landmarks, entity = osm_maps_instructions[sample_number]
-    path_map = os.path.join(dir_map,f"map_{sample_number}.html")
-    if not os.path.exists(path_map):
-      folium_map.save(path_map)
-
-    date_start = datetime.utcnow()
-
-    return redirect(url_for(
-      'task', 
-      sample=sample_number, 
-      task=task, 
-      assignmentId=assignmentId,
-      hitId=hitId,
-      workerId=workerId,
-      turkSubmitTo=turkSubmitTo,
-      date_start=date_start
-     ))
-  else:
-    address = turkSubmitTo + '/mturk/externalSubmit'
-    fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
-    form = ReviewForm()
-
-    if request.method == 'POST':
-      try:
-        content = request.form['content']
-        j_req = {
-          'review': content}
-        id = "review" + workerId + hitId 
-        reviews_ref.document(id).set(j_req)
-
-      except Exception as e:
-        return f"An Error Occured: {e}"
-      
-      return render_template(
-        'end.html', 
-        bar=100, 
-        fullUrl=fullUrl,
-      ) 
-
-
-    return render_template(
-      'review.html', 
-      bar=100, 
-      form=form
-      )
-    
-
-@app.route("/task/<sample>/<task>", methods=['GET', 'POST'])
-def task(sample, task):
-  sample = int(sample)
-  task = int(task)
-
-  assignmentId = request.args.get("assignmentId") 
-  assignmentId = assignmentId if assignmentId else 0
-  hitId = request.args.get("hitId")
-  hitId = hitId if hitId else 1
-  turkSubmitTo = request.args.get("turkSubmitTo")
-  workerId = request.args.get("workerId")
-  turkSubmitTo = request.args.get("turkSubmitTo")
+  
   
   folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
-  path_map = os.path.join(dir_map,f"map_{sample}.html")
 
-  if not os.path.exists(path_map):
-    folium_map.save(path_map)
+  if os.path.exists(path_map):
+    os.remove(path_map)
+
+  folium_map.save(path_map)
 
   form_nav = NavigationForm()
 
   form_nav.landmarks = landmarks
   
   if request.method == 'POST': 
-    if not os.path.exists(path_map):
-      folium_map.save(path_map)
+    if os.path.exists(path_map):
+      os.remove(path_map)
+    folium_map.save(path_map)
     
     if form_nav.validate_on_submit() or (
       len(form_nav.errors)==1 and 'csrf_token' in form_nav.errors):
 
+      # session['task'] = task
       content = request.form['content']
       goal_point = entity.geo_landmarks['end_point'].geometry
       start_point = entity.geo_landmarks['start_point'].geometry
-    
-      date_start = request.args.get("date_start")
+
+      sample = random.randint(0, size_dataset)
+
+
       try:
         j_req = {
         'hit_id': hitId,
@@ -185,33 +112,33 @@ def task(sample, task):
 
         # save to database
         id = workerId + hitId + str(task)
-        instructions_ref.document(id).set(j_req)
+        if 'sandbox' in turkSubmitTo:
+          instructions_ref_sandbox.document(id).set(j_req)
+        else:
+          instructions_ref.document(id).set(j_req)
       except Exception as e:
         return f"An Error Occured: {e}"
 
 
-      return redirect(url_for(
-        'index', 
-        task=task, 
-        assignmentId=assignmentId,
-        hitId=hitId,
-        workerId=workerId,
-        turkSubmitTo=turkSubmitTo
-        )) 
+      address = turkSubmitTo + '/mturk/externalSubmit'
+      fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
+      return render_template(
+        'end.html', 
+        bar=100, 
+        fullUrl=fullUrl,
+      ) 
+
+  date_start = datetime.utcnow()
 
   if task == 0:
     task_bar = 0
   else:
     task_bar = task - 1
-
-  if not os.path.exists(path_map):
-    folium_map.save(path_map)
   progress_task = round(task_bar / N_TASKS_PER_USER * 100)
   return render_template('instructor_task.html',
                          form=form_nav,
                          bar=progress_task,
                          title=task,
-                         n_sample = sample
                          )
 
 
@@ -224,12 +151,9 @@ def internal_server_error(e):
 def page_not_found(e):
   return render_template("404.html", exc = e)
 
-@app.route('/map/<n_sample>', methods=['GET', 'POST'])
-@app.route('/map/')
+@app.route('/map')
 def map():
-  n_sample = request.args.get("n_sample") 
-
-  return render_template(f'map_{n_sample}.html')
+  return render_template('map.html')
 
 port = int(os.environ.get('PORT', 5000))
 
