@@ -22,8 +22,8 @@ from shapely.geometry import Polygon, Point, LineString
 from typing import Tuple, Sequence, Optional, Dict, Text
 
 import util
-import geo_item
 
+NOT_PRIVIEW_TAGS = ['osmid', 'main_tag'] 
 
 def get_osm_map(entity) -> Sequence[folium.Map]:
   '''Create the OSM maps.
@@ -55,11 +55,13 @@ def get_osm_map(entity) -> Sequence[folium.Map]:
   colors = [
     'red', 'green', 'black', 'black', 'black', 'black', 'black']
   for landmark_type, landmark in entity.geo_landmarks.items():
-    if landmark.geometry is not None:
+    if landmark.geometry is not None:    
+      desc = landmark.pivot_gdf.pivot_view.replace(";", "<br>") 
+      desc = "<b> " + desc.replace("_", "</b>", 1)
       landmark_geom = util.list_yx_from_point(landmark.geometry)
       folium.Marker(
         landmark_geom,
-        popup=f'{landmark.main_tag.replace("_", " ")}',
+        popup=desc,
         icon=folium.Icon(color=colors.pop(0))).add_to(map_osm)
 
   line = LineString(entity.route)

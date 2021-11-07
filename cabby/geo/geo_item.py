@@ -27,6 +27,11 @@ import attr
 
 _Geo_DataFrame_Driver = "GPKG"
 VERSION = 0.5
+NOT_PRIVIEW_TAGS = [
+  'osmid', 'main_tag','unique_id',"element_type", "node_ele",
+  "gnis:Class", "gnis:County", "York_gnis", "alpha", "import_uuid", "hours", "gnis:ST_num",
+  "gnis:id", "in", "nycdoitt:bin", "gnis:feature_id", "element_type"] 
+
 
 @attr.s
 class GeoEntity:
@@ -71,9 +76,27 @@ class GeoLandmark:
   pivot_gdf: gpd.GeoDataFrame = attr.ib()
 
   def __attrs_post_init__(self):
-    columns_remove = self.pivot_gdf.keys().difference(['osmid', 'geometry', 'main_tag'])
+    landmark_dict = {}
+    for k,v in self.pivot_gdf.to_dict().items():
+      if str(v)=='nan':
+        continue
+      if isinstance(v,str) and v and k not in NOT_PRIVIEW_TAGS:
+        if  not(self.landmark_type in ['end_point', 'near_pivot'] and 'name' in k):
+          landmark_dict[k.replace('_', ' ')] = v 
+    
+    landmark_desc_list = [
+      f"{t}: {v}" for t, v in landmark_dict.items()]
+
+    if len(landmark_desc_list)>0:
+      landmark_desc_list.insert(0, "________________________")
+
+    landmark_desc_list.insert(0, self.main_tag.replace("_", " "))
+    self.pivot_gdf['pivot_view'] = ';'.join(landmark_desc_list)
+    self.pivot_gdf_all = self.pivot_gdf
+    columns_remove = self.pivot_gdf.keys().difference(['osmid', 'geometry', 'main_tag', 'pivot_view'])
     if len(columns_remove) > 0:
       self.pivot_gdf.drop(columns_remove, inplace=True)
+
 
   def to_rvs_format(self):
     """Reformat a GeoLandmark into an RVS style."""
@@ -94,7 +117,7 @@ class GeoLandmark:
       pivot_type,
       pivot['osmid'],
       pivot['geometry'],
-      pivot['main_tag'],
+      str(pivot['main_tag']),
       pivot
     )
 
@@ -150,7 +173,7 @@ def save(entities: Sequence[GeoEntity], path_to_save: str):
   landmark_types = entities[0].geo_landmarks.keys()
   geo_types_all = {}
   empty_gdf = gpd.GeoDataFrame(
-    columns=['osmid', 'geometry', 'main_tag'])
+    columns=['osmid', 'geometry', 'main_tag', 'pivot_view'])
   for landmark_type in landmark_types:
     geo_types_all[landmark_type] = empty_gdf
   columns = ['geometry'] + list(entities[0].geo_features.keys())

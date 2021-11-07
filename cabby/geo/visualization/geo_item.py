@@ -28,6 +28,7 @@ import util
 _Geo_DataFrame_Driver = "GPKG"
 VERSION = 0.5
 
+
 @attr.s
 class GeoEntity:
   """Construct a geo entity.
@@ -70,10 +71,6 @@ class GeoLandmark:
   main_tag: str = attr.ib()
   pivot_gdf: gpd.GeoDataFrame = attr.ib()
 
-  def __attrs_post_init__(self):
-    columns_remove = self.pivot_gdf.keys().difference(['osmid', 'geometry', 'main_tag'])
-    if len(columns_remove) > 0:
-      self.pivot_gdf.drop(columns_remove, inplace=True)
 
   def to_rvs_format(self):
     """Reformat a GeoLandmark into an RVS style."""
