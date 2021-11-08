@@ -27,7 +27,7 @@ from typing import List, Optional, Tuple, Sequence, Any, Text
 import geo_item
 
 LANDMARK_TYPES = [
-  "end_point", "start_point", "main_pivot", "near_pivot", "beyond_pivot"]
+  "end_point", "start_point", "main_pivot", "main_pivot_2", "main_pivot_3", "near_pivot", "beyond_pivot"]
 
 
 FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.

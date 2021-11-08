@@ -55,7 +55,7 @@ ADD_POI_DISTANCE = 5000
 MAX_NUM_BEYOND_TRY = 50
 
 LANDMARK_TYPES = [
-  "end_point", "start_point", "main_pivot", "near_pivot", "beyond_pivot"]
+  "end_point", "start_point", "main_pivot", "main_pivot_2", "main_pivot_3", "near_pivot", "beyond_pivot"]
 
 FEATURES_TYPES = ["cardinal_direction",
                   "spatial_rel_goal",
@@ -638,6 +638,18 @@ class Walker:
 
     # Get pivot along the goal location.
     main_pivot = self.get_pivot_along_route(route, end_point)
+
+    # Get a second and third pivots along the goal location.
+    main_pivot_2 = self.get_pivot_along_route(route, end_point)
+    main_pivot_3 = self.get_pivot_along_route(route, end_point)
+
+
+    while (main_pivot==main_pivot_2).all():
+      main_pivot_2 = self.get_pivot_along_route(route, end_point)
+    while (main_pivot==main_pivot_3).all() or (main_pivot_2==main_pivot_3).all():
+      main_pivot_3 = self.get_pivot_along_route(route, end_point)
+
+
     if main_pivot is None:
       return None
 
@@ -652,7 +664,7 @@ class Walker:
     # Get pivot located past the goal location and beyond the route.
     beyond_pivot = self.get_pivot_beyond_goal(end_point, route)
 
-    return main_pivot, near_pivot, beyond_pivot
+    return main_pivot, main_pivot_2, main_pivot_3, near_pivot, beyond_pivot
 
   def get_egocentric_spatial_relation_pivot(self,
                                             ref_point: Point,
@@ -799,8 +811,8 @@ class Walker:
     if result is None:
       return None
 
-    geo_landmarks['main_pivot'], geo_landmarks['near_pivot'], \
-     geo_landmarks['beyond_pivot'] = result
+    geo_landmarks['main_pivot'], geo_landmarks['main_pivot_2'], geo_landmarks['main_pivot_3'], \
+     geo_landmarks['near_pivot'], geo_landmarks['beyond_pivot'] = result
 
     geo_features = {}
     # Get cardinal direction.

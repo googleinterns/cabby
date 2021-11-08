@@ -30,7 +30,9 @@ VERSION = 0.5
 NOT_PRIVIEW_TAGS = [
   'osmid', 'main_tag','unique_id',"element_type", "node_ele",
   "gnis:Class", "gnis:County", "York_gnis", "alpha", "import_uuid", "hours", "gnis:ST_num",
-  "gnis:id", "in", "nycdoitt:bin", "gnis:feature_id", "element_type"] 
+  "gnis:id", "in", "nycdoitt:bin", "gnis:feature_id", "element_type", "phone",
+  "website", "addr:housenumber", "contact:facebook", "contact:instagram",
+  "reservation"] 
 
 
 @attr.s
@@ -81,7 +83,7 @@ class GeoLandmark:
       if str(v)=='nan':
         continue
       if isinstance(v,str) and v and k not in NOT_PRIVIEW_TAGS:
-        if  not(self.landmark_type in ['end_point', 'near_pivot'] and 'name' in k):
+        if  not(self.landmark_type in ['end_point', 'near_pivot', "beyond_pivot"] and 'name' in k):
           landmark_dict[k.replace('_', ' ')] = v 
     
     landmark_desc_list = [
