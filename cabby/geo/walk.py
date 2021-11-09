@@ -42,12 +42,14 @@ from cabby.geo import osm
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 3
-SAVE_ENTITIES_EVERY = 1000
+SAVE_ENTITIES_EVERY = 100
 MAX_BATCH_GEN = 100
+MAX_BATCH_GEN = MAX_BATCH_GEN if MAX_BATCH_GEN<SAVE_ENTITIES_EVERY else SAVE_ENTITIES_EVERY
 MAX_SEED = 2**32 - 1
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
+ON_PIVOT_DIST = 10
 # The max number of failed tries to generate a single path entities.
 MAX_NUM_GEN_FAILED = 10
 PIVOT_ALONG_ROUTE_MAX_DIST = 0.0001
@@ -436,12 +438,14 @@ class Walker:
 
   def get_pivot_along_route(self,
                             route: GeoDataFrame,
-                            end_point: Dict
+                            end_point: Dict,
+                            start_point: Dict,
   ) -> Optional[GeoSeries]:
     '''Return a picked landmark on a given route.
     Arguments:
       route: The route along which a landmark will be chosen.
       end_point: The goal location.
+      start_point: The start location.
     Returns:
       A single landmark. '''
 
@@ -459,11 +463,13 @@ class Walker:
     if 'highway' in df_pivots.columns:
       df_pivots = df_pivots[(df_pivots['highway'].isnull())]
 
-    # Remove POI near goal.
+    # Remove POI near goal and start position.
     far_poi_con = df_pivots.apply(
     lambda x: util.get_distance_between_geometries(
       x.geometry,
-      end_point['centroid']) > NEAR_PIVOT_DIST, axis=1)
+      end_point['centroid']) > NEAR_PIVOT_DIST and util.get_distance_between_geometries(
+      x.geometry,
+      start_point['centroid']) > ON_PIVOT_DIST, axis=1)
     far_poi = df_pivots[far_poi_con]
 
     path_geom = LineString(points_route)
@@ -627,27 +633,29 @@ class Walker:
   def get_pivots(self,
                 route: GeoDataFrame,
                 end_point: Dict,
+                start_point: Dict,
   ) -> Optional[Tuple[GeoSeries, GeoSeries, GeoSeries]]:
     '''Return a picked landmark on a given route.
     Arguments:
       route: The route along which a landmark will be chosen.
       end_point: The goal location.
+      start_point: The start location.
     Returns:
       A single landmark.
     '''
 
     # Get pivot along the goal location.
-    main_pivot = self.get_pivot_along_route(route, end_point)
+    main_pivot = self.get_pivot_along_route(route, end_point, start_point)
 
     # Get a second and third pivots along the goal location.
-    main_pivot_2 = self.get_pivot_along_route(route, end_point)
-    main_pivot_3 = self.get_pivot_along_route(route, end_point)
+    main_pivot_2 = self.get_pivot_along_route(route, end_point, start_point)
+    main_pivot_3 = self.get_pivot_along_route(route, end_point, start_point)
 
 
     while (main_pivot==main_pivot_2).all():
-      main_pivot_2 = self.get_pivot_along_route(route, end_point)
+      main_pivot_2 = self.get_pivot_along_route(route, end_point, start_point)
     while (main_pivot==main_pivot_3).all() or (main_pivot_2==main_pivot_3).all():
-      main_pivot_3 = self.get_pivot_along_route(route, end_point)
+      main_pivot_3 = self.get_pivot_along_route(route, end_point, start_point)
 
 
     if main_pivot is None:
@@ -807,7 +815,8 @@ class Walker:
       return None
 
     # Select pivots.
-    result = self.get_pivots(route, geo_landmarks['end_point'])
+    result = self.get_pivots(
+      route, geo_landmarks['end_point'], geo_landmarks['start_point'])
     if result is None:
       return None
 
@@ -902,7 +911,7 @@ class Walker:
           proc.join()
       new_entities += [entity for idx_entity, entity in return_dict.items()]
 
-      if len(new_entities)>SAVE_ENTITIES_EVERY:
+      if len(new_entities)>=SAVE_ENTITIES_EVERY:
         geo_item.save(new_entities, path_rvs_path)
         new_entities = []
     if len(new_entities)>0:

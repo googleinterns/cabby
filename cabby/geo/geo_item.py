@@ -31,8 +31,8 @@ NOT_PRIVIEW_TAGS = [
   'osmid', 'main_tag','unique_id',"element_type", "node_ele",
   "gnis:Class", "gnis:County", "York_gnis", "alpha", "import_uuid", "hours", "gnis:ST_num",
   "gnis:id", "in", "nycdoitt:bin", "gnis:feature_id", "element_type", "phone",
-  "website", "addr:housenumber", "contact:facebook", "contact:instagram",
-  "reservation"] 
+  "website", "addr:housenumber", "contact:facebook", "contact:instagram", "opening_hours",
+  "reservation", "wikidata"] 
 
 
 @attr.s
