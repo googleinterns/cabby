@@ -32,7 +32,7 @@ app.config['SECRET_KEY'] = SECRET_KEY
 app.app_context().push()
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_geo_paths.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v4.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}, {rvs_path}")
 
