@@ -57,7 +57,8 @@ ADD_POI_DISTANCE = 5000
 MAX_NUM_BEYOND_TRY = 50
 
 LANDMARK_TYPES = [
-  "end_point", "start_point", "main_pivot", "main_pivot_2", "main_pivot_3", "near_pivot", "beyond_pivot"]
+  "end_point", "start_point", "main_pivot", "main_pivot_2", "main_pivot_3", "near_pivot",
+   "beyond_pivot", "around_goal_pivot_1", "around_goal_pivot_2", "around_goal_pivot_3"]
 
 FEATURES_TYPES = ["cardinal_direction",
                   "spatial_rel_goal",
@@ -399,12 +400,17 @@ class Walker:
 
   def get_pivot_near_goal(self,
                           end_point: GeoSeries,
-                          path_geom: LineString
+                          path_geom: LineString,
+                          max_distance_from_goal: int,
+                          min_distance_from_goal: int,
+
   ) -> Optional[GeoSeries]:
     '''Return a picked landmark near the end_point.
     Arguments:
       end_point: The goal location.
       path_geom: The geometry of the path selected.
+      max_distance_from_goal: The max distance from goal.
+      min_distance_from_goal: The min distance from goal.
     Returns:
       A single landmark near the goal location.
     '''
@@ -412,12 +418,15 @@ class Walker:
     near_poi_con = self.map.poi.apply(
       lambda x: util.get_distance_between_geometries(
         x.geometry,
-        end_point['centroid']) < NEAR_PIVOT_DIST, axis=1)
+        end_point['centroid']) < max_distance_from_goal and util.get_distance_between_geometries(
+        x.geometry,
+        end_point['centroid']) >= min_distance_from_goal, axis=1)
 
     poi = self.map.poi[near_poi_con]
 
+    columns_empty = self.map.nodes.columns.tolist() + ['main_tag']
     if poi.shape[0]==0:
-      return None
+      return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
 
     # Remove streets and roads.
     if 'highway' in poi.columns:
@@ -430,9 +439,12 @@ class Walker:
     unique_poi = self.select_generic_unique_pois(
       nearby_poi, is_unique=True)
     if unique_poi.shape[0]==0:
-      return None
+      return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
 
     prominent_poi = self.pick_prominent_pivot(unique_poi, end_point, path_geom)
+    if prominent_poi is None:
+      return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
+
     return prominent_poi
 
 
@@ -456,8 +468,10 @@ class Walker:
 
     df_pivots = self.map.poi[self.map.poi.apply(
       lambda x: poly.intersects(x['geometry']), axis=1)]
+
+    columns_empty = self.map.nodes.columns.tolist() + ['main_tag']
     if df_pivots.shape[0]==0:
-      return None
+      return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
 
     # Remove streets.
     if 'highway' in df_pivots.columns:
@@ -474,6 +488,8 @@ class Walker:
 
     path_geom = LineString(points_route)
     main_pivot = self.pick_prominent_pivot(far_poi, end_point, path_geom)
+    if main_pivot is None:
+      return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
     return main_pivot
 
   def get_pivot_beyond_goal(self,
@@ -647,32 +663,42 @@ class Walker:
     # Get pivot along the goal location.
     main_pivot = self.get_pivot_along_route(route, end_point, start_point)
 
+    if main_pivot['geometry'] is None:
+      return None
+      
     # Get a second and third pivots along the goal location.
     main_pivot_2 = self.get_pivot_along_route(route, end_point, start_point)
     main_pivot_3 = self.get_pivot_along_route(route, end_point, start_point)
 
 
-    while (main_pivot==main_pivot_2).all():
+    while main_pivot_2 is not np.NaN and (main_pivot==main_pivot_2).all() :
       main_pivot_2 = self.get_pivot_along_route(route, end_point, start_point)
-    while (main_pivot==main_pivot_3).all() or (main_pivot_2==main_pivot_3).all():
+    while main_pivot_3 is not np.NaN and ((main_pivot==main_pivot_3).all() or (
+      main_pivot_2==main_pivot_3).all()):
       main_pivot_3 = self.get_pivot_along_route(route, end_point, start_point)
 
-
-    if main_pivot is None:
-      return None
 
     path_geom = LineString(route['geometry'].tolist())
 
     # Get pivot near the goal location.
-    near_pivot = self.get_pivot_near_goal(end_point, path_geom)
-
-    if near_pivot is None:
+    near_pivot = self.get_pivot_near_goal(end_point, path_geom, NEAR_PIVOT_DIST, 0)
+    if near_pivot['geometry'] is None:
       return None
+    
+    around_goal_pivot_1 = self.get_pivot_near_goal(
+      end_point, path_geom, 2*NEAR_PIVOT_DIST, NEAR_PIVOT_DIST)
+    around_goal_pivot_2 = self.get_pivot_near_goal(
+      end_point, path_geom, 2*NEAR_PIVOT_DIST, NEAR_PIVOT_DIST)
+    around_goal_pivot_3 = self.get_pivot_near_goal(
+      end_point, path_geom, 2*NEAR_PIVOT_DIST, NEAR_PIVOT_DIST)
+
 
     # Get pivot located past the goal location and beyond the route.
     beyond_pivot = self.get_pivot_beyond_goal(end_point, route)
 
-    return main_pivot, main_pivot_2, main_pivot_3, near_pivot, beyond_pivot
+    return (
+      main_pivot, main_pivot_2, main_pivot_3, near_pivot, around_goal_pivot_1, 
+      around_goal_pivot_2, around_goal_pivot_3, beyond_pivot)
 
   def get_egocentric_spatial_relation_pivot(self,
                                             ref_point: Point,
@@ -821,7 +847,9 @@ class Walker:
       return None
 
     geo_landmarks['main_pivot'], geo_landmarks['main_pivot_2'], geo_landmarks['main_pivot_3'], \
-     geo_landmarks['near_pivot'], geo_landmarks['beyond_pivot'] = result
+     geo_landmarks['near_pivot'], geo_landmarks['around_goal_pivot_1'], \
+        geo_landmarks['around_goal_pivot_2'], geo_landmarks['around_goal_pivot_3'], \
+          geo_landmarks['beyond_pivot'] = result
 
     geo_features = {}
     # Get cardinal direction.

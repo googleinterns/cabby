@@ -32,14 +32,14 @@ app.config['SECRET_KEY'] = SECRET_KEY
 app.app_context().push()
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v4.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v6.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}, {rvs_path}")
 
 osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
 size_dataset = len(osm_maps_instructions)
 
-N_TASKS_PER_USER = 2
+N_TASKS_PER_USER = 1
 
 path_map = os.path.join(app.root_path,"templates", secure_filename('map.html'))
 if os.path.exists(path_map):

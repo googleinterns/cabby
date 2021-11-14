@@ -52,17 +52,20 @@ def get_osm_map(entity) -> Sequence[folium.Map]:
                        zoom_start=zoom_start  , tiles='OpenStreetMap')
 
   # draw the points
-  colors = [
-    'red', 'green', 'black', 'black', 'black', 'black', 'black']
+  colors = ['red', 'green']
   for landmark_type, landmark in entity.geo_landmarks.items():
     if landmark.geometry is not None:    
       desc = landmark.pivot_gdf.pivot_view.replace(";", "<br>") 
       desc = "<b> " + desc.replace("_", "</b>", 1)
       landmark_geom = util.list_yx_from_point(landmark.geometry)
+      if len(colors)==0:
+        color = 'black'
+      else:
+        color=colors.pop(0)
       folium.Marker(
         landmark_geom,
         popup=desc,
-        icon=folium.Icon(color=colors.pop(0))).add_to(map_osm)
+        icon=folium.Icon(color=color)).add_to(map_osm)
 
   line = LineString(entity.route)
   folium.GeoJson(data=line, style_function=lambda feature: {

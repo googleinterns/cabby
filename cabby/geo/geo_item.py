@@ -83,8 +83,9 @@ class GeoLandmark:
       if str(v)=='nan':
         continue
       if isinstance(v,str) and v and k not in NOT_PRIVIEW_TAGS:
-        if  not(self.landmark_type in ['end_point', 'near_pivot', "beyond_pivot"] and 'name' in k):
-          landmark_dict[k.replace('_', ' ')] = v 
+        if  not(
+          self.landmark_type in ['end_point', 'near_pivot', "beyond_pivot"] and 'name' in k):
+          landmark_dict[k.replace('_', ' ')] = v.replace('_', ' ')
     
     landmark_desc_list = [
       f"{t}: {v}" for t, v in landmark_dict.items()]
@@ -95,7 +96,8 @@ class GeoLandmark:
     landmark_desc_list.insert(0, self.main_tag.replace("_", " "))
     self.pivot_gdf['pivot_view'] = ';'.join(landmark_desc_list)
     self.pivot_gdf_all = self.pivot_gdf
-    columns_remove = self.pivot_gdf.keys().difference(['osmid', 'geometry', 'main_tag', 'pivot_view'])
+    columns_remove = self.pivot_gdf.keys().difference(
+      ['osmid', 'geometry', 'main_tag', 'pivot_view'])
     if len(columns_remove) > 0:
       self.pivot_gdf.drop(columns_remove, inplace=True)
 
