@@ -1,7 +1,9 @@
 from datetime import datetime
+from datetime import timedelta
 import flask
 from flask import *
 from flask import session
+from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
 import folium
 import os
@@ -31,8 +33,13 @@ app.config['SECRET_KEY'] = SECRET_KEY
 
 app.app_context().push()
 
+Session(app)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
+
+
+
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v6.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v8.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}, {rvs_path}")
 
@@ -40,13 +47,13 @@ osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
 size_dataset = len(osm_maps_instructions)
 
 N_TASKS_PER_USER = 1
+worker_session = {}
 
 path_map = os.path.join(app.root_path,"templates", secure_filename('map.html'))
 if os.path.exists(path_map):
     os.remove(path_map)
 
 
-task=1
 sample = random.randint(0, size_dataset)
 date_start = datetime.utcnow()
 
@@ -56,20 +63,24 @@ date_start = datetime.utcnow()
 def home():
   global sample
   global date_start
-
+  global worker_session
 
   assignmentId = request.args.get("assignmentId") 
   assignmentId = assignmentId if assignmentId else uuid.uuid4().hex
   hitId = request.args.get("hitId")
-  hitId = hitId if hitId else uuid.uuid4().hex
+  hitId = hitId if hitId else "2"
   turkSubmitTo = request.args.get("turkSubmitTo")
   workerId = request.args.get("workerId")
-  workerId = workerId if workerId else uuid.uuid4().hex
-
+  workerId = workerId if workerId else "1"
   turkSubmitTo = request.args.get("turkSubmitTo")
   turkSubmitTo = turkSubmitTo if turkSubmitTo else "https://workersandbox.mturk.com"
+
+
+  session_id = workerId+hitId
+  if session_id not in worker_session:
+    worker_session[session_id] = 1
   
-  
+
   folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
 
   if os.path.exists(path_map):
@@ -94,9 +105,6 @@ def home():
       goal_point = entity.geo_landmarks['end_point'].geometry
       start_point = entity.geo_landmarks['start_point'].geometry
 
-      sample = random.randint(0, size_dataset)
-
-
       try:
         j_req = {
         'hit_id': hitId,
@@ -107,11 +115,12 @@ def home():
         'rvs_path': rvs_path,
         'rvs_goal_point': str(goal_point),
         'rvs_start_point': str(start_point),
+        'task': worker_session[session_id],
         'date_start': str(date_start),
         'date_finish': str(datetime.utcnow())}
 
         # save to database
-        id = workerId + hitId + str(task)
+        id = workerId + hitId + str(worker_session[session_id])
         if 'sandbox' in turkSubmitTo:
           instructions_ref_sandbox.document(id).set(j_req)
         else:
@@ -119,26 +128,54 @@ def home():
       except Exception as e:
         return f"An Error Occured: {e}"
 
+      
+      sample = random.randint(0, size_dataset)
 
-      address = turkSubmitTo + '/mturk/externalSubmit'
-      fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
-      return render_template(
-        'end.html', 
-        bar=100, 
-        fullUrl=fullUrl,
-      ) 
+      folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
+
+      if os.path.exists(path_map):
+        os.remove(path_map)
+      folium_map.save(path_map)
+
+      form_nav = NavigationForm()
+      form_nav.landmarks = landmarks
+      
+      worker_session[session_id] = worker_session[session_id] + 1
+
+      
+      if worker_session[session_id]>N_TASKS_PER_USER:
+
+        address = turkSubmitTo + '/mturk/externalSubmit'
+        fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
+        return render_template(
+          'end.html', 
+          bar=100, 
+          fullUrl=fullUrl,
+        )
+      else:
+        date_start = datetime.utcnow()
+        if worker_session[session_id] == 0:
+          task_bar = 0
+        else:
+          task_bar = worker_session[session_id] - 1
+        progress_task = round(task_bar / N_TASKS_PER_USER * 100)
+        return render_template('instructor_task.html',
+                              form=form_nav,
+                              bar=progress_task,
+                              title=worker_session[session_id],
+                              )
 
   date_start = datetime.utcnow()
 
-  if task == 0:
+  if worker_session[session_id] == 0:
     task_bar = 0
   else:
-    task_bar = task - 1
+    task_bar = worker_session[session_id] - 1
   progress_task = round(task_bar / N_TASKS_PER_USER * 100)
   return render_template('instructor_task.html',
                          form=form_nav,
                          bar=progress_task,
-                         title=task,
+                         title=worker_session[session_id] ,
                          )
 
 

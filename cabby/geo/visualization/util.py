@@ -27,9 +27,10 @@ from typing import List, Optional, Tuple, Sequence, Any, Text
 import geo_item
 
 LANDMARK_TYPES = [
-  "end_point", "start_point", "main_pivot", "main_pivot_2", "main_pivot_3", "near_pivot", "beyond_pivot"]
+  "end_point", "start_point", "main_pivot", "main_pivot_2", "main_pivot_3", "near_pivot",
+   "beyond_pivot", "around_goal_pivot_1", "around_goal_pivot_2", "around_goal_pivot_3"]
 
-
+   
 FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
 MAX_FAILED_ATTEMPTS = 50
 
@@ -85,17 +86,22 @@ def load_entities(path: str):
     return []
   geo_types_all = {}
   for landmark_type in LANDMARK_TYPES:
-    geo_types_all[landmark_type] = gpd.read_file(path, layer=landmark_type)
+    try:
+      geo_types_all[landmark_type] = gpd.read_file(path, layer=landmark_type)
+    except:
+      continue
   geo_types_all['route'] = gpd.read_file(path, layer='path_features')['geometry']
   geo_types_all['path_features'] = gpd.read_file(path, layer='path_features')
   geo_entities = []
   for row_idx in range(geo_types_all[LANDMARK_TYPES[0]].shape[0]):
     landmarks = {}
     for landmark_type in LANDMARK_TYPES:
-      landmarks[landmark_type] = geo_types_all[landmark_type].iloc[row_idx]
+      if landmark_type in geo_types_all:
+        landmarks[landmark_type] = geo_types_all[landmark_type].iloc[row_idx]
     features = geo_types_all['path_features'].iloc[row_idx].to_dict()
     del features['geometry']
     route = geo_types_all['route'].iloc[row_idx]
+
     geo_item_cur = geo_item.GeoEntity.add_entity(
       geo_landmarks=landmarks,
       geo_features=features,
