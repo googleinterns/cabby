@@ -54,9 +54,12 @@ def get_osm_map(entity) -> Sequence[folium.Map]:
   # draw the points
   colors = ['red', 'green']
   for landmark_type, landmark in entity.geo_landmarks.items():
-    if landmark.geometry is not None:    
-      desc = landmark.pivot_gdf.pivot_view.replace(";", "<br>") 
-      desc = "<b> " + desc.replace("_", "</b>", 1)
+    if landmark.geometry is not None:  
+      if 'pivot_view' in landmark.pivot_gdf:
+        desc = landmark.pivot_gdf.pivot_view.replace(";", "<br>") 
+        desc = "<b> " + desc.replace("_", "</b>", 1)
+      else:
+        desc = landmark.pivot_gdf.main_tag
       landmark_geom = util.list_yx_from_point(landmark.geometry)
       if len(colors)==0:
         color = 'black'
