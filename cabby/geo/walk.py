@@ -220,6 +220,9 @@ class Walker:
           new_pois_uniq = new_pois_uniq[new_pois_uniq['main_tag']==chosen_tag][:1]
           new_pois_uniq['main_tag'] = str(chosen_count) + \
                                  " " + inflect_engine.plural(chosen_tag)
+        if 'name' in new_pois_uniq:
+          new_pois_uniq.pop('name')
+
       if not is_group:
         uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==False
         new_pois_uniq = new_pois[uniqueness]
