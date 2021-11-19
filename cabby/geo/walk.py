@@ -204,7 +204,8 @@ class Walker:
       # Randomly select whether the near by pivot would be
       # a single pivot (e.g., `a toy shop` or
       # a group of unique landmark (e.g, `3 toy shops`)
-      is_group = self.randomize_boolean(percentage = 10)
+      is_group = self.randomize_boolean(probabilty = 20)
+
       if is_group:
         uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==True
         new_pois_uniq = new_pois[uniqueness]
@@ -220,6 +221,8 @@ class Walker:
           new_pois_uniq = new_pois_uniq[new_pois_uniq['main_tag']==chosen_tag][:1]
           new_pois_uniq['main_tag'] = str(chosen_count) + \
                                  " " + inflect_engine.plural(chosen_tag)
+
+          new_pois_uniq['name'] = new_pois_uniq['main_tag']
 
       if not is_group:
         uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==False
@@ -268,8 +271,8 @@ class Walker:
       Returns a random\non random boolean value.
     '''
     if self.rand_sample:
-      rand_bit = random.getrandbits(100)
-      return rand_bit<=probabilty
+      rand_int = random.randint(0,100)
+      return rand_int<=probabilty
     return True
 
   def sample_point(self,
