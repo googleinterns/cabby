@@ -13,6 +13,9 @@
 # limitations under the License.
 '''Defines OSM entities adaptations.'''
 
+from networkx.algorithms import hierarchy
+
+
 CORRECTIONS = {'fuel': 'gas station', 'parking': 'parking lot', 
   'taxi': 'taxi stand', 'doctors': 'doctor\'s office', 
   'dentist': 'dentist\'s office', 'gambling': 'gambling place', 
@@ -53,7 +56,7 @@ INTERESTING_TAGS =  {'name': True,
                     'man_made': MAN_MADE_INTERESTING}
 
 NON_SPECIFIC_TAGS = {'amenity': False, 'brand': False, 'shop': 'after', 
-  'historic	': 'before', 'tourism': TOURISM_INTERESTING, 'bridge': True,
+  'historic': 'before', 'tourism': TOURISM_INTERESTING, 'bridge': True,
   'man_made': False, 'natural': False, 'place': PLACE, 
   'leisure': LEISURE_INTERESTING, 'building': BUILDING_INTERESTING, 
   'craft': CRAFT_INTERESTING, 'man_made': MAN_MADE_INTERESTING}
@@ -61,3 +64,6 @@ NON_SPECIFIC_TAGS = {'amenity': False, 'brand': False, 'shop': 'after',
 
 PROMINENT_TAGS_ORDERED = [
   'wikipedia', 'wikidata', 'brand', 'tourism', 'tourism','amenity', 'shop']
+
+
+SPECIFIC_TAGS = ['name']

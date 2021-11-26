@@ -30,6 +30,7 @@ import os
 import osmnx as ox
 import pandas as pd
 import random
+from pandas.core.frame import DataFrame
 from shapely.ops import nearest_points
 from shapely.geometry.point import Point
 from shapely.geometry import LineString
@@ -158,7 +159,7 @@ class Walker:
     Returns:
       A non-specific tag.
     '''
-    for tag, addition in osm.NON_SPECIFIC_TAGS.items():
+    for tag, addition in osm.NON_SPECIFIC_TAGS.items():        
       if tag not in poi or not isinstance(poi[tag], str):
         continue
       if addition == True:
@@ -186,11 +187,18 @@ class Walker:
       return new_tag
     return None
 
-  def select_generic_unique_pois(self, pois: pd.DataFrame, is_unique: bool = False):
+
+
+
+  def select_generic_unique_pois(
+    self, pois: pd.DataFrame, 
+    is_unique: bool = False,
+    end_point: pd.DataFrame = None):
     '''Returns a non-specific POIs with main tag being the non-specific tag.
     Arguments:
       pois: all pois to select from.
       is_unique: if to filter unique tags.
+      end_point: end point of the path.
     Returns:
       A number of non-specific POIs which are unique.
     '''
@@ -199,36 +207,77 @@ class Walker:
     new_pois = pois.assign(main_tag = main_tags)
     new_pois.dropna(subset=['main_tag'], inplace=True)
 
+    if end_point is not None:
+      new_pois = new_pois[new_pois['osmid']!=end_point['osmid']]
+
+
     # Get Unique main tags.
     if is_unique:
       # Randomly select whether the near by pivot would be
       # a single pivot (e.g., `a toy shop` or
       # a group of unique landmark (e.g, `3 toy shops`)
-      is_group = self.randomize_boolean(probabilty = 20)
+      is_group = self.randomize_boolean(probabilty = 100)
 
       if is_group:
         uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==True
         new_pois_uniq = new_pois[uniqueness]
+
         if new_pois_uniq.shape[0]==0:
-          is_group = False
-        else:
-          count_by_tag = new_pois_uniq.main_tag.value_counts()
-          chosen_tag = random.choice(count_by_tag.keys())
-          chosen_count = count_by_tag.loc[chosen_tag]
+          return self.get_generic_unique_pois_single(new_pois) 
+                  
+        count_by_tag = new_pois_uniq.main_tag.value_counts().to_dict()
+
+        tag_list = list((count_by_tag.keys()))
+
+        random.shuffle(tag_list)
+
+
+        for chosen_tag in tag_list:
+          
+          chosen_count = count_by_tag[chosen_tag]
+          if chosen_count<=1:
+            continue
+
+          
+          new_pois_uniq_group = new_pois_uniq[new_pois_uniq['main_tag']==chosen_tag]
+          single_new_pois_uniq = new_pois_uniq_group.sample()
+          anchor = single_new_pois_uniq.iloc[0]['centroid']
+          entities_geo_group = new_pois_uniq_group[new_pois_uniq_group.apply(
+            lambda x: (
+              util.get_distance_between_geometries(
+              x.geometry, anchor) <= ON_PIVOT_DIST and util.get_distance_between_geometries(
+              x.geometry, anchor) > 0), axis=1)]
+        
+          chosen_count = entities_geo_group.shape[0]
+          if chosen_count<=1:
+            continue   
+          
           by_word = self.randomize_boolean()
           if by_word:
             chosen_count = inflect_engine.number_to_words(chosen_count)
-          new_pois_uniq = new_pois_uniq[new_pois_uniq['main_tag']==chosen_tag][:1]
-          new_pois_uniq['main_tag'] = str(chosen_count) + \
-                                 " " + inflect_engine.plural(chosen_tag)
+          single_new_pois_uniq['main_tag'] = str(chosen_count) + \
+                                  " " + inflect_engine.plural(chosen_tag)
 
-          new_pois_uniq['name'] = new_pois_uniq['main_tag']
+          single_new_pois_uniq.drop(
+            single_new_pois_uniq.columns.difference(
+              [
+                'main_tag', 'centroid', 'geometry', 'osmid'] + \
+                osm.PROMINENT_TAGS_ORDERED+list(osm.NON_SPECIFIC_TAGS.keys())), 
+                1, inplace=True)
+          single_new_pois_uniq['name'] = single_new_pois_uniq['main_tag']
 
-      if not is_group:
-        uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==False
-        new_pois_uniq = new_pois[uniqueness]
-      return new_pois_uniq
+          single_new_pois_uniq['grouped'] = True
+          return single_new_pois_uniq
+
+      return self.get_generic_unique_pois_single(new_pois)
     return new_pois
+
+
+  def get_generic_unique_pois_single(self, pois: pd.DataFrame):
+      uniqueness = pois.duplicated(subset=['main_tag'], keep=False)==False
+      new_pois_uniq = pois[uniqueness]
+      return new_pois_uniq
+
 
   def select_generic_poi(self, pois: pd.DataFrame):
     '''Returns a non-specific POI with main tag being the non-specific tag.
@@ -337,8 +386,8 @@ class Walker:
 
   def get_landmark_if_tag_exists(self, 
                                 gdf: GeoDataFrame, 
-                                tag: str, main_tag: str,
-                                alt_main_tag: str
+                                tag: str, 
+                                pick_generic_name: bool = False
   ) -> GeoSeries:
     '''Check if tag exists, set main tag name and choose pivot.
     Arguments:
@@ -352,23 +401,26 @@ class Walker:
     if tag in candidate_landmarks:
       pivots = gdf[gdf[tag].notnull()]
       if pivots.shape[0]:
-        pivots = gdf[gdf[main_tag].notnull()]
-        if main_tag in candidate_landmarks and pivots.shape[0]:
-          if 'main_tag' not in pivots:
-            pivots = pivots.assign(main_tag=pivots[main_tag])
-          return self.sample_point(pivots)
-        pivots = gdf[gdf[alt_main_tag].notnull()]
-        if alt_main_tag in candidate_landmarks and pivots.shape[0]:
-          if 'main_tag' not in pivots:
-            pivots = pivots.assign(main_tag=pivots[alt_main_tag])
-          return self.sample_point(pivots)
+        if pick_generic_name:
+          tags_keys = osm.NON_SPECIFIC_TAGS.keys()
+        else: 
+          tags_keys = osm.SPECIFIC_TAGS
+        for tag_k in tags_keys:
+          pivots = gdf[gdf[tag_k].notnull()]
+          if pick_generic_name and isinstance(osm.NON_SPECIFIC_TAGS[tag_k], list):
+            pivots = gdf[gdf[tag_k].isin(osm.NON_SPECIFIC_TAGS[tag_k])]
+          if pivots.shape[0]:
+            if 'main_tag' not in pivots:
+              pivots = pivots.assign(main_tag=pivots[tag_k])
+            return self.sample_point(pivots)
     return None
 
 
   def pick_prominent_pivot(self,
                            df_pivots: GeoDataFrame,
                            end_point: Dict[str, Any],
-                           path_geom: LineString
+                           path_geom: LineString,
+                           pick_generic_name: bool = False
   ) -> Optional[GeoSeries]:
     '''Select a landmark from a set of landmarks by priority.
     Arguments:
@@ -388,18 +440,13 @@ class Walker:
     if df_pivots.shape[0]==0:
       return None
 
-    tag_pairs = [('wikipedia', 'amenity'), ('wikidata', 'amenity'),
-          ('brand', 'brand'), ('tourism', 'tourism'),
-          ('tourism', 'tourism'), ('amenity', 'amenity'), ('shop', 'shop')
-          ]
-
     pivot = None
 
-    for main_tag, named_tag in tag_pairs:
+    for main_tag in osm.PROMINENT_TAGS_ORDERED:
       pivot = self.get_landmark_if_tag_exists(df_pivots,
                                               main_tag,
-                                              'name',
-                                              named_tag)
+                                              pick_generic_name
+                                              )
       if pivot is not None:
         if not isinstance(pivot['geometry'], Point):
           pivot['geometry'] = nearest_points(pivot['geometry'], path_geom)[0]
@@ -446,11 +493,13 @@ class Walker:
 
     # Filter non-specific tags.
     unique_poi = self.select_generic_unique_pois(
-      nearby_poi, is_unique=True)
+      nearby_poi, is_unique=True, end_point=end_point)
     if unique_poi.shape[0]==0:
+
       return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
 
-    prominent_poi = self.pick_prominent_pivot(unique_poi, end_point, path_geom)
+    prominent_poi = self.pick_prominent_pivot(
+      unique_poi, end_point, path_geom, pick_generic_name=True)
     if prominent_poi is None:
       return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
 
@@ -563,6 +612,7 @@ class Walker:
       # Check if the path calculated overlaps the route taken,
       # if not then pick a POI to be the pivot beyond.
       if len(intersections)<1 and len(path)>2:
+
         beyond = self.select_pivot_from_path(route, end_point, path)
         if beyond is not None:
           return beyond
@@ -595,10 +645,12 @@ class Walker:
     df_pivots = df_pivots[(df_pivots['geometry'].is_valid)]
     if df_pivots.shape[0] == 0:
       # Return Empty.
+
       return None
 
     path_geom = LineString(points_route)
-    beyond_pivot = self.pick_prominent_pivot(df_pivots, end_point, path_geom)
+    beyond_pivot = self.pick_prominent_pivot(
+      df_pivots, end_point, path_geom, pick_generic_name=True)
     return beyond_pivot
 
 
@@ -637,6 +689,7 @@ class Walker:
     intersection_opposite = intersections_nodes[(intersections_nodes['bearing']-opposite_bearing)%360<30]
     if intersection_opposite.shape[0]==0:
       return None
+
     intersection_opposite_idx = intersection_opposite['distances'].idxmin()
     intersection_opposite_distance = intersection_opposite.loc[intersection_opposite_idx]['distances']
 
@@ -673,6 +726,7 @@ class Walker:
     main_pivot = self.get_pivot_along_route(route, end_point, start_point)
 
     if main_pivot['geometry'] is None:
+
       return None
       
     # Get a second and third pivots along the goal location.
@@ -905,7 +959,7 @@ class Walker:
     attempt = 0
     while entity is None:
       if attempt >= MAX_NUM_GEN_FAILED:
-        sys.exit("Reached max number of failed attempts.")
+        sys.exit(f"Reached max number of failed attempts for sample {index}.")
       entity = self.get_sample()
       attempt += 1
 

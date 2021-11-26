@@ -2,8 +2,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, ValidationError
 import nltk
-# nltk.download('punkt')
-# nltk.download('averaged_perceptron_tagger')
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
 
 
 def check_second_person(form, field):
@@ -14,14 +14,14 @@ def check_no_first_person(form, field):
   if 'We ' in field.data or 'I' in field.data:
     raise ValidationError('Describe the goal as if you are telling a friend about it.')
 
-# def check_verbs(form, field):
-#   # word tokenizeing and part-of-speech tagger
-#   tokens = [nltk.word_tokenize(sent) for sent in [field.data]]
-#   postag = [nltk.pos_tag(sent) for sent in tokens][0]
-#   tags = [pt[1] for pt in postag if 'VB' in pt[1]]
+def check_verbs(form, field):
+  # word tokenizeing and part-of-speech tagger
+  tokens = [nltk.word_tokenize(sent) for sent in [field.data]]
+  postag = [nltk.pos_tag(sent) for sent in tokens][0]
+  tags = [pt[1] for pt in postag if 'VB' in pt[1]]
 
-#   if len(tags)<1:
-#     raise ValidationError('Try again to describe the goal.')
+  if len(tags)<1:
+    raise ValidationError('Try again to describe the goal.')
 
 
 def check_landmarks(form, field):
@@ -34,8 +34,8 @@ class NavigationForm(FlaskForm):
   content = TextAreaField('Content', 
   validators=[
     DataRequired(),
-    Length(min=80),
-    # check_verbs,
+    Length(min=100),
+    check_verbs,
     check_landmarks
   ]
   )

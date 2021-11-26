@@ -24,6 +24,8 @@ from typing import Tuple, Sequence, Optional, Dict, Text
 import util
 
 NOT_PRIVIEW_TAGS = ['osmid', 'main_tag'] 
+PIVOTS_COLORS = {"end_point":'red', "start_point":'green'} 
+
 
 def get_osm_map(entity) -> Sequence[folium.Map]:
   '''Create the OSM maps.
@@ -52,8 +54,9 @@ def get_osm_map(entity) -> Sequence[folium.Map]:
                        zoom_start=zoom_start  , tiles='OpenStreetMap')
 
   # draw the points
-  colors = ['red', 'green']
   for landmark_type, landmark in entity.geo_landmarks.items():
+    if landmark_type in PIVOTS_COLORS:
+      continue
     if landmark.geometry is not None:  
       if 'pivot_view' in landmark.pivot_gdf:
         desc = landmark.pivot_gdf.pivot_view.replace(";", "<br>") 
@@ -61,25 +64,48 @@ def get_osm_map(entity) -> Sequence[folium.Map]:
       else:
         desc = landmark.pivot_gdf.main_tag
       landmark_geom = util.list_yx_from_point(landmark.geometry)
-      if len(colors)==0:
-        color = 'black'
-      else:
-        color=colors.pop(0)
+      color = 'black'
       folium.Marker(
         landmark_geom,
         popup=desc,
         icon=folium.Icon(color=color)).add_to(map_osm)
 
-  line = LineString(entity.route)
-  folium.GeoJson(data=line, style_function=lambda feature: {
-    'fillColor': 'crimson',
-    'color': 'crimson',
-    'weight': 5,
-    'fillOpacity': 1,
-  }).add_to(map_osm)
+  # add start point
+  add_landmark_to_osm_map(
+    landmark=entity.geo_landmarks['start_point'],
+    map_osm=map_osm,
+    color=PIVOTS_COLORS['start_point'])
+
+  # add end point
+  add_landmark_to_osm_map(
+    landmark=entity.geo_landmarks['end_point'],
+    map_osm=map_osm,
+    color=PIVOTS_COLORS['end_point'])
+
+
+  # line = LineString(entity.route)
+  # folium.GeoJson(data=line, style_function=lambda feature: {
+  #   'fillColor': 'crimson',
+  #   'color': 'crimson',
+  #   'weight': 5,
+  #   'fillOpacity': 1,
+  # }).add_to(map_osm)
 
   return map_osm
 
+def add_landmark_to_osm_map(
+  landmark, map_osm, color):
+  if landmark.geometry is not None:  
+    if 'pivot_view' in landmark.pivot_gdf:
+      desc = landmark.pivot_gdf.pivot_view.replace(";", "<br>") 
+      desc = "<b> " + desc.replace("_", "</b>", 1)
+    else:
+      desc = landmark.pivot_gdf.main_tag
+    landmark_geom = util.list_yx_from_point(landmark.geometry)
+    folium.Marker(
+      landmark_geom,
+      popup=desc,
+      icon=folium.Icon(color=color)).add_to(map_osm)
 
 def get_maps_and_instructions(path: Text
                               ) -> Sequence[Tuple[folium.Map, str]]:
