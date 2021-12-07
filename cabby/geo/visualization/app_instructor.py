@@ -47,23 +47,24 @@ osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
 size_dataset = len(osm_maps_instructions)
 
 N_TASKS_PER_USER = 1
-worker_session = {}
+task_session = {}
+sample_session = {}
 
-path_map = os.path.join(app.root_path,"templates", secure_filename('map.html'))
-if os.path.exists(path_map):
-    os.remove(path_map)
+# path_map = os.path.join(app.root_path,"templates", secure_filename('map.html'))
+# if os.path.exists(path_map):
+#     os.remove(path_map)
 
 
-sample = random.randint(0, size_dataset)
+# sample = random.randint(0, size_dataset)
 date_start = datetime.utcnow()
-
+dir_map = os.path.join(app.root_path,"templates")
 
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/pub/", methods=['GET', 'POST'])
 def home():
   global sample
   global date_start
-  global worker_session
+  global task_session
 
   assignmentId = request.args.get("assignmentId") 
   assignmentId = assignmentId if assignmentId else uuid.uuid4().hex
@@ -77,12 +78,15 @@ def home():
 
 
   session_id = workerId+hitId
-  if session_id not in worker_session:
-    worker_session[session_id] = 1
+  if session_id not in task_session:
+    task_session[session_id] = 1
   
-
-  folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
-
+  
+  if workerId not in sample_session:
+    sample_session[workerId] = random.randint(0, size_dataset)
+    
+  folium_map, instruction, landmarks, entity = osm_maps_instructions[sample_session[workerId]]
+  path_map = os.path.join(dir_map,f"map_{sample_session[workerId]}.html") 
   if os.path.exists(path_map):
     os.remove(path_map)
 
@@ -110,17 +114,17 @@ def home():
         'hit_id': hitId,
         'work_id': workerId,
         'assignmentId': assignmentId, 
-        'rvs_sample_number': str(sample),
+        'rvs_sample_number': str(sample_session[workerId]),
         'content': content,
         'rvs_path': rvs_path,
         'rvs_goal_point': str(goal_point),
         'rvs_start_point': str(start_point),
-        'task': worker_session[session_id],
+        'task': task_session[session_id],
         'date_start': str(date_start),
         'date_finish': str(datetime.utcnow())}
 
         # save to database
-        id = workerId + hitId + str(worker_session[session_id])
+        id = workerId + hitId + str(task_session[session_id])
         if 'sandbox' in turkSubmitTo:
           instructions_ref_sandbox.document(id).set(j_req)
         else:
@@ -129,10 +133,10 @@ def home():
         return f"An Error Occured: {e}"
 
       
-      sample = random.randint(0, size_dataset)
+      sample_session[workerId] = random.randint(0, size_dataset)
 
-      folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
-
+      folium_map, instruction, landmarks, entity = osm_maps_instructions[sample_session[workerId]]
+      path_map = os.path.join(dir_map,f"map_{sample_session[workerId]}.html") 
       if os.path.exists(path_map):
         os.remove(path_map)
       folium_map.save(path_map)
@@ -140,11 +144,11 @@ def home():
       form_nav = NavigationForm()
       form_nav.landmarks = landmarks
       
-      worker_session[session_id] = worker_session[session_id] + 1
+      task_session[session_id] = task_session[session_id] + 1
 
       
-      if worker_session[session_id]>N_TASKS_PER_USER:
-
+      if task_session[session_id]>N_TASKS_PER_USER:
+        task_session[session_id] = 1
         address = turkSubmitTo + '/mturk/externalSubmit'
         fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
         return render_template(
@@ -154,28 +158,34 @@ def home():
         )
       else:
         date_start = datetime.utcnow()
-        if worker_session[session_id] == 0:
+        if task_session[session_id] == 0:
           task_bar = 0
         else:
-          task_bar = worker_session[session_id] - 1
+          task_bar = task_session[session_id] - 1
         progress_task = round(task_bar / N_TASKS_PER_USER * 100)
+
+        title = 0 if task_session[session_id]==1 else task_session[session_id]
         return render_template('instructor_task.html',
                               form=form_nav,
                               bar=progress_task,
-                              title=worker_session[session_id],
+                              title=title,
+                              n_sample = sample_session[workerId]
                               )
 
   date_start = datetime.utcnow()
 
-  if worker_session[session_id] == 0:
+  if task_session[session_id] == 0:
     task_bar = 0
   else:
-    task_bar = worker_session[session_id] - 1
+    task_bar = task_session[session_id] - 1
   progress_task = round(task_bar / N_TASKS_PER_USER * 100)
+  
+  title = 0 if task_session[session_id]==1 else task_session[session_id]
   return render_template('instructor_task.html',
                          form=form_nav,
                          bar=progress_task,
-                         title=worker_session[session_id] ,
+                         title=title,
+                         n_sample = sample_session[workerId]
                          )
 
 
@@ -188,9 +198,18 @@ def internal_server_error(e):
 def page_not_found(e):
   return render_template("404.html", exc = e)
 
+@app.route('/map/<n_sample>', methods=['GET', 'POST'])
 @app.route('/map')
 def map():
-  return render_template('map.html')
+  n_sample = request.args.get("n_sample") 
+  try:
+    return render_template(f'map_{n_sample}.html')
+  except:
+    # sample = random.randint(0, size_dataset)
+    # folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
+    # folium_map.save(path_map)
+    return render_template(f'map_{n_sample}.html')
+
 
 port = int(os.environ.get('PORT', 5000))
 

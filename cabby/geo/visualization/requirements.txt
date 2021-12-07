@@ -11,3 +11,5 @@ geopy
 shapely
 pandas
 attr
+fuzzywuzzy
+python-Levenshtein
