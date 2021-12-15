@@ -214,17 +214,16 @@ def verification_task(
   workerId, turkSubmitTo, session_id, hitId, assignmentId):
 
   # read from database
-
-  if 'sandbox' in turkSubmitTo:
-    table_name = 'instructions_sandbox'
-  else:
-    table_name = 'instructions'
+  table_name = 'instructions'
   
-  instruction_data = list(db.collection(table_name).get())
+  instruction_data_all = list(db.collection(table_name).get())
+
+  instruction_data = [
+    e.to_dict() for e in instruction_data_all if 'review' in e.to_dict() and e.to_dict()['review']=='RVS_excellent']
   data_len = len(instruction_data)
   n_sample = random.randint(0, data_len-1)
 
-  sample = instruction_data[n_sample].to_dict()
+  sample = instruction_data[n_sample]
 
 
   path_data = os.path.abspath(sample['rvs_path'].replace("/app_instructor", "."))
