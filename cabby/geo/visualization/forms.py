@@ -84,7 +84,10 @@ class NavigationForm(FlaskForm):
 
 class ReviewForm(FlaskForm):
   class Meta:
-    csrf = True
-  content = TextAreaField('Content', )
+    csrf = False
+  content = TextAreaField('Content', 
+  validators=[
+    DataRequired(),
+  ])
   submit = SubmitField('Submit review and finish assignment')
 

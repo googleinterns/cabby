@@ -83,13 +83,13 @@ def get_osm_map(entity) -> Sequence[folium.Map]:
     color=PIVOTS_COLORS['end_point'])
 
 
-  # line = LineString(entity.route)
-  # folium.GeoJson(data=line, style_function=lambda feature: {
-  #   'fillColor': 'crimson',
-  #   'color': 'crimson',
-  #   'weight': 5,
-  #   'fillOpacity': 1,
-  # }).add_to(map_osm)
+  line = LineString(entity.route)
+  folium.GeoJson(data=line, style_function=lambda feature: {
+    'fillColor': 'crimson',
+    'color': 'crimson',
+    'weight': 5,
+    'fillOpacity': 1,
+  }).add_to(map_osm)
 
   return map_osm
 

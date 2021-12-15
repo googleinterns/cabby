@@ -20,6 +20,40 @@
 
         
 <div id="mapid" class=map></div>
+
+
+    </div>
+    <div class="float-child">
+        <h3>Navigation Description</h3>
+        <p><b>Your task </b>
+            is to read the following navigation instructions and pin the goal on the map:
+        </p>
+        
+        <p style="color:blue">{{ nav_instruction }}</p>
+
+        <p>
+            <b>Task Instructions: </b>
+            <ul>
+                <li>The green marker is the start point of the instructions.</li>
+                <li>You can click on the map to pin a red marker for the goal.</li>
+                <li>You can click on a different place on the map to move the goal.</li>
+                <li>Once you finish click on the submit button.</li>
+            </ul>
+            
+
+
+        <form method="POST" action="">
+            <p><input type = "hidden" name = "content" id="latlng" /></p>
+            <button type="submit" class="btn btn-primary" id="submit_button" name="submit_button" value="submit_b"> Submit and go to next task </button>
+
+        </form>    
+   
+
+    </div>
+
+</div>
+
+
 <script>
 
     var map = L.map('mapid').setView({{start_point|tojson}}, 16);
@@ -51,7 +85,10 @@
               marker = markers.pop()
               map.removeLayer(marker)
 
+
         }
+
+
         
     
     var redIcon = new L.Icon({
@@ -73,6 +110,12 @@
     markers.push(marker);
 
 
+    var coords =  markers.pop().getLatLng();
+    var lat = coords.lat.toString(10);
+    var lng = coords.lng.toString(10);
+    var data = JSON.stringify({lat: lat, lng: lng});
+
+    document.getElementById('latlng').value = data
 
 	}
 
@@ -82,62 +125,6 @@
     
 
 </script>
-
-
-    </div>
-    <div class="float-child">
-        <h3>Navigation Description</h3>
-        <p><b>Your task </b>
-            is to read the following navigation instructions and pin the goal on the map:
-        </p>
-        
-        <p style="color:blue">{{ nav_instruction }}</p>
-
-        <p>
-            <b>Task Instructions: </b>
-            <ul>
-                <li>The green marker is the start point of the instructions.</li>
-                <li>You can click on the map to pin a red marker for the goal.</li>
-                <li>You can click on a different place on the map to move the goal.</li>
-                <li>Once you finish click on the submit button.</li>
-            </ul>
-            
-
-        <script>
-
-
-            $(document).ready(function() {
-
-            $("#button").click(function(e) {
-            e.preventDefault();
-            var coords =  markers.pop().getLatLng();
-            var lat = coords.lat.toString(10);
-            var lng = coords.lng.toString(10);
-
-            var data = JSON.stringify({lat: lat, lng: lng});
-
-            $.ajax({
-                type: "POST",
-                data : data,
-                contentType: "application/json; charset=utf-8",
-                // dataType: "json",
-                url:  "{{ url_for('button') }}",
-                success: function(result) {
-                    window.location.href = '/index';
-                },
-                error: function(result) {
-                    alert(result.responseText);
-                }
-            });
-        });    
-    });
-      
-        </script>
-        <button id="button" class="btn btn-outline-info" >Submit and go to next task</button>
-
-    </div>
-
-</div>
 
 
 
