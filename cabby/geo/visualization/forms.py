@@ -23,8 +23,8 @@ def check_verbs(form, field):
   tags = [pt[1] for pt in postag if 'VB' in pt[1]]
 
   validation_mess = 'The description should not be a list of the landmarks.'
-  if len(tags)<1:
-    raise ValidationError(validation_mess)
+  # if len(tags)<1:
+  #   raise ValidationError(validation_mess)
   
   landmark_names = ','.join(form.landmarks)
 

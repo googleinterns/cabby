@@ -55,15 +55,8 @@ sample_session = {}
 start_session = {}
 
 
-N_TASKS_PER_USER = 1
+N_TASKS_PER_USER = 2
 
-# path_map = os.path.join(app.root_path,"templates", secure_filename('map.html'))
-# if os.path.exists(path_map):
-#     os.remove(path_map)
-
-
-# sample = random.randint(0, size_dataset)
-# date_start = datetime.utcnow()
 dir_map = os.path.join(app.root_path,"templates")
 
 @app.route("/", methods=['GET', 'POST'])
@@ -120,6 +113,7 @@ def description_task(
     os.remove(path_map)
 
   folium_map.save(path_map)
+
 
   form_nav = NavigationForm()
 
@@ -255,7 +249,7 @@ def verification_task(
     
     if request.form.get("submit_button"):
       
-      latlng_dict = json.loads(request.form['content'])
+      latlng_dict = json.loads(request.form['latlng'])
       lat_lng = latlng_dict['lng'] + "," + latlng_dict['lat']
 
       try:
@@ -322,7 +316,8 @@ def verification_task(
                         hitId=hitId,
                         workerId=workerId,
                         assignmentId=assignmentId,
-                        session_id=session_id
+                        session_id=session_id,
+                        form=form
                         )
 
 
