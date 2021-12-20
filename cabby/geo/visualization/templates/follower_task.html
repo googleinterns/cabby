@@ -43,7 +43,7 @@
 
 
         <form method="POST" action="">
-            <p><input type = "hidden" name = "content" id="latlng" /></p>
+            <p><input type = "hidden" name = "latlng" id="latlng" /></p>
             <button type="submit" class="btn btn-primary" id="submit_button" name="submit_button" value="submit_b"> Submit and go to next task </button>
 
         </form>    
@@ -109,11 +109,13 @@
     map.addLayer(marker);
     markers.push(marker);
 
-
-    var coords =  markers.pop().getLatLng();
+    var marker = markers.pop()
+    var coords = marker.getLatLng();
     var lat = coords.lat.toString(10);
     var lng = coords.lng.toString(10);
     var data = JSON.stringify({lat: lat, lng: lng});
+    markers.push(marker)
+
 
     document.getElementById('latlng').value = data
 

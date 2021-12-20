@@ -21,6 +21,10 @@ import shapely.geometry as geom
 from shapely.geometry import Polygon, Point, LineString
 from typing import Tuple, Sequence, Optional, Dict, Text
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd()))))
+
 import util
 
 NOT_PRIVIEW_TAGS = ['osmid', 'main_tag'] 
@@ -108,7 +112,7 @@ def add_landmark_to_osm_map(
       icon=folium.Icon(color=color)).add_to(map_osm)
 
 def get_maps_and_instructions(path: Text
-                              ) -> Sequence[Tuple[folium.Map, str]]:
+                              ) -> Sequence[Tuple[Sequence, str, Sequence[str], folium.Map]]:
   '''Create the OSM maps and instructions.
   Arguments:
     path: The path from the start point to the goal location.

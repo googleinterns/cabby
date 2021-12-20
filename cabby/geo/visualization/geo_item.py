@@ -21,6 +21,9 @@ import os
 from shapely.geometry.base import BaseGeometry
 from shapely.geometry import LineString, Polygon
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd()))))
 
 import util
 

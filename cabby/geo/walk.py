@@ -356,8 +356,8 @@ class Walker:
       # Find nodes within 2000 meter path distance.
       outer_circle_graph = ox.truncate.truncate_graph_dist(
         self.map.nx_graph, dest_osmid,
-        max_dist=(MAX_PATH_DIST + 2 * ADD_POI_DISTANCE), weight='length')
-
+        max_dist=(MAX_PATH_DIST), weight='true_length')
+    
       outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
       return None
@@ -366,7 +366,7 @@ class Walker:
       # Get graph that is too close (less than 200 meter path distance)
       inner_circle_graph = ox.truncate.truncate_graph_dist(
         self.map.nx_graph, dest_osmid,
-        max_dist=MIN_PATH_DIST + 2 * ADD_POI_DISTANCE, weight='length')
+        max_dist=MIN_PATH_DIST, weight='true_length')
       inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
@@ -712,7 +712,7 @@ class Walker:
                 route: GeoDataFrame,
                 end_point: Dict,
                 start_point: Dict,
-  ) -> Optional[Tuple[GeoSeries, GeoSeries, GeoSeries]]:
+  ) -> Optional[Sequence[GeoSeries]]:
     '''Return a picked landmark on a given route.
     Arguments:
       route: The route along which a landmark will be chosen.
@@ -759,9 +759,9 @@ class Walker:
     # Get pivot located past the goal location and beyond the route.
     beyond_pivot = self.get_pivot_beyond_goal(end_point, route)
 
-    return (
-      main_pivot, main_pivot_2, main_pivot_3, near_pivot, around_goal_pivot_1, 
-      around_goal_pivot_2, around_goal_pivot_3, beyond_pivot)
+    list_pivots = [main_pivot, main_pivot_2, main_pivot_3, near_pivot, around_goal_pivot_1, 
+      around_goal_pivot_2, around_goal_pivot_3, beyond_pivot]
+    return list_pivots
 
   def get_egocentric_spatial_relation_pivot(self,
                                             ref_point: Point,
@@ -912,7 +912,7 @@ class Walker:
     geo_landmarks['main_pivot'], geo_landmarks['main_pivot_2'], geo_landmarks['main_pivot_3'], \
      geo_landmarks['near_pivot'], geo_landmarks['around_goal_pivot_1'], \
         geo_landmarks['around_goal_pivot_2'], geo_landmarks['around_goal_pivot_3'], \
-          geo_landmarks['beyond_pivot'] = result
+          geo_landmarks['beyond_pivot'] = result[:]
 
     geo_features = {}
     # Get cardinal direction.
