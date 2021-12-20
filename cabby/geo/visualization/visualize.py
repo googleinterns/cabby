@@ -108,7 +108,8 @@ def add_landmark_to_osm_map(
       icon=folium.Icon(color=color)).add_to(map_osm)
 
 def get_maps_and_instructions(path: Text
-                              ) -> Sequence[Tuple[folium.Map, str]]:
+) -> Sequence[Tuple[Sequence, str, Sequence[str], folium.Map]]:
+
   '''Create the OSM maps and instructions.
   Arguments:
     path: The path from the start point to the goal location.

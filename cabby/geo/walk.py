@@ -710,7 +710,7 @@ class Walker:
                 route: GeoDataFrame,
                 end_point: Dict,
                 start_point: Dict,
-  ) -> Optional[Tuple[GeoSeries, GeoSeries, GeoSeries]]:
+  ) -> Optional[Sequence[GeoSeries]]:
     '''Return a picked landmark on a given route.
     Arguments:
       route: The route along which a landmark will be chosen.
@@ -757,9 +757,12 @@ class Walker:
     # Get pivot located past the goal location and beyond the route.
     beyond_pivot = self.get_pivot_beyond_goal(end_point, route)
 
-    return (
-      main_pivot, main_pivot_2, main_pivot_3, near_pivot, around_goal_pivot_1, 
-      around_goal_pivot_2, around_goal_pivot_3, beyond_pivot)
+    list_pivots = [
+      main_pivot, main_pivot_2, main_pivot_3, 
+      near_pivot, around_goal_pivot_1, around_goal_pivot_2, 
+      around_goal_pivot_3, beyond_pivot]
+    return list_pivots
+      
 
   def get_egocentric_spatial_relation_pivot(self,
                                             ref_point: Point,
@@ -910,7 +913,7 @@ class Walker:
     geo_landmarks['main_pivot'], geo_landmarks['main_pivot_2'], geo_landmarks['main_pivot_3'], \
      geo_landmarks['near_pivot'], geo_landmarks['around_goal_pivot_1'], \
         geo_landmarks['around_goal_pivot_2'], geo_landmarks['around_goal_pivot_3'], \
-          geo_landmarks['beyond_pivot'] = result
+          geo_landmarks['beyond_pivot'] = result[:]
 
     geo_features = {}
     # Get cardinal direction.

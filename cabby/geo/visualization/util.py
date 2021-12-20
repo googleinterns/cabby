@@ -15,11 +15,12 @@
 
 from collections import namedtuple
 from geopy.distance import geodesic
+import geopandas as gpd
+import os
+import osmnx as ox
 from shapely.geometry.point import Point
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import box, mapping, LineString, LinearRing
-import os
-import geopandas as gpd
 
 import sys
 from typing import List, Optional, Tuple, Sequence, Any, Text
