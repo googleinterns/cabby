@@ -188,8 +188,6 @@ class Walker:
     return None
 
 
-
-
   def select_generic_unique_pois(
     self, pois: pd.DataFrame, 
     is_unique: bool = False,
@@ -356,7 +354,7 @@ class Walker:
       # Find nodes within 2000 meter path distance.
       outer_circle_graph = ox.truncate.truncate_graph_dist(
         self.map.nx_graph, dest_osmid,
-        max_dist=(MAX_PATH_DIST + 2 * ADD_POI_DISTANCE), weight='length')
+        max_dist=MAX_PATH_DIST, weight='true_length')
 
       outer_circle_graph_osmid = list(outer_circle_graph.nodes.keys())
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
@@ -366,7 +364,7 @@ class Walker:
       # Get graph that is too close (less than 200 meter path distance)
       inner_circle_graph = ox.truncate.truncate_graph_dist(
         self.map.nx_graph, dest_osmid,
-        max_dist=MIN_PATH_DIST + 2 * ADD_POI_DISTANCE, weight='length')
+        max_dist=MIN_PATH_DIST, weight='true_length')
       inner_circle_graph_osmid = list(inner_circle_graph.nodes.keys())
 
     except nx.exception.NetworkXPointlessConcept:  # GeoDataFrame returned empty
