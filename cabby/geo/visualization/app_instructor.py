@@ -40,9 +40,8 @@ Session(app)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 
-
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v13.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v14.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}, {rvs_path}")
 
@@ -200,7 +199,8 @@ def description_task(
                          form=form_nav,
                          bar=progress_task,
                          title=title,
-                         n_sample = sample_session[workerId]
+                         n_sample = sample_session[workerId],
+                         workerId=workerId
                          )
                          
 
@@ -333,12 +333,16 @@ def page_not_found(e):
 @app.route('/map')
 def map():
   n_sample = request.args.get("n_sample") 
+  workerId = request.args.get("workerId") 
+
   try:
     return render_template(f'map_{n_sample}.html')
   except:
-    # sample = random.randint(0, size_dataset)
-    # folium_map, instruction, landmarks, entity = osm_maps_instructions[sample]
-    # folium_map.save(path_map)
+    n_sample = random.randint(0, size_dataset-1)
+    sample_session[workerId] = n_sample
+    folium_map, _, _, _ = osm_maps_instructions[n_sample]
+    path_map = os.path.join(dir_map,f"map_{n_sample}.html") 
+    folium_map.save(path_map)
     return render_template(f'map_{n_sample}.html')
 
 
