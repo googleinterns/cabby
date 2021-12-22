@@ -24,11 +24,16 @@ from typing import Sequence
 
 import geo_item
 
-LANDMARK_TYPES = [
-  "end_point", "start_point", "main_pivot", "main_pivot_2", "main_pivot_3", "near_pivot",
-   "beyond_pivot", "around_goal_pivot_1", "around_goal_pivot_2", "around_goal_pivot_3"]
+N_AROUND_PIVOTS = 7
+N_MAIN_PIVOTS = 10
 
-   
+main_pivots = [f"main_pivot_{n}" for n in range(2, N_MAIN_PIVOTS+1)]
+around_pivots = [f"around_goal_pivot_{n}" for n in range(1, N_AROUND_PIVOTS+1)]
+
+LANDMARK_TYPES = [
+  "end_point", "start_point", "main_pivot"] + main_pivots + [
+    "near_pivot", "beyond_pivot"] + around_pivots
+
 FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
 MAX_FAILED_ATTEMPTS = 50
 
