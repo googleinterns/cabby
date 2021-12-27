@@ -18,6 +18,7 @@ from geopy.distance import geodesic
 from shapely.geometry.point import Point
 from shapely.geometry import LineString
 import os
+import osmnx as ox
 import geopandas as gpd
 
 from typing import Sequence
@@ -58,7 +59,8 @@ def get_linestring_distance(line: LineString) -> int:
 
   return dist
 
-def get_distance_between_points(point_1: Point, point_2: Point) -> int:
+def get_distance_between_points(
+  point_1: Point, point_2: Point) -> int:
   '''Calculate the line length in meters.
   Arguments:
     point_1: The point to calculate the distance from.
@@ -114,8 +116,6 @@ def load_entities(path: str):
 
   return geo_entities
 
-
-
 def midpoint(p1: Point, p2: Point) -> Point:
   '''Get the midpoint between two points.
   Arguments:
@@ -134,9 +134,7 @@ def list_yx_from_point(point: Point) -> Sequence[float]:
   Returns:
     A lat-lng Sequence[float, float].
   '''
-
   return [point.y, point.x]
-
 
 
 def get_distance_m(start: Point, goal: Point) -> float:

@@ -12,10 +12,11 @@ import uuid
 from firebase_admin import credentials, firestore, initialize_app
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import  FileStorage
+import pandas as pd
 
 from forms import NavigationForm, ReviewForm
 import visualize
-from database import Instruction, Goal, db, create_app
+from database import db, create_app
 import util
 
 # Initialize Firestore DB
@@ -47,6 +48,9 @@ except Exception as e:
 
 # Raw Data
 osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
+osm_maps_verification = visualize.get_maps_and_instructions(
+  rvs_path, with_path=False, with_end_point=False)
+
 size_dataset = len(osm_maps_instructions)
 
 task_session = {}
@@ -146,7 +150,8 @@ def description_task(
         'task': task_session[session_id],
         'date_start': str(start_session[session_id]),
         'date_finish': str(datetime.utcnow()),
-        'key': id
+        'key': id,
+        'verified_n': 0
         }
 
         # save to database
@@ -208,26 +213,31 @@ def verification_task(
   workerId, turkSubmitTo, session_id, hitId, assignmentId):
 
   # read from database
-  table_name = 'instructions'
-  
-  instruction_data_all = list(db.collection(table_name).get())
+  if 'sandbox' in turkSubmitTo:
+    instruction_table = instructions_ref_sandbox
+  else:
+    instruction_table = instructions_ref
+
+  instruction_data_all = list(instruction_table.get())
+  # verification_data_all = list(verification_ref.get())
+
 
   instruction_data = [
-    e.to_dict() for e in instruction_data_all if 'review' in e.to_dict() and e.to_dict()['review']=='RVS_excellent']
-  data_len = len(instruction_data)
-  n_sample = random.randint(0, data_len-1)
+    e.to_dict() for e in instruction_data_all if 'review' in e.to_dict() and e.to_dict()[
+      'review']=='RVS_excellent']
 
-  sample = instruction_data[n_sample]
+  instruction_data_df = pd.DataFrame(instruction_data)
+  instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
+  
+  sample = instruction_data_df.iloc[0]
 
+  sample_session[workerId] = sample['rvs_sample_number']
 
   path_data = os.path.abspath(sample['rvs_path'].replace("/app_instructor", "."))
 
   entities = util.load_entities(path_data)
 
-  try:
-    entity = entities[int(sample['rvs_sample_number'])]
-  except:
-    print (sample['rvs_sample_number'], len(entities))
+  entity = entities[int(sample['rvs_sample_number'])]
 
   start_point = util.list_yx_from_point(entity.geo_landmarks['start_point'].geometry)
   nav_instruction = sample['content']
@@ -254,21 +264,26 @@ def verification_task(
 
       try:
           
+        id = workerId + hitId + str(task_session[session_id])
+
         j_req = {
         'hit_id': hitId,
         'work_id': workerId,
         'assignmentId': assignmentId, 
-        'rvs_sample_number': str(sample_session[workerId]),
-        'rvs_path': rvs_path,
+        'rvs_sample_number': str(sample['rvs_sample_number']),
+        'rvs_path': sample['rvs_path'],
         'predict_goal_point': lat_lng,
         'rvs_start_point': sample['rvs_start_point'],
         'task': task_session[session_id],
         'date_start': str(start_session[session_id]),
-        'date_finish': str(datetime.utcnow())
+        'date_finish': str(datetime.utcnow()),
+        'rvs_goal_point': sample['rvs_goal_point'],
+        'key_instruction': sample['key'],
+        'key': id
         }
 
         # save to database
-        id = workerId + hitId + str(task_session[session_id])
+        
 
         if 'sandbox' in turkSubmitTo:
           verification_ref_sandbox.document(id).set(j_req)
@@ -277,7 +292,10 @@ def verification_task(
       except Exception as e:
         return f"An Error Occured: {e}"
 
-      
+      # Update instruction with number of verifications
+      id = sample['key'] 
+      instruction_table.document(id).update({'verified_n': int(sample['verified_n']+1)})
+
       sample_session[workerId] = random.randint(0, size_dataset-1)
       
       task_session[session_id] = task_session[session_id] + 1
@@ -296,6 +314,9 @@ def verification_task(
       
 
 
+  _, _, _, entity = osm_maps_verification[
+    int(sample_session[workerId])]
+  
   start_session[session_id] = datetime.utcnow()
 
   if task_session[session_id] == 0:
@@ -306,18 +327,33 @@ def verification_task(
   
   title = 0 if task_session[session_id]==1 else task_session[session_id]
 
+  landmark_entity = {}
+  for landmark_type, landmark in entity.geo_landmarks.items():
+    if landmark_type=='end_point' or landmark_type is None:
+      continue
+
+    color = visualize.PIVOTS_COLORS[landmark_type] if landmark_type in visualize.PIVOTS_COLORS else 'black'
+    landmark_geom, desc = visualize.get_landmark_desc_geo(
+      landmark=landmark,
+      )
+    
+    landmark_entity[landmark_type] = (desc, landmark_geom)
+
+  print(landmark_entity)
+
   return render_template('follower_task.html',
                         start_point=start_point,
                         nav_instruction=nav_instruction,
                         bar=progress_task,
                         title=title,
                         turkSubmitTo=turkSubmitTo,
-                        n_sample=n_sample,
+                        n_sample=sample['rvs_sample_number'],
                         hitId=hitId,
                         workerId=workerId,
                         assignmentId=assignmentId,
                         session_id=session_id,
-                        form=form
+                        form=form,
+                        landmarks=landmark_entity,
                         )
 
 
