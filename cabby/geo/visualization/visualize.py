@@ -15,11 +15,8 @@
 '''Library to support geographical visualization.'''
 
 import folium
-import geopandas as gpd
-import pandas as pd
-import shapely.geometry as geom
-from shapely.geometry import Polygon, Point, LineString
-from typing import Tuple, Sequence, Optional, Dict, Text
+from shapely.geometry import LineString
+from typing import Tuple, Sequence, Text
 
 import util
 
@@ -27,7 +24,8 @@ NOT_PRIVIEW_TAGS = ['osmid', 'main_tag']
 PIVOTS_COLORS = {"end_point":'red', "start_point":'green'} 
 
 
-def get_osm_map(entity, with_path, with_end_point) -> Sequence[folium.Map]:
+def get_osm_map(
+  entity, with_path, with_end_point) -> Sequence[folium.Map]:
   '''Create the OSM maps.
   Arguments:
     gdf: the GeoDataFrame from which to create the OSM map.
@@ -57,7 +55,10 @@ def get_osm_map(entity, with_path, with_end_point) -> Sequence[folium.Map]:
 
   # draw the points
   for landmark_type, landmark in entity.geo_landmarks.items():
-    color = PIVOTS_COLORS[landmark_type] if landmark_type in PIVOTS_COLORS else 'black'
+    if not with_end_point and landmark_type=='end_point':
+      continue
+    color = PIVOTS_COLORS[
+      landmark_type] if landmark_type in PIVOTS_COLORS else 'black'
     add_landmark_to_osm_map(
       landmark=landmark,
       map_osm=map_osm,
@@ -120,6 +121,7 @@ def get_maps_and_instructions(
       landmark_list.append(str(landmark.main_tag))
 
     instruction = '; '.join(features_list) + '; '.join(landmark_list)
-    map_osms_instructions.append((map_osm, instruction, landmark_list, entity))
+    map_osms_instructions.append(
+      (map_osm, instruction, landmark_list, entity))
 
   return map_osms_instructions

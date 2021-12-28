@@ -13,3 +13,4 @@ pandas
 attr
 fuzzywuzzy
 python-Levenshtein
+osmnx

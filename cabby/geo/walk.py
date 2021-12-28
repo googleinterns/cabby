@@ -16,7 +16,7 @@
 along the path and near the goal.'''
 
 
-from typing import Tuple, Sequence, Optional, Dict, Any
+from typing import Sequence, Optional, Dict, Any
 
 from absl import logging
 import geopandas as gpd
@@ -49,7 +49,7 @@ MAX_SEED = 2**32 - 1
 SAVE_ENTITIES_EVERY = 100
 MAX_BATCH_GEN = 100
 MAX_BATCH_GEN = MAX_BATCH_GEN if MAX_BATCH_GEN<SAVE_ENTITIES_EVERY else SAVE_ENTITIES_EVERY
-MAX_PATH_DIST = 2000
+MAX_PATH_DIST = 1500
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
 ON_PIVOT_DIST = 10

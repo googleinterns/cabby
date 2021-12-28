@@ -4,20 +4,15 @@ import flask
 from flask import *
 from flask import session
 from flask_session import Session
-from flask_sqlalchemy import SQLAlchemy
-import folium
 import os
 import random
 import uuid
 from firebase_admin import credentials, firestore, initialize_app
-from werkzeug.utils import secure_filename
-from werkzeug.datastructures import  FileStorage
 import pandas as pd
 
 from forms import NavigationForm, ReviewForm
-import visualize
-from database import db, create_app
 import util
+import visualize
 
 # Initialize Firestore DB
 cred = credentials.Certificate('key.json')
@@ -30,8 +25,8 @@ verification_ref = db.collection('verification')
 verification_ref_sandbox = db.collection('verification_sandbox')
 
 app = Flask(__name__)
+app.config['SESSION_TYPE'] = 'filesystem'
 
-app = create_app()
 SECRET_KEY = '5791628bb0b13ce0c676dfde280ba245'
 app.config['SECRET_KEY'] = SECRET_KEY
 
@@ -42,14 +37,12 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v17.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v18.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}, {rvs_path}")
 
 # Raw Data
 osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
-osm_maps_verification = visualize.get_maps_and_instructions(
-  rvs_path, with_path=False, with_end_point=False)
 
 size_dataset = len(osm_maps_instructions)
 
@@ -109,7 +102,7 @@ def home():
 
 def description_task(
   workerId, hitId, assignmentId, session_id, turkSubmitTo):
-  folium_map, instruction, landmarks, entity = osm_maps_instructions[
+  folium_map, _, landmarks, entity = osm_maps_instructions[
     sample_session[workerId]]
   path_map = os.path.join(dir_map,f"map_{sample_session[workerId]}.html") 
   if os.path.exists(path_map):
@@ -165,7 +158,7 @@ def description_task(
       
       sample_session[workerId] = random.randint(0, size_dataset-1)
 
-      folium_map, instruction, landmarks, entity = osm_maps_instructions[sample_session[workerId]]
+      folium_map, _, landmarks, entity = osm_maps_instructions[sample_session[workerId]]
       path_map = os.path.join(dir_map,f"map_{sample_session[workerId]}.html") 
       if os.path.exists(path_map):
         os.remove(path_map)
@@ -219,8 +212,6 @@ def verification_task(
     instruction_table = instructions_ref
 
   instruction_data_all = list(instruction_table.get())
-  # verification_data_all = list(verification_ref.get())
-
 
   instruction_data = [
     e.to_dict() for e in instruction_data_all if 'review' in e.to_dict() and e.to_dict()[
@@ -233,13 +224,17 @@ def verification_task(
 
   sample_session[workerId] = sample['rvs_sample_number']
 
-  path_data = os.path.abspath(sample['rvs_path'].replace("/app_instructor", "."))
+  path_data = os.path.abspath(
+    sample['rvs_path'].replace("/app_instructor", "."))
 
   entities = util.load_entities(path_data)
 
   entity = entities[int(sample['rvs_sample_number'])]
 
-  start_point = util.list_yx_from_point(entity.geo_landmarks['start_point'].geometry)
+  start_point = util.list_yx_from_point(
+    entity.geo_landmarks['start_point'].geometry)
+  end_point = util.list_yx_from_point(
+    entity.geo_landmarks['end_point'].geometry)
   nav_instruction = sample['content']
 
   if task_session[session_id] == 0:
@@ -256,7 +251,6 @@ def verification_task(
 
   if request.method == 'POST': 
 
-    
     if request.form.get("submit_button"):
       
       latlng_dict = json.loads(request.form['latlng'])
@@ -283,8 +277,6 @@ def verification_task(
         }
 
         # save to database
-        
-
         if 'sandbox' in turkSubmitTo:
           verification_ref_sandbox.document(id).set(j_req)
         else:
@@ -294,7 +286,8 @@ def verification_task(
 
       # Update instruction with number of verifications
       id = sample['key'] 
-      instruction_table.document(id).update({'verified_n': int(sample['verified_n']+1)})
+      instruction_table.document(id).update(
+        {'verified_n': int(sample['verified_n']+1)})
 
       sample_session[workerId] = random.randint(0, size_dataset-1)
       
@@ -311,11 +304,14 @@ def verification_task(
         )
       else:
         return home()
-      
 
+
+  path_verf = sample['rvs_path'].replace("/app_instructor", ".")
+  osm_maps_verification = visualize.get_maps_and_instructions(path_verf)
 
   _, _, _, entity = osm_maps_verification[
     int(sample_session[workerId])]
+
   
   start_session[session_id] = datetime.utcnow()
 
@@ -327,21 +323,26 @@ def verification_task(
   
   title = 0 if task_session[session_id]==1 else task_session[session_id]
 
-  landmark_entity = {}
+  landmark_main = {}
+  landmark_around = {}
+  landmark_rest = {} 
+
   for landmark_type, landmark in entity.geo_landmarks.items():
-    if landmark_type=='end_point' or landmark_type is None:
+    if landmark_type=='end_point' or landmark.geometry is None:
       continue
 
-    color = visualize.PIVOTS_COLORS[landmark_type] if landmark_type in visualize.PIVOTS_COLORS else 'black'
     landmark_geom, desc = visualize.get_landmark_desc_geo(
       landmark=landmark,
       )
-    
-    landmark_entity[landmark_type] = (desc, landmark_geom)
-
-  print(landmark_entity)
+    if 'main' in landmark_type:
+      landmark_main[landmark_type] = (desc, landmark_geom)
+    elif 'around' in landmark_type:
+      landmark_around[landmark_type] = (desc, landmark_geom)
+    else:
+      landmark_rest[landmark_type] = (desc, landmark_geom)
 
   return render_template('follower_task.html',
+                        end_point=end_point,
                         start_point=start_point,
                         nav_instruction=nav_instruction,
                         bar=progress_task,
@@ -353,7 +354,9 @@ def verification_task(
                         assignmentId=assignmentId,
                         session_id=session_id,
                         form=form,
-                        landmarks=landmark_entity,
+                        landmark_main=landmark_main,
+                        landmark_around=landmark_around,
+                        landmark_rest=landmark_rest
                         )
 
 
