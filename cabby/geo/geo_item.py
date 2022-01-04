@@ -32,7 +32,8 @@ NOT_PRIVIEW_TAGS = [
   "gnis:Class", "gnis:County", "York_gnis", "alpha", "import_uuid", "hours", "gnis:ST_num",
   "gnis:id", "in", "nycdoitt:bin", "gnis:feature_id", "element_type", "phone",
   "website", "addr:housenumber", "contact:facebook", "contact:instagram", "opening_hours",
-  "reservation", "wikidata", "wikipedia:_en", "wikipedia: en"] 
+  "reservation", "wikidata", "wikipedia:_en", "wikipedia: en", "addr:postcode", 
+  "addr:street", "addr:state", "addr:city"] 
 
 
 @attr.s

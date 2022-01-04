@@ -27,11 +27,11 @@ CORRECTIONS = {'fuel': 'gas station', 'parking': 'parking lot',
 BLOCK_LIST = ['place of worship']
 
 TOURISM_INTERESTING = [ 'aquarium', 'gallery', 'guest_house', 'hostel', 'hotel',
-  'motel','museum', 'picnic_site', 'theme_park', 'viewpoint', 'zoo']
+  'motel','museum', 'picnic_site', 'theme_park', 'viewpoint', 'zoo', 'attraction']
            
 LEISURE_INTERESTING = ['dog_park', 'fitness_centre', 'garden', 'golfcourse', 
   'ice_rink', 'marina', 'miniature_golf', 'park', 'playground', 'stadium', 
-  'water_park']
+  'water_park', 'track', 'pitch']
 
 BUILDING_INTERESTING = ['hotel', 'supermarket', 'warehouse', 'cathedral', 
   'chapel', 'church', 'mosque', 'synagogue', 'hospital', 'kindergarten', 

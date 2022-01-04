@@ -2,12 +2,10 @@
 
 {% block content %}
 
-<br>
-
 
 <div class="float-container">
     <div class="float-child">
-        <h3>Navigation Map</h3>
+        <h4>Navigation Map</h4>
 
         <b>Map Instructions: </b>
 
@@ -24,7 +22,7 @@
 
     </div>
     <div class="float-child">
-        <h3>Navigation Description</h3>
+        <h4>Navigation Description</h4>
         <p><b>Your task </b>
             is to read the following navigation instructions and pin the goal on the map:
         </p>
@@ -34,7 +32,8 @@
         <p>
             <b>Task Instructions: </b>
             <ul>
-                <li>The green marker is the start point of the instructions.</li>
+                <li>The <font color = "green">green marker is the start point </font>
+                    of the instructions.</li>
                 <li>You can click on the map to pin a red marker for the goal.</li>
                 <li>You can click on a different place on the map to move the goal.</li>
                 <li>Once you finish click on the submit button.</li>
@@ -71,20 +70,22 @@
         bounds = L.latLngBounds(southWest, northEast);
 
     var map = L.map('mapid').setView(
-        mid_point, 
-        17,
+        end_point, 
+        15,
     ).setMaxBounds(
         bounds);
 
+
     
+    var map_layer= L.tileLayer( 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a>',
+        subdomains: ['a','b','c'],
+        maxZoom: 19,
+
+    });
+
+    map_layer.addTo( map )    
     
-
-    L.tileLayer( 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        subdomains: ['a','b','c']
-    }).addTo( map );
-
-
     var greenIcon = new L.Icon({
         iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -182,7 +183,7 @@
 
 	map.on('click', onMapClick);
 
-    
+
 
 </script>
 

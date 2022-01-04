@@ -22,6 +22,7 @@ import osmnx as ox
 import geopandas as gpd
 
 from typing import Sequence
+from typing import List, Optional, Tuple, Sequence, Any, Text
 
 import geo_item
 
@@ -125,6 +126,20 @@ def midpoint(p1: Point, p2: Point) -> Point:
     A lat-lng Point.
   '''
   return Point((p1.x+p2.x)/2, (p1.y+p2.y)/2)
+
+def point_from_str_point(coord_str: Text) -> Point:
+  '''Converts coordinates in string format ('Point(longtitude latitude)') to Point.
+  E.g, of string 'Point(-74.037258 40.715865)'.
+  Arguments:
+    coord: A lat-lng coordinate to be converted to a point.
+  Returns:
+    A point.
+  '''
+  list_coords_str = coord_str.replace("POINT (", "").replace(")", "").split(' ')
+  coord = list(map(float, list_coords_str))
+
+  return Point(coord[0], coord[1])
+
 
 def list_yx_from_point(point: Point) -> Sequence[float]:
   '''Convert a Point into a sequence, with latitude as first element, and

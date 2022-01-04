@@ -226,7 +226,7 @@ class Walker:
       # Randomly select whether the near by pivot would be
       # a single pivot (e.g., `a toy shop` or
       # a group of unique landmark (e.g, `3 toy shops`)
-      is_group = self.randomize_boolean(probabilty = 90)
+      is_group = self.randomize_boolean(probabilty = 30)
 
       if is_group:
         uniqueness = new_pois.duplicated(subset=['main_tag'], keep=False)==True

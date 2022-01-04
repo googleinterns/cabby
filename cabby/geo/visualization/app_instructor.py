@@ -9,6 +9,8 @@ import random
 import uuid
 from firebase_admin import credentials, firestore, initialize_app
 import pandas as pd
+from shapely.geometry.point import Point
+
 
 from forms import NavigationForm, ReviewForm
 import util
@@ -37,12 +39,12 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v18.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v20.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}, {rvs_path}")
 
 # Raw Data
-osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path)
+osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path, with_path=False)
 
 size_dataset = len(osm_maps_instructions)
 
@@ -215,7 +217,8 @@ def verification_task(
 
   instruction_data = [
     e.to_dict() for e in instruction_data_all if 'review' in e.to_dict() and e.to_dict()[
-      'review']=='RVS_excellent']
+      'review']=='RVS_excellent' and e.to_dict()[
+      'work_id']!=workerId]
 
   instruction_data_df = pd.DataFrame(instruction_data)
   instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
@@ -254,11 +257,19 @@ def verification_task(
     if request.form.get("submit_button"):
       
       latlng_dict = json.loads(request.form['latlng'])
-      lat_lng = latlng_dict['lng'] + "," + latlng_dict['lat']
+      lng = latlng_dict['lng']
+      lat = latlng_dict['lat']
+      lat_lng = lng + "," + lat
 
       try:
           
         id = workerId + hitId + str(task_session[session_id])
+
+        point_pred = Point(float(lng), float(lat))
+
+        point_true = util.point_from_str_point(sample['rvs_goal_point'])
+
+        dist = round(util.get_distance_between_points(point_true, point_pred))
 
         j_req = {
         'hit_id': hitId,
@@ -273,7 +284,8 @@ def verification_task(
         'date_finish': str(datetime.utcnow()),
         'rvs_goal_point': sample['rvs_goal_point'],
         'key_instruction': sample['key'],
-        'key': id
+        'key': id,
+        'dist_m': dist
         }
 
         # save to database
@@ -307,7 +319,8 @@ def verification_task(
 
 
   path_verf = sample['rvs_path'].replace("/app_instructor", ".")
-  osm_maps_verification = visualize.get_maps_and_instructions(path_verf)
+  osm_maps_verification = visualize.get_maps_and_instructions(
+    path_verf, with_path=False)
 
   _, _, _, entity = osm_maps_verification[
     int(sample_session[workerId])]
@@ -332,7 +345,7 @@ def verification_task(
       continue
 
     landmark_geom, desc = visualize.get_landmark_desc_geo(
-      landmark=landmark,
+      landmark=landmark
       )
     if 'main' in landmark_type:
       landmark_main[landmark_type] = (desc, landmark_geom)
