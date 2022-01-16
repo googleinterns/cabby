@@ -169,9 +169,3 @@ def save(entities: Sequence[GeoEntity], path_to_save: str):
   for geo_type, pivots_gdf in geo_types_all.items():
     pivots_gdf.to_file(
         path_to_save, layer=geo_type, mode=mode, driver=_Geo_DataFrame_Driver)
-
-
-
-
-
-

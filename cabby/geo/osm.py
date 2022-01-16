@@ -26,8 +26,10 @@ CORRECTIONS = {'fuel': 'gas station', 'parking': 'parking lot',
 
 BLOCK_LIST = ['place of worship']
 
-TOURISM_INTERESTING = [ 'aquarium', 'gallery', 'guest_house', 'hostel', 'hotel',
-  'motel','museum', 'picnic_site', 'theme_park', 'viewpoint', 'zoo', 'attraction']
+TOURISM_INTERESTING = [
+  'aquarium', 'gallery', 'guest_house', 'hostel', 'hotel',
+  'motel','museum', 'picnic_site', 'theme_park', 'viewpoint', 
+  'zoo', 'attraction']
            
 LEISURE_INTERESTING = ['dog_park', 'fitness_centre', 'garden', 'golfcourse', 
   'ice_rink', 'marina', 'miniature_golf', 'park', 'playground', 'stadium', 
@@ -49,6 +51,7 @@ INTERESTING_TAGS =  {'name': True,
                     'wikipedia': True,
                     'shop': True,
                     'brand': True,
+                    'diplomatic': True,
                     'tourism': TOURISM_INTERESTING,
                     'leisure': LEISURE_INTERESTING,
                     'building': BUILDING_INTERESTING,
@@ -63,7 +66,12 @@ NON_SPECIFIC_TAGS = {'amenity': False, 'brand': False, 'shop': 'after',
 
 
 PROMINENT_TAGS_ORDERED = [
-  'wikipedia', 'wikidata', 'brand', 'tourism', 'tourism','amenity', 'shop']
+  'wikipedia', 'wikidata', 'brand', 'tourism', 'tourism','amenity', 'shop', 'leisure']
+
+NEGLIGIBLE_AMENITY = [
+  'bicycle_parking', 'drinking_water', 'picnic_site', 'bicycle_rental',
+  'bench', 'waste_basket', 'information', 'parking', 'post_box', 
+  'parking_entrance', 'charging_station', 'telephone']
 
 
 SPECIFIC_TAGS = ['name']

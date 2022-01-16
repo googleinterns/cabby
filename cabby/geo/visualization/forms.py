@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, TextAreaField
+from wtforms import SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, ValidationError
 import nltk
 from fuzzywuzzy import fuzz
@@ -23,8 +23,6 @@ def check_verbs(form, field):
   tags = [pt[1] for pt in postag if 'VB' in pt[1]]
 
   validation_mess = 'The description should not be a list of the landmarks.'
-  # if len(tags)<1:
-  #   raise ValidationError(validation_mess)
   
   landmark_names = ','.join(form.landmarks)
 
@@ -74,10 +72,6 @@ class NavigationForm(FlaskForm):
   validators=[
     DataRequired(),
     Length(min=100),
-    check_verbs,
-    check_landmarks,
-    check_not_instruction,
-    check_relative_language,
   ]
   )
   submit = SubmitField('Submit')

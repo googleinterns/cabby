@@ -27,7 +27,7 @@ import attr
 
 _Geo_DataFrame_Driver = "GPKG"
 VERSION = 0.5
-NOT_PRIVIEW_TAGS = [
+NOT_DISPLAY_TAGS = [
   'osmid', 'main_tag','unique_id',"element_type", "node_ele",
   "gnis:Class", "gnis:County", "York_gnis", "alpha", "import_uuid", "hours", "gnis:ST_num",
   "gnis:id", "in", "nycdoitt:bin", "gnis:feature_id", "element_type", "phone",
@@ -83,7 +83,7 @@ class GeoLandmark:
     for k,v in self.pivot_gdf.to_dict().items():
       if str(v)=='nan':
         continue
-      if isinstance(v,str) and v and k not in NOT_PRIVIEW_TAGS:
+      if isinstance(v,str) and v and k not in NOT_DISPLAY_TAGS:
         if  not(
           self.landmark_type in ['end_point', 'near_pivot', "beyond_pivot"] and 'name' in k):
           landmark_dict[k.replace('_', ' ')] = v.replace('_', ' ')
@@ -106,7 +106,7 @@ class GeoLandmark:
   def to_rvs_format(self):
     """Reformat a GeoLandmark into an RVS style."""
     centroid = util.tuple_from_point(
-      self.geometry.centroid) if self.geometry else None
+      self.centroid) if self.geometry else None
 
     return [
       self.landmark_type,
@@ -171,7 +171,6 @@ class RVSSample:
               entity_span)
 
 
-
 def save(entities: Sequence[GeoEntity], path_to_save: str):
   path_to_save = os.path.abspath(path_to_save)
 
@@ -202,8 +201,3 @@ def save(entities: Sequence[GeoEntity], path_to_save: str):
         path_to_save, layer=geo_type, mode=mode, driver=_Geo_DataFrame_Driver)
 
   logging.info(f"Saved {len(entities)} entities to => {path_to_save}")
-
-
-
-
-

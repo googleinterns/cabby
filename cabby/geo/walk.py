@@ -30,11 +30,12 @@ import os
 import osmnx as ox
 import pandas as pd
 import random
-from pandas.core.frame import DataFrame
 from shapely.ops import nearest_points
 from shapely.geometry.point import Point
 from shapely.geometry import LineString
 import sys
+
+from torch import NoneType
 
 from cabby.geo import util
 from cabby.geo.map_processing import map_structure
@@ -49,7 +50,7 @@ MAX_SEED = 2**32 - 1
 SAVE_ENTITIES_EVERY = 100
 MAX_BATCH_GEN = 100
 MAX_BATCH_GEN = MAX_BATCH_GEN if MAX_BATCH_GEN<SAVE_ENTITIES_EVERY else SAVE_ENTITIES_EVERY
-MAX_PATH_DIST = 1500
+MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
 NEAR_PIVOT_DIST = 80
 ON_PIVOT_DIST = 10
@@ -57,11 +58,11 @@ ON_PIVOT_DIST = 10
 # The max number of failed tries to generate a single path entities.
 MAX_NUM_GEN_FAILED = 10
 
-PIVOT_ALONG_ROUTE_MAX_DIST = 0.0005
+PIVOT_ALONG_ROUTE_MAX_DIST = 0.0007
 MAX_NUM_BEYOND_TRY = 50
 
-N_AROUND_PIVOTS = 7
-N_MAIN_PIVOTS = 10
+N_AROUND_PIVOTS = 10
+N_MAIN_PIVOTS = 15
 
 main_pivots = [f"main_pivot_{n}" for n in range(2, N_MAIN_PIVOTS+1)]
 around_pivots = [f"around_goal_pivot_{n}" for n in range(1, N_AROUND_PIVOTS+1)]
@@ -388,6 +389,13 @@ class Walker:
     # Filter large POI.
     small_poi = poi_in_ring[poi_in_ring['s2cellids'].str.len() <= SMALL_POI]
 
+    # Filter by distance
+    small_poi = small_poi[
+      small_poi.apply(
+      lambda x: util.get_distance_between_geometries(
+        x.geometry,
+        end_point['centroid']) > MIN_PATH_DIST, axis=1)]
+
     # Filter non-specific tags.
     return self.select_generic_poi(small_poi)
 
@@ -404,22 +412,38 @@ class Walker:
     Returns:
       A single landmark.
     '''
+
     candidate_landmarks = gdf.columns
+    secondary_pivots = []
     if tag in candidate_landmarks:
       pivots = gdf[gdf[tag].notnull()]
+
       if pivots.shape[0]:
         if pick_generic_name:
           tags_keys = osm.NON_SPECIFIC_TAGS.keys()
         else: 
           tags_keys = osm.SPECIFIC_TAGS
         for tag_k in tags_keys:
-          pivots = gdf[gdf[tag_k].notnull()]
-          if pick_generic_name and isinstance(osm.NON_SPECIFIC_TAGS[tag_k], list):
-            pivots = gdf[gdf[tag_k].isin(osm.NON_SPECIFIC_TAGS[tag_k])]
-          if pivots.shape[0]:
+          pivots_tag = pivots[pivots[tag_k].notnull()]
+
+          if pick_generic_name and isinstance(
+            osm.NON_SPECIFIC_TAGS[tag_k], list):
+            pivots_tag = pivots_tag[pivots_tag[tag_k].isin(osm.NON_SPECIFIC_TAGS[tag_k])]
+          if pivots_tag.shape[0]:
             if 'main_tag' not in pivots:
-              pivots = pivots.assign(main_tag=pivots[tag_k])
-            return self.sample_point(pivots)
+              pivots_tag = pivots_tag.assign(main_tag=pivots_tag[tag_k])
+            
+            pivots_prominent = pivots_tag[
+              ~pivots_tag['amenity'].isin(osm.NEGLIGIBLE_AMENITY)]
+            if pivots_prominent.shape[0]==0:
+              pivot = self.sample_point(pivots_tag)
+              secondary_pivots.append(pivot)
+              continue
+            pivot = self.sample_point(pivots_prominent)
+            return pivot
+
+    if len(secondary_pivots)>0:
+      return secondary_pivots.pop()
     return None
 
   def pick_prominent_pivot(self,
@@ -449,6 +473,7 @@ class Walker:
     pivot = None
 
     for main_tag in osm.PROMINENT_TAGS_ORDERED:
+      
       pivot = self.get_landmark_if_tag_exists(df_pivots,
                                               main_tag,
                                               pick_generic_name
@@ -457,11 +482,12 @@ class Walker:
         if not isinstance(pivot['geometry'], Point):
           pivot['geometry'] = nearest_points(pivot['geometry'], path_geom)[0]
         return pivot
-
+    
     return pivot
 
   def get_pivot_near_goal(self,
                           end_point: GeoSeries,
+                          start_point: GeoSeries,
                           path_geom: LineString,
                           max_distance_from_goal: int,
                           min_distance_from_goal: int,
@@ -470,6 +496,7 @@ class Walker:
     '''Return a picked landmark near the end_point.
     Arguments:
       end_point: The goal location.
+      start_point: The start location.
       path_geom: The geometry of the path selected.
       max_distance_from_goal: The max distance from goal.
       min_distance_from_goal: The min distance from goal.
@@ -483,7 +510,9 @@ class Walker:
         x.geometry,
         end_point['centroid']) < max_distance_from_goal and util.get_distance_between_geometries(
         x.geometry,
-        end_point['centroid']) >= min_distance_from_goal, axis=1)
+        end_point['centroid']) > min_distance_from_goal and util.get_distance_between_geometries(
+        x.geometry,
+        start_point['centroid']) > min_distance_from_goal, axis=1)
 
     poi = self.map.poi[near_poi_con]
 
@@ -526,6 +555,7 @@ class Walker:
       A single landmark. '''
 
     # Get POI along the route.
+    start_point_copy = start_point.copy()
     points_route = route['geometry'].tolist()
 
     poly = LineString(points_route).buffer(PIVOT_ALONG_ROUTE_MAX_DIST)
@@ -543,17 +573,24 @@ class Walker:
 
     # Remove POI near goal and start position.
     far_poi_con = df_pivots.apply(
-    lambda x: util.get_distance_between_geometries(
-      x.geometry,
-      end_point['centroid']) > NEAR_PIVOT_DIST and util.get_distance_between_geometries(
-      x.geometry,
-      start_point['centroid']) > ON_PIVOT_DIST, axis=1)
+      lambda x: util.get_distance_between_geometries(
+        nearest_points(x.geometry, end_point['geometry'])[0],
+        nearest_points(x.geometry, end_point['geometry'])[1]
+        ) > NEAR_PIVOT_DIST and util.get_distance_between_geometries(
+          nearest_points(x.geometry, start_point['geometry'])[0],
+          nearest_points(x.geometry, start_point['geometry'])[1]
+          ) > ON_PIVOT_DIST, axis=1)
+    
+
     far_poi = df_pivots[far_poi_con]
 
     path_geom = LineString(points_route)
-    main_pivot = self.pick_prominent_pivot(far_poi, end_point, path_geom)
+
+    main_pivot = self.pick_prominent_pivot(far_poi, end_point, path_geom, False)
+
     if main_pivot is None:
       return GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
+
     return main_pivot
 
   def get_pivot_beyond_goal(self,
@@ -727,21 +764,25 @@ class Walker:
     '''
 
     # Get pivot along the goal location.
-    main_pivot = self.get_pivot_along_route(route, end_point, start_point)
+    main_pivot = self.get_pivot_along_route(
+      route, end_point, start_point)
 
     if main_pivot['geometry'] is None:
       return None
-    
+
     list_main_pivots = [main_pivot]
     # Get a second and third pivots along the goal location.
     for _ in range(1, N_MAIN_PIVOTS):
-      main_pivot_x = self.get_pivot_along_route(route, end_point, start_point)
+      main_pivot_x = self.get_pivot_along_route(
+        route, end_point, start_point)
+      
       list_main_pivots.append(main_pivot_x)
 
     path_geom = LineString(route['geometry'].tolist())
 
     # Get pivot near the goal location.
-    near_pivot = self.get_pivot_near_goal(end_point, path_geom, NEAR_PIVOT_DIST, 0)
+    near_pivot = self.get_pivot_near_goal(
+      end_point, start_point, path_geom, NEAR_PIVOT_DIST, 2)
 
     if near_pivot['geometry'] is None:
       return None
@@ -750,10 +791,13 @@ class Walker:
     list_around_goal_pivots = []
     # Get a second and third pivots along the goal location.
     for _ in range(0, N_AROUND_PIVOTS):
-      # c=0
-      # list_common=[1]
       around_goal_pivot_x = self.get_pivot_near_goal(
-          end_point, path_geom, 2*NEAR_PIVOT_DIST, NEAR_PIVOT_DIST, list_around_goal_pivots_osmid)
+          end_point, 
+          start_point, 
+          path_geom, 
+          2*NEAR_PIVOT_DIST, 
+          NEAR_PIVOT_DIST, 
+          list_around_goal_pivots_osmid)
       list_around_goal_pivots_osmid.append(around_goal_pivot_x['osmid'])
       list_around_goal_pivots.append(around_goal_pivot_x)
   
@@ -761,7 +805,7 @@ class Walker:
     beyond_pivot = self.get_pivot_beyond_goal(end_point, route)
 
     list_pivots = list_main_pivots + [near_pivot] + list_around_goal_pivots + [beyond_pivot]
-
+    
     return list_pivots
       
   def get_egocentric_spatial_relation_pivot(self,
@@ -888,7 +932,9 @@ class Walker:
       return None
 
     # Select start point.
-    geo_landmarks['start_point'] = self.get_start_poi(geo_landmarks['end_point'])
+    geo_landmarks['start_point'] = self.get_start_poi(
+      geo_landmarks['end_point'])
+
     if geo_landmarks['start_point'] is None:
       return None
 
@@ -933,7 +979,7 @@ class Walker:
 
     geo_features['goal_position'] = self.get_position_goal(
       geo_landmarks['end_point'], route)
-
+    
     rvs_path_entity = geo_item.GeoEntity.add_entity(
       route=route,
       geo_features=geo_features,
@@ -966,7 +1012,6 @@ class Walker:
     logging.info(f"Created sample {index}/{n_samples}.")
     return_dict[index]=entity
     sema.release()
-
 
   def generate_and_save_rvs_routes(self,
                                   path_rvs_path: str,

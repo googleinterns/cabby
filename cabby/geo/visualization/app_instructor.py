@@ -1,15 +1,16 @@
 from datetime import datetime
 from datetime import timedelta
 import flask
-from flask import *
-from flask import session
+from flask import Flask
 from flask_session import Session
+import firebase_admin
+from firebase_admin import firestore
+
 import os
-import random
-import uuid
-from firebase_admin import credentials, firestore, initialize_app
 import pandas as pd
+import random
 from shapely.geometry.point import Point
+import uuid
 
 
 from forms import NavigationForm, ReviewForm
@@ -17,8 +18,8 @@ import util
 import visualize
 
 # Initialize Firestore DB
-cred = credentials.Certificate('key.json')
-default_app = initialize_app(cred)
+cred = firebase_admin.credentials.Certificate('key.json')
+default_app = firebase_admin.initialize_app(cred)
 db = firestore.client()
 instructions_ref = db.collection('instructions')
 instructions_ref_sandbox = db.collection('instructions_sandbox')
@@ -29,8 +30,7 @@ verification_ref_sandbox = db.collection('verification_sandbox')
 app = Flask(__name__)
 app.config['SESSION_TYPE'] = 'filesystem'
 
-SECRET_KEY = '5791628bb0b13ce0c676dfde280ba245'
-app.config['SECRET_KEY'] = SECRET_KEY
+app.config['SECRET_KEY'] = uuid.uuid4().hex
 
 app.app_context().push()
 
@@ -39,7 +39,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v20.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v24.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}, {rvs_path}")
 
@@ -64,14 +64,14 @@ def home():
   global sample
   global task_session
 
-  assignmentId = request.args.get("assignmentId") 
+  assignmentId = flask.request.args.get("assignmentId") 
   assignmentId = assignmentId if assignmentId else uuid.uuid4().hex
-  hitId = request.args.get("hitId")
+  hitId = flask.request.args.get("hitId")
   hitId = hitId if hitId else "2"
-  turkSubmitTo = request.args.get("turkSubmitTo")
-  workerId = request.args.get("workerId")
+  turkSubmitTo = flask.request.args.get("turkSubmitTo")
+  workerId = flask.request.args.get("workerId")
   workerId = workerId if workerId else "1"
-  turkSubmitTo = request.args.get("turkSubmitTo")
+  turkSubmitTo = flask.request.args.get("turkSubmitTo")
   turkSubmitTo = turkSubmitTo if turkSubmitTo else "https://workersandbox.mturk.com"
 
 
@@ -118,7 +118,7 @@ def description_task(
   form_nav.landmarks = landmarks
 
 
-  if request.method == 'POST': 
+  if flask.request.method == 'POST': 
     if os.path.exists(path_map):
       os.remove(path_map)
     folium_map.save(path_map)
@@ -126,7 +126,7 @@ def description_task(
     if form_nav.validate_on_submit() or (
       len(form_nav.errors)==1 and 'csrf_token' in form_nav.errors):
 
-      content = request.form['content']
+      content = flask.request.form['content']
       goal_point = entity.geo_landmarks['end_point'].geometry
       start_point = entity.geo_landmarks['start_point'].geometry
 
@@ -176,7 +176,7 @@ def description_task(
         task_session[session_id] = 1
         address = turkSubmitTo + '/mturk/externalSubmit'
         fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
-        return render_template(
+        return flask.render_template(
           'end.html', 
           bar=100, 
           fullUrl=fullUrl,
@@ -195,7 +195,7 @@ def description_task(
   
   title = 0 if task_session[session_id]==1 else task_session[session_id]
 
-  return render_template('instructor_task.html',
+  return flask.render_template('instructor_task.html',
                          form=form_nav,
                          bar=progress_task,
                          title=title,
@@ -252,11 +252,12 @@ def verification_task(
 
   form = ReviewForm()
 
-  if request.method == 'POST': 
+  if flask.request.method == 'POST': 
 
-    if request.form.get("submit_button"):
+    if flask.request.form.get("submit_button"):
       
-      latlng_dict = json.loads(request.form['latlng'])
+      latlng_dict = flask.json.loads(
+        flask.request.form['latlng'])
       lng = latlng_dict['lng']
       lat = latlng_dict['lat']
       lat_lng = lng + "," + lat
@@ -309,7 +310,7 @@ def verification_task(
         task_session[session_id] = 1
         address = turkSubmitTo + '/mturk/externalSubmit'
         fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
-        return render_template(
+        return flask.render_template(
           'end.html', 
           bar=100, 
           fullUrl=fullUrl,
@@ -354,7 +355,7 @@ def verification_task(
     else:
       landmark_rest[landmark_type] = (desc, landmark_geom)
 
-  return render_template('follower_task.html',
+  return flask.render_template('follower_task.html',
                         end_point=end_point,
                         start_point=start_point,
                         nav_instruction=nav_instruction,
@@ -375,27 +376,27 @@ def verification_task(
 
 @app.errorhandler(500)
 def internal_server_error(e):
-  return jsonify(error=str(e)), 500
+  return flask.jsonify(error=str(e)), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
-  return render_template("404.html", exc = e)
+  return flask.render_template("404.html", exc = e)
 
 @app.route('/map/<n_sample>', methods=['GET', 'POST'])
 @app.route('/map')
 def map():
-  n_sample = request.args.get("n_sample") 
-  workerId = request.args.get("workerId") 
+  n_sample = flask.request.args.get("n_sample") 
+  workerId = flask.request.args.get("workerId") 
 
   try:
-    return render_template(f'map_{n_sample}.html')
+    return flask.render_template(f'map_{n_sample}.html')
   except:
     n_sample = random.randint(0, size_dataset-1)
     sample_session[workerId] = n_sample
     folium_map, _, _, _ = osm_maps_instructions[n_sample]
     path_map = os.path.join(dir_map,f"map_{n_sample}.html") 
     folium_map.save(path_map)
-    return render_template(f'map_{n_sample}.html')
+    return flask.render_template(f'map_{n_sample}.html')
 
 
 port = int(os.environ.get('PORT', 5000))

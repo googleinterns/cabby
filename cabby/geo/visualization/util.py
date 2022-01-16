@@ -26,8 +26,8 @@ from typing import List, Optional, Tuple, Sequence, Any, Text
 
 import geo_item
 
-N_AROUND_PIVOTS = 7
-N_MAIN_PIVOTS = 10
+N_AROUND_PIVOTS = 10
+N_MAIN_PIVOTS = 15
 
 main_pivots = [f"main_pivot_{n}" for n in range(2, N_MAIN_PIVOTS+1)]
 around_pivots = [f"around_goal_pivot_{n}" for n in range(1, N_AROUND_PIVOTS+1)]

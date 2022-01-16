@@ -42,13 +42,13 @@ def get_osm_map(
 
   dist = util.get_distance_m(goal_point, start_point)
   if dist>2500:
-    zoom_start = 12
-  elif dist>1800:
     zoom_start = 13
-  elif dist>400:
+  elif dist>1800:
     zoom_start = 14
-  else:
+  elif dist>400:
     zoom_start = 15
+  else:
+    zoom_start = 16
   # create a map
   map_osm = folium.Map(location=zoom_location,
                        zoom_start=zoom_start, tiles='OpenStreetMap')
