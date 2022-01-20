@@ -13,6 +13,9 @@
 # limitations under the License.
 '''Defines OSM entities adaptations.'''
 
+from networkx.algorithms import hierarchy
+
+
 CORRECTIONS = {'fuel': 'gas station', 'parking': 'parking lot', 
   'taxi': 'taxi stand', 'doctors': 'doctor\'s office', 
   'dentist': 'dentist\'s office', 'gambling': 'gambling place', 
@@ -23,12 +26,14 @@ CORRECTIONS = {'fuel': 'gas station', 'parking': 'parking lot',
 
 BLOCK_LIST = ['place of worship']
 
-TOURISM_INTERESTING = [ 'aquarium', 'gallery', 'guest_house', 'hostel', 'hotel',
-  'motel','museum', 'picnic_site', 'theme_park', 'viewpoint', 'zoo']
+TOURISM_INTERESTING = [
+  'aquarium', 'gallery', 'guest_house', 'hostel', 'hotel',
+  'motel','museum', 'picnic_site', 'theme_park', 'viewpoint', 
+  'zoo', 'attraction']
            
 LEISURE_INTERESTING = ['dog_park', 'fitness_centre', 'garden', 'golfcourse', 
   'ice_rink', 'marina', 'miniature_golf', 'park', 'playground', 'stadium', 
-  'water_park']
+  'water_park', 'track', 'pitch']
 
 BUILDING_INTERESTING = ['hotel', 'supermarket', 'warehouse', 'cathedral', 
   'chapel', 'church', 'mosque', 'synagogue', 'hospital', 'kindergarten', 
@@ -46,6 +51,7 @@ INTERESTING_TAGS =  {'name': True,
                     'wikipedia': True,
                     'shop': True,
                     'brand': True,
+                    'diplomatic': True,
                     'tourism': TOURISM_INTERESTING,
                     'leisure': LEISURE_INTERESTING,
                     'building': BUILDING_INTERESTING,
@@ -53,11 +59,19 @@ INTERESTING_TAGS =  {'name': True,
                     'man_made': MAN_MADE_INTERESTING}
 
 NON_SPECIFIC_TAGS = {'amenity': False, 'brand': False, 'shop': 'after', 
-  'historic	': 'before', 'tourism': TOURISM_INTERESTING, 'bridge': True,
+  'historic': 'before', 'tourism': TOURISM_INTERESTING, 'bridge': True,
   'man_made': False, 'natural': False, 'place': PLACE, 
   'leisure': LEISURE_INTERESTING, 'building': BUILDING_INTERESTING, 
   'craft': CRAFT_INTERESTING, 'man_made': MAN_MADE_INTERESTING}
 
 
 PROMINENT_TAGS_ORDERED = [
-  'wikipedia', 'wikidata', 'brand', 'tourism', 'tourism','amenity', 'shop']
+  'wikipedia', 'wikidata', 'brand', 'tourism', 'tourism','amenity', 'shop', 'leisure']
+
+NEGLIGIBLE_AMENITY = [
+  'bicycle_parking', 'drinking_water', 'picnic_site', 'bicycle_rental',
+  'bench', 'waste_basket', 'information', 'parking', 'post_box', 
+  'parking_entrance', 'charging_station', 'telephone']
+
+
+SPECIFIC_TAGS = ['name']

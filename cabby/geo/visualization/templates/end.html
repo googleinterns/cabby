@@ -1,9 +1,31 @@
 {% extends "layout.html" %}
 {% block content %}
+
 <div class="p-5 text-center bg-light">
 
-    <h4 class="mb-3">Finished Tasks!</h4>
+    <h2 class="mb-3">Finished Tasks!</h4>
+    </b>
+
 </div>
+
+
+<html>
+   <body>
+      <form action = '{{fullUrl}}' method = "post"  name="finish_task">
+         <p><input type = "hidden" name = "none" /></p>
+         <p><input type = "submit" class="btn btn-primary" value = "Finish assignment" /></p>
+      </form>      
+   </body>
+</html>
+
+<script>
+
+window.onload = function(){
+  document.forms['finish_task'].submit();
+}
+
+</script>
+
 
 
 {% endblock content %}

@@ -13,11 +13,12 @@
 # limitations under the License.
 
 '''Tests for map_structure.py'''
-
 import unittest
 
 from cabby.geo.map_processing import map_structure
 from cabby.geo import regions
+
+
 
 class MapTest(unittest.TestCase):
 
@@ -52,13 +53,13 @@ class MapTest(unittest.TestCase):
     # Verify that a known POI is present.
 
     specific_poi_found = self.map.poi[self.map.poi[
-      'name'] == 'Dental Dream']
+      'name'] == 'Deantal Dream']
     # Check that the number of Frick Building POI found is exactly 1.
     self.assertEqual(specific_poi_found.shape[0], 1)
 
     # Check the cellid.
     list_cells = self.map.poi[self.map.poi[
-      'name'] == 'Dental Dream']['s2cellids'].tolist()[0]
+      'name'] == 'Deantal Dream']['s2cellids'].tolist()[0]
     expected_ids = [9923620797002285056]
     found_ids = [list_cells[i].id() for i in range(len(list_cells))]
     for expected, found in zip(expected_ids, found_ids):

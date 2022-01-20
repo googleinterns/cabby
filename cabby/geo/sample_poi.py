@@ -23,10 +23,7 @@ $ bazel-bin/cabby/geo/sample_poi --region "DC" --min_s2_level 18 \
 from absl import app
 from absl import flags
 
-from geopandas import GeoDataFrame
 import multiprocessing 
-import osmnx as ox
-from shapely.geometry.point import Point
 
 from cabby.geo import regions
 from cabby.geo import walk

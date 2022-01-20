@@ -15,24 +15,22 @@
 '''Library to support geographical visualization.'''
 
 import folium
-import geopandas as gpd
-import pandas as pd
-import shapely.geometry as geom
-from shapely.geometry import Polygon, Point, LineString
-from typing import Tuple, Sequence, Optional, Dict, Text
-import sys
-import os
+from shapely.geometry import LineString
+from typing import Tuple, Sequence, Text
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd()))))
-from cabby.geo import util
-from cabby.geo import walk
-from cabby.geo import geo_item
+import util
+
+NOT_PRIVIEW_TAGS = ['osmid', 'main_tag'] 
+PIVOTS_COLORS = {"end_point":'red', "start_point":'green'} 
 
 
-def get_osm_map(entity: geo_item.GeoEntity) -> Sequence[folium.Map]:
+def get_osm_map(
+  entity, with_path, with_end_point) -> Sequence[folium.Map]:
   '''Create the OSM maps.
   Arguments:
     gdf: the GeoDataFrame from which to create the OSM map.
+    with_path: Add path to map.
+    with_end_point: Add end point to map.
   Returns:
     OSM maps from the GeoDataFrame.
   '''
@@ -44,52 +42,76 @@ def get_osm_map(entity: geo_item.GeoEntity) -> Sequence[folium.Map]:
 
   dist = util.get_distance_m(goal_point, start_point)
   if dist>2500:
-    zoom_start = 12
-  elif dist>1800:
     zoom_start = 13
-  elif dist>400:
+  elif dist>1800:
     zoom_start = 14
-  else:
+  elif dist>400:
     zoom_start = 15
+  else:
+    zoom_start = 16
   # create a map
   map_osm = folium.Map(location=zoom_location,
-                       zoom_start=zoom_start  , tiles='OpenStreetMap')
+                       zoom_start=zoom_start, tiles='OpenStreetMap')
 
   # draw the points
-  colors = [
-    'red', 'green', 'black', 'black', 'black', 'black', 'black']
   for landmark_type, landmark in entity.geo_landmarks.items():
-    if landmark.geometry is not None:
-      landmark_geom = util.list_yx_from_point(landmark.geometry)
-      folium.Marker(
-        landmark_geom,
-        popup=f'{landmark.main_tag.replace("_", " ")}',
-        icon=folium.Icon(color=colors.pop(0))).add_to(map_osm)
+    if not with_end_point and landmark_type=='end_point':
+      continue
+    color = PIVOTS_COLORS[
+      landmark_type] if landmark_type in PIVOTS_COLORS else 'black'
+    add_landmark_to_osm_map(
+      landmark=landmark,
+      map_osm=map_osm,
+      color=color)
 
-  line = LineString(entity.route)
-  folium.GeoJson(data=line, style_function=lambda feature: {
-    'fillColor': 'crimson',
-    'color': 'crimson',
-    'weight': 5,
-    'fillOpacity': 1,
-  }).add_to(map_osm)
+  # add path between start and end point
+  if with_path:
+    line = LineString(entity.route)
+    folium.GeoJson(data=line, style_function=lambda feature: {
+      'fillColor': 'crimson',
+      'color': 'crimson',
+      'weight': 5,
+      'fillOpacity': 1,
+    }).add_to(map_osm)
 
   return map_osm
 
+def get_landmark_desc_geo(landmark):
+  if landmark.geometry is not None:  
+    if 'pivot_view' in landmark.pivot_gdf:
+      desc = landmark.pivot_gdf.pivot_view.replace(";", "<br>") 
+      desc = "<b> " + desc.replace("_", "</b>", 1)
+    else:
+      desc = landmark.pivot_gdf.main_tag
+    landmark_geom = util.list_yx_from_point(landmark.geometry)
+    return landmark_geom, desc
+  return None, "" 
 
-def get_maps_and_instructions(path: Text
-                              ) -> Sequence[Tuple[folium.Map, str]]:
+
+def add_landmark_to_osm_map(landmark, map_osm, color):
+  landmark_geom, desc = get_landmark_desc_geo(landmark)
+  if landmark_geom:
+    folium.Marker(
+          landmark_geom,
+          popup=desc,
+          icon=folium.Icon(color=color)).add_to(map_osm)
+
+def get_maps_and_instructions(
+  path: Text, with_path: bool = True, with_end_point: bool = True
+) -> Sequence[Tuple[Sequence, str, Sequence[str], folium.Map]]:
   '''Create the OSM maps and instructions.
   Arguments:
     path: The path from the start point to the goal location.
+    with_path: Add path to map.
+    with_end_point: Add end point to map.
   Returns:
     OSM maps from the GeoDataFrame.
   '''
 
   map_osms_instructions = []
-  entities = walk.load_entities(path)
+  entities = util.load_entities(path)
   for entity in entities:
-    map_osm = get_osm_map(entity)
+    map_osm = get_osm_map(entity, with_path, with_end_point)
     features_list = []
     for feature_type, feature in entity.geo_features.items():
       features_list.append(feature_type + ": " + str(feature))
@@ -99,6 +121,7 @@ def get_maps_and_instructions(path: Text
       landmark_list.append(str(landmark.main_tag))
 
     instruction = '; '.join(features_list) + '; '.join(landmark_list)
-    map_osms_instructions.append((map_osm, instruction, landmark_list, entity))
+    map_osms_instructions.append(
+      (map_osm, instruction, landmark_list, entity))
 
   return map_osms_instructions
