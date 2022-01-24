@@ -336,10 +336,6 @@ def verification_task(
 
   if icon_path:
     icon_path = icon_path.split('osm_icons/')[-1]
-  print ("!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-  print (path_verf)
-  print (entity.geo_landmarks['end_point'].pivot_gdf)
-  print (icon_path)
 
   start_session[session_id] = datetime.utcnow()
 
