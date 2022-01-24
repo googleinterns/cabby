@@ -22,6 +22,7 @@ from shapely.geometry.base import BaseGeometry
 from shapely.geometry import LineString, Polygon
 
 from cabby.geo import util
+from cabby.geo import osm
 
 import attr
 
@@ -98,7 +99,7 @@ class GeoLandmark:
     self.pivot_gdf['pivot_view'] = ';'.join(landmark_desc_list)
     self.pivot_gdf_all = self.pivot_gdf
     columns_remove = self.pivot_gdf.keys().difference(
-      ['osmid', 'geometry', 'main_tag', 'pivot_view'])
+      ['osmid', 'geometry', 'main_tag', 'pivot_view'] + osm.PROMINENT_TAGS_ORDERED)
     if len(columns_remove) > 0:
       self.pivot_gdf.drop(columns_remove, inplace=True)
 

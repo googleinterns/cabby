@@ -1079,4 +1079,3 @@ def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
 
   logging.info(f"Loaded entities {len(geo_entities)} from <= {path}")
   return geo_entities
-
