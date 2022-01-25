@@ -44,7 +44,7 @@ from cabby.geo import osm
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
 
-SEED = 3
+SEED = 1
 MAX_SEED = 2**32 - 1
 
 SAVE_ENTITIES_EVERY = 100
