@@ -106,8 +106,9 @@ class GeoLandmark:
 
   def to_rvs_format(self):
     """Reformat a GeoLandmark into an RVS style."""
+
     centroid = util.tuple_from_point(
-      self.centroid) if self.geometry else None
+      self.geometry.centroid) if self.geometry else None
 
     return [
       self.landmark_type,

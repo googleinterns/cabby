@@ -259,11 +259,12 @@ def create_templates():
   for column in STREET_FEATURES:
     templates_df[column] = templates_df['sentence'].apply(
     lambda x: column.upper() in x)
-
+  
   return templates_df
 
 
-def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tuple[Text, Dict[str, Tuple[int, int]]]:
+def add_features_to_template(template: Text, entity: geo_item.GeoEntity
+) -> Tuple[Text, Dict[str, Tuple[int, int]]]:
   '''Add the entity features to the picked template to create an instruction.
   Arguments:
     template: The chosen template.
@@ -299,14 +300,11 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity) -> Tupl
       template = template.replace("?UP?"+landmark_type.upper(),
                                   landmark.main_tag.capitalize())
 
-
-
       template = template.replace(landmark_type.upper(),
                                   landmark.main_tag)
 
       if landmark.landmark_type != "start_point":
         entities_tags.append(landmark.main_tag)
-
 
   for feature_type, feature in entity.geo_features.items():
 
@@ -350,7 +348,6 @@ def add_entity_span(entity_tag: str, instruction: str) -> Dict[str, Tuple[int, i
   return entities_span_dict
 
 
-
 def generate_instruction_by_split(entities, gen_templates, split, save_instruction_dir):
   '''Generate from entities the entity span to a dictionary of entites (keys) and spans (value).
     Args:
@@ -367,12 +364,16 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
     for landmark_type, landmark in entity.geo_landmarks.items():
       if landmark_type not in current_templates or landmark_type == "start_point":
         continue
+      if landmark_type in walk.main_pivots + walk.around_pivots:
+        continue
+
       if not landmark.main_tag:
+
         current_templates = current_templates[
           current_templates[landmark_type] == False]
       else:
         current_templates = current_templates[current_templates[landmark_type] == True]
-
+  
     # Use features that exist.
     for feature_type, feature in entity.geo_features.items():
 
@@ -387,6 +388,7 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
 
     num_intersections = entity.geo_features['intersections']
     num_intersections = -1 if num_intersections  is None else int(num_intersections )
+
 
     if num_intersections > 0:
       if num_intersections == 1:
@@ -421,11 +423,11 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
         (current_templates['next block'] == False)]
 
       # From the candidates left, pick randomly one template.
-
       choosen_template = current_templates.sample(1)['sentence'].iloc[0]
 
       gen_instructions, entity_span = add_features_to_template(
         choosen_template, entity)
+      
       rvs_entity = geo_item.RVSSample.to_rvs_sample(
         instructions=gen_instructions,
         id=entity_idx,

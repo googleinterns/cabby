@@ -424,6 +424,8 @@ class Walker:
         else: 
           tags_keys = osm.SPECIFIC_TAGS
         for tag_k in tags_keys:
+          if tag_k not in pivots:
+            continue
           pivots_tag = pivots[pivots[tag_k].notnull()]
 
           if pick_generic_name and isinstance(
@@ -955,6 +957,8 @@ class Walker:
 
     geo_landmarks['main_pivot'] = result[0]
     geo_landmarks['near_pivot'] = result[N_MAIN_PIVOTS]
+    geo_landmarks['beyond_pivot'] = result[-1]
+
     for i in range(1, N_MAIN_PIVOTS+1):
       geo_landmarks[f'main_pivot_{i}'] = result[i]
     for i in range(1, N_AROUND_PIVOTS+1):
