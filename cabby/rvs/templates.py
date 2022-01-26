@@ -42,6 +42,27 @@ inflect_engine = inflect.engine()
 STREET_FEATURES = ["next block", "next intersection", "blocks"] \
                   + walk.FEATURES_TYPES + walk.LANDMARK_TYPES
 
+GOAL_POSITION_OPTION = {
+  'first_intersection': [
+    "near the next intersection",
+    "on the first corner",
+    "near the corner of the street",
+    "on the corner of the street",
+    "near the corner",
+    "on the corner",
+    "at the corner",
+    "on the corner of the block",
+    "near the corner of the block",
+    ],
+    'second_intersection': [
+      "near the last intersection passed",
+      "on the far corner",
+      "on the opposite side of the corner of that block",
+      "near the far corner",
+    ],
+    'middle_block': ["in the middle of the block"]
+    }
+
 # Terminals in the grammar.
 MAIN_NO_V = [
   "CARDINAL_DIRECTION from MAIN_PIVOT for INTERSECTIONS intersections",
@@ -68,7 +89,6 @@ MAIN_NO_V = [
 ]
 
 # SPATIAL_RELATION_PIVOT
-
 MAIN = [
   ". When you pass MAIN_PIVOT, you'll be just INTERSECTIONS intersections away",
   ". When you pass MAIN_PIVOT on your SPATIAL_REL_PIVOT, you'll be just INTERSECTIONS intersections away",
@@ -94,7 +114,6 @@ MAIN = [
   ". After you pass MAIN_PIVOT on your SPATIAL_REL_PIVOT, go BLOCKS blocks more",
   ". Once you reach MAIN_PIVOT, continue for BLOCKS blocks",
   ". Once you see MAIN_PIVOT on your SPATIAL_REL_PIVOT, continue for BLOCKS blocks",
-
 ]
 
 V1 = ['Go', 'Walk', 'Head', 'Proceed', 'Travel']
@@ -114,16 +133,19 @@ NEAR_GOAL_END = [
   ". Meet at the END_POINT, which will be on your SPATIAL_REL_GOAL, right next to a NEAR_PIVOT.",
   ". If you see a NEAR_PIVOT, you should find the END_POINT close by.",
   ". If you see a NEAR_PIVOT, you should find on the SPATIAL_REL_GOAL side of the street"+
-  " the END_POINT close by."
-
+  " the END_POINT close by.",
+  ". The END_POINT is not far from NEAR_PIVOT."
 ]
+
 NEAR_GOAL_START = [
   ". It will be near a NEAR_PIVOT.",
   ". It will be on your SPATIAL_REL_GOAL, near a NEAR_PIVOT.",
   ". It is close to a NEAR_PIVOT.",
   ". It is on the SPATIAL_REL_GOAL side of the street, close to a NEAR_PIVOT.",
-  ". A NEAR_PIVOT is close by."
+  ". A NEAR_PIVOT is close by.",
+  ". It is not far from NEAR_PIVOT."
 ]
+
 AVOID = [
   ". If you reach BEYOND_PIVOT, you have gone too far.",
   ". You've overshot the meeting point if you reach BEYOND_PIVOT.",
@@ -131,13 +153,17 @@ AVOID = [
   ""]
 
 GOAL_END = [
+  'and meet at the END_POINT, GOAL_POSITION.',
   'and meet at the END_POINT, right GOAL_POSITION.',
   'and meet at the END_POINT.',
+  'and come to the END_POINT, GOAL_POSITION.',
   'and come to the END_POINT, right GOAL_POSITION.',
   'and come to the END_POINT.',
+  'to reach the END_POINT, GOAL_POSITION.',
   'to reach the END_POINT, right GOAL_POSITION.',
   'to reach the END_POINT.',
-  'to arrive at the END_POINT, right GOAL_POSITION.'
+  'to arrive at the END_POINT, GOAL_POSITION.',
+  'to arrive at the END_POINT, right GOAL_POSITION.',
   'to arrive at the END_POINT.'
 ]
 
@@ -307,6 +333,9 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity
         entities_tags.append(landmark.main_tag)
 
   for feature_type, feature in entity.geo_features.items():
+    if feature_type=='goal_position' and feature:
+      feature_list = GOAL_POSITION_OPTION[feature]
+      feature = random.choice(feature_list)
 
     template = template.replace(feature_type.upper(),
                                 str(feature))

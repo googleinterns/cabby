@@ -740,16 +740,16 @@ class Walker:
     total_distance = intersection_opposite_distance + distance_closest
     closest_propotion = distance_closest/total_distance
     if closest_propotion>0.4:
-      return "in the middle of the block"
+      return "middle_block"
 
     if closest_propotion>0.3:
       return None
     # Check to which intersection it is closer.
     closest_inter_node_osmid = intersections_nodes.loc[min_distance_idx]['osmid']
     if closest_inter_node_osmid in route['osmid'].tolist():
-      return "near the last intersection passed"
+      return "second_intersection"
 
-    return "near the next intersection"
+    return "first_intersection"
 
   def get_pivots(self,
                 route: GeoDataFrame,

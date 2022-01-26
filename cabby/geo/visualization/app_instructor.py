@@ -42,7 +42,7 @@ qualified_workers = pd.read_csv(
   "qualified_workers.csv", header=None)[0].tolist()
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v26.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v27.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}, {rvs_path}")
 
