@@ -712,10 +712,17 @@ class Walker:
     street = self.map.edges[self.map.edges['u'] == end_point['osmid']].iloc[0]['osmid']
     nodes_u = self.map.edges[self.map.edges['osmid']==street]['u']
     condition_intersection = self.map.edges['osmid'] != street
-    condition_not_poi = self.map.edges['name'] != 'poi'
-    intersections_nodes_osmid = self.map.edges[
-      condition_not_poi & condition_intersection & self.map.edges['u'].isin(nodes_u)]['u']
+    condition_not_poi = self.map.edges['name'] != 'poi' 
+    streets_intersection = self.map.edges[
+      condition_not_poi & condition_intersection & self.map.edges['u'].isin(
+        nodes_u)]
+    intersections_nodes_osmid = streets_intersection['u']
+
     intersections_nodes = self.map.nodes[self.map.nodes['osmid'].isin(intersections_nodes_osmid)]
+
+    if intersections_nodes.shape[0]==0:
+      return None
+   
     distances = intersections_nodes.apply(
       lambda x: util.get_distance_between_geometries(x.geometry, end_point.centroid), axis=1)
     intersections_nodes.insert(0, "distances", distances, True)
@@ -727,29 +734,46 @@ class Walker:
     bearing = intersections_nodes['bearing'].loc[min_distance_idx]
     distance_closest = intersections_nodes['distances'].loc[min_distance_idx]
 
+    point_1 = intersections_nodes.loc[min_distance_idx]
+
     # Get second bearing in opposite direction.
     opposite_bearing = (bearing+180)%360
     intersection_opposite = intersections_nodes[(intersections_nodes['bearing']-opposite_bearing)%360<30]
+
     if intersection_opposite.shape[0]==0:
       return None
 
     intersection_opposite_idx = intersection_opposite['distances'].idxmin()
     intersection_opposite_distance = intersection_opposite.loc[intersection_opposite_idx]['distances']
 
+    point_2 = intersection_opposite.loc[intersection_opposite_idx]
+
+    logging.info(f"000000000000000 {route.iloc[-5].y}, {route.iloc[-5].x}")
+    logging.info(f"22222222222 {point_1.y}, {point_1.x}")
+    logging.info(f"3333333333 {point_2.y}, {point_2.x}")
+    logging.info(f"4444444444444 {end_point.centroid.y}, {end_point.centroid.x}")
+
+
+
     # Check the proportions.
     total_distance = intersection_opposite_distance + distance_closest
     closest_propotion = distance_closest/total_distance
-    if closest_propotion>0.4:
+    if closest_propotion>0.3:
+      logging.info(f" 77777777 middle_block")
       return "middle_block"
 
     if closest_propotion>0.3:
       return None
+      
     # Check to which intersection it is closer.
     closest_inter_node_osmid = intersections_nodes.loc[min_distance_idx]['osmid']
     if closest_inter_node_osmid in route['osmid'].tolist():
-      return "second_intersection"
+      logging.info(f" 55555555555 first_intersection")
+      return "first_intersection"
 
-    return "first_intersection"
+    logging.info(f" 6666666666 second_intersection")
+
+    return "second_intersection"
 
   def get_pivots(self,
                 route: GeoDataFrame,
