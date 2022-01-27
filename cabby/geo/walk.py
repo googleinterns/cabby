@@ -734,7 +734,7 @@ class Walker:
     bearing = intersections_nodes['bearing'].loc[min_distance_idx]
     distance_closest = intersections_nodes['distances'].loc[min_distance_idx]
 
-    point_1 = intersections_nodes.loc[min_distance_idx]
+    point_closest = intersections_nodes.loc[min_distance_idx]
 
     # Get second bearing in opposite direction.
     opposite_bearing = (bearing+180)%360
@@ -746,20 +746,15 @@ class Walker:
     intersection_opposite_idx = intersection_opposite['distances'].idxmin()
     intersection_opposite_distance = intersection_opposite.loc[intersection_opposite_idx]['distances']
 
-    point_2 = intersection_opposite.loc[intersection_opposite_idx]
+    point_far = intersection_opposite.loc[intersection_opposite_idx]
 
-    logging.info(f"000000000000000 {route.iloc[-5].y}, {route.iloc[-5].x}")
-    logging.info(f"22222222222 {point_1.y}, {point_1.x}")
-    logging.info(f"3333333333 {point_2.y}, {point_2.x}")
-    logging.info(f"4444444444444 {end_point.centroid.y}, {end_point.centroid.x}")
-
+    cardinal = self.get_cardinal_direction(point_far, point_closest)
 
 
     # Check the proportions.
     total_distance = intersection_opposite_distance + distance_closest
     closest_propotion = distance_closest/total_distance
-    if closest_propotion>0.3:
-      logging.info(f" 77777777 middle_block")
+    if closest_propotion>0.4:
       return "middle_block"
 
     if closest_propotion>0.3:
@@ -768,12 +763,9 @@ class Walker:
     # Check to which intersection it is closer.
     closest_inter_node_osmid = intersections_nodes.loc[min_distance_idx]['osmid']
     if closest_inter_node_osmid in route['osmid'].tolist():
-      logging.info(f" 55555555555 first_intersection")
-      return "first_intersection"
+      return "first_intersection;" + cardinal
 
-    logging.info(f" 6666666666 second_intersection")
-
-    return "second_intersection"
+    return "second_intersection;" + cardinal
 
   def get_pivots(self,
                 route: GeoDataFrame,

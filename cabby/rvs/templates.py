@@ -50,15 +50,21 @@ GOAL_POSITION_OPTION = {
     "on the corner of the street",
     "near the corner",
     "on the corner",
+    "on the CARDINAL_POSITION corner",
     "at the corner",
     "on the corner of the block",
+    "on the CARDINAL_POSITION corner of the block",
     "near the corner of the block",
+    "near the CARDINAL_POSITION corner of the block",
     ],
     'second_intersection': [
       "near the last intersection passed",
       "on the far corner",
       "on the opposite side of the corner of that block",
       "near the far corner",
+      "near the CARDINAL_POSITION corner of the block",
+      "on the CARDINAL_POSITION corner of the block",
+      "on the CARDINAL_POSITION corner",
     ],
     'middle_block': ["in the middle of the block"]
     }
@@ -334,9 +340,20 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity
 
   for feature_type, feature in entity.geo_features.items():
     if feature_type=='goal_position' and feature:
-      feature_list = GOAL_POSITION_OPTION[feature]
+      if not feature:
+        continue
+      cardinal_and_position = feature.split(";")
+
+      cardinal_position = None
+      if len(cardinal_and_position)>1:
+        cardinal_position = cardinal_and_position[-1]
+
+      feature_list = GOAL_POSITION_OPTION[cardinal_and_position[0]]
       feature = random.choice(feature_list)
 
+      if cardinal_position and 'CARDINAL_POSITION' in feature:
+        feature = feature.replace('CARDINAL_POSITION', cardinal_position)
+      
     template = template.replace(feature_type.upper(),
                                 str(feature))
 
