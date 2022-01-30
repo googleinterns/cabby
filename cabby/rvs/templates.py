@@ -89,7 +89,7 @@ MAIN_NO_V = [
   "to MAIN_PIVOT and go CARDINAL_DIRECTION",
   "to MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and go CARDINAL_DIRECTION",
   "to MAIN_PIVOT and turn CARDINAL_DIRECTION",
-  "to MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and turn CARDINAL_DIRECTION"
+  "to MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and turn CARDINAL_DIRECTION",
 
   ""
 ]
@@ -120,7 +120,9 @@ MAIN = [
   ". After you pass MAIN_PIVOT on your SPATIAL_REL_PIVOT, go BLOCKS blocks more",
   ". Once you reach MAIN_PIVOT, continue for BLOCKS blocks",
   ". Once you see MAIN_PIVOT on your SPATIAL_REL_PIVOT, continue for BLOCKS blocks",
+
 ]
+
 
 V1 = ['Go', 'Walk', 'Head', 'Proceed', 'Travel']
 
@@ -129,6 +131,19 @@ V2 = [
   'Come to the END_POINT.',
   'Head over to the END_POINT.',
   'The END_POINT is the meeting point.'
+]
+
+MAIN_NEAR_END = [
+    ". Before reaching the destination, you will see MAIN_NEAR_PIVOT.",
+    ". Before reaching the destination, you will pass MAIN_NEAR_PIVOT.",
+    ". You will pass MAIN_NEAR_PIVOT before reaching the destination.",
+    ". You will see MAIN_NEAR_PIVOT before reaching the destination.",
+    ". It will be on your SPATIAL_REL_GOAL, you will see MAIN_NEAR_PIVOT before reaching the destination.",
+    ". It will be on your SPATIAL_REL_GOAL, you will pass MAIN_NEAR_PIVOT before reaching the destination.",
+    ". Before reaching the destination on your SPATIAL_REL_GOAL, you will see MAIN_NEAR_PIVOT.",
+    ". Before reaching the destination on your SPATIAL_REL_GOAL, you will pass MAIN_NEAR_PIVOT.",
+    ". You will see MAIN_NEAR_PIVOT before reaching the destination on your SPATIAL_REL_GOAL.",
+    ". You will pass MAIN_NEAR_PIVOT before reaching the destination on your SPATIAL_REL_GOAL.",
 ]
 
 NEAR_GOAL_END = [
@@ -231,6 +246,11 @@ def create_templates():
     Production(
       Nonterminal('END_NEAR_GOAL_KNOWN'), (Nonterminal('NEAR_GOAL_START'),
                     Nonterminal('AVOID'))),
+    # End part - (1) near pivot on the way assuming goal already mentioned; and (2) avoid
+    # sentence.
+    Production(
+      Nonterminal('END_NEAR_GOAL_KNOWN'), (Nonterminal('MAIN_NEAR_END'),
+                    Nonterminal('AVOID'))),
     # End part - (1) near pivot assuming goal not mentioned yet; and (2) avoid
     # sentence.
     Production(Nonterminal(
@@ -256,6 +276,7 @@ def create_templates():
   prods += add_rules('V2', V2)
   prods += add_rules('AVOID', AVOID)
   prods += add_rules('NEAR_GOAL_START', NEAR_GOAL_START)
+  prods += add_rules('MAIN_NEAR_END', MAIN_NEAR_END)
   prods += add_rules('NEAR_GOAL_END', NEAR_GOAL_END)
   prods += add_rules('GOAL', GOAL)
   prods += add_rules('GOAL_END', GOAL_END)
@@ -429,12 +450,10 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
       if not feature:
         current_templates = current_templates[
           current_templates[feature_type] == False]
-      else:
-        current_templates = current_templates[current_templates[feature_type] == True]
 
     num_intersections = entity.geo_features['intersections']
     num_intersections = -1 if num_intersections  is None else int(num_intersections )
-
+    
 
     if num_intersections > 0:
       if num_intersections == 1:

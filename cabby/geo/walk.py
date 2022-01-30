@@ -69,7 +69,7 @@ around_pivots = [f"around_goal_pivot_{n}" for n in range(1, N_AROUND_PIVOTS+1)]
 
 LANDMARK_TYPES = [
   "end_point", "start_point", "main_pivot"] + main_pivots + [
-    "near_pivot", "beyond_pivot"] + around_pivots
+    "near_pivot", "beyond_pivot"] + around_pivots + ['main_near_pivot']
 
 FEATURES_TYPES = ["cardinal_direction",
                   "spatial_rel_goal",
@@ -344,7 +344,6 @@ class Walker:
     if self.rand_sample:
       return df.sample(1, random_state = random.randint(0, MAX_SEED)).iloc[0]
     return df.sample(1, random_state=SEED).iloc[0]
-
 
   def get_start_poi(self,
                     end_point: Dict
@@ -794,6 +793,16 @@ class Walker:
       main_pivot_x = self.get_pivot_along_route(
         route, end_point, start_point)
       
+      dist = util.get_distance_between_geometries(
+        main_pivot_x.geometry.centroid,
+        end_point.geometry.centroid
+      )
+      if dist < NEAR_PIVOT_DIST:
+        main_near_pivot = main_pivot_x
+      else:
+        columns_empty = self.map.nodes.columns.tolist() + ['main_tag']
+        main_near_pivot = GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
+      
       list_main_pivots.append(main_pivot_x)
 
     path_geom = LineString(route['geometry'].tolist())
@@ -822,7 +831,8 @@ class Walker:
     # Get pivot located past the goal location and beyond the route.
     beyond_pivot = self.get_pivot_beyond_goal(end_point, route)
 
-    list_pivots = list_main_pivots + [near_pivot] + list_around_goal_pivots + [beyond_pivot]
+    list_pivots = list_main_pivots + [
+      near_pivot] + list_around_goal_pivots + [beyond_pivot] + [main_near_pivot]
     
     return list_pivots
       
@@ -973,7 +983,8 @@ class Walker:
 
     geo_landmarks['main_pivot'] = result[0]
     geo_landmarks['near_pivot'] = result[N_MAIN_PIVOTS]
-    geo_landmarks['beyond_pivot'] = result[-1]
+    geo_landmarks['beyond_pivot'] = result[-2]
+    geo_landmarks['main_near_pivot'] = result[-1]
 
     for i in range(1, N_MAIN_PIVOTS+1):
       geo_landmarks[f'main_pivot_{i}'] = result[i]
