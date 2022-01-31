@@ -96,8 +96,10 @@ class GeoLandmark:
       landmark_desc_list.insert(0, "________________________")
 
     landmark_desc_list.insert(0, self.main_tag.replace("_", " "))
-    self.pivot_gdf['pivot_view'] = ';'.join(landmark_desc_list)
-    self.pivot_gdf_all = self.pivot_gdf
+    
+    if 'pivot_view' not in self.pivot_gdf:
+      self.pivot_gdf['pivot_view'] = ';'.join(landmark_desc_list)
+
     columns_remove = self.pivot_gdf.keys().difference(
       ['osmid', 'geometry', 'main_tag', 'pivot_view'] + osm.PROMINENT_TAGS_ORDERED)
     if len(columns_remove) > 0:
@@ -178,12 +180,15 @@ def save(entities: Sequence[GeoEntity], path_to_save: str):
 
   landmark_types = entities[0].geo_landmarks.keys()
   geo_types_all = {}
-  empty_gdf = gpd.GeoDataFrame(
-    columns=['osmid', 'geometry', 'main_tag', 'pivot_view'])
+  columns = list(set([
+    'osmid', 'geometry', 'main_tag', 'pivot_view'] + osm.PROMINENT_TAGS_ORDERED))
+  empty_gdf = gpd.GeoDataFrame(columns=columns)
+  
   for landmark_type in landmark_types:
     geo_types_all[landmark_type] = empty_gdf
   columns = ['geometry'] + list(entities[0].geo_features.keys())
   geo_types_all['path_features'] = gpd.GeoDataFrame(columns=columns)
+
   for entity in entities:
     for pivot_type, pivot in entity.geo_landmarks.items():
       geo_types_all[pivot_type] = geo_types_all[pivot_type].append(pivot.pivot_gdf)
@@ -198,6 +203,7 @@ def save(entities: Sequence[GeoEntity], path_to_save: str):
     mode = 'a'
   else:
     mode = 'w'
+    
   for geo_type, pivots_gdf in geo_types_all.items():
     pivots_gdf.to_file(
         path_to_save, layer=geo_type, mode=mode, driver=_Geo_DataFrame_Driver)

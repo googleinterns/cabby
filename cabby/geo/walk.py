@@ -75,7 +75,8 @@ FEATURES_TYPES = ["cardinal_direction",
                   "spatial_rel_goal",
                   "spatial_rel_pivot",
                   "intersections",
-                  "goal_position"]
+                  "goal_position",
+                  "spatial_rel_main_near"]
 
 inflect_engine = inflect.engine()
 
@@ -1004,6 +1005,14 @@ class Walker:
     geo_features['spatial_rel_pivot'] = self.get_egocentric_spatial_relation_pivot(
       geo_landmarks['main_pivot']['geometry'].centroid, route)
 
+    
+    # Get Egocentric spatial relation from pivot near and along the way.
+    if geo_landmarks['main_near_pivot']['geometry']: 
+      geo_features['spatial_rel_main_near'] = self.get_egocentric_spatial_relation_pivot(
+        geo_landmarks['main_near_pivot']['geometry'].centroid, route)
+    else:
+      geo_features['spatial_rel_main_near'] = None
+
     # Get number of intersections between main pivot and goal location.
     geo_features['intersections'] = self.get_number_intersections_past(
       geo_landmarks['main_pivot'], route, geo_landmarks['end_point'])
@@ -1094,7 +1103,9 @@ def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
   geo_types_all['route'] = gpd.read_file(path, layer='path_features')['geometry']
   geo_types_all['path_features'] = gpd.read_file(path, layer='path_features')
   geo_entities = []
-  for row_idx in range(geo_types_all[LANDMARK_TYPES[0]].shape[0]):
+  
+  for row_idx in list(range(geo_types_all[LANDMARK_TYPES[0]].shape[0]-1)):
+
     landmarks = {}
     for landmark_type in LANDMARK_TYPES:
       landmarks[landmark_type] = geo_types_all[landmark_type].iloc[row_idx]

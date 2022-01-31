@@ -39,8 +39,9 @@ from cabby.geo import geo_item
 from cabby.geo import walk
 
 inflect_engine = inflect.engine()
-STREET_FEATURES = ["next block", "next intersection", "blocks"] \
-                  + walk.FEATURES_TYPES + walk.LANDMARK_TYPES
+STREET_FEATURES = ["next_block", "next_intersection", "blocks"] \
+                  + walk.FEATURES_TYPES + walk.LANDMARK_TYPES \
+                    + ['SPATIAL_SAME', 'SPATIAL_ACROSS']
 
 GOAL_POSITION_OPTION = {
   'first_intersection': [
@@ -81,11 +82,11 @@ MAIN_NO_V = [
   "past MAIN_PIVOT on your SPATIAL_REL_PIVOT",
   "CARDINAL_DIRECTION and past MAIN_PIVOT",
   "CARDINAL_DIRECTION and past MAIN_PIVOT (on your SPATIAL_REL_PIVOT)",
-  "past MAIN_PIVOT and continue to the next intersection",
-  "past MAIN_PIVOT on your SPATIAL_REL_PIVOT, and continue to the next intersection",
-  "past MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and continue to the next intersection",
-  "past MAIN_PIVOT and continue to the next block",
-  "past MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and continue to the next block",
+  "past MAIN_PIVOT and continue to the NEXT_INTERSECTION",
+  "past MAIN_PIVOT on your SPATIAL_REL_PIVOT, and continue to the NEXT_INTERSECTION",
+  "past MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and continue to the NEXT_INTERSECTION",
+  "past MAIN_PIVOT and continue to the NEXT_BLOCK",
+  "past MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and continue to the NEXT_BLOCK",
   "to MAIN_PIVOT and go CARDINAL_DIRECTION",
   "to MAIN_PIVOT, pass it on your SPATIAL_REL_PIVOT, and go CARDINAL_DIRECTION",
   "to MAIN_PIVOT and turn CARDINAL_DIRECTION",
@@ -111,10 +112,10 @@ MAIN = [
   ". Travel to MAIN_PIVOT and continue BLOCKS blocks further",
   ". Walk to MAIN_PIVOT and proceed BLOCKS blocks past it",
   ". After you reach MAIN_PIVOT, you'll need to go INTERSECTIONS intersections further",
-  ". After you reach MAIN_PIVOT on your SPATIAL_REL_PIVOT, "+
+  ". After you reach MAIN_PIVOT on your SPATIAL_REL_PIVOT, " +
   "you'll need to go INTERSECTIONS intersections further",
   ". When you get to MAIN_PIVOT, you have INTERSECTIONS intersections more to walk",
-  ". When you see to MAIN_PIVOT on your SPATIAL_REL_PIVOT, "+
+  ". When you see to MAIN_PIVOT on your SPATIAL_REL_PIVOT, " +
   "you have INTERSECTIONS intersections more to walk",
   ". After you pass MAIN_PIVOT, go BLOCKS blocks more",
   ". After you pass MAIN_PIVOT on your SPATIAL_REL_PIVOT, go BLOCKS blocks more",
@@ -144,6 +145,11 @@ MAIN_NEAR_END = [
     ". Before reaching the destination on your SPATIAL_REL_GOAL, you will pass MAIN_NEAR_PIVOT.",
     ". You will see MAIN_NEAR_PIVOT before reaching the destination on your SPATIAL_REL_GOAL.",
     ". You will pass MAIN_NEAR_PIVOT before reaching the destination on your SPATIAL_REL_GOAL.",
+    ". It will be across the street from the SPATIAL_ACROSS.",
+    ". It will be across from the SPATIAL_ACROSS.",
+    ". It will be on the same side of the street as the SPATIAL_SAME.",
+    ". It will be on the same side as the SPATIAL_SAME.",
+
 ]
 
 NEAR_GOAL_END = [
@@ -311,8 +317,8 @@ def create_templates():
   # Flag features.
   for column in STREET_FEATURES:
     templates_df[column] = templates_df['sentence'].apply(
-    lambda x: column.upper() in x)
-  
+      lambda x: column.upper() in x)
+
   return templates_df
 
 
@@ -426,40 +432,30 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
   # Generate instructions.
   gen_samples = []
   for entity_idx, entity in enumerate(entities):
+    entity.geo_features['SPATIAL_SAME'] = None
+    entity.geo_features['SPATIAL_ACROSS'] = None
+
+    if not entity.geo_features['spatial_rel_main_near']:
+      pass
+    elif entity.geo_features['spatial_rel_main_near']==entity.geo_features['spatial_rel_goal']:
+      entity.geo_features['SPATIAL_SAME'] = entity.geo_landmarks['main_near_pivot']
+    else:
+      entity.geo_features['SPATIAL_ACROSS'] = entity.geo_landmarks['main_near_pivot']
+      
     current_templates = gen_templates.copy()  # Candidate templates.
 
-    for landmark_type, landmark in entity.geo_landmarks.items():
-      if landmark_type not in current_templates or landmark_type == "start_point":
-        continue
-      if landmark_type in walk.main_pivots + walk.around_pivots:
-        continue
-
-      if not landmark.main_tag:
-
-        current_templates = current_templates[
-          current_templates[landmark_type] == False]
-      else:
-        current_templates = current_templates[current_templates[landmark_type] == True]
-  
-    # Use features that exist.
-    for feature_type, feature in entity.geo_features.items():
-
-      if feature_type not in current_templates or feature_type == 'intersections':
-        continue
-
-      if not feature:
-        current_templates = current_templates[
-          current_templates[feature_type] == False]
-
-    num_intersections = entity.geo_features['intersections']
-    num_intersections = -1 if num_intersections  is None else int(num_intersections )
+    # Filter templates by intersection
     
+    num_intersections = entity.geo_features['intersections']
+    num_intersections = -1 if num_intersections  is None else int(num_intersections)
 
     if num_intersections > 0:
       if num_intersections == 1:
         # Filter out templates without the next intersection mention.
+
         current_templates = current_templates[
-          current_templates['next intersection'] == True]
+          current_templates['next_intersection'] == True]
+
       else:
         # Pick templates with either blocks or intersections. X blocks = X intersection - 1.
         # Randomly pick if the feature is a block or an intersection.
@@ -468,38 +464,60 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
           if num_intersections == 2:  # one block
             # Filter out templates without the next block mention.
             current_templates = current_templates[
-              current_templates['next block'] == True]
+              current_templates['next_block'] == True]
+
           else: # Multiple blocks.
             # Filter out templates without mentions of the number of blocks
             # that should be passed.
             current_templates = current_templates[
               current_templates['blocks'] == True]
+
         else: # Multiple intersections.
           # Filter out templates without mentions of the number of
           # intersections that should be passed.
           current_templates = current_templates[
             current_templates['intersections'] == True]
+
     else:
       # Filter out templates with mentions of intersection\block.
       current_templates = current_templates[
         (current_templates['intersections'] == False) &
         (current_templates['blocks'] == False) &
-        (current_templates['next intersection'] == False) &
-        (current_templates['next block'] == False)]
+        (current_templates['next_intersection'] == False) &
+        (current_templates['next_block'] == False)]
 
-      # From the candidates left, pick randomly one template.
-      choosen_template = current_templates.sample(1)['sentence'].iloc[0]
+    for landmark_type, landmark in entity.geo_landmarks.items():
+      if landmark_type not in current_templates or landmark_type == "start_point":
+        continue
+      if landmark_type in walk.main_pivots + walk.around_pivots:
+        continue
 
-      gen_instructions, entity_span = add_features_to_template(
-        choosen_template, entity)
+      if not landmark.main_tag or landmark.main_tag=='None':
+        current_templates = current_templates[
+          current_templates[landmark_type] == False]
+
+    # Use features that exist.
+    for feature_type, feature in entity.geo_features.items():
+      if feature_type not in current_templates or feature_type == 'intersections':
+        continue
+
+      if not feature:
+        current_templates = current_templates[
+          current_templates[feature_type] == False]
       
-      rvs_entity = geo_item.RVSSample.to_rvs_sample(
-        instructions=gen_instructions,
-        id=entity_idx,
-        geo_entity=entity,
-        entity_span=entity_span
-      )
-      gen_samples.append(rvs_entity)
+    # From the candidates left, pick randomly one template.
+    choosen_template = current_templates.sample(1)['sentence'].iloc[0]
+
+    gen_instructions, entity_span = add_features_to_template(
+      choosen_template, entity)
+    
+    rvs_entity = geo_item.RVSSample.to_rvs_sample(
+      instructions=gen_instructions,
+      id=entity_idx,
+      geo_entity=entity,
+      entity_span=entity_span
+    )
+    gen_samples.append(rvs_entity)
 
   logging.info(f"RVS {split}-set generated: {len(gen_samples)}")
 

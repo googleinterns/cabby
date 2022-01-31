@@ -28,6 +28,7 @@ data file.
 '''
 
 import sys
+from sklearn.utils import shuffle
 
 from absl import logging
 from absl import app
@@ -76,6 +77,9 @@ def main(argv):
 
   # Save templates.
   gen_templates['sentence'].to_csv('templates.csv')
+
+  # Shuffle templates.
+  gen_templates = shuffle(gen_templates)
 
   # Split into Train, Dev and Test sets.
   size_templates = gen_templates.shape[0]
