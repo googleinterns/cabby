@@ -796,7 +796,7 @@ class Walker:
       
       dist = util.get_distance_between_geometries(
         main_pivot_x.geometry.centroid,
-        end_point.geometry.centroid
+        end_point['geometry'].centroid
       )
       if dist < NEAR_PIVOT_DIST:
         main_near_pivot = main_pivot_x
@@ -1103,8 +1103,8 @@ def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
   geo_types_all['route'] = gpd.read_file(path, layer='path_features')['geometry']
   geo_types_all['path_features'] = gpd.read_file(path, layer='path_features')
   geo_entities = []
-  
-  for row_idx in list(range(geo_types_all[LANDMARK_TYPES[0]].shape[0]-1)):
+
+  for row_idx in range(geo_types_all[LANDMARK_TYPES[0]].shape[0]):
 
     landmarks = {}
     for landmark_type in LANDMARK_TYPES:
@@ -1112,6 +1112,7 @@ def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
     features = geo_types_all['path_features'].iloc[row_idx].to_dict()
     del features['geometry']
     route = geo_types_all['route'].iloc[row_idx]
+
     geo_item_cur = geo_item.GeoEntity.add_entity(
       geo_landmarks=landmarks,
       geo_features=features,
