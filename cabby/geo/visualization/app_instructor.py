@@ -18,6 +18,13 @@ from forms import NavigationForm, ReviewForm
 import util
 import visualize
 
+REGION = 'Pittsburgh'
+
+try:
+  rvs_path = os.path.abspath("./data/pittsburgh_samples_v3.gpkg")
+except Exception as e:
+  print (f"An Error Occured: {e}")
+
 # Initialize Firestore DB
 cred = firebase_admin.credentials.Certificate('key.json')
 default_app = firebase_admin.initialize_app(cred)
@@ -40,11 +47,6 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 qualified_workers = pd.read_csv(
   "qualified_workers.csv", header=None)[0].tolist()
-
-try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v28.gpkg")
-except Exception as e:
-  print (f"An Error Occured: {e}, {rvs_path}")
 
 # Raw Data
 osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path, with_path=False)
@@ -152,7 +154,8 @@ def description_task(
         'date_start': str(start_session[session_id]),
         'date_finish': str(datetime.utcnow()),
         'key': id,
-        'verified_n': 0
+        'verified_n': 0,
+        'region': REGION
         }
 
         # save to database
@@ -294,7 +297,7 @@ def verification_task(
         'rvs_goal_point': sample['rvs_goal_point'],
         'key_instruction': sample['key'],
         'key': id,
-        'dist_m': dist
+        'dist_m': dist,
         }
 
         # save to database
@@ -404,7 +407,7 @@ def map():
   except:
     n_sample = random.randint(0, size_dataset-1)
     sample_session[workerId] = n_sample
-    folium_map, _, _, _ = osm_maps_instructions[n_sample]
+    folium_map, _, _, _, _ = osm_maps_instructions[n_sample]
     path_map = os.path.join(dir_map,f"map_{n_sample}.html") 
     folium_map.save(path_map)
     return flask.render_template(f'map_{n_sample}.html')
