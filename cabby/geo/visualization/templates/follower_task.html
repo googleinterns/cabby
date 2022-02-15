@@ -16,6 +16,11 @@
         </ul>
 
 
+
+    <!-- <svg width="200" height="200"
+        xmlns="http://www.w3.org/2000/svg">
+        <image href={{icon}} height="200" width="200"/>
+      </svg> -->
         
 <div id="mapid" class=map></div>
 
@@ -30,6 +35,24 @@
         <p style="color:blue">{{ nav_instruction }}</p>
 
         <p>
+            
+
+            {% if icon_path %}
+
+            <div>
+
+                <p><b>Hint </b>the goal's icon is most likely: <img src="{{url_for('static', filename='osm_icons/' + icon_path)}}"  />
+                </p> 
+
+
+           </div>
+           
+            {% endif %}
+
+
+            
+
+
             <b>Task Instructions: </b>
             <ul>
                 <li>The <font color = "green">green marker is the start point </font>

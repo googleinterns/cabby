@@ -15,13 +15,23 @@
 '''Library to support geographical visualization.'''
 
 import folium
+import os
 from shapely.geometry import LineString
 from typing import Tuple, Sequence, Text
+
 
 import util
 
 NOT_PRIVIEW_TAGS = ['osmid', 'main_tag'] 
 PIVOTS_COLORS = {"end_point":'red', "start_point":'green'} 
+ICON_TAGS = ['tourism','amenity', 'shop', 'leisure']
+
+icon_dir = os.path.abspath("./static/osm_icons")
+
+onlyfiles = [
+  f for f in os.listdir(icon_dir) if os.path.isfile(os.path.join(icon_dir, f))]
+
+dict_icon_path = {x.replace('.svg', "").split('=')[1].replace('_', " "): x for x in onlyfiles}
 
 
 def get_osm_map(
@@ -62,7 +72,8 @@ def get_osm_map(
     add_landmark_to_osm_map(
       landmark=landmark,
       map_osm=map_osm,
-      color=color)
+      color=color,
+      )
 
   # add path between start and end point
   if with_path:
@@ -96,6 +107,19 @@ def add_landmark_to_osm_map(landmark, map_osm, color):
           popup=desc,
           icon=folium.Icon(color=color)).add_to(map_osm)
 
+def get_goal_icon(goal):
+    for tag in ICON_TAGS:
+      if tag not in goal.pivot_gdf:
+        continue 
+      value_goal = goal.pivot_gdf[tag]
+      if value_goal is None:
+        continue
+      candidate_path = os.path.join(icon_dir, tag+"="+value_goal+".svg")
+      if os.path.exists(candidate_path):
+        return candidate_path
+    return None
+    
+
 def get_maps_and_instructions(
   path: Text, with_path: bool = True, with_end_point: bool = True
 ) -> Sequence[Tuple[Sequence, str, Sequence[str], folium.Map]]:
@@ -118,10 +142,12 @@ def get_maps_and_instructions(
 
     landmark_list = []
     for landmark_type, landmark in entity.geo_landmarks.items():
+      if landmark_type == 'end_point':
+        goal_icon = get_goal_icon(landmark)
       landmark_list.append(str(landmark.main_tag))
 
     instruction = '; '.join(features_list) + '; '.join(landmark_list)
     map_osms_instructions.append(
-      (map_osm, instruction, landmark_list, entity))
+      (map_osm, instruction, landmark_list, entity, goal_icon))
 
   return map_osms_instructions

@@ -44,7 +44,7 @@ from cabby.geo import osm
 
 SMALL_POI = 4 # Less than 4 S2Cellids.
 
-SEED = 3
+SEED = 1
 MAX_SEED = 2**32 - 1
 
 SAVE_ENTITIES_EVERY = 100
@@ -424,6 +424,8 @@ class Walker:
         else: 
           tags_keys = osm.SPECIFIC_TAGS
         for tag_k in tags_keys:
+          if tag_k not in pivots:
+            continue
           pivots_tag = pivots[pivots[tag_k].notnull()]
 
           if pick_generic_name and isinstance(
@@ -955,6 +957,8 @@ class Walker:
 
     geo_landmarks['main_pivot'] = result[0]
     geo_landmarks['near_pivot'] = result[N_MAIN_PIVOTS]
+    geo_landmarks['beyond_pivot'] = result[-1]
+
     for i in range(1, N_MAIN_PIVOTS+1):
       geo_landmarks[f'main_pivot_{i}'] = result[i]
     for i in range(1, N_AROUND_PIVOTS+1):
@@ -1079,4 +1083,3 @@ def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
 
   logging.info(f"Loaded entities {len(geo_entities)} from <= {path}")
   return geo_entities
-

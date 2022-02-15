@@ -1,5 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
+from operator import iconcat
 import flask
 from flask import Flask
 from flask_session import Session
@@ -37,9 +38,11 @@ app.app_context().push()
 Session(app)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
+qualified_workers = pd.read_csv(
+  "qualified_workers.csv", header=None)[0].tolist()
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v24.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v26.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}, {rvs_path}")
 
@@ -104,8 +107,11 @@ def home():
 
 def description_task(
   workerId, hitId, assignmentId, session_id, turkSubmitTo):
-  folium_map, _, landmarks, entity = osm_maps_instructions[
-    sample_session[workerId]]
+  
+  n_sample = int(sample_session[workerId])
+
+  folium_map, _, landmarks, entity, _ = osm_maps_instructions[n_sample]
+
   path_map = os.path.join(dir_map,f"map_{sample_session[workerId]}.html") 
   if os.path.exists(path_map):
     os.remove(path_map)
@@ -160,7 +166,7 @@ def description_task(
       
       sample_session[workerId] = random.randint(0, size_dataset-1)
 
-      folium_map, _, landmarks, entity = osm_maps_instructions[sample_session[workerId]]
+      folium_map, _, landmarks, entity, _ = osm_maps_instructions[sample_session[workerId]]
       path_map = os.path.join(dir_map,f"map_{sample_session[workerId]}.html") 
       if os.path.exists(path_map):
         os.remove(path_map)
@@ -216,9 +222,11 @@ def verification_task(
   instruction_data_all = list(instruction_table.get())
 
   instruction_data = [
-    e.to_dict() for e in instruction_data_all if 'review' in e.to_dict() and e.to_dict()[
-      'review']=='RVS_excellent' and e.to_dict()[
-      'work_id']!=workerId]
+    e.to_dict() for e in instruction_data_all if (
+      workerId in qualified_workers or (
+        'review' in e.to_dict() and e.to_dict()[
+          'review']=='RVS_excellent')) and e.to_dict()[
+            'work_id']!=workerId]
 
   instruction_data_df = pd.DataFrame(instruction_data)
   instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
@@ -323,10 +331,12 @@ def verification_task(
   osm_maps_verification = visualize.get_maps_and_instructions(
     path_verf, with_path=False)
 
-  _, _, _, entity = osm_maps_verification[
+  _, _, _, entity, icon_path = osm_maps_verification[
     int(sample_session[workerId])]
 
-  
+  if icon_path:
+    icon_path = icon_path.split('osm_icons/')[-1]
+
   start_session[session_id] = datetime.utcnow()
 
   if task_session[session_id] == 0:
@@ -370,7 +380,8 @@ def verification_task(
                         form=form,
                         landmark_main=landmark_main,
                         landmark_around=landmark_around,
-                        landmark_rest=landmark_rest
+                        landmark_rest=landmark_rest,
+                        icon_path=icon_path
                         )
 
 
