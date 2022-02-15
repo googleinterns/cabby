@@ -69,13 +69,14 @@ around_pivots = [f"around_goal_pivot_{n}" for n in range(1, N_AROUND_PIVOTS+1)]
 
 LANDMARK_TYPES = [
   "end_point", "start_point", "main_pivot"] + main_pivots + [
-    "near_pivot", "beyond_pivot"] + around_pivots
+    "near_pivot", "beyond_pivot"] + around_pivots + ['main_near_pivot']
 
 FEATURES_TYPES = ["cardinal_direction",
                   "spatial_rel_goal",
                   "spatial_rel_pivot",
                   "intersections",
-                  "goal_position"]
+                  "goal_position",
+                  "spatial_rel_main_near"]
 
 inflect_engine = inflect.engine()
 
@@ -344,7 +345,6 @@ class Walker:
     if self.rand_sample:
       return df.sample(1, random_state = random.randint(0, MAX_SEED)).iloc[0]
     return df.sample(1, random_state=SEED).iloc[0]
-
 
   def get_start_poi(self,
                     end_point: Dict
@@ -712,10 +712,17 @@ class Walker:
     street = self.map.edges[self.map.edges['u'] == end_point['osmid']].iloc[0]['osmid']
     nodes_u = self.map.edges[self.map.edges['osmid']==street]['u']
     condition_intersection = self.map.edges['osmid'] != street
-    condition_not_poi = self.map.edges['name'] != 'poi'
-    intersections_nodes_osmid = self.map.edges[
-      condition_not_poi & condition_intersection & self.map.edges['u'].isin(nodes_u)]['u']
+    condition_not_poi = self.map.edges['name'] != 'poi' 
+    streets_intersection = self.map.edges[
+      condition_not_poi & condition_intersection & self.map.edges['u'].isin(
+        nodes_u)]
+    intersections_nodes_osmid = streets_intersection['u']
+
     intersections_nodes = self.map.nodes[self.map.nodes['osmid'].isin(intersections_nodes_osmid)]
+
+    if intersections_nodes.shape[0]==0:
+      return None
+   
     distances = intersections_nodes.apply(
       lambda x: util.get_distance_between_geometries(x.geometry, end_point.centroid), axis=1)
     intersections_nodes.insert(0, "distances", distances, True)
@@ -727,29 +734,38 @@ class Walker:
     bearing = intersections_nodes['bearing'].loc[min_distance_idx]
     distance_closest = intersections_nodes['distances'].loc[min_distance_idx]
 
+    point_closest = intersections_nodes.loc[min_distance_idx]
+
     # Get second bearing in opposite direction.
     opposite_bearing = (bearing+180)%360
     intersection_opposite = intersections_nodes[(intersections_nodes['bearing']-opposite_bearing)%360<30]
+
     if intersection_opposite.shape[0]==0:
       return None
 
     intersection_opposite_idx = intersection_opposite['distances'].idxmin()
     intersection_opposite_distance = intersection_opposite.loc[intersection_opposite_idx]['distances']
 
+    point_far = intersection_opposite.loc[intersection_opposite_idx]
+
+    cardinal = self.get_cardinal_direction(point_far, point_closest)
+
+
     # Check the proportions.
     total_distance = intersection_opposite_distance + distance_closest
     closest_propotion = distance_closest/total_distance
     if closest_propotion>0.4:
-      return "in the middle of the block"
+      return "middle_block"
 
     if closest_propotion>0.3:
       return None
+      
     # Check to which intersection it is closer.
     closest_inter_node_osmid = intersections_nodes.loc[min_distance_idx]['osmid']
     if closest_inter_node_osmid in route['osmid'].tolist():
-      return "near the last intersection passed"
+      return "first_intersection;" + cardinal
 
-    return "near the next intersection"
+    return "second_intersection;" + cardinal
 
   def get_pivots(self,
                 route: GeoDataFrame,
@@ -777,6 +793,16 @@ class Walker:
     for _ in range(1, N_MAIN_PIVOTS):
       main_pivot_x = self.get_pivot_along_route(
         route, end_point, start_point)
+      
+      dist = util.get_distance_between_geometries(
+        main_pivot_x.geometry.centroid,
+        end_point['geometry'].centroid
+      )
+      if dist < NEAR_PIVOT_DIST:
+        main_near_pivot = main_pivot_x
+      else:
+        columns_empty = self.map.nodes.columns.tolist() + ['main_tag']
+        main_near_pivot = GeoDataFrame(index=[0], columns=columns_empty).iloc[0]
       
       list_main_pivots.append(main_pivot_x)
 
@@ -806,7 +832,8 @@ class Walker:
     # Get pivot located past the goal location and beyond the route.
     beyond_pivot = self.get_pivot_beyond_goal(end_point, route)
 
-    list_pivots = list_main_pivots + [near_pivot] + list_around_goal_pivots + [beyond_pivot]
+    list_pivots = list_main_pivots + [
+      near_pivot] + list_around_goal_pivots + [beyond_pivot] + [main_near_pivot]
     
     return list_pivots
       
@@ -957,7 +984,8 @@ class Walker:
 
     geo_landmarks['main_pivot'] = result[0]
     geo_landmarks['near_pivot'] = result[N_MAIN_PIVOTS]
-    geo_landmarks['beyond_pivot'] = result[-1]
+    geo_landmarks['beyond_pivot'] = result[-2]
+    geo_landmarks['main_near_pivot'] = result[-1]
 
     for i in range(1, N_MAIN_PIVOTS+1):
       geo_landmarks[f'main_pivot_{i}'] = result[i]
@@ -976,6 +1004,14 @@ class Walker:
     # Get Egocentric spatial relation from main pivot.
     geo_features['spatial_rel_pivot'] = self.get_egocentric_spatial_relation_pivot(
       geo_landmarks['main_pivot']['geometry'].centroid, route)
+
+    
+    # Get Egocentric spatial relation from pivot near and along the way.
+    if geo_landmarks['main_near_pivot']['geometry']: 
+      geo_features['spatial_rel_main_near'] = self.get_egocentric_spatial_relation_pivot(
+        geo_landmarks['main_near_pivot']['geometry'].centroid, route)
+    else:
+      geo_features['spatial_rel_main_near'] = None
 
     # Get number of intersections between main pivot and goal location.
     geo_features['intersections'] = self.get_number_intersections_past(
@@ -1067,13 +1103,16 @@ def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
   geo_types_all['route'] = gpd.read_file(path, layer='path_features')['geometry']
   geo_types_all['path_features'] = gpd.read_file(path, layer='path_features')
   geo_entities = []
+
   for row_idx in range(geo_types_all[LANDMARK_TYPES[0]].shape[0]):
+
     landmarks = {}
     for landmark_type in LANDMARK_TYPES:
       landmarks[landmark_type] = geo_types_all[landmark_type].iloc[row_idx]
     features = geo_types_all['path_features'].iloc[row_idx].to_dict()
     del features['geometry']
     route = geo_types_all['route'].iloc[row_idx]
+
     geo_item_cur = geo_item.GeoEntity.add_entity(
       geo_landmarks=landmarks,
       geo_features=features,

@@ -28,11 +28,11 @@ data file.
 '''
 
 import sys
+from sklearn.utils import shuffle
 
 from absl import logging
 from absl import app
 from absl import flags
-
 
 from cabby.geo import walk
 from cabby.rvs import templates
@@ -75,6 +75,12 @@ def main(argv):
   # Get templates.
   gen_templates = templates.create_templates()
 
+  # Save templates.
+  gen_templates['sentence'].to_csv('templates.csv')
+
+  # Shuffle templates.
+  gen_templates = shuffle(gen_templates)
+
   # Split into Train, Dev and Test sets.
   size_templates = gen_templates.shape[0]
   train_size = round(size_templates*FLAGS.train_proportion)
@@ -99,4 +105,3 @@ def main(argv):
 
 if __name__ == '__main__':
   app.run(main)
-
