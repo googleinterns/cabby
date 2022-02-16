@@ -47,6 +47,19 @@ py_library(
     ],
 )
 
+
+py_library(
+    name = 'dataset_human',
+    srcs = ['dataset_human.py'],
+    deps = [
+          ":dataset_item",
+          "//cabby/model:util",
+          "//cabby/geo:util",
+          "//cabby/geo:regions",
+          "//cabby/model:datasets",
+    ],
+)
+
 py_library(
     name = 'dataset_item',
     srcs = ['dataset_item.py'],
@@ -79,6 +92,7 @@ py_binary(
         ':dataset_wikigeo',
         ':dataset_rvs',
         ':dataset_run',
+        ':dataset_human',
         ':dataset_item',
         ':model',
         "//cabby/model/text:util",

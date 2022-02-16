@@ -22,6 +22,42 @@ from cabby.geo import regions
 from cabby.geo import util as gutil
 
 
+class HumanDataset:
+  def __init__(self, data_dir: str, s2level: int, region: str, lines: bool = True):
+    self.train = self.load_data(data_dir, 'train', lines=lines)
+    self.valid = self.load_data(data_dir, 'dev', lines=lines)
+    self.test = self.load_data(data_dir, 'test', lines=lines)
+    
+    # Get labels.
+    active_region = regions.get_region(region)
+    unique_cellid = gutil.cellids_from_polygon(active_region.polygon, s2level)
+    label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
+    cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
+
+    self.unique_cellid = unique_cellid
+    self.label_to_cellid = label_to_cellid
+    self.cellid_to_label = cellid_to_label
+
+
+  def load_data(self, data_dir: str, ds_set: str, lines: bool):
+
+    ds_path = os.path.join(data_dir, ds_set + '.json')
+    assert os.path.exists(ds_path), f"{ds_path} doesn't exsits"
+
+    ds = pd.read_json(ds_path, lines=lines)
+    ds['instructions'] = ds['content']
+    ds['end_point'] = ds['rvs_goal_point']
+    ds['start_point'] = ds['rvs_start_point']
+
+    columns_keep = ds.columns.difference(
+      ['instructions', 'end_point', 'start_point'])
+    ds.drop(columns_keep, 1, inplace=True)
+
+    ds = shuffle(ds)
+    ds.reset_index(inplace=True, drop=True)
+    return ds
+
+
 class RUNDataset:
   def __init__(self, data_dir: str, s2level: int, lines: bool = False):
     train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=lines)

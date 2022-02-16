@@ -59,12 +59,13 @@ from cabby.model.text.dual_encoder import train
 from cabby.model.text.dual_encoder import dataset_wikigeo
 from cabby.model.text.dual_encoder import dataset_rvs
 from cabby.model.text.dual_encoder import dataset_run
+from cabby.model.text.dual_encoder import dataset_human
 from cabby.model.text.dual_encoder import model
 from cabby.model.text.dual_encoder import dataset_item
 from cabby.model.text import util
 from cabby.geo import regions
 
-TASKS = ["WikiGeo", "RVS", "RUN"]
+TASKS = ["WikiGeo", "RVS", "RUN", "human"]
 
 FLAGS = flags.FLAGS
 
@@ -136,8 +137,12 @@ def main(argv):
     dataset = dataset_wikigeo
   elif FLAGS.task == "RVS": 
     dataset = dataset_rvs
-  else: # RUN.
+  elif FLAGS.task == 'RUN':
     dataset = dataset_run
+  elif FLAGS.task == 'human':
+    dataset = dataset_human
+  else: 
+    sys.exit("Dataset invalid")
  
   if os.path.exists(dataset_path):
     dataset_text = dataset_item.TextGeoDataset.load(
