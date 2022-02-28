@@ -46,8 +46,8 @@ class HumanDataset:
 
     ds = pd.read_json(ds_path, lines=lines)
     ds['instructions'] = ds['content']
-    ds['end_point'] = ds['rvs_goal_point']
-    ds['start_point'] = ds['rvs_start_point']
+    ds['end_point'] = ds['rvs_goal_point'].apply(gutil.point_from_str_coord_xy)
+    ds['start_point'] = ds['rvs_start_point'].apply(gutil.point_from_str_coord_xy)
 
     columns_keep = ds.columns.difference(
       ['instructions', 'end_point', 'start_point'])

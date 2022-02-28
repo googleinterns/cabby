@@ -20,6 +20,7 @@ import os
 import pandas as pd
 from sklearn.utils import shuffle
 import torch
+import swifter
 
 from cabby.geo import util as gutil
 from cabby.model.text import util 
@@ -48,6 +49,7 @@ def create_dataset(
   Returns:
     The train, validate and test sets and the dictionary of labels to cellids.
   '''
+
   human_dataset = datasets.HumanDataset(data_dir, s2level, region)
 
   points = gutil.get_centers_from_s2cellids(human_dataset.unique_cellid)
@@ -55,7 +57,7 @@ def create_dataset(
   unique_cells_df = pd.DataFrame(
     {'point': points, 'cellid': human_dataset.unique_cellid})
   
-  unique_cells_df['far'] = unique_cells_df.point.apply(
+  unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
       lambda x: gutil.far_cellid(x, unique_cells_df))
 
   vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
