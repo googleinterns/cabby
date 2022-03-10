@@ -115,25 +115,10 @@ class RUNDataset:
 
 class RVSDataset:
   def __init__(self, data_dir: str, s2level: int, region: str, lines: bool = True):
-    ds = pd.read_json(os.path.join(data_dir, 'dataset.json'), lines=lines)
-    logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
-    ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
-    lengths = ds.end_point.apply(lambda x: x if len(x) == 3 else "").tolist()
-    ds['end_osmid'] = ds.end_point.apply(lambda x: x[1])
-    ds['start_osmid'] = ds.start_point.apply(lambda x: x[1])
-    ds['end_pivot'] = ds.end_point
-    ds['end_point'] = ds.end_point.apply(lambda x: x[3])
-    ds['start_point'] = ds.start_point.apply(lambda x: x[3])
-    ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
-    logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
-    dataset_size = ds.shape[0]
 
-    train_size = round(dataset_size * 80 / 100)
-    valid_size = round(dataset_size * 10 / 100)
-
-    train_ds = ds.iloc[:train_size]
-    valid_ds = ds.iloc[train_size:train_size + valid_size]
-    test_ds = ds.iloc[train_size + valid_size:]
+    train_ds = self.load_data(data_dir, 'train', lines)
+    valid_ds = self.load_data(data_dir, 'dev', lines)
+    test_ds = self.load_data(data_dir, 'test', lines)
 
     # Get labels.
     active_region = regions.get_region(region)
@@ -147,3 +132,38 @@ class RVSDataset:
     self.unique_cellid = unique_cellid
     self.label_to_cellid = label_to_cellid
     self.cellid_to_label = cellid_to_label
+
+  def load_data(self, data_dir: str, split: str, lines: bool):
+    path_ds= os.path.join(data_dir, f'ds_{split}.json')
+    assert os.path.exists(path_ds), path_ds
+    # ds = pd.read_json(path_ds, lines=lines)
+        
+    import json
+    lineByLine = []
+
+    with open(path_ds, 'r') as f:
+      db = json.load(f)
+      lineByLine.append(db)
+    
+    for line in lineByLine:
+      logging.info(f" ?????????? {type(line['geo_landmarks'])} ")
+
+    to_json = json.dumps(lineByLine)
+    ds = pd.read_json(to_json)
+
+
+    logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
+    # ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
+    logging.info(f"!!!!!!!!! {ds.geo_landmarks.keys()}")
+
+    # logging.info(f"!!!!!!!!! {ds.apply(lambda x: type(x.geo_landmarks[0]), axis=1)}")
+
+    ds['end_osmid'] = ds.geo_landmarks.apply(lambda x: x['end_point'][1])
+    ds['start_osmid'] = ds.geo_landmarks.apply(lambda x: x['start_point'][1])
+    ds['end_pivot'] = ds.geo_landmarks['end_point']
+    ds['end_point'] = ds.geo_landmarks.apply(lambda x: x['end_point'][3])
+    ds['start_point'] = ds.geo_landmarks.apply(lambda x: x['start_point'][3])
+    ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
+    return ds    
+
+

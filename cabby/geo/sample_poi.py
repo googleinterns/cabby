@@ -20,14 +20,15 @@ $ bazel-bin/cabby/geo/sample_poi --region "DC" --min_s2_level 18 \
     --path "./cabby/geo/pathData/dc_geo_paths.gpkg" --n_samples 1
 '''
 
-from absl import app
-from absl import flags
-
-import multiprocessing 
-
 from cabby.geo import regions
 from cabby.geo import walk
 from cabby.geo.map_processing import map_structure
+
+from absl import app
+from absl import flags
+
+
+import multiprocessing 
 
 FLAGS = flags.FLAGS
 flags.DEFINE_enum(

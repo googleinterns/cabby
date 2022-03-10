@@ -416,7 +416,7 @@ def add_entity_span(entity_tag: str, instruction: str) -> Dict[str, Tuple[int, i
   entities_span_dict = {}
   for keyword_found in keywords_found:
     start_position, end_position = keyword_found[1], keyword_found[2]
-    entities_span_dict[entity_tag] = (start_position, end_position)
+    entities_span_dict[entity_tag] = str(start_position) +";" + str(end_position)
 
   return entities_span_dict
 
@@ -533,9 +533,12 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
     f"{save_instruction_path}")
   # Save to file.
   with open(save_instruction_path, 'a') as outfile:
-    for sample in uniq_samples.values():
-      json.dump(sample, outfile, default=lambda o: o.__dict__)
-      outfile.write('\n')
-      outfile.flush()
+    for sample_idx, sample in enumerate(uniq_samples.values()):
+      try:
+        json.dump(sample, outfile, default=lambda o: o.__dict__)
+        outfile.write('\n')
+        outfile.flush()
+      except AttributeError:
+        logging.info(f"Failed writting sample {sample_idx}. Error: {AttributeError}")
 
   logging.info(f"Finished writing {split}-set to file.")
