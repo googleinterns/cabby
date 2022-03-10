@@ -183,7 +183,7 @@ class Trainer:
       # Evaluation step.
       valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
 
-      average_train_loss = running_loss / batch_idx
+      average_train_loss = running_loss / (batch_idx + 1)
       accuracy = accuracy_score(true_vals, predictions)
 
       # Resetting running values.

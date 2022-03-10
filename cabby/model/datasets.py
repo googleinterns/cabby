@@ -136,33 +136,17 @@ class RVSDataset:
   def load_data(self, data_dir: str, split: str, lines: bool):
     path_ds= os.path.join(data_dir, f'ds_{split}.json')
     assert os.path.exists(path_ds), path_ds
-    # ds = pd.read_json(path_ds, lines=lines)
+    ds = pd.read_json(path_ds, lines=lines)
         
-    import json
-    lineByLine = []
-
-    with open(path_ds, 'r') as f:
-      db = json.load(f)
-      lineByLine.append(db)
-    
-    for line in lineByLine:
-      logging.info(f" ?????????? {type(line['geo_landmarks'])} ")
-
-    to_json = json.dumps(lineByLine)
-    ds = pd.read_json(to_json)
-
-
     logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
-    # ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
-    logging.info(f"!!!!!!!!! {ds.geo_landmarks.keys()}")
 
-    # logging.info(f"!!!!!!!!! {ds.apply(lambda x: type(x.geo_landmarks[0]), axis=1)}")
+    ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
 
-    ds['end_osmid'] = ds.geo_landmarks.apply(lambda x: x['end_point'][1])
-    ds['start_osmid'] = ds.geo_landmarks.apply(lambda x: x['start_point'][1])
-    ds['end_pivot'] = ds.geo_landmarks['end_point']
-    ds['end_point'] = ds.geo_landmarks.apply(lambda x: x['end_point'][3])
-    ds['start_point'] = ds.geo_landmarks.apply(lambda x: x['start_point'][3])
+    ds['end_osmid'] = ds.end_point.apply(lambda x: x[1])
+    ds['start_osmid'] = ds.start_point.apply(lambda x: x[1])
+    ds['end_pivot'] = ds.end_point
+    ds['end_point'] = ds.end_point.apply(lambda x: gutil.point_from_list_coord(x[3]))
+    ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord(x[3]))
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
     return ds    
 
