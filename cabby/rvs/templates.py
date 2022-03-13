@@ -517,6 +517,7 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
       geo_entity=entity,
       entity_span=entity_span
     )
+
     gen_samples.append(rvs_entity)
 
   logging.info(f"RVS {split}-set generated: {len(gen_samples)}")
