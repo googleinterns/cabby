@@ -13,6 +13,7 @@
 # limitations under the License.
 '''Basic classes and functions for Wikigeo items.'''
 
+from xmlrpc.client import Boolean
 from absl import logging
 import geopandas as gpd
 from geopandas import GeoDataFrame, GeoSeries
@@ -121,30 +122,36 @@ class TextGeoSplit(torch.utils.data.Dataset):
   """
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int], 
-    dprob: mutil.DistanceProbability):
+    dprob: mutil.DistanceProbability, is_dist: Boolean = False):
 
+    self.is_dist = is_dist
     
     data = data.assign(point=data.end_point)
 
     data['cellid'] = data.point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
 
+    logging.info(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 2B")
+
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.neighbor_cellid(x))
 
-    dist_lists = data.start_point.apply(
-      lambda start: calc_dist(start, unique_cells_df)
-    )
+    logging.info(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 2C")
+
+    if is_dist:
+      dist_lists = data.start_point.apply(
+        lambda start: calc_dist(start, unique_cells_df)
+      )
+      
+      self.prob = dist_lists.swifter.apply(
+        lambda row: [dprob(dist) for dist in row.values.tolist()], axis=1) 
+      self.prob = self.prob.tolist()
+
 
     # Tokenize instructions.
     self.encodings = tokenizer(
       data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
-
-    self.prob = dist_lists.swifter.apply(
-      lambda row: [dprob(dist) for dist in row.values.tolist()], axis=1) 
-
-    self.prob = self.prob.tolist()
 
     data['far_cells'] = data.cellid.apply(
       lambda cellid: unique_cells_df[unique_cells_df['cellid']==cellid].far.iloc[0])
@@ -183,7 +190,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
     far_cells = torch.tensor(self.far_cells[idx])
     point = torch.tensor(self.points[idx])
     label = torch.tensor(self.labels[idx])
-    prob = torch.tensor(self.prob[idx])
+    if self.is_dist:
+      prob = torch.tensor(self.prob[idx])
+    else:
+      prob = torch.tensor([])
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
       'far_cells': far_cells, 'point': point, 'label': label, 'prob': prob}
