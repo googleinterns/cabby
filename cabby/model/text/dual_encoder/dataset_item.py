@@ -131,12 +131,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
     data['cellid'] = data.point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
 
-    logging.info(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 2B")
-
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.neighbor_cellid(x))
-
-    logging.info(f"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 2C")
 
     if is_dist:
       dist_lists = data.start_point.apply(
