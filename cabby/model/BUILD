@@ -11,6 +11,10 @@ package(
 py_library(
     name = 'util',
     srcs = ['util.py'],    
+    deps = [
+        "//cabby/geo:util",
+
+],
 )
 
 
@@ -21,7 +25,7 @@ py_binary(
     deps = [
           ":datasets",
           "//cabby/geo:util",
-          "//cabby/model/text:util",
+          "//cabby/model:util",
           "//cabby/geo:regions",
           "//cabby/evals:utils"
 
@@ -35,12 +39,27 @@ py_binary(
     srcs = ['datasets.py'],
     deps = [
           "//cabby/geo:util",
-          "//cabby/model/text:util",
           "//cabby/geo:regions",
-          "//cabby/evals:utils"
+          "//cabby/evals:utils",
+          ":dataset_item",
+          ":util"
+
 
     ],
 )
+
+py_library(
+    name = 'dataset_item',
+    srcs = ['dataset_item.py'],
+    deps = [
+        "//cabby/geo:util",
+        ":util"
+
+
+],
+
+)
+
 
 
 py_test(

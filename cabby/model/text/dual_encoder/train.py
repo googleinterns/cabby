@@ -25,7 +25,7 @@ from transformers import AdamW
 from torch.utils.data import DataLoader
 
 from cabby.evals import utils as eu
-from cabby.model.text import util
+from cabby.model import util
 
 criterion = nn.CosineEmbeddingLoss()
 

@@ -23,6 +23,6 @@ py_binary(
     deps = [
         ":utils",
         "//cabby:logger",
-        "//cabby/model/text:util",
+        "//cabby/model:util",
     ],
 )

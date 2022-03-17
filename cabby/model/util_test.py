@@ -13,6 +13,11 @@
 # limitations under the License.
 '''Tests for util.py'''
 import unittest
+import numpy as np
+import osmnx as ox
+import unittest
+from shapely.geometry.point import Point
+import sys
 
 from cabby.model import util
 
@@ -32,6 +37,14 @@ class UtilTest(unittest.TestCase):
     
     # Check probability of 6000 meters.
     self.assertAlmostEqual(dprob5kshape2(6000), 0.21685983257678548)
+
+
+
+  def testBinarization(self):
+    array_int = np.array([1, 2, 3, 1], dtype=np.int8)    
+    representation = util.binary_representation(array_int, 2)
+    np.testing.assert_array_equal(
+      representation, np.array([[1, 0], [0, 1], [1, 1], [1, 0]]))
 
 
 if __name__ == "__main__":

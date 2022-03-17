@@ -17,7 +17,7 @@
 import folium
 import os
 from shapely.geometry import LineString
-from typing import Tuple, Sequence, Text
+from typing import Tuple, Sequence, Text, Optional
 
 
 import util
@@ -122,7 +122,7 @@ def get_goal_icon(goal):
 
 def get_maps_and_instructions(
   path: Text, with_path: bool = True, with_end_point: bool = True
-) -> Sequence[Tuple[Sequence, str, Sequence[str], folium.Map]]:
+) -> Sequence[Tuple[Sequence, str, Sequence[str], folium.Map, Optional[str]]]:
   '''Create the OSM maps and instructions.
   Arguments:
     path: The path from the start point to the goal location.

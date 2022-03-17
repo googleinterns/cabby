@@ -31,9 +31,8 @@ from transformers import DistilBertTokenizerFast
 
 import attr
 
-from cabby.model import util as mutil
 from cabby.geo import util as gutil
-from cabby.model.text import util 
+from cabby.model import util 
 
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 
@@ -122,7 +121,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
   """
   def __init__(self, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int], 
-    dprob: mutil.DistanceProbability, is_dist: Boolean = False):
+    dprob: util.DistanceProbability, is_dist: Boolean = False):
 
     self.is_dist = is_dist
     

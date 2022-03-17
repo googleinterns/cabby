@@ -56,13 +56,10 @@ from transformers import AdamW
 
 from cabby.evals import utils as eu
 from cabby.model.text.dual_encoder import train
-from cabby.model.text.dual_encoder import dataset_wikigeo
-from cabby.model.text.dual_encoder import dataset_rvs
-from cabby.model.text.dual_encoder import dataset_run
-from cabby.model.text.dual_encoder import dataset_human
+from cabby.model import dataset_item
 from cabby.model.text.dual_encoder import model
-from cabby.model.text.dual_encoder import dataset_item
-from cabby.model.text import util
+from cabby.model import datasets
+from cabby.model import util
 from cabby.geo import regions
 
 TASKS = ["WikiGeo", "RVS", "RUN", "human"]
@@ -133,14 +130,20 @@ def main(argv):
 
 
   assert FLAGS.task in TASKS
-  if FLAGS.task == "WikiGeo":
-    dataset = dataset_wikigeo
-  elif FLAGS.task == "RVS": 
-    dataset = dataset_rvs
+  if FLAGS.task == "RVS": 
+    dataset = datasets.RVSDataset(
+      data_dir = FLAGS.data_dir, 
+      region = FLAGS.region, 
+      s2level = FLAGS.s2_level, )
   elif FLAGS.task == 'RUN':
-    dataset = dataset_run
+    dataset = datasets.RUNDataset(
+      data_dir = FLAGS.data_dir, 
+      s2level = FLAGS.s2_level, )
   elif FLAGS.task == 'human':
-    dataset = dataset_human
+    dataset = datasets.HumanDataset(
+      data_dir = FLAGS.data_dir, 
+      region = FLAGS.region, 
+      s2level = FLAGS.s2_level, )
   else: 
     sys.exit("Dataset invalid")
  
@@ -157,9 +160,6 @@ def main(argv):
   else:
     logging.info("Preparing data.")
     dataset_text = dataset.create_dataset(
-            data_dir = FLAGS.data_dir, 
-            region = FLAGS.region, 
-            s2level = FLAGS.s2_level, 
             infer_only= FLAGS.infer_only,
     )
 

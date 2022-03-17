@@ -20,7 +20,7 @@ py_binary(
     main = 'train.py',
     srcs = ['train.py'],
     deps = [
-          "//cabby/model/text:util",
+          "//cabby/model:util",
 
     ],
 )
@@ -32,7 +32,7 @@ py_binary(
     deps = [
         ':train',
         ':dataset',
-        "//cabby/model/text:util",
+        "//cabby/model:util",
 
     ],
 )

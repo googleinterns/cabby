@@ -25,7 +25,7 @@ import torch.nn as nn
 from transformers import AdamW
 from torch.utils.data import DataLoader
 
-from cabby.model.text import util
+from cabby.model import util
 
 
 def evaluate(model: torch.nn.Module,

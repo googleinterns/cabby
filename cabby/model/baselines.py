@@ -39,7 +39,7 @@ from transformers import AdamW
 from cabby.model import datasets
 from cabby.geo import util as gutil
 from cabby.evals import utils as eu
-from cabby.model.text import util
+from cabby.model import util
 from cabby.geo import regions
 
 

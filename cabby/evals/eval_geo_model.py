@@ -30,7 +30,7 @@ import torch
 
 from cabby import logger
 from cabby.evals import utils
-from cabby.model.text import util
+from cabby.model import util
 
 FLAGS = flags.FLAGS
 flags.DEFINE_bool("preprocess_pytorch_output", False,

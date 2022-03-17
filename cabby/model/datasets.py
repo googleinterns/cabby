@@ -14,19 +14,94 @@
 
 from absl import logging
 
+import numpy as np
 import os
 import pandas as pd
 from sklearn.utils import shuffle
+import torch
+
+from typing import Optional
+
 
 from cabby.geo import regions
 from cabby.geo import util as gutil
+from cabby.model import dataset_item
+from cabby.model import util 
 
 
-class HumanDataset:
-  def __init__(self, data_dir: str, s2level: int, region: str, lines: bool = True):
-    self.train = self.load_data(data_dir, 'train', lines=lines)
-    self.valid = self.load_data(data_dir, 'dev', lines=lines)
-    self.test = self.load_data(data_dir, 'test', lines=lines)
+
+# DISTRIBUTION_SCALE_DISTANCEA is a factor (in meters) that gives the overall 
+# scale in meters for the distribution.
+DISTRIBUTION_SCALE_DISTANCE = 1000
+dprob = util.DistanceProbability(DISTRIBUTION_SCALE_DISTANCE)
+
+class Dataset: 
+  def __init__(self, data_dir: str, s2level: int, region: Optional[str]):
+    self.data_dir = data_dir
+    self.s2level = s2level
+    self.region = region
+
+    self.unique_cellid = {}
+    self.cellid_to_label = {}
+    self.label_to_cellid = {}
+
+    self.train = None
+    self.valid = None
+    self.test = None
+
+    
+  def create_dataset(self, infer_only: bool = False
+  ) -> dataset_item.TextGeoDataset:
+    '''Loads data and creates datasets and train, validate and test sets.
+    Returns:
+      The train, validate and test sets and the dictionary of labels to cellids.
+    '''
+
+    points = gutil.get_centers_from_s2cellids(self.unique_cellid)
+
+    unique_cells_df = pd.DataFrame(
+      {'point': points, 'cellid': self.unique_cellid})
+    
+    unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
+        lambda x: gutil.far_cellid(x, unique_cells_df))
+
+    vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
+    dim = dataset_item.CELLID_DIM)
+    tens_cells = torch.tensor(vec_cells)
+
+    # Create RUN dataset.
+    train_dataset = None
+    val_dataset = None
+    logging.info("Starting to create the splits")
+    if infer_only == False:
+      train_dataset = dataset_item.TextGeoSplit(
+        self.train, self.s2level, unique_cells_df, 
+        self.cellid_to_label, dprob)
+      logging.info(
+        f"Finished to create the train-set with {len(train_dataset)} samples")
+      val_dataset = dataset_item.TextGeoSplit(
+        self.valid, self.s2level, unique_cells_df, 
+        self.cellid_to_label, dprob)
+      logging.info(
+        f"Finished to create the valid-set with {len(val_dataset)} samples")
+    test_dataset = dataset_item.TextGeoSplit(
+      self.test, self.s2level, unique_cells_df, 
+      self.cellid_to_label, dprob)
+    logging.info(
+      f"Finished to create the test-set with {len(test_dataset)} samples")
+
+    return dataset_item.TextGeoDataset.from_TextGeoSplit(
+      train_dataset, val_dataset, test_dataset, 
+      np.array(self.unique_cellid), 
+      tens_cells, self.label_to_cellid)
+
+
+class HumanDataset(Dataset):
+  def __init__(self, data_dir: str, s2level: int, region):
+    Dataset.__init__(self, data_dir, s2level, region)
+    self.train = self.load_data(data_dir, 'train', lines=True)
+    self.valid = self.load_data(data_dir, 'dev', lines=True)
+    self.test = self.load_data(data_dir, 'test', lines=True)
     
     # Get labels.
     active_region = regions.get_region(region)
@@ -57,10 +132,13 @@ class HumanDataset:
     ds.reset_index(inplace=True, drop=True)
     return ds
 
+  
 
-class RUNDataset:
-  def __init__(self, data_dir: str, s2level: int, lines: bool = False):
-    train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=lines)
+class RUNDataset(Dataset):
+  def __init__(self, data_dir: str, s2level: int):
+    Dataset.__init__(self, data_dir, s2level, None)
+
+    train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=False)
 
     # Get labels.
     map_1 = regions.get_region("RUN-map1")
@@ -113,12 +191,12 @@ class RUNDataset:
     return train_ds, valid_ds, test_ds, ds
 
 
-class RVSDataset:
-  def __init__(self, data_dir: str, s2level: int, region: str, lines: bool = True):
-
-    train_ds = self.load_data(data_dir, 'train', lines)
-    valid_ds = self.load_data(data_dir, 'dev', lines)
-    test_ds = self.load_data(data_dir, 'test', lines)
+class RVSDataset(Dataset):
+  def __init__(self, data_dir: str, s2level: int, region: str):
+    Dataset.__init__(self, data_dir, s2level, region)
+    train_ds = self.load_data(data_dir, 'train', True)
+    valid_ds = self.load_data(data_dir, 'dev', True)
+    test_ds = self.load_data(data_dir, 'test', True)
 
     # Get labels.
     active_region = regions.get_region(region)
@@ -149,5 +227,6 @@ class RVSDataset:
     ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord(x[3]))
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
     return ds    
+
 
 

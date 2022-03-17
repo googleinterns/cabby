@@ -9,63 +9,6 @@ package(
 )
 
 
-
-py_library(
-    name = 'dataset_wikigeo',
-    srcs = ['dataset_wikigeo.py'],
-    deps = [
-          ":dataset_item",
-          "//cabby/geo:util",
-          "//cabby/geo:regions",
-          "//cabby/model:util",
-
-    ],
-)
-py_library(
-    name = 'dataset_rvs',
-    srcs = ['dataset_rvs.py'],
-    deps = [
-          ":dataset_item",
-          "//cabby/model:util",
-          "//cabby/geo:util",
-          "//cabby/geo:regions",
-          "//cabby/model:datasets",
-
-
-    ],
-)
-
-py_library(
-    name = 'dataset_run',
-    srcs = ['dataset_run.py'],
-    deps = [
-          ":dataset_item",
-          "//cabby/model:util",
-          "//cabby/geo:util",
-          "//cabby/geo:regions",
-          "//cabby/model:datasets",
-    ],
-)
-
-
-py_library(
-    name = 'dataset_human',
-    srcs = ['dataset_human.py'],
-    deps = [
-          ":dataset_item",
-          "//cabby/model:util",
-          "//cabby/geo:util",
-          "//cabby/geo:regions",
-          "//cabby/model:datasets",
-    ],
-)
-
-py_library(
-    name = 'dataset_item',
-    srcs = ['dataset_item.py'],
-
-)
-
 py_library(
     name = 'model',
     srcs = ['model.py'],
@@ -77,7 +20,7 @@ py_binary(
     main = 'train.py',
     srcs = ['train.py'],
     deps = [
-          "//cabby/model/text:util",
+          "//cabby/model:util",
           "//cabby/evals:utils",
 
     ],
@@ -89,13 +32,10 @@ py_binary(
     srcs = ['model_trainer.py'],
     deps = [
         ':train',
-        ':dataset_wikigeo',
-        ':dataset_rvs',
-        ':dataset_run',
-        ':dataset_human',
-        ':dataset_item',
+        '//cabby/model:datasets',
+        '//cabby/model:dataset_item',
         ':model',
-        "//cabby/model/text:util",
+        "//cabby/model:util",
 
     ],
 )

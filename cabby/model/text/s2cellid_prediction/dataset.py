@@ -42,7 +42,7 @@ class CabbyDataset(torch.utils.data.Dataset):
       padding=True, add_special_tokens=True)
 
     data['point'] = data.ref_point.apply(
-      lambda x: util.point_from_str_coord(x))
+      lambda x: util.point_from_str_coord_yx(x))
     self.points = data.ref_point.apply(
       lambda x: util.coords_from_str_coord(x)).tolist()
     data['cellid'] = data.point.apply(
