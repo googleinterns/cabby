@@ -27,7 +27,13 @@ from cabby.geo import regions
 from cabby.geo import util as gutil
 from cabby.model import dataset_item
 from cabby.model import util 
+from transformers import DistilBertTokenizerFast, T5Tokenizer
 
+
+MODELS = ['Dual-Encoder', 'S2-Generation']
+
+T5_TYPE = "t5-small"
+BERT_TYPE = 'distilbert-base-uncased'
 
 
 # DISTRIBUTION_SCALE_DISTANCEA is a factor (in meters) that gives the overall 
@@ -36,10 +42,11 @@ DISTRIBUTION_SCALE_DISTANCE = 1000
 dprob = util.DistanceProbability(DISTRIBUTION_SCALE_DISTANCE)
 
 class Dataset: 
-  def __init__(self, data_dir: str, s2level: int, region: Optional[str]):
+  def __init__(self, data_dir: str, s2level: int, region: Optional[str], model_type: str):
     self.data_dir = data_dir
     self.s2level = s2level
     self.region = region
+    self.model_type = model_type
 
     self.unique_cellid = {}
     self.cellid_to_label = {}
@@ -48,6 +55,17 @@ class Dataset:
     self.train = None
     self.valid = None
     self.test = None
+
+    self.set_tokenizers()
+
+  def set_tokenizers(self):
+    assert self.model_type in MODELS
+    if self.model_type == 'Dual-Encoder':      
+      self.text_tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_TYPE)
+      self.s2_tokenizer = util.binary_representation
+    elif self.model_type == 'S2-Generation':
+      self.text_tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
+      self.s2_tokenizer = tokenize_cell
 
     
   def create_dataset(self, infer_only: bool = False
@@ -65,8 +83,7 @@ class Dataset:
     unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
         lambda x: gutil.far_cellid(x, unique_cells_df))
 
-    vec_cells = util.binary_representation(unique_cells_df.cellid.to_numpy(), 
-    dim = dataset_item.CELLID_DIM)
+    vec_cells = self.s2_tokenizer(unique_cells_df.cellid.tolist())
     tens_cells = torch.tensor(vec_cells)
 
     # Create RUN dataset.
@@ -75,16 +92,22 @@ class Dataset:
     logging.info("Starting to create the splits")
     if infer_only == False:
       train_dataset = dataset_item.TextGeoSplit(
+        self.text_tokenizer,
+        self.s2_tokenizer,
         self.train, self.s2level, unique_cells_df, 
         self.cellid_to_label, dprob)
       logging.info(
         f"Finished to create the train-set with {len(train_dataset)} samples")
       val_dataset = dataset_item.TextGeoSplit(
+        self.text_tokenizer,
+        self.s2_tokenizer, 
         self.valid, self.s2level, unique_cells_df, 
         self.cellid_to_label, dprob)
       logging.info(
         f"Finished to create the valid-set with {len(val_dataset)} samples")
     test_dataset = dataset_item.TextGeoSplit(
+      self.text_tokenizer,
+      self.s2_tokenizer,
       self.test, self.s2level, unique_cells_df, 
       self.cellid_to_label, dprob)
     logging.info(
@@ -97,8 +120,8 @@ class Dataset:
 
 
 class HumanDataset(Dataset):
-  def __init__(self, data_dir: str, s2level: int, region):
-    Dataset.__init__(self, data_dir, s2level, region)
+  def __init__(self, data_dir: str, s2level: int, region, model_type: str = "human"):
+    Dataset.__init__(self, data_dir, s2level, region, model_type)
     self.train = self.load_data(data_dir, 'train', lines=True)
     self.valid = self.load_data(data_dir, 'dev', lines=True)
     self.test = self.load_data(data_dir, 'test', lines=True)
@@ -135,8 +158,8 @@ class HumanDataset(Dataset):
   
 
 class RUNDataset(Dataset):
-  def __init__(self, data_dir: str, s2level: int):
-    Dataset.__init__(self, data_dir, s2level, None)
+  def __init__(self, data_dir: str, s2level: int, model_type: str = "RUN"):
+    Dataset.__init__(self, data_dir, s2level, None, model_type)
 
     train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=False)
 
@@ -192,8 +215,8 @@ class RUNDataset(Dataset):
 
 
 class RVSDataset(Dataset):
-  def __init__(self, data_dir: str, s2level: int, region: str):
-    Dataset.__init__(self, data_dir, s2level, region)
+  def __init__(self, data_dir: str, s2level: int, region: str, model_type: str = "RVS"):
+    Dataset.__init__(self, data_dir, s2level, region, model_type)
     train_ds = self.load_data(data_dir, 'train', True)
     valid_ds = self.load_data(data_dir, 'dev', True)
     test_ds = self.load_data(data_dir, 'test', True)
@@ -229,4 +252,9 @@ class RVSDataset(Dataset):
     return ds    
 
 
+def tokenize_cell(list_cells):
+  list_cells_str = list(map(str, list_cells))
 
+  tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
+  return tokenizer(list_cells_str, return_tensors="pt", padding=True, truncation=True).input_ids
+  

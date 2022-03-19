@@ -12,28 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Dual-encoder framework for text and S2Cellids matching.
+"""Model framework for text and S2Cellids matching.
 
 Example command line call:
-$ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
+$ bazel-bin/cabby/model/text/model_trainer \
   --data_dir ~/data/wikigeo/pittsburgh  \
-  --dataset_dir ~/model/dual_encoder/dataset/pittsburgh \
+  --dataset_dir ~/model/dataset/pittsburgh \
   --region Pittsburgh \ 
   --s2_level 12 \
-  --output_dir ~/tmp/output/dual\
+  --output_dir ~/tmp/output/\
   --train_batch_size 32 \
   --test_batch_size 32 \
 
 For infer:
-$ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
+$ bazel-bin/cabby/model/text/model_trainer \
   --data_dir ~/data/wikigeo/pittsburgh  \
-  --dataset_dir ~/model/dual_encoder/dataset/pittsburgh \
+  --dataset_dir ~/model/dataset/pittsburgh \
   --region Pittsburgh \
   --s2_level 12 \
   --test_batch_size 32 \
   --infer_only True \
-  --model_path ~/tmp/model/dual \
-  --output_dir ~/tmp/output/dual\
+  --model_path ~/tmp/model/ \
+  --output_dir ~/tmp/output/\
   --task RVS
 
 
@@ -57,7 +57,7 @@ from transformers import AdamW
 from cabby.evals import utils as eu
 from cabby.model.text.dual_encoder import train
 from cabby.model import dataset_item
-from cabby.model.text.dual_encoder import model
+from cabby.model.text import models
 from cabby.model import datasets
 from cabby.model import util
 from cabby.geo import regions
@@ -75,7 +75,12 @@ flags.DEFINE_enum(
   regions.REGION_SUPPORT_MESSAGE)
 flags.DEFINE_enum(
   "task", "WikiGeo", TASKS, 
-  "Supported datasets to train\evaluate on: WikiGeo, RVS or RUN.")
+  f"Supported datasets to train\evaluate on: {','.join(TASKS)}. ")
+
+flags.DEFINE_enum(
+  "model", "Dual-Encoder", datasets.MODELS, 
+  f"Supported models to train\evaluate on:  {','.join(datasets.MODELS)}.")
+
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
 flags.DEFINE_string("output_dir", None,
           "The directory where the model and results will be save to.")
@@ -119,8 +124,9 @@ def main(argv):
   
   if not os.path.exists(FLAGS.dataset_dir):
     sys.exit("Dataset path doesn't exist: {}.".format(FLAGS.dataset_dir))
-
-  dataset_path = os.path.join(FLAGS.dataset_dir, str(FLAGS.s2_level))
+  
+  dataset_model_path = os.path.join(FLAGS.dataset_dir, str(FLAGS.model))
+  dataset_path = os.path.join(dataset_model_path, str(FLAGS.s2_level))
   train_path_dataset = os.path.join(dataset_path,'train.pth')
   valid_path_dataset = os.path.join(dataset_path,'valid.pth')
   test_path_dataset = os.path.join(dataset_path,'test.pth')
@@ -131,21 +137,19 @@ def main(argv):
 
   assert FLAGS.task in TASKS
   if FLAGS.task == "RVS": 
-    dataset = datasets.RVSDataset(
-      data_dir = FLAGS.data_dir, 
-      region = FLAGS.region, 
-      s2level = FLAGS.s2_level, )
+    dataset_init = datasets.RVSDataset
   elif FLAGS.task == 'RUN':
-    dataset = datasets.RUNDataset(
-      data_dir = FLAGS.data_dir, 
-      s2level = FLAGS.s2_level, )
+    dataset_init = datasets.RUNDataset
   elif FLAGS.task == 'human':
-    dataset = datasets.HumanDataset(
-      data_dir = FLAGS.data_dir, 
-      region = FLAGS.region, 
-      s2level = FLAGS.s2_level, )
+    dataset_init = datasets.HumanDataset
   else: 
     sys.exit("Dataset invalid")
+
+  dataset = dataset_init(
+    data_dir = FLAGS.data_dir, 
+    region = FLAGS.region, 
+    s2level = FLAGS.s2_level, 
+    model_type = FLAGS.model)
  
   if os.path.exists(dataset_path):
     dataset_text = dataset_item.TextGeoDataset.load(
@@ -158,6 +162,8 @@ def main(argv):
       tensor_cellid_path = tensor_cellid_path)
 
   else:
+    if not os.path.exists(dataset_model_path):
+      os.mkdir(dataset_model_path)
     logging.info("Preparing data.")
     dataset_text = dataset.create_dataset(
             infer_only= FLAGS.infer_only,
@@ -189,28 +195,34 @@ def main(argv):
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
 
+  if FLAGS.model == 'Dual-Encoder':
+    run_model = models.DualEncoder()
+  elif FLAGS.model == 'S2-Generation':
+    run_model = models.S2GenerationModel()
+  else: 
+    sys.exit("Model invalid")
 
-  dual_encoder = model.DualEncoder()
+    
   if FLAGS.model_path is not None:
     if not os.path.exists(FLAGS.model_path):
       sys.exit(f"The model's path does not exists: {FLAGS.model_path}")
     util.load_checkpoint(
-      load_path=FLAGS.model_path, model=dual_encoder, device=device)
+      load_path=FLAGS.model_path, model=run_model, device=device)
   if torch.cuda.device_count() > 1:
     logging.info("Using {} GPUs.".format(torch.cuda.device_count()))
-    dual_encoder = nn.DataParallel(dual_encoder)
+    run_model = nn.DataParallel(run_model)
 
-  dual_encoder.to(device)
+  run_model.to(device)
 
   optimizer = torch.optim.Adam(
-    dual_encoder.parameters(), lr=FLAGS.learning_rate)
+    run_model.parameters(), lr=FLAGS.learning_rate)
   
   if FLAGS.is_distance_distribution and FLAGS.task=='WikiGeo':
     sys.exit("Wikigeo does not have a distance distribution option.")
 
 
   trainer = train.Trainer(
-    model=dual_encoder,
+    model=run_model,
     device=device,
     num_epochs=FLAGS.num_epochs,
     optimizer=optimizer,
@@ -240,17 +252,4 @@ def main(argv):
     _, mean_distance, median_distance, max_error, norm_auc = (
       evaluator.compute_metrics(error_distances))
 
-    logging.info(f"\nTest Accuracy: {accuracy}, \n" +
-    f"Mean distance: {mean_distance},\nMedian distance: {median_distance},\n" +
-    f"Max error: {max_error},\nNorm AUC: {norm_auc}")
-
-  else: 
-    logging.info("Starting to train model.")
-    trainer.train_model()
-    
-
-if __name__ == '__main__':
-  app.run(main)
-
-
-
+    logging.info(f"\nTest Accuracy: {accuracy}, \n")

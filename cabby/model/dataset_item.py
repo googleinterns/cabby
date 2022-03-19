@@ -27,16 +27,11 @@ import sys
 import swifter
 from typing import Any, Dict, Text 
 import torch
-from transformers import DistilBertTokenizerFast
 
 import attr
 
 from cabby.geo import util as gutil
 from cabby.model import util 
-
-tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
-
-CELLID_DIM = 64
 
 
 @attr.s
@@ -119,9 +114,12 @@ class TextGeoSplit(torch.utils.data.Dataset):
   'dprob': Gamma distribution probability.
   S2Cell id.
   """
-  def __init__(self, data: pd.DataFrame, s2level: int, 
+  def __init__(self, text_tokenizer, s2_tokenizer, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int], 
     dprob: util.DistanceProbability, is_dist: Boolean = False):
+
+    self.text_tokenizer = text_tokenizer
+    self.s2_tokenizer = s2_tokenizer
 
     self.is_dist = is_dist
     
@@ -144,7 +142,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 
     # Tokenize instructions.
-    self.encodings = tokenizer(
+    self.encodings = self.text_tokenizer(
       data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
 
@@ -160,13 +158,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
 
-    self.cellids = util.binary_representation(cellids_array, dim = CELLID_DIM)
+    self.cellids = self.s2_tokenizer(cellids_array)
 
-    self.neighbor_cells =  util.binary_representation(
-      neighbor_cells_array, dim = CELLID_DIM)
+    self.neighbor_cells = self.s2_tokenizer(neighbor_cells_array)
 
-    self.far_cells =  util.binary_representation(
-      far_cells_array, dim = CELLID_DIM)
+    self.far_cells = self.s2_tokenizer(far_cells_array)
 
 
   def __getitem__(self, idx: int):

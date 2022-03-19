@@ -27,6 +27,8 @@ import torch.nn as nn
 
 from cabby.geo import util
 
+CELLID_DIM = 64
+
 
 class DistanceProbability:
   '''Calculates Gamma distribution probability of a given distance in meters.
@@ -66,7 +68,7 @@ class DistanceProbability:
     return self.gamma_dist.cdf(dist_meters/self.scale_meters)
 
 
-def binary_representation(array_int: np.ndarray, dim: int
+def binary_representation(array_int: list, dim: int = CELLID_DIM
 ) -> np.ndarray:
   '''Converts an aray of integers to their binary vector with specific 
   dimension.
@@ -77,6 +79,7 @@ def binary_representation(array_int: np.ndarray, dim: int
     An array of binary vectors.
   '''
 
+  array_int = np.array(array_int)
   binary_range = 2**np.arange(dim, dtype=array_int.dtype)
   vector = array_int.reshape(-1,1)
 

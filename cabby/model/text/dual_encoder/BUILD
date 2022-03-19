@@ -26,16 +26,3 @@ py_binary(
     ],
 )
 
-py_binary(
-    name = 'model_trainer',
-    main = 'model_trainer.py',
-    srcs = ['model_trainer.py'],
-    deps = [
-        ':train',
-        '//cabby/model:datasets',
-        '//cabby/model:dataset_item',
-        ':model',
-        "//cabby/model:util",
-
-    ],
-)
