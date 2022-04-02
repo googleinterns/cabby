@@ -28,6 +28,7 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry import box, mapping, LineString, LinearRing
 from shapely.geometry.base import BaseGeometry
+from absl import logging
 
 import sys
 from typing import List, Optional, Tuple, Sequence, Any, Text
@@ -68,6 +69,7 @@ def far_cellid(
       sys.exit(
         f"Reached max number of failed attempts in far cell calculation for point: {(Point.y, Point.x)}.")
     sample_cell = cells.sample(1).iloc[0]
+
     distance = get_distance_between_points(point, sample_cell.point)
     if distance > far_distance:
       far_cell_found = sample_cell.cellid
@@ -300,6 +302,7 @@ def cellid_from_point(point: Point, level: int) -> int:
     An id of S2Cellsid that cover the provided Shapely Point.
   '''
 
+  assert isinstance(point, Point), f"Object not a Shapely Point but a type {type(point)}"
   s2polygon = s2polygon_from_shapely_point(point)
   cellids = get_s2cover_for_s2polygon(s2polygon, level)
   if cellids is None:
@@ -517,18 +520,41 @@ def point_from_list_coord(coord: Sequence) -> Point:
   return Point(lon, lat)
 
 
-def point_from_str_coord(coord_str: Text) -> Point:
+def point_from_str_coord_yx(coord_str: Text) -> Point:
   '''Converts coordinates in string format (latitude and longtitude) to Point.
-  E.g, of string '(40.715865, -74.037258)'.
+  E.g, of string '(40.715865, -74.037258)' or 'POINT(40.715865 -74.037258)'. 
   Arguments:
     coord: A lat-lng coordinate to be converted to a point.
   Returns:
     A point.
   '''
-  list_coords_str = coord_str.replace("(", "").replace(")", "").split(',')
+  list_coords_str = coord_str.replace("POINT", "").replace("(", "").replace(")", "").split(',')
+  if len(list_coords_str)==1:
+    list_coords_str = list_coords_str[0].split(' ')
+  
+  list_coords_str = [x for x in list_coords_str if x]
   coord = list(map(float, list_coords_str))
 
   return Point(coord[1], coord[0])
+
+
+def point_from_str_coord_xy(coord_str: Text) -> Point:
+  '''Converts coordinates in string format (latitude and longtitude) to Point.
+  E.g, of string '(40.715865, -74.037258)' or 'POINT(40.715865 -74.037258)'. 
+  Arguments:
+    coord: A lat-lng coordinate to be converted to a point.
+  Returns:
+    A point.
+  '''
+  list_coords_str = coord_str.replace("POINT", "").replace("(", "").replace(")", "").split(',')
+  if len(list_coords_str)==1:
+    list_coords_str = list_coords_str[0].split(' ')
+  
+  list_coords_str = [x for x in list_coords_str if x]
+  coord = list(map(float, list_coords_str))
+
+  return Point(coord[0], coord[1])
+
 
 
 def coords_from_str_coord(coord_str: Text) -> CoordsYX:

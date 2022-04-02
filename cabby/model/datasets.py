@@ -14,17 +14,176 @@
 
 from absl import logging
 
+import numpy as np
 import os
 import pandas as pd
 from sklearn.utils import shuffle
+import torch
+
+from typing import Optional
+
 
 from cabby.geo import regions
 from cabby.geo import util as gutil
+from cabby.model import dataset_item
+from cabby.model import util 
+from transformers import DistilBertTokenizerFast, T5Tokenizer
 
 
-class RUNDataset:
-  def __init__(self, data_dir: str, s2level: int, lines: bool = False):
-    train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=lines)
+MODELS = ['Dual-Encoder-Bert', 'Classification-Bert', 'S2-Generation-T5']
+
+T5_TYPE = "t5-small"
+BERT_TYPE = 'distilbert-base-uncased'
+
+
+# DISTRIBUTION_SCALE_DISTANCEA is a factor (in meters) that gives the overall 
+# scale in meters for the distribution.
+DISTRIBUTION_SCALE_DISTANCE = 1000
+dprob = util.DistanceProbability(DISTRIBUTION_SCALE_DISTANCE)
+
+tokenizerT5 = T5Tokenizer.from_pretrained(T5_TYPE)
+
+
+class Dataset: 
+  def __init__(self, data_dir: str, s2level: int, region: Optional[str], model_type: str):
+    self.data_dir = data_dir
+    self.s2level = s2level
+    self.region = region
+    self.model_type = model_type
+
+    self.unique_cellid = {}
+    self.cellid_to_label = {}
+    self.label_to_cellid = {}
+
+    self.train = None
+    self.valid = None
+    self.test = None
+
+    self.set_tokenizers()
+
+  def set_tokenizers(self):
+    assert self.model_type in MODELS
+    if self.model_type in ['Dual-Encoder-Bert', 'Classification-Bert']:      
+      self.text_tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_TYPE)
+      self.s2_tokenizer = util.binary_representation
+    elif self.model_type == 'S2-Generation-T5':
+      self.text_tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
+      self.s2_tokenizer = self.tokenize_cell
+
+  def tokenize_cell(self, list_cells):
+    labels = [self.cellid_to_label[c] for c in list_cells]
+    list_cells_str = list(map(str, labels))
+
+    return tokenizerT5(
+      list_cells_str, return_tensors="pt", padding=True, truncation=True).input_ids
+    
+
+    
+  def create_dataset(self, infer_only: bool = False
+  ) -> dataset_item.TextGeoDataset:
+    '''Loads data and creates datasets and train, validate and test sets.
+    Returns:
+      The train, validate and test sets and the dictionary of labels to cellids.
+    '''
+
+    points = gutil.get_centers_from_s2cellids(self.unique_cellid)
+
+    unique_cells_df = pd.DataFrame(
+      {'point': points, 'cellid': self.unique_cellid})
+    
+    unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
+        lambda x: gutil.far_cellid(x, unique_cells_df))
+
+    vec_cells = self.s2_tokenizer(unique_cells_df.cellid.tolist())
+    tens_cells = torch.tensor(vec_cells)
+
+    # Create RUN dataset.
+    train_dataset = None
+    val_dataset = None
+    logging.info("Starting to create the splits")
+    if infer_only == False:
+      train_dataset = dataset_item.TextGeoSplit(
+        self.text_tokenizer,
+        self.s2_tokenizer,
+        self.train, self.s2level, unique_cells_df, 
+        self.cellid_to_label, dprob)
+      logging.info(
+        f"Finished to create the train-set with {len(train_dataset)} samples")
+      val_dataset = dataset_item.TextGeoSplit(
+        self.text_tokenizer,
+        self.s2_tokenizer, 
+        self.valid, self.s2level, unique_cells_df, 
+        self.cellid_to_label, dprob)
+      logging.info(
+        f"Finished to create the valid-set with {len(val_dataset)} samples")
+    test_dataset = dataset_item.TextGeoSplit(
+      self.text_tokenizer,
+      self.s2_tokenizer,
+      self.test, self.s2level, unique_cells_df, 
+      self.cellid_to_label, dprob)
+    logging.info(
+      f"Finished to create the test-set with {len(test_dataset)} samples")
+
+    return dataset_item.TextGeoDataset.from_TextGeoSplit(
+      train_dataset, val_dataset, test_dataset, 
+      np.array(self.unique_cellid), 
+      tens_cells, self.label_to_cellid)
+
+
+class HumanDataset(Dataset):
+  def __init__(
+    self, data_dir: str, 
+    s2level: int, 
+    region: Optional[str], 
+    model_type: str = "Dual-Encoder-Bert"):
+
+    Dataset.__init__(self, data_dir, s2level, region, model_type)
+    self.train = self.load_data(data_dir, 'train', lines=True)
+    self.valid = self.load_data(data_dir, 'dev', lines=True)
+    self.test = self.load_data(data_dir, 'test', lines=True)
+    
+    # Get labels.
+    active_region = regions.get_region(region)
+    unique_cellid = gutil.cellids_from_polygon(active_region.polygon, s2level)
+    label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
+    cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
+
+    self.unique_cellid = unique_cellid
+    self.label_to_cellid = label_to_cellid
+    self.cellid_to_label = cellid_to_label
+
+
+  def load_data(self, data_dir: str, ds_set: str, lines: bool):
+
+    ds_path = os.path.join(data_dir, ds_set + '.json')
+    assert os.path.exists(ds_path), f"{ds_path} doesn't exsits"
+
+    ds = pd.read_json(ds_path, lines=lines)
+    ds['instructions'] = ds['content']
+    ds['end_point'] = ds['rvs_goal_point'].apply(gutil.point_from_str_coord_xy)
+    ds['start_point'] = ds['rvs_start_point'].apply(gutil.point_from_str_coord_xy)
+
+    columns_keep = ds.columns.difference(
+      ['instructions', 'end_point', 'start_point'])
+    ds.drop(columns_keep, 1, inplace=True)
+
+    ds = shuffle(ds)
+    ds.reset_index(inplace=True, drop=True)
+    return ds
+
+  
+
+class RUNDataset(Dataset):
+  def __init__(
+    self, 
+    data_dir: str, 
+    s2level: int, 
+    region: Optional[str], 
+    model_type: str = "Dual-Encoder-Bert"):
+
+    Dataset.__init__(self, data_dir, s2level, None, model_type)
+
+    train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=False)
 
     # Get labels.
     map_1 = regions.get_region("RUN-map1")
@@ -54,9 +213,15 @@ class RUNDataset:
 
   def load_data(self, data_dir: str, lines: bool):
     ds = pd.read_json(os.path.join(data_dir, 'dataset.json'), lines=lines)
-  
-    self.remove_columns(ds)
-    
+    ds['instructions'] = ds.groupby(
+      ['id'])['instruction'].transform(lambda x: ' '.join(x))
+
+    ds = ds.drop_duplicates(subset='id', keep="last")
+
+    columns_keep = ds.columns.difference(
+      ['map', 'id', 'instructions', 'end_point', 'start_point'])
+    ds.drop(columns_keep, 1, inplace=True)
+
     ds = shuffle(ds)
     ds.reset_index(inplace=True, drop=True)
 
@@ -69,31 +234,16 @@ class RUNDataset:
     valid_ds = ds.iloc[train_size:train_size + valid_size]
     test_ds = ds.iloc[train_size + valid_size:]
     return train_ds, valid_ds, test_ds, ds
-  
-  def remove_columns(self, ds):
-    ds['instructions'] = ds.groupby(
-      ['id'])['instruction'].transform(lambda x: ' '.join(x))
-
-    ds = ds.drop_duplicates(subset='id', keep="last")
-
-    columns_keep = ds.columns.difference(
-      ['map', 'id', 'instructions', 'end_point', 'start_point'])
-    ds.drop(columns_keep, 1, inplace=True)
 
 
-
-class RVSDataset:
+class RVSDataset(Dataset):
   def __init__(
-    self, data_dir: str, s2level: int, region: str, lines: bool = True, split_data = False):
+    self, data_dir: str, s2level: int, region: Optional[str], model_type: str = "RVS"):
+    Dataset.__init__(self, data_dir, s2level, region, model_type)
+    train_ds = self.load_data(data_dir, 'train', True)
+    valid_ds = self.load_data(data_dir, 'dev', True)
+    test_ds = self.load_data(data_dir, 'test', True)
 
-    if split_data:
-      func_load = self.load_data_split
-    else:
-      func_load = self.load_data
-    
-
-    train_ds, valid_ds, test_ds = func_load(data_dir, lines)
-    
     # Get labels.
     active_region = regions.get_region(region)
     unique_cellid = gutil.cellids_from_polygon(active_region.polygon, s2level)
@@ -106,45 +256,23 @@ class RVSDataset:
     self.unique_cellid = unique_cellid
     self.label_to_cellid = label_to_cellid
     self.cellid_to_label = cellid_to_label
-  
-  def load_data(self, data_dir: str, lines: bool = True):
-    ds = pd.read_json(os.path.join(data_dir, 'dataset.json'), lines=lines)
-
-    self.columns_process(ds)
-
-    dataset_size = ds.shape[0]
-
-    train_size = round(dataset_size * 80 / 100)
-    valid_size = round(dataset_size * 10 / 100)
-
-    train_ds = ds.iloc[:train_size]
-    valid_ds = ds.iloc[train_size:train_size + valid_size]
-    test_ds = ds.iloc[train_size + valid_size:]
-
-    return train_ds, valid_ds, test_ds
 
 
-  def load_data_split(self, data_dir: str, lines: bool):
-    train_ds = pd.read_json(os.path.join(data_dir, 'ds_train.json'), lines=lines)
-    test_ds = pd.read_json(os.path.join(data_dir, 'ds_test.json'), lines=lines)
-    valid_ds = pd.read_json(os.path.join(data_dir, 'ds_dev.json'), lines=lines)
-
-    self.columns_process(train_ds)
-    self.columns_process(test_ds)
-    self.columns_process(valid_ds)
-
-    return train_ds, valid_ds, test_ds
-
-  
-  def columns_process(self, ds):
+  def load_data(self, data_dir: str, split: str, lines: bool):
+    path_ds= os.path.join(data_dir, f'ds_{split}.json')
+    assert os.path.exists(path_ds), path_ds
+    ds = pd.read_json(path_ds, lines=lines)
+        
     logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
-    
+
     ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
-    lengths = ds.end_point.apply(lambda x: x if len(x) == 3 else "").tolist()
+
     ds['end_osmid'] = ds.end_point.apply(lambda x: x[1])
     ds['start_osmid'] = ds.start_point.apply(lambda x: x[1])
     ds['end_pivot'] = ds.end_point
-    ds['end_point'] = ds.end_point.apply(lambda x: x[3])
-    ds['start_point'] = ds.start_point.apply(lambda x: x[3])
+    ds['end_point'] = ds.end_point.apply(lambda x: gutil.point_from_list_coord(x[3]))
+    ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord(x[3]))
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
-    logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
+    return ds    
+
+

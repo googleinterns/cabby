@@ -39,7 +39,7 @@ from transformers import AdamW
 from cabby.model import datasets
 from cabby.geo import util as gutil
 from cabby.evals import utils as eu
-from cabby.model.text import util
+from cabby.model import util
 from cabby.geo import regions
 
 
@@ -78,7 +78,11 @@ def main(argv):
   metrics_path = os.path.join(FLAGS.metrics_dir, 'metrics.tsv')
 
   if FLAGS.task == "RUN":
-    ds = datasets.RUNDataset(FLAGS.data_dir, 18 )
+    ds = datasets.RUNDataset(
+      data_dir=FLAGS.data_dir, 
+      s2level=18,
+      region="Manhattan",
+      )
     ds_test = ds.ds
   else: # RVS
     ds = datasets.RVSDataset(FLAGS.data_dir, 18, FLAGS.region)

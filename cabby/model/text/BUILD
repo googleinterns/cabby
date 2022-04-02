@@ -10,24 +10,38 @@ package(
 
 
 py_binary(
-    name = 'util',
-    main = 'util.py',
-    srcs = ['util.py'],
+    name = 'model_trainer',
+    main = 'model_trainer.py',
+    srcs = ['model_trainer.py'],
     deps = [
-          "//cabby/geo:util",
+        '//cabby/model/text:train',
+        '//cabby/model:datasets',
+        '//cabby/model:dataset_item',
+        "//cabby/model:util",
+        "//cabby/geo:util",
+        ':models'        
 
     ],
-
 )
 
 
-py_test(
-    name = "util_test",
-    srcs = ["util_test.py"],
-    python_version = "PY3",
+py_binary(
+    name = 'models',
+    main = 'models.py',
+    srcs = ['models.py'],
     deps = [
-        ":util",
+        "//cabby/model:util",
 
-    ],
-		
+],
+
+)
+
+py_library(
+    name = 'train',
+    srcs = ['train.py'],    
+    deps = [
+        "//cabby/model:util",
+        "//cabby/evals:utils",
+
+],
 )

@@ -50,7 +50,7 @@ class ObserveTest(unittest.TestCase):
     pois = [warhol_museum, carnegie_library, reserve_bank, heinz_hall]
     obtained_distances = observe.get_all_distances(goal, pois)
     expected_distances = {
-      'Q751172': 0.1497106143476055, 'Q5043895': 0.39191208288190965,
+      'Q751172': 0.14883102382530744, 'Q5043895': 0.39191208288190965,
       'Q5440376': 0.8607457546797966, 'Q12059806': 0.09590394273539078
     }
 

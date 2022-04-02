@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% block head %}
+
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='main.css') }}">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+            integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"></script>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+    
+    <script src="/static/main.js" type="text/javascript"></script>
+
+    {% endblock %}
+
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
+
+</head>
+<body>
+
+<header class="site-header">
+</header>
+
+<main role="main" class="container">
+    {% if title %}
+    <h1 style="text-align:center">Navigation Task - {{ title }} 🌏</h1>
+    {% else %}
+    <h1 style="text-align:center">Navigation Task🌏</h1>
+    {% endif %}
+</main>
+{% block content %} {% endblock %}
+
+<div class="progress" style="width: 99%; margin: 10px; bottom: 0px; position:absolute;">
+    <div id='progressBar' class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar"
+         aria-valuenow=0 aria-valuemin="0" aria-valuemax="100" style="width: 0%" id="prog_{{bar}}">
+        <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script> $("#progressBar").css("width", '{{bar}}%'); </script>
+        <span class="progress-bar-label" id="prog_{{bar}}_label">{{ bar }}%</span>
+    </div>
+</div>
+
+
+</div>
+
+</body>
+</html>
