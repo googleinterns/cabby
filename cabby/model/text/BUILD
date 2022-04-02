@@ -14,11 +14,11 @@ py_binary(
     main = 'model_trainer.py',
     srcs = ['model_trainer.py'],
     deps = [
-        '//cabby/model/text/dual_encoder:train',
+        '//cabby/model/text:train',
         '//cabby/model:datasets',
         '//cabby/model:dataset_item',
-        '//cabby/model/text/dual_encoder:model',
         "//cabby/model:util",
+        "//cabby/geo:util",
         ':models'        
 
     ],
@@ -29,5 +29,19 @@ py_binary(
     name = 'models',
     main = 'models.py',
     srcs = ['models.py'],
+    deps = [
+        "//cabby/model:util",
 
+],
+
+)
+
+py_library(
+    name = 'train',
+    srcs = ['train.py'],    
+    deps = [
+        "//cabby/model:util",
+        "//cabby/evals:utils",
+
+],
 )

@@ -159,7 +159,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
 
     self.cellids = self.s2_tokenizer(cellids_array)
-
     self.neighbor_cells = self.s2_tokenizer(neighbor_cells_array)
 
     self.far_cells = self.s2_tokenizer(far_cells_array)
@@ -176,7 +175,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     '''
     text = {key: torch.tensor(val[idx])
         for key, val in self.encodings.items()}
-    cellid = torch.tensor(self.cellids[idx])
+    cellid = self.cellids[idx]
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
     point = torch.tensor(self.points[idx])

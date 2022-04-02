@@ -55,7 +55,7 @@ from torch.utils.data import DataLoader
 from transformers import AdamW
 
 from cabby.evals import utils as eu
-from cabby.model.text.dual_encoder import train
+from cabby.model.text import train
 from cabby.model import dataset_item
 from cabby.model.text import models
 from cabby.model import datasets
@@ -78,7 +78,7 @@ flags.DEFINE_enum(
   f"Supported datasets to train\evaluate on: {','.join(TASKS)}. ")
 
 flags.DEFINE_enum(
-  "model", "Dual-Encoder", datasets.MODELS, 
+  "model", "Dual-Encoder-Bert", datasets.MODELS, 
   f"Supported models to train\evaluate on:  {','.join(datasets.MODELS)}.")
 
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
@@ -179,9 +179,9 @@ def main(argv):
       unique_cellid_path = unique_cellid_path, 
       tensor_cellid_path = tensor_cellid_path)
   
+  n_cells = len(dataset_text.unique_cellids)
   logging.info("Number of unique cells: {}".format(
-  len(dataset_text.unique_cellids)))
-
+  n_cells))
   train_loader = None
   valid_loader = None
   if FLAGS.infer_only == False:
@@ -194,11 +194,14 @@ def main(argv):
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-  if FLAGS.model == 'Dual-Encoder':
-    run_model = models.DualEncoder()
-  elif FLAGS.model == 'S2-Generation':
-    run_model = models.S2GenerationModel()
+  
+  logging.info(f"Using model: {FLAGS.model}")
+  if 'Dual-Encoder' in FLAGS.model:
+    run_model = models.DualEncoder(device=device)
+  elif FLAGS.model == 'S2-Generation-T5':
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid)
+  elif FLAGS.model == 'Classification-Bert':
+    run_model = models.ClassificationModel(n_cells)
   else: 
     sys.exit("Model invalid")
 
@@ -219,7 +222,6 @@ def main(argv):
   
   if FLAGS.is_distance_distribution and FLAGS.task=='WikiGeo':
     sys.exit("Wikigeo does not have a distance distribution option.")
-
 
   trainer = train.Trainer(
     model=run_model,
@@ -252,4 +254,14 @@ def main(argv):
     _, mean_distance, median_distance, max_error, norm_auc = (
       evaluator.compute_metrics(error_distances))
 
-    logging.info(f"\nTest Accuracy: {accuracy}, \n")
+    logging.info(f"\nTest Accuracy: {accuracy}, \n" +
+    f"Mean distance: {mean_distance},\nMedian distance: {median_distance},\n" +
+    f"Max error: {max_error},\nNorm AUC: {norm_auc}")
+
+  else: 
+    logging.info("Starting to train model.")
+    trainer.train_model()
+    
+
+if __name__ == '__main__':
+  app.run(main)

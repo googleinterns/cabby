@@ -41,8 +41,8 @@ class UtilTest(unittest.TestCase):
 
 
   def testBinarization(self):
-    array_int = np.array([1, 2, 3, 1], dtype=np.int8)    
-    representation = util.binary_representation(array_int, 2)
+    list_int = [1, 2, 3, 1]  
+    representation = util.binary_representation(list_int, 2)
     np.testing.assert_array_equal(
       representation, np.array([[1, 0], [0, 1], [1, 1], [1, 0]]))
 

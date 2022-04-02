@@ -30,7 +30,7 @@ from cabby.model import util
 from transformers import DistilBertTokenizerFast, T5Tokenizer
 
 
-MODELS = ['Dual-Encoder', 'S2-Generation']
+MODELS = ['Dual-Encoder-Bert', 'Classification-Bert', 'S2-Generation-T5']
 
 T5_TYPE = "t5-small"
 BERT_TYPE = 'distilbert-base-uncased'
@@ -40,6 +40,9 @@ BERT_TYPE = 'distilbert-base-uncased'
 # scale in meters for the distribution.
 DISTRIBUTION_SCALE_DISTANCE = 1000
 dprob = util.DistanceProbability(DISTRIBUTION_SCALE_DISTANCE)
+
+tokenizerT5 = T5Tokenizer.from_pretrained(T5_TYPE)
+
 
 class Dataset: 
   def __init__(self, data_dir: str, s2level: int, region: Optional[str], model_type: str):
@@ -60,12 +63,20 @@ class Dataset:
 
   def set_tokenizers(self):
     assert self.model_type in MODELS
-    if self.model_type == 'Dual-Encoder':      
+    if self.model_type in ['Dual-Encoder-Bert', 'Classification-Bert']:      
       self.text_tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_TYPE)
       self.s2_tokenizer = util.binary_representation
-    elif self.model_type == 'S2-Generation':
+    elif self.model_type == 'S2-Generation-T5':
       self.text_tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
-      self.s2_tokenizer = tokenize_cell
+      self.s2_tokenizer = self.tokenize_cell
+
+  def tokenize_cell(self, list_cells):
+    labels = [self.cellid_to_label[c] for c in list_cells]
+    list_cells_str = list(map(str, labels))
+
+    return tokenizerT5(
+      list_cells_str, return_tensors="pt", padding=True, truncation=True).input_ids
+    
 
     
   def create_dataset(self, infer_only: bool = False
@@ -120,7 +131,12 @@ class Dataset:
 
 
 class HumanDataset(Dataset):
-  def __init__(self, data_dir: str, s2level: int, region, model_type: str = "human"):
+  def __init__(
+    self, data_dir: str, 
+    s2level: int, 
+    region: Optional[str], 
+    model_type: str = "Dual-Encoder-Bert"):
+
     Dataset.__init__(self, data_dir, s2level, region, model_type)
     self.train = self.load_data(data_dir, 'train', lines=True)
     self.valid = self.load_data(data_dir, 'dev', lines=True)
@@ -158,7 +174,13 @@ class HumanDataset(Dataset):
   
 
 class RUNDataset(Dataset):
-  def __init__(self, data_dir: str, s2level: int, model_type: str = "RUN"):
+  def __init__(
+    self, 
+    data_dir: str, 
+    s2level: int, 
+    region: Optional[str], 
+    model_type: str = "Dual-Encoder-Bert"):
+
     Dataset.__init__(self, data_dir, s2level, None, model_type)
 
     train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=False)
@@ -215,7 +237,8 @@ class RUNDataset(Dataset):
 
 
 class RVSDataset(Dataset):
-  def __init__(self, data_dir: str, s2level: int, region: str, model_type: str = "RVS"):
+  def __init__(
+    self, data_dir: str, s2level: int, region: Optional[str], model_type: str = "RVS"):
     Dataset.__init__(self, data_dir, s2level, region, model_type)
     train_ds = self.load_data(data_dir, 'train', True)
     valid_ds = self.load_data(data_dir, 'dev', True)
@@ -233,6 +256,7 @@ class RVSDataset(Dataset):
     self.unique_cellid = unique_cellid
     self.label_to_cellid = label_to_cellid
     self.cellid_to_label = cellid_to_label
+
 
   def load_data(self, data_dir: str, split: str, lines: bool):
     path_ds= os.path.join(data_dir, f'ds_{split}.json')
@@ -252,9 +276,3 @@ class RVSDataset(Dataset):
     return ds    
 
 
-def tokenize_cell(list_cells):
-  list_cells_str = list(map(str, list_cells))
-
-  tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
-  return tokenizer(list_cells_str, return_tensors="pt", padding=True, truncation=True).input_ids
-  
