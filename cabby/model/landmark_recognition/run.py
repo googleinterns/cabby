@@ -201,12 +201,14 @@ def test_samples(instructions, tokenizer, model):
                  model=model,
                  tokenizer=tokenizer,
                  device=torch.cuda.current_device())
-
-  ner_results = nlp(instructions)
+  
+  ner_results = nlp(instructions, truncation=True)
+  if len(instructions)==1:
+    ner_results = [ner_results]
   for result in ner_results:
     list_words = []
     for word_dic in result:
-      assert word_dic['entity'] in ['LABEL_0', 'LABEL_1']
+      assert word_dic['entity'] in ['LABEL_0', 'LABEL_1'], word_dic
       if word_dic['entity'] == "LABEL_1":
         word = colored(word_dic['word'], 'green')
       else:
