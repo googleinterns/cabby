@@ -93,7 +93,10 @@ class Trainer:
         neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
         far_cells = batch['far_cells'].float().to(self.device)
         labels = batch['label'].to(self.device)
-        loss = self.model.compute_loss(text, cellids, neighbor_cells, far_cells, labels)
+        landmarks = batch['landmarks'].to(self.device)
+
+        loss = self.model.compute_loss(
+          text, cellids, neighbor_cells, far_cells, labels, landmarks)
         loss_val_total+=loss
 
         predictions = self.model.predict(text, self.cells_tensor, self.label_to_cellid)
@@ -131,9 +134,10 @@ class Trainer:
         neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
         far_cells = batch['far_cells'].float().to(self.device)
         labels = batch['label'].to(self.device)
+        landmarks = batch['landmarks'].to(self.device)
 
         loss = self.model.compute_loss(
-          text, cellids, neighbor_cells, far_cells, labels)
+          text, cellids, neighbor_cells, far_cells, labels, landmarks)
 
         loss.backward()
 

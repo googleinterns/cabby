@@ -145,14 +145,19 @@ class DualEncoder(GeneralModel):
 
 
 class S2GenerationModel(GeneralModel):
-  def __init__(self, label_to_cellid):
+  def __init__(self, label_to_cellid, is_landmarks=False):
     GeneralModel.__init__(self)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
     self.tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
     self.is_generation = True
     self.label_to_cellid = label_to_cellid
+    self.is_landmarks = is_landmarks
 
     self.max_size = len(str(len(label_to_cellid)))
+
+    if self.is_landmarks:
+      self.max_size = self.max_size*10
+
 
     self.constraints = []
 
@@ -162,11 +167,15 @@ class S2GenerationModel(GeneralModel):
 
 
   def compute_loss(self, text, cellid, *args):
-    labels = args[2]
+    landmarks = args[3]
+    if self.is_landmarks:
+      labels = landmarks.long()
+    else:
+      labels = cellid.long()
+    
     text_ids = text['input_ids'] 
     attention_mask = text['attention_mask'] 
-    cellid_ids = cellid.long()
-    loss = self.model(input_ids=text_ids, attention_mask=attention_mask, labels=cellid_ids).loss
+    loss = self.model(input_ids=text_ids, attention_mask=attention_mask, labels=labels).loss
     return loss
 
   def forward(self, text, cellid):
@@ -177,7 +186,6 @@ class S2GenerationModel(GeneralModel):
   def predict(self, text, *args):
 
     label_to_cellid = args[1]
-    default_cell = list(label_to_cellid.values())[0]
 
     output_sequences = self.model.generate(
       **text, num_beams=2, 
@@ -189,8 +197,9 @@ class S2GenerationModel(GeneralModel):
       output_sequences, skip_special_tokens=True)
 
     prediction_cellids = []
+
     for pred_raw in prediction:
-      pred = pred_raw.replace(" ", "")
+      pred = pred_raw.split(";")[0].replace(" ", "")
 
       if not pred.isdigit():
         pred = 0

@@ -200,6 +200,8 @@ def main(argv):
     run_model = models.DualEncoder(device=device)
   elif FLAGS.model == 'S2-Generation-T5':
     run_model = models.S2GenerationModel(dataset_text.label_to_cellid)
+  elif FLAGS.model == 'S2-Generation-T5-Landmarks':
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_landmarks=True)
   elif FLAGS.model == 'Classification-Bert':
     run_model = models.ClassificationModel(n_cells)
   else: 

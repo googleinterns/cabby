@@ -125,8 +125,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
     
     data = data.assign(point=data.end_point)
 
+
     data['cellid'] = data.point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
+
 
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.neighbor_cellid(x))
@@ -149,6 +151,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     data['far_cells'] = data.cellid.apply(
       lambda cellid: unique_cells_df[unique_cells_df['cellid']==cellid].far.iloc[0])
 
+
     cellids_array = np.array(data.cellid.tolist())
     neighbor_cells_array = np.array(data.neighbor_cells.tolist())
     far_cells_array = np.array(data.far_cells.tolist())
@@ -163,6 +166,13 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.far_cells = self.s2_tokenizer(far_cells_array)
 
+    if 'landmarks' in data:
+      data['landmarks'] = data.landmarks.apply(
+        lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
+      landmarks_array = np.array(data.landmarks.tolist())
+      self.landmarks = self.s2_tokenizer(landmarks_array)
+    else:
+      self.landmarks = [0] * len(self.cellids)
 
   def __getitem__(self, idx: int):
     '''Supports indexing such that TextGeoDataset[i] can be used to get 
@@ -176,6 +186,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
     text = {key: torch.tensor(val[idx])
         for key, val in self.encodings.items()}
     cellid = self.cellids[idx]
+    landmarks = self.landmarks[idx]
+
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
     point = torch.tensor(self.points[idx])
@@ -186,7 +198,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       prob = torch.tensor([])
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
-      'far_cells': far_cells, 'point': point, 'label': label, 'prob': prob}
+      'far_cells': far_cells, 'point': point, 'label': label, 'prob': prob, 'landmarks': landmarks}
 
     return sample
 

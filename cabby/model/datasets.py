@@ -30,7 +30,7 @@ from cabby.model import util
 from transformers import DistilBertTokenizerFast, T5Tokenizer
 
 
-MODELS = ['Dual-Encoder-Bert', 'Classification-Bert', 'S2-Generation-T5']
+MODELS = ['Dual-Encoder-Bert', 'Classification-Bert', 'S2-Generation-T5', 'S2-Generation-T5-Landmarks']
 
 T5_TYPE = "t5-small"
 BERT_TYPE = 'distilbert-base-uncased'
@@ -66,16 +66,25 @@ class Dataset:
     if self.model_type in ['Dual-Encoder-Bert', 'Classification-Bert']:      
       self.text_tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_TYPE)
       self.s2_tokenizer = util.binary_representation
-    elif self.model_type == 'S2-Generation-T5':
+    elif 'S2-Generation-T5' in self.model_type:
       self.text_tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
       self.s2_tokenizer = self.tokenize_cell
 
   def tokenize_cell(self, list_cells):
-    labels = [self.cellid_to_label[c] for c in list_cells]
-    list_cells_str = list(map(str, labels))
+    if isinstance(list_cells[0], list): 
+      labels = []
+      for c_list in list_cells:
+        list_lables = []
+        for c in c_list:
+          list_lables.append(str(self.cellid_to_label[c]))
+
+        labels.append('; '.join(list_lables))
+
+    else:
+      labels = [str(self.cellid_to_label[c]) for c in list_cells]
 
     return tokenizerT5(
-      list_cells_str, return_tensors="pt", padding=True, truncation=True).input_ids
+      labels, return_tensors="pt", padding=True, truncation=True).input_ids
     
 
     
@@ -163,13 +172,23 @@ class HumanDataset(Dataset):
     ds['end_point'] = ds['rvs_goal_point'].apply(gutil.point_from_str_coord_xy)
     ds['start_point'] = ds['rvs_start_point'].apply(gutil.point_from_str_coord_xy)
 
+    if 'landmarks' in ds:
+      ds['landmarks'] = ds.landmarks.apply(self.process_landmarks)
+
     columns_keep = ds.columns.difference(
-      ['instructions', 'end_point', 'start_point'])
+      ['instructions', 'end_point', 'start_point', 'landmarks'])
     ds.drop(columns_keep, 1, inplace=True)
 
     ds = shuffle(ds)
     ds.reset_index(inplace=True, drop=True)
     return ds
+
+  def process_landmarks(self, landmarks_str_one_line):
+    ladmarks_str_list = landmarks_str_one_line.split(';')
+    return [gutil.point_from_str_coord_yx(
+      landmark_str.split(':')[-1]) for landmark_str in ladmarks_str_list]
+
+
 
   
 
