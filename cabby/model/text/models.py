@@ -198,7 +198,10 @@ class S2GenerationModel(GeneralModel):
 
     prediction_cellids = []
 
+    logging.info(f"!!!!!!!!!! {prediction[0]}")
+
     for pred_raw in prediction:
+
       pred = pred_raw.split(";")[0].replace(" ", "")
 
       if not pred.isdigit():

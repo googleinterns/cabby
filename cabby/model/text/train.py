@@ -218,10 +218,3 @@ def infer_text(model: torch.nn.Module, text: str):
   else:
     return model.text_embed(text)
     
-  
-
-
-  
-
-
-

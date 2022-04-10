@@ -215,7 +215,7 @@ def main(argv):
       load_path=FLAGS.model_path, model=run_model, device=device)
   if torch.cuda.device_count() > 1:
     logging.info("Using {} GPUs.".format(torch.cuda.device_count()))
-    run_model = nn.DataParallel(run_model)
+    run_model = nn.DataParallel(run_model).module
 
   run_model.to(device)
 
