@@ -295,7 +295,6 @@ class RVSDataset(Dataset):
         
     logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
     ds['landmarks'] =  ds.geo_landmarks.apply(self.process_landmarks)
-    logging.info(f"66666666666 {ds.columns}")
     ds['route'] = ds.route.apply(self.process_route)
 
     ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
