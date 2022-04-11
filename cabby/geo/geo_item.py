@@ -170,7 +170,7 @@ class RVSSample:
               landmark_list,
               geo_entity.geo_features,
               route_length,
-              geo_entity.route.coords,
+              geo_entity.route.coords[:],
               instructions,
               id,
               VERSION,

@@ -506,7 +506,7 @@ def get_line_length(line: LineString) -> float:
   return dist
 
 
-def point_from_list_coord(coord: Sequence) -> Point:
+def point_from_list_coord_yx(coord: Sequence) -> Point:
   '''Converts coordinates in list format (latitude and longtitude) to Point.
   E.g, of list [40.715865, -74.037258].
   Arguments:
@@ -516,6 +516,19 @@ def point_from_list_coord(coord: Sequence) -> Point:
   '''
   lat = coord[0]
   lon = coord[1]
+
+  return Point(lon, lat)
+
+def point_from_list_coord_xy(coord: Sequence) -> Point:
+  '''Converts coordinates in list format (longtitude and latitude) to Point.
+  E.g, of list [-74.037258, 40.715865].
+  Arguments:
+    coord: A lat-lng coordinate to be converted to a point.
+  Returns:
+    A point.
+  '''
+  lat = coord[1]
+  lon = coord[0]
 
   return Point(lon, lat)
 

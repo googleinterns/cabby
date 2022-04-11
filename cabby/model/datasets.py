@@ -74,7 +74,7 @@ class Dataset:
     elif 'S2-Generation-T5' in self.model_type:
       self.text_tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
       self.s2_tokenizer = self.tokenize_cell
-
+    
   def tokenize_cell(self, list_cells):
     if isinstance(list_cells[0], list): 
       labels = []
@@ -302,19 +302,17 @@ class RVSDataset(Dataset):
     ds['end_osmid'] = ds.end_point.apply(lambda x: x[1])
     ds['start_osmid'] = ds.start_point.apply(lambda x: x[1])
     ds['end_pivot'] = ds.end_point
-    ds['end_point'] = ds.end_point.apply(lambda x: gutil.point_from_list_coord(x[3]))
-    ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord(x[3]))
+    ds['end_point'] = ds.end_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))
+    ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
     return ds    
 
   def process_landmarks(self, landmarks_dict):
     ladmarks_list = list(landmarks_dict.values())
-    return [gutil.point_from_list_coord(
+    return [gutil.point_from_list_coord_yx(
       landmark_l[-1]) for landmark_l in ladmarks_list if landmark_l[-1]]
 
-  # def process_route(self, route_str):
-  #   route_str = route_str.replace('LINESTRING', "").replace('(', "").replace(')', "")
-  #   ladmarks_str_list = route_str.split(',')
-  #   return [
-  #     gutil.point_from_str_coord_xy(landmark_str) for landmark_str in ladmarks_str_list]
+  def process_route(self, route_list):
+    return [
+      gutil.point_from_list_coord_xy(landmark) for landmark in route_list]
 

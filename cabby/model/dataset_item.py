@@ -166,20 +166,20 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.far_cells = self.s2_tokenizer(far_cells_array)
 
-    if 'landmarks' in data:
+    try:
       data['landmarks'] = data.landmarks.apply(
         lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
       landmarks_array = np.array(data.landmarks.tolist())
-      self.landmarks = self.s2_tokenizer(landmarks_array)
-    else:
+      self.landmarks = self.landmarks_route_s2_tokenizer(landmarks_array)
+    except:
       self.landmarks = [0] * len(self.cellids)
 
-    if 'route' in data:
+    try:
       data['route'] = data.route.apply(
         lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
       route_array = np.array(data.route.tolist())
-      self.route = self.s2_tokenizer(route_array)
-    else:
+      self.route = self.landmarks_route_s2_tokenizer(route_array)
+    except:
       self.route = [0] * len(self.cellids)
 
   def __getitem__(self, idx: int):
