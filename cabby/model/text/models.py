@@ -145,19 +145,22 @@ class DualEncoder(GeneralModel):
 
 
 class S2GenerationModel(GeneralModel):
-  def __init__(self, label_to_cellid, is_landmarks=False):
+  def __init__(self, label_to_cellid, is_landmarks=False, is_path=False):
     GeneralModel.__init__(self)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
     self.tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
     self.is_generation = True
     self.label_to_cellid = label_to_cellid
     self.is_landmarks = is_landmarks
+    self.is_path = is_path
 
     self.max_size = len(str(len(label_to_cellid)))
 
     if self.is_landmarks:
       self.max_size = self.max_size*10
 
+    if self.is_path:
+      self.max_size = self.max_size*100
 
     self.constraints = []
 
@@ -168,13 +171,19 @@ class S2GenerationModel(GeneralModel):
 
   def compute_loss(self, text, cellid, *args):
     landmarks = args[3]
+    route = args[4]
+
     if self.is_landmarks:
       labels = landmarks.long()
+    elif self.is_path:
+      labels = route.long()
     else:
       labels = cellid.long()
-    
+
+   
     text_ids = text['input_ids'] 
     attention_mask = text['attention_mask'] 
+
     loss = self.model(input_ids=text_ids, attention_mask=attention_mask, labels=labels).loss
     return loss
 

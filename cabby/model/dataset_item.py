@@ -174,6 +174,14 @@ class TextGeoSplit(torch.utils.data.Dataset):
     else:
       self.landmarks = [0] * len(self.cellids)
 
+    if 'route' in data:
+      data['route'] = data.route.apply(
+        lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
+      route_array = np.array(data.route.tolist())
+      self.route = self.s2_tokenizer(route_array)
+    else:
+      self.route = [0] * len(self.cellids)
+
   def __getitem__(self, idx: int):
     '''Supports indexing such that TextGeoDataset[i] can be used to get 
     i-th sample. 
@@ -187,6 +195,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
         for key, val in self.encodings.items()}
     cellid = self.cellids[idx]
     landmarks = self.landmarks[idx]
+    route = self.route[idx]
 
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
@@ -198,7 +207,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
       prob = torch.tensor([])
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
-      'far_cells': far_cells, 'point': point, 'label': label, 'prob': prob, 'landmarks': landmarks}
+      'far_cells': far_cells, 'point': point, 'label': label, 'prob': prob, 
+      'landmarks': landmarks, 'route': route}
 
     return sample
 

@@ -544,9 +544,9 @@ def point_from_str_coord_yx(coord_str: Text) -> Point:
 
 def point_from_str_coord_xy(coord_str: Text) -> Point:
   '''Converts coordinates in string format (latitude and longtitude) to Point.
-  E.g, of string '(40.715865, -74.037258)' or 'POINT(40.715865 -74.037258)'. 
+  E.g, of string '(-74.037258, 40.715865)' or '[-74.037258, 40.715865]' or 'POINT(-74.037258 40.715865)'. 
   Arguments:
-    coord: A lat-lng coordinate to be converted to a point.
+    coord: A lng-lat coordinate to be converted to a point.
   Returns:
     A point.
   '''

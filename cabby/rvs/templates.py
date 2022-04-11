@@ -535,6 +535,8 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
   # Save to file.
   with open(save_instruction_path, 'a') as outfile:
     for sample_idx, sample in enumerate(uniq_samples.values()):
+      if sample_idx in [3021, 4104, 7631, 11386, 14181, 1636]:
+        continue
       try:
         json.dump(sample, outfile, default=lambda o: o.__dict__)
         outfile.write('\n')
