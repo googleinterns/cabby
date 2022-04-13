@@ -199,13 +199,15 @@ def main(argv):
   if 'Dual-Encoder' in FLAGS.model:
     run_model = models.DualEncoder(device=device)
   elif FLAGS.model == 'S2-Generation-T5':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid)
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, device=device)
   elif FLAGS.model == 'S2-Generation-T5-Landmarks':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_landmarks=True)
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_landmarks=True, device=device)
   elif FLAGS.model == 'S2-Generation-T5-Path':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_path=True)
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_path=True, device=device)
+  elif FLAGS.model == 'S2-Generation-T5-Fixed-Landmarks':
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_near_landmark=True, device=device)
   elif FLAGS.model == 'Classification-Bert':
-    run_model = models.ClassificationModel(n_cells)
+    run_model = models.ClassificationModel(n_cells, device=device)
   else: 
     sys.exit("Model invalid")
 

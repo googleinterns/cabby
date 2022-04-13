@@ -35,7 +35,8 @@ MODELS = [
   'Classification-Bert', 
   'S2-Generation-T5', 
   'S2-Generation-T5-Landmarks', 
-  'S2-Generation-T5-Path']
+  'S2-Generation-T5-Path',
+  'S2-Generation-T5-Fixed-Landmarks']
 
 T5_TYPE = "t5-small"
 BERT_TYPE = 'distilbert-base-uncased'
@@ -103,7 +104,17 @@ class Dataset:
     ladmarks_str_list = landmarks_str_one_line.split(';')
     return [gutil.point_from_str_coord_yx(
       landmark_str.split(':')[-1]) for landmark_str in ladmarks_str_list]
+  
+  def get_specific_landmark(self, landmarks_str_one_line, landmark_name):
 
+    ladmarks_str_list = landmarks_str_one_line.split(';')
+
+    landmark_found = None
+    for landmark_str in ladmarks_str_list:
+      if landmark_name in landmark_str:
+        landmark_found = gutil.point_from_str_coord_yx(landmark_str.split(':')[-1])
+
+    return landmark_found
 
     
   def create_dataset(self, infer_only: bool = False
@@ -190,13 +201,25 @@ class HumanDataset(Dataset):
     ds['start_point'] = ds['rvs_start_point'].apply(gutil.point_from_str_coord_xy)
 
     if 'landmarks' in ds:
+      ds['near_pivot'] = ds.landmarks.apply(
+        lambda x: self.get_specific_landmark(x, 'near_pivot'))
+      ds['main_pivot'] = ds.landmarks.apply(
+        lambda x: self.get_specific_landmark(x, 'main_pivot'))
+    
       ds['landmarks'] = ds.landmarks.apply(self.process_landmarks)
     
     if 'route' in ds:
       ds['route'] = ds.route.apply(self.process_route)
     
     columns_keep = ds.columns.difference(
-      ['instructions', 'end_point', 'start_point', 'landmarks', 'route'])
+      [
+        'instructions', 
+        'end_point', 
+        'start_point', 
+        'landmarks', 
+        'route', 
+        'near_pivot',
+        'main_pivot'])
     ds.drop(columns_keep, 1, inplace=True)
 
     ds = shuffle(ds)

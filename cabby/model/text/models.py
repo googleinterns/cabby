@@ -35,9 +35,10 @@ criterion = nn.CosineEmbeddingLoss()
 
 
 class GeneralModel(nn.Module):
-  def __init__(self):
+  def __init__(self, device):
     super(GeneralModel, self).__init__()
     self.is_generation = False
+    self.device = device
   def forward(self, text_feat, cellid):
     return text_feat, cellid
   def compute_loss(self, text: Dict, *args
@@ -57,9 +58,8 @@ class DualEncoder(GeneralModel):
     s2cell_dim=64, 
     output_dim=100, 
     ):
-    GeneralModel.__init__(self)
+    GeneralModel.__init__(self, device)
     
-    self.device = device
     self.hidden_layer = nn.Linear(text_dim, hidden_dim)
     self.softmax = nn.Softmax(dim=-1)
     self.tanh = nn.Tanh()
@@ -145,14 +145,18 @@ class DualEncoder(GeneralModel):
 
 
 class S2GenerationModel(GeneralModel):
-  def __init__(self, label_to_cellid, is_landmarks=False, is_path=False):
-    GeneralModel.__init__(self)
+  def __init__(
+    self, label_to_cellid, device, is_landmarks=False, is_path=False, is_near_landmark=False):
+    GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
     self.tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
     self.is_generation = True
     self.label_to_cellid = label_to_cellid
     self.is_landmarks = is_landmarks
     self.is_path = is_path
+    self.is_near_landmark = is_near_landmark
+    self.sep = self.tokenizer(
+      '; ', return_tensors="pt", padding=True, truncation=True).input_ids.to(self.device)
 
     self.max_size = len(str(len(label_to_cellid)))
 
@@ -172,11 +176,22 @@ class S2GenerationModel(GeneralModel):
   def compute_loss(self, text, cellid, *args):
     landmarks = args[3]
     route = args[4]
+    near_landmark = args[5]
+    main_landmark = args[6]
+    start_point = args[6]
 
     if self.is_landmarks:
       labels = landmarks.long()
     elif self.is_path:
       labels = route.long()
+    elif self.is_near_landmark:
+      batch_size = cellid.shape[0]
+      sep = self.sep.expand(batch_size, -1)
+      labels = torch.cat(
+        (cellid, sep, 
+        start_point, sep,
+        main_landmark, sep,
+        near_landmark, sep), axis=1).long()
     else:
       labels = cellid.long()
 
@@ -226,8 +241,8 @@ class S2GenerationModel(GeneralModel):
 
   
 class ClassificationModel(GeneralModel):
-  def __init__(self, n_lables, hidden_dim = 200):
-    GeneralModel.__init__(self)
+  def __init__(self, n_lables, device, hidden_dim = 200):
+    GeneralModel.__init__(self, device)
     self.is_generation = True
 
     self.model = DistilBertForSequenceClassification.from_pretrained(
