@@ -144,21 +144,21 @@ class Dataset:
         self.text_tokenizer,
         self.s2_tokenizer,
         self.train, self.s2level, unique_cells_df, 
-        self.cellid_to_label, dprob)
+        self.cellid_to_label, self.model_type, dprob)
       logging.info(
         f"Finished to create the train-set with {len(train_dataset)} samples")
       val_dataset = dataset_item.TextGeoSplit(
         self.text_tokenizer,
         self.s2_tokenizer, 
         self.valid, self.s2level, unique_cells_df, 
-        self.cellid_to_label, dprob)
+        self.cellid_to_label, self.model_type, dprob)
       logging.info(
         f"Finished to create the valid-set with {len(val_dataset)} samples")
     test_dataset = dataset_item.TextGeoSplit(
       self.text_tokenizer,
       self.s2_tokenizer,
       self.test, self.s2level, unique_cells_df, 
-      self.cellid_to_label, dprob)
+      self.cellid_to_label, self.model_type, dprob)
     logging.info(
       f"Finished to create the test-set with {len(test_dataset)} samples")
 

@@ -116,7 +116,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
   """
   def __init__(self, text_tokenizer, s2_tokenizer, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int], 
-    dprob: util.DistanceProbability, is_dist: Boolean = False):
+    model_type: str, dprob: util.DistanceProbability, is_dist: Boolean = False):
 
     self.text_tokenizer = text_tokenizer
     self.s2_tokenizer = s2_tokenizer
@@ -166,7 +166,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.far_cells = self.s2_tokenizer(far_cells_array)
 
-    try:
+    if 'T5' in model_type:
       data['start_point'] = data.start_point.apply(
         lambda x: gutil.cellid_from_point(x, s2level))
 
@@ -174,11 +174,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
       self.start_point = self.s2_tokenizer(start_point_array)
 
-    except:
+    else:
       self.start_point = [0] * len(self.cellids)
  
 
-    try:
+    if 'T5' in model_type and 'landmarks' in data:
       data['landmarks'] = data.landmarks.apply(
         lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
 
@@ -199,18 +199,22 @@ class TextGeoSplit(torch.utils.data.Dataset):
       main_pivot_array = np.array(data.main_pivot.tolist())
       self.main_pivot = self.s2_tokenizer(main_pivot_array)
 
-    except:
+    else:
       self.landmarks = [0] * len(self.cellids)
       self.near_pivot = [0] * len(self.cellids)
       self.main_pivot = [0] * len(self.cellids)
+      logging.warning("Landmarks not processed")
 
-    try:
+
+    if 'T5' in model_type and 'route' in data:
       data['route'] = data.route.apply(
         lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
       route_array = np.array(data.route.tolist())
       self.route = self.s2_tokenizer(route_array)
-    except:
+    else:
       self.route = [0] * len(self.cellids)
+      logging.warning("Route not processed")
+
 
   def __getitem__(self, idx: int):
     '''Supports indexing such that TextGeoDataset[i] can be used to get 
