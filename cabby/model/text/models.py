@@ -19,7 +19,7 @@ import sys
 import torch
 import torch.nn as nn
 from transformers import DistilBertModel, DistilBertForSequenceClassification
-from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model, PhrasalConstraint
+from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model
 
 from typing import Dict, Sequence 
 
@@ -39,9 +39,10 @@ class GeneralModel(nn.Module):
     super(GeneralModel, self).__init__()
     self.is_generation = False
     self.device = device
-  def forward(self, text_feat, cellid):
+
+  def get_embed(self, text_feat, cellid):
     return text_feat, cellid
-  def compute_loss(self, text: Dict, *args
+  def forward(self, text: Dict, *args
   ):
     sys.exit("Implement compute_loss function in model")
  
@@ -79,7 +80,7 @@ class DualEncoder(GeneralModel):
     self.cos = nn.CosineSimilarity(dim=2)
 
 
-  def forward(self, text_feat, cellid):
+  def get_embed(self, text_feat, cellid):
     
     text_embedding = self.text_embed(text_feat)
     cellid_embedding = self.cellid_main(cellid)
@@ -90,7 +91,7 @@ class DualEncoder(GeneralModel):
 
   def predict(self, text, all_cells, *args):
 
-    batch_dim, text_embedding_exp, cellid_embedding = self.forward(text, all_cells)
+    batch_dim, text_embedding_exp, cellid_embedding = self.get_embed(text, all_cells)
     cell_dim = cellid_embedding.shape[0]
     output_dim  = cellid_embedding.shape[1]
 
@@ -107,7 +108,7 @@ class DualEncoder(GeneralModel):
     return points
 
 
-  def compute_loss(
+  def forward(
           self,
           text: Dict,
           *args
@@ -119,18 +120,18 @@ class DualEncoder(GeneralModel):
 
     # Correct cellid.
     target = torch.ones(cellids.shape[0]).to(self.device)
-    _, text_embedding, cellid_embedding = self.forward(text, cellids)
+    _, text_embedding, cellid_embedding = self.get_embed(text, cellids)
     loss_cellid = criterion(text_embedding, cellid_embedding, target)
 
     # Neighbor cellid.
     target_neighbor = -1*torch.ones(cellids.shape[0]).to(self.device)
-    _, text_embedding_neighbor, cellid_embedding = self.forward(text, neighbor_cells)
+    _, text_embedding_neighbor, cellid_embedding = self.get_embed(text, neighbor_cells)
     loss_neighbor = criterion(text_embedding_neighbor, 
     cellid_embedding, target_neighbor)
 
     # Far cellid.
     target_far = -1*torch.ones(cellids.shape[0]).to(self.device)
-    _, text_embedding_far, cellid_embedding = self.forward(text, far_cells)
+    _, text_embedding_far, cellid_embedding = self.get_embed(text, far_cells)
     loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
 
     loss = loss_cellid + loss_neighbor + loss_far
@@ -146,7 +147,7 @@ class DualEncoder(GeneralModel):
 
 class S2GenerationModel(GeneralModel):
   def __init__(
-    self, label_to_cellid, device, is_landmarks=False, is_path=False, is_near_landmark=False):
+    self, label_to_cellid, device, is_landmarks=False, is_path=False):
     GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
     self.tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
@@ -154,7 +155,6 @@ class S2GenerationModel(GeneralModel):
     self.label_to_cellid = label_to_cellid
     self.is_landmarks = is_landmarks
     self.is_path = is_path
-    self.is_near_landmark = is_near_landmark
     self.sep = self.tokenizer(
       '; ', return_tensors="pt", padding=True, truncation=True).input_ids.to(self.device)
 
@@ -166,32 +166,14 @@ class S2GenerationModel(GeneralModel):
     if self.is_path:
       self.max_size = self.max_size*100
 
-    self.constraints = []
-
-    for constraint_str in '0123456789':
-      constraint_token_ids = self.tokenizer.encode(str(constraint_str))[:-1]  # slice to remove eos token
-      self.constraints += [PhrasalConstraint(token_ids=constraint_token_ids)]
-
-
-  def compute_loss(self, text, cellid, *args):
+  def forward(self, text, cellid, *args):
     landmarks = args[3]
     route = args[4]
-    near_landmark = args[5]
-    main_landmark = args[6]
-    start_point = args[6]
 
     if self.is_landmarks:
       labels = landmarks.long()
     elif self.is_path:
       labels = route.long()
-    elif self.is_near_landmark:
-      batch_size = cellid.shape[0]
-      sep = self.sep.expand(batch_size, -1)
-      labels = torch.cat(
-        (cellid, sep, 
-        start_point, sep,
-        main_landmark, sep,
-        near_landmark, sep), axis=1).long()
     else:
       labels = cellid.long()
 
@@ -199,10 +181,10 @@ class S2GenerationModel(GeneralModel):
     text_ids = text['input_ids'] 
     attention_mask = text['attention_mask'] 
 
-    loss = self.model(input_ids=text_ids, attention_mask=attention_mask, labels=labels).loss
-    return loss
+    output = self.model(input_ids=text_ids, attention_mask=attention_mask, labels=labels, return_dict=True)
+    return output.loss
 
-  def forward(self, text, cellid):
+  def get_embed(self, text, cellid):
     text_dim = text['input_ids'].shape[0]
     return text_dim, text, cellid
 
@@ -250,7 +232,7 @@ class ClassificationModel(GeneralModel):
 
     self.criterion = nn.CrossEntropyLoss()
 
-  def compute_loss(self, text, cellid, *args):
+  def forward(self, text, cellid, *args):
     labels = args[2]
 
     outputs = self.model(
@@ -269,7 +251,3 @@ class ClassificationModel(GeneralModel):
 
     points = mutil.predictions_to_points(predictions, label_to_cellid)
     return points
-
-
-
-

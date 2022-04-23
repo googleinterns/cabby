@@ -199,3 +199,10 @@ def predictions_to_points(preds: Sequence,
     cellids.append(label_to_cellid[label] if label in label_to_cellid else default_cell)
   coords = util.get_center_from_s2cellids(cellids)
   return coords
+
+def get_valid_label(dict_cells_lables: Dict, cellid: str):
+  while cellid not in dict_cells_lables:
+    cellid = util.neighbor_cellid(int(cellid))
+
+  return dict_cells_lables[cellid]
+  

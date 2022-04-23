@@ -166,43 +166,16 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.far_cells = self.s2_tokenizer(far_cells_array)
 
-    if 'T5' in model_type:
-      data['start_point'] = data.start_point.apply(
-        lambda x: gutil.cellid_from_point(x, s2level))
-
-      start_point_array = np.array(data.start_point.tolist())
-
-      self.start_point = self.s2_tokenizer(start_point_array)
-
-    else:
-      self.start_point = [0] * len(self.cellids)
- 
 
     if 'T5' in model_type and 'landmarks' in data:
       data['landmarks'] = data.landmarks.apply(
         lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
 
-      landmarks_array = np.array(data.landmarks.tolist())
+      self.landmarks = self.s2_tokenizer(data.landmarks.tolist())
 
-      self.landmarks = self.s2_tokenizer(landmarks_array)
-
-      data['near_pivot'] = data.near_pivot.apply(
-        lambda x: gutil.cellid_from_point(x, s2level))
-
-      near_pivot_array = np.array(data.near_pivot.tolist())
-      self.near_pivot = self.s2_tokenizer(near_pivot_array)
-
-      
-      data['main_pivot'] = data.main_pivot.apply(
-        lambda x: gutil.cellid_from_point(x, s2level))
-
-      main_pivot_array = np.array(data.main_pivot.tolist())
-      self.main_pivot = self.s2_tokenizer(main_pivot_array)
 
     else:
       self.landmarks = [0] * len(self.cellids)
-      self.near_pivot = [0] * len(self.cellids)
-      self.main_pivot = [0] * len(self.cellids)
       logging.warning("Landmarks not processed")
 
 
@@ -229,9 +202,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
         for key, val in self.encodings.items()}
     cellid = self.cellids[idx]
     landmarks = self.landmarks[idx]
-    near_pivot = self.near_pivot[idx]
-    main_pivot = self.main_pivot[idx]
-    start_point = self.start_point[idx]
 
     route = self.route[idx]
 
@@ -246,8 +216,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
       'far_cells': far_cells, 'point': point, 'label': label, 'prob': prob, 
-      'landmarks': landmarks, 'route': route, 'near_pivot': near_pivot,
-      'main_pivot': main_pivot, 'start_point': start_point}
+      'landmarks': landmarks, 'route': route}
 
     return sample
 
@@ -257,5 +226,3 @@ class TextGeoSplit(torch.utils.data.Dataset):
 def calc_dist(start, unique_cells_df):
   return unique_cells_df.swifter.apply(
     lambda end: gutil.get_distance_between_points(start, end.point), axis=1)
-
-

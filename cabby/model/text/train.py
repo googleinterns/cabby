@@ -95,24 +95,25 @@ class Trainer:
         labels = batch['label'].to(self.device)
         landmarks = batch['landmarks'].to(self.device)
         route = batch['route'].to(self.device)
-        near_pivot = batch['near_pivot'].to(self.device)
-        main_pivot = batch['main_pivot'].to(self.device)
-        start_point = batch['start_point'].to(self.device)
 
-        loss = self.model.compute_loss(
-          text, 
-          cellids, 
-          neighbor_cells, 
-          far_cells, labels, 
-          landmarks, 
-          route, 
-          near_pivot, 
-          main_pivot,
-          start_point
-          )
+
+        loss = self.model(
+            text, 
+            cellids, 
+            neighbor_cells, 
+            far_cells, labels, 
+            landmarks, 
+            route, 
+            )
+
+     
         loss_val_total+=loss
 
-        predictions = self.model.predict(text, self.cells_tensor, self.label_to_cellid)
+        if isinstance(self.model, nn.DataParallel):
+          predictions = self.model.module.predict(text, self.cells_tensor, self.label_to_cellid)
+        else:
+          predictions = self.model.predict(text, self.cells_tensor, self.label_to_cellid)
+
         predictions_list.append(predictions)
         labels = batch['label'].numpy()
         true_vals.append(labels)
@@ -149,22 +150,16 @@ class Trainer:
         labels = batch['label'].to(self.device)
         landmarks = batch['landmarks'].to(self.device)
         route = batch['route'].to(self.device)
-        near_pivot = batch['near_pivot'].to(self.device)
-        main_pivot = batch['main_pivot'].to(self.device)
-        start_point = batch['start_point'].to(self.device)
 
-
-        loss = self.model.compute_loss(
-          text, 
-          cellids, 
-          neighbor_cells, 
-          far_cells, 
-          labels, 
-          landmarks, 
-          route, 
-          near_pivot,
-          main_pivot,
-          start_point)
+        loss = self.model(
+            text, 
+            cellids, 
+            neighbor_cells, 
+            far_cells, 
+            labels, 
+            landmarks, 
+            route)
+       
 
         loss.backward()
 
