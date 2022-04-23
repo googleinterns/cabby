@@ -204,8 +204,6 @@ def main(argv):
     run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_landmarks=True, device=device)
   elif FLAGS.model == 'S2-Generation-T5-Path':
     run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_path=True, device=device)
-  elif FLAGS.model == 'S2-Generation-T5-Fixed-Landmarks':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_near_landmark=True, device=device)
   elif FLAGS.model == 'Classification-Bert':
     run_model = models.ClassificationModel(n_cells, device=device)
   else: 
