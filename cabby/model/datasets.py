@@ -88,7 +88,7 @@ class Dataset:
         labels.append('; '.join(list_lables))
 
     else:
-      labels = [str(self.cellid_to_label[c]) for c in list_cells]
+      labels = [str(util.get_valid_label(self.cellid_to_label,c)) for c in list_cells]
 
     return tokenizerT5(
       labels, padding=True, truncation=True).input_ids
