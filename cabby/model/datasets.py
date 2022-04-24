@@ -35,8 +35,9 @@ MODELS = [
   'Classification-Bert', 
   'S2-Generation-T5', 
   'S2-Generation-T5-Landmarks', 
+  'S2-Generation-T5-Warmup-start-end', 
   'S2-Generation-T5-Path',
-  'S2-Generation-T5-Fixed-Landmarks']
+  ]
 
 T5_TYPE = "t5-small"
 BERT_TYPE = 'distilbert-base-uncased'
@@ -90,7 +91,7 @@ class Dataset:
       labels = [str(self.cellid_to_label[c]) for c in list_cells]
 
     return tokenizerT5(
-      labels, return_tensors="pt", padding=True, truncation=True).input_ids
+      labels, padding=True, truncation=True).input_ids
     
 
   def process_route(self, route_str):
@@ -167,6 +168,18 @@ class Dataset:
       np.array(self.unique_cellid), 
       tens_cells, self.label_to_cellid)
 
+
+  def get_fixed_point_along_route(self, points_list, n_points=4):
+    avg_number = round(len(points_list)/n_points)
+    fixed_points = []
+    for i in range(n_points):
+      curr_point = points_list[i*avg_number]
+      fixed_points.append(curr_point)
+    
+    assert len(fixed_points) == n_points
+    return fixed_points
+
+
 class HumanDataset(Dataset):
   def __init__(
     self, data_dir: str, 
@@ -210,7 +223,9 @@ class HumanDataset(Dataset):
     
     if 'route' in ds:
       ds['route'] = ds.route.apply(self.process_route)
+      ds['route_fixed'] = ds.route.apply(self.get_fixed_point_along_route)
     
+    ds['start_end'] = ds.route.apply(self.get_fixed_point_along_route)
     columns_keep = ds.columns.difference(
       [
         'instructions', 
@@ -219,7 +234,8 @@ class HumanDataset(Dataset):
         'landmarks', 
         'route', 
         'near_pivot',
-        'main_pivot'])
+        'main_pivot',
+        'route_fixed'])
     ds.drop(columns_keep, 1, inplace=True)
 
     ds = shuffle(ds)
@@ -323,6 +339,8 @@ class RVSDataset(Dataset):
     
     if 'route' in ds: 
       ds['route'] = ds.route.apply(self.process_route)
+      ds['route_fixed'] = ds.route.apply(self.get_fixed_point_along_route)
+
 
     ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
 
@@ -330,7 +348,7 @@ class RVSDataset(Dataset):
     ds['start_osmid'] = ds.start_point.apply(lambda x: x[1])
     ds['end_pivot'] = ds.end_point
     ds['end_point'] = ds.end_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))
-    ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))
+    ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))    
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
     return ds    
 
@@ -342,4 +360,6 @@ class RVSDataset(Dataset):
   def process_route(self, route_list):
     return [
       gutil.point_from_list_coord_xy(landmark) for landmark in route_list]
+  
+
 

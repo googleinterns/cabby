@@ -83,7 +83,7 @@ class DualEncoder(GeneralModel):
   def get_embed(self, text_feat, cellid):
     
     text_embedding = self.text_embed(text_feat)
-    cellid_embedding = self.cellid_main(cellid)
+    cellid_embedding = self.cellid_main(cellid.float())
     
     return text_embedding.shape[0], text_embedding, cellid_embedding
 
@@ -108,29 +108,26 @@ class DualEncoder(GeneralModel):
     return points
 
 
-  def forward(
-          self,
-          text: Dict,
-          *args
+  def forward(self, text, cellid, *args
   ):
 
-    cellids = args[0]
-    neighbor_cells = args[1]
-    far_cells = args[2]
+    batch = args[0]
+    neighbor_cells = batch['neighbor_cells']
+    far_cells = batch['far_cells']
 
     # Correct cellid.
-    target = torch.ones(cellids.shape[0]).to(self.device)
-    _, text_embedding, cellid_embedding = self.get_embed(text, cellids)
+    target = torch.ones(cellid.shape[0]).to(self.device)
+    _, text_embedding, cellid_embedding = self.get_embed(text, cellid)
     loss_cellid = criterion(text_embedding, cellid_embedding, target)
 
     # Neighbor cellid.
-    target_neighbor = -1*torch.ones(cellids.shape[0]).to(self.device)
+    target_neighbor = -1*torch.ones(cellid.shape[0]).to(self.device)
     _, text_embedding_neighbor, cellid_embedding = self.get_embed(text, neighbor_cells)
     loss_neighbor = criterion(text_embedding_neighbor, 
     cellid_embedding, target_neighbor)
 
     # Far cellid.
-    target_far = -1*torch.ones(cellids.shape[0]).to(self.device)
+    target_far = -1*torch.ones(cellid.shape[0]).to(self.device)
     _, text_embedding_far, cellid_embedding = self.get_embed(text, far_cells)
     loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
 
@@ -147,7 +144,7 @@ class DualEncoder(GeneralModel):
 
 class S2GenerationModel(GeneralModel):
   def __init__(
-    self, label_to_cellid, device, is_landmarks=False, is_path=False):
+    self, label_to_cellid, device, is_landmarks=False, is_path=False, is_warmup_start_end=False):
     GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
     self.tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
@@ -155,8 +152,7 @@ class S2GenerationModel(GeneralModel):
     self.label_to_cellid = label_to_cellid
     self.is_landmarks = is_landmarks
     self.is_path = is_path
-    self.sep = self.tokenizer(
-      '; ', return_tensors="pt", padding=True, truncation=True).input_ids.to(self.device)
+    self.is_warmup_start_end = is_warmup_start_end
 
     self.max_size = len(str(len(label_to_cellid)))
 
@@ -167,21 +163,23 @@ class S2GenerationModel(GeneralModel):
       self.max_size = self.max_size*100
 
   def forward(self, text, cellid, *args):
-    landmarks = args[3]
-    route = args[4]
+    batch = args[0]
 
-    if self.is_landmarks:
-      labels = landmarks.long()
-    elif self.is_path:
-      labels = route.long()
-    else:
-      labels = cellid.long()
-
-   
-    text_ids = text['input_ids'] 
+    input_ids = text['input_ids'] 
     attention_mask = text['attention_mask'] 
 
-    output = self.model(input_ids=text_ids, attention_mask=attention_mask, labels=labels, return_dict=True)
+    if self.is_landmarks:
+      labels = batch['landmarks'].long()
+    elif self.is_path:
+      labels = batch['route'].long()
+    elif self.is_warmup_start_end:
+      input_ids = batch['start_end_input_ids'] 
+      attention_mask = batch['start_end_attention_mask']
+      labels = batch['route_fixed'].long()
+    else:
+      labels = cellid.long()
+    
+    output = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, return_dict=True)
     return output.loss
 
   def get_embed(self, text, cellid):
@@ -233,7 +231,7 @@ class ClassificationModel(GeneralModel):
     self.criterion = nn.CrossEntropyLoss()
 
   def forward(self, text, cellid, *args):
-    labels = args[2]
+    labels =  args[0]['label']
 
     outputs = self.model(
       input_ids = text['input_ids'], 

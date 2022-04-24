@@ -90,34 +90,24 @@ class Trainer:
 
         text = {key: val.to(self.device) for key, val in batch['text'].items()}
         cellids = batch['cellid'].float().to(self.device)
-        neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
-        far_cells = batch['far_cells'].float().to(self.device)
-        labels = batch['label'].to(self.device)
-        landmarks = batch['landmarks'].to(self.device)
-        route = batch['route'].to(self.device)
 
+        batch = {k:v.to(self.device) for k,v in batch.items() if torch.is_tensor(v)}
 
         loss = self.model(
             text, 
             cellids, 
-            neighbor_cells, 
-            far_cells, labels, 
-            landmarks, 
-            route, 
+            batch
             )
 
      
         loss_val_total+=loss
 
-        if isinstance(self.model, nn.DataParallel):
-          predictions = self.model.module.predict(text, self.cells_tensor, self.label_to_cellid)
-        else:
-          predictions = self.model.predict(text, self.cells_tensor, self.label_to_cellid)
+        predictions = self.model.predict(text, self.cells_tensor, self.label_to_cellid)
 
         predictions_list.append(predictions)
-        labels = batch['label'].numpy()
+        labels = batch['label'].cpu()
         true_vals.append(labels)
-        true_points_list.append(batch['point'])
+        true_points_list.append(batch['end_point'].cpu())
 
     true_points_list = np.concatenate(true_points_list, axis=0)
     pred_points_list = np.concatenate(predictions_list, axis=0)
@@ -145,21 +135,14 @@ class Trainer:
         self.optimizer.zero_grad()
         text = {key: val.to(self.device) for key, val in batch['text'].items()}
         cellids = batch['cellid'].float().to(self.device)
-        neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
-        far_cells = batch['far_cells'].float().to(self.device)
-        labels = batch['label'].to(self.device)
-        landmarks = batch['landmarks'].to(self.device)
-        route = batch['route'].to(self.device)
+        batch = {k:v.to(self.device) for k,v in batch.items() if torch.is_tensor(v)}
 
         loss = self.model(
             text, 
             cellids, 
-            neighbor_cells, 
-            far_cells, 
-            labels, 
-            landmarks, 
-            route)
-       
+            batch
+        )
+
 
         loss.backward()
 
