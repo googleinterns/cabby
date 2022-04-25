@@ -334,7 +334,7 @@ class RVSDataset(Dataset):
         
     logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
     
-    if 'landmarks' in ds:
+    if 'geo_landmarks' in ds:
       ds['landmarks'] =  ds.geo_landmarks.apply(self.process_landmarks)
     
     if 'route' in ds: 
