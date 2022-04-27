@@ -42,7 +42,8 @@ class Trainer:
           num_epochs: int,
           cells_tensor: torch.tensor,
           label_to_cellid: Dict[int, int],
-          is_distance_distribution: bool
+          is_distance_distribution: bool,
+          best_valid_loss: float = float("Inf")
 
           ):
 
@@ -58,7 +59,7 @@ class Trainer:
     self.cells_tensor = cells_tensor.float().to(self.device)
     self.label_to_cellid = label_to_cellid
     self.cos = nn.CosineSimilarity(dim=2)
-    self.best_valid_loss = float("Inf")
+    self.best_valid_loss = best_valid_loss
     if not os.path.exists(self.file_path):
       os.mkdir(self.file_path)
     self.model_path = os.path.join(self.file_path, 'model.pt')

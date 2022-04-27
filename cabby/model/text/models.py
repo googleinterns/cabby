@@ -178,7 +178,7 @@ class S2GenerationModel(GeneralModel):
       labels = batch['route_fixed'].long()
     else:
       labels = cellid.long()
-    
+
     output = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, return_dict=True)
     return output.loss
 

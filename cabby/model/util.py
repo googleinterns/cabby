@@ -135,6 +135,8 @@ def load_checkpoint(load_path: Text, model:  torch.nn.Module,
 
   else: 
     model.load_state_dict(state_dict['model_state_dict'])
+  
+  model.best_valid_loss = state_dict['valid_loss']
   return state_dict
 
 

@@ -107,6 +107,11 @@ flags.DEFINE_bool(
   'infer_only', default=False,
   help=('Train and infer\ just infer.'))
 
+
+flags.DEFINE_bool(
+  'is_val_loss_from_model', default=False,
+  help=('In case the model is loaded - should the validation loss use the models current loss.'))
+
 flags.DEFINE_bool(
   'is_distance_distribution', default=False,
   help=(
@@ -229,6 +234,9 @@ def main(argv):
   if FLAGS.is_distance_distribution and FLAGS.task=='WikiGeo':
     sys.exit("Wikigeo does not have a distance distribution option.")
 
+  if not FLAGS.is_val_loss_from_model:
+    run_model.best_valid_loss = float("Inf")
+
   trainer = train.Trainer(
     model=run_model,
     device=device,
@@ -241,7 +249,8 @@ def main(argv):
     file_path=FLAGS.output_dir, 
     cells_tensor = dataset_text.unique_cellids_binary,
     label_to_cellid = dataset_text.label_to_cellid,
-    is_distance_distribution = FLAGS.is_distance_distribution
+    is_distance_distribution = FLAGS.is_distance_distribution,
+    best_valid_loss = run_model.best_valid_loss
     )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")
