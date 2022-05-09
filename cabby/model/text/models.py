@@ -144,7 +144,12 @@ class DualEncoder(GeneralModel):
 
 class S2GenerationModel(GeneralModel):
   def __init__(
-    self, label_to_cellid, device, is_landmarks=False, is_path=False, is_warmup_start_end=False):
+      self, 
+      label_to_cellid, 
+      device, 
+      is_landmarks=False, 
+      is_path=False, 
+      is_warmup_start_end=False):
     GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
     self.tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)

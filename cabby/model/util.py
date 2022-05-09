@@ -128,7 +128,6 @@ def load_checkpoint(load_path: Text, model:  torch.nn.Module,
     return
 
   state_dict = torch.load(load_path, map_location=device)
-  logging.info(f'Model loaded from <== {load_path}')
 
   if isinstance(model, nn.DataParallel):
     model.module.load_state_dict(state_dict['model_state_dict'])
@@ -137,6 +136,8 @@ def load_checkpoint(load_path: Text, model:  torch.nn.Module,
     model.load_state_dict(state_dict['model_state_dict'])
   
   model.best_valid_loss = state_dict['valid_loss']
+  logging.info(f'Model loaded from <== {load_path} with validation loss {model.best_valid_loss}')
+
   return state_dict
 
 
