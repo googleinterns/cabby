@@ -169,7 +169,7 @@ pycurl==7.43.0.5
 pydocstyle @ file:///tmp/build/80754af9/pydocstyle_1592848020240/work
 pyepsg==0.4.0
 pyflakes==2.2.0
-Pygments==2.6.1
+Pygments==2.7.4
 pylint==2.3.1
 pyodbc==4.0.30
 pyOpenSSL @ file:///tmp/build/80754af9/pyopenssl_1594392929924/work
