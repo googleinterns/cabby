@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-from typing import Dict, Sequence 
+from typing import Dict, Sequence, Any
 
 from absl import logging
 import numpy as np
@@ -35,7 +35,7 @@ class Trainer:
           device: torch.device,
           optimizer: torch.optim.Adam,
           file_path: str,
-          train_loader: DataLoader,
+          train_loader: Any,
           valid_loader: DataLoader,
           test_loader: DataLoader,
           unique_cells: Sequence[int],
@@ -43,6 +43,7 @@ class Trainer:
           cells_tensor: torch.tensor,
           label_to_cellid: Dict[int, int],
           is_distance_distribution: bool,
+          is_single_sample_train: bool = False,
           best_valid_loss: float = float("Inf")
 
           ):
@@ -65,7 +66,7 @@ class Trainer:
     self.model_path = os.path.join(self.file_path, 'model.pt')
     self.metrics_path = os.path.join(self.file_path, 'metrics.tsv')
     self.is_distance_distribution = is_distance_distribution
-
+    self.is_single_sample_train = is_single_sample_train
     self.evaluator = eu.Evaluator()
     
 
@@ -76,9 +77,9 @@ class Trainer:
       data_loader = self.valid_loader
     else:
       data_loader = self.test_loader
+      logging.info("Starting evaluation.")
 
     # Validation loop.
-    logging.info("Starting evaluation.")
     true_points_list, pred_points_list = [], []
     predictions_list, true_vals  = [], []
     correct = 0
@@ -153,6 +154,9 @@ class Trainer:
         running_loss += loss.item()
         global_step += 1
 
+        if self.is_single_sample_train:
+          break
+      
 
       # Evaluation step.
       valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
@@ -174,6 +178,9 @@ class Trainer:
         util.save_checkpoint(self.model_path, self.model, self.best_valid_loss)
 
       self.model.train()
+
+      if self.is_single_sample_train:
+        return
 
 
     logging.info('Finished Training.')
@@ -206,6 +213,100 @@ class Trainer:
 
     if not self.model.is_generation:
       self.save_cell_embed()
+
+
+  def multi_train_model(self):
+
+    '''Main function for training model.'''
+    # Initialize running values.
+    global_step = 0
+
+    # Training loop.
+    self.model.train()
+
+    for epoch in range(self.num_epochs):
+      running_loss = 0.0
+      logging.info("Epoch number: {}".format(epoch))
+      for batches in zip(self.train_loader[0], self.train_loader[1], self.train_loader[2]):
+        loss = torch.tensor([0.0]).to(self.device)
+        self.optimizer.zero_grad()
+        for batch_idx in range(len(self.train_loader)):
+          batch  = batches[batch_idx]
+          text = {key: val.to(self.device) for key, val in batch['text'].items()}
+          cellids = batch['cellid'].float().to(self.device)
+          batch = {k:v.to(self.device) for k,v in batch.items() if torch.is_tensor(v)}
+
+          loss += self.model(
+              text, 
+              cellids, 
+              batch
+          )
+
+        loss.backward()
+
+        self.optimizer.step()
+
+        # Update running values.
+        running_loss += loss.item()
+        global_step += 1
+      
+
+      # Evaluation step.
+      valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
+
+      average_train_loss = running_loss / (batch_idx + 1)
+
+      # Resetting running values.
+      running_loss = 0.0
+
+      logging.info('Epoch [{}/{}], Step [{}/{}], \
+          Train Loss: {:.4f}, Valid Loss: {:.4f}'
+            .format(epoch+1, self.num_epochs, global_step,
+                self.num_epochs*len(self.train_loader),
+                average_train_loss, valid_loss))
+
+      # Save model and results in checkpoint.
+      if self.best_valid_loss > valid_loss:
+        self.best_valid_loss = valid_loss
+        util.save_checkpoint(self.model_path, self.model, self.best_valid_loss)
+
+      self.model.train()
+
+      if self.is_single_sample_train:
+        return
+
+
+    logging.info('Finished Training.')
+
+    model_state = util.load_checkpoint(self.model_path, self.model, self.device)
+    valid_loss = model_state['valid_loss']
+
+    logging.info(
+      f'Loaded best model (with validation loss {valid_loss}) for testing.')
+    
+    logging.info('Start testing.')
+
+    test_loss, predictions, true_vals, true_points, pred_points = self.evaluate(
+      validation_set = False)
+
+    util.save_metrics_last_only(
+          self.metrics_path, 
+          true_points, 
+          pred_points)
+
+    evaluator = eu.Evaluator()
+    error_distances = evaluator.get_error_distances(self.metrics_path)
+    _, mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
+
+    logging.info(f"\
+          Mean distance: {mean_distance}, \
+          Median distance: {median_distance}, \
+          Max error: {max_error}, \
+          Norm AUC: {norm_auc}")
+
+    if not self.model.is_generation:
+      self.save_cell_embed()
+
 
   def save_cell_embed(self):
     if isinstance(self.model, nn.DataParallel):
