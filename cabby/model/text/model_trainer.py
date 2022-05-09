@@ -107,6 +107,11 @@ flags.DEFINE_bool(
   'infer_only', default=False,
   help=('Train and infer\ just infer.'))
 
+
+flags.DEFINE_bool(
+  'is_val_loss_from_model', default=False,
+  help=('In case the model is loaded - should the validation loss use the models current loss.'))
+
 flags.DEFINE_bool(
   'is_distance_distribution', default=False,
   help=(
@@ -199,9 +204,15 @@ def main(argv):
   if 'Dual-Encoder' in FLAGS.model:
     run_model = models.DualEncoder(device=device)
   elif FLAGS.model == 'S2-Generation-T5':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid)
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, device=device)
+  elif FLAGS.model == 'S2-Generation-T5-Landmarks':
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_landmarks=True, device=device)
+  elif FLAGS.model == 'S2-Generation-T5-Path':
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_path=True, device=device)
+  elif FLAGS.model == 'S2-Generation-T5-Warmup-start-end':
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_start_end=True, device=device)   
   elif FLAGS.model == 'Classification-Bert':
-    run_model = models.ClassificationModel(n_cells)
+    run_model = models.ClassificationModel(n_cells, device=device)
   else: 
     sys.exit("Model invalid")
 
@@ -213,7 +224,7 @@ def main(argv):
       load_path=FLAGS.model_path, model=run_model, device=device)
   if torch.cuda.device_count() > 1:
     logging.info("Using {} GPUs.".format(torch.cuda.device_count()))
-    run_model = nn.DataParallel(run_model)
+    run_model = nn.DataParallel(run_model).module
 
   run_model.to(device)
 
@@ -222,6 +233,9 @@ def main(argv):
   
   if FLAGS.is_distance_distribution and FLAGS.task=='WikiGeo':
     sys.exit("Wikigeo does not have a distance distribution option.")
+
+  if not FLAGS.is_val_loss_from_model:
+    run_model.best_valid_loss = float("Inf")
 
   trainer = train.Trainer(
     model=run_model,
@@ -235,7 +249,8 @@ def main(argv):
     file_path=FLAGS.output_dir, 
     cells_tensor = dataset_text.unique_cellids_binary,
     label_to_cellid = dataset_text.label_to_cellid,
-    is_distance_distribution = FLAGS.is_distance_distribution
+    is_distance_distribution = FLAGS.is_distance_distribution,
+    best_valid_loss = run_model.best_valid_loss
     )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")

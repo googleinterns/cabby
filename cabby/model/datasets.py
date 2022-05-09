@@ -30,7 +30,14 @@ from cabby.model import util
 from transformers import DistilBertTokenizerFast, T5Tokenizer
 
 
-MODELS = ['Dual-Encoder-Bert', 'Classification-Bert', 'S2-Generation-T5']
+MODELS = [
+  'Dual-Encoder-Bert', 
+  'Classification-Bert', 
+  'S2-Generation-T5', 
+  'S2-Generation-T5-Landmarks', 
+  'S2-Generation-T5-Warmup-start-end', 
+  'S2-Generation-T5-Path',
+  ]
 
 T5_TYPE = "t5-small"
 BERT_TYPE = 'distilbert-base-uncased'
@@ -66,17 +73,49 @@ class Dataset:
     if self.model_type in ['Dual-Encoder-Bert', 'Classification-Bert']:      
       self.text_tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_TYPE)
       self.s2_tokenizer = util.binary_representation
-    elif self.model_type == 'S2-Generation-T5':
+    elif 'S2-Generation-T5' in self.model_type:
       self.text_tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
       self.s2_tokenizer = self.tokenize_cell
-
+    
   def tokenize_cell(self, list_cells):
-    labels = [self.cellid_to_label[c] for c in list_cells]
-    list_cells_str = list(map(str, labels))
+    if isinstance(list_cells[0], list): 
+      labels = []
+      for c_list in list_cells:
+        list_lables = []
+        for c in c_list:
+          list_lables.append(str(self.cellid_to_label[c]))
+
+        labels.append('; '.join(list_lables))
+
+    else:
+      labels = [str(util.get_valid_label(self.cellid_to_label,c)) for c in list_cells]
 
     return tokenizerT5(
-      list_cells_str, return_tensors="pt", padding=True, truncation=True).input_ids
+      labels, padding=True, truncation=True).input_ids
     
+
+  def process_route(self, route_str):
+    route_str = route_str.replace('LINESTRING', "").replace('(', "").replace(')', "")
+    ladmarks_str_list = route_str.split(',')
+    return [
+      gutil.point_from_str_coord_xy(landmark_str) for landmark_str in ladmarks_str_list]
+
+
+  def process_landmarks(self, landmarks_str_one_line):
+    ladmarks_str_list = landmarks_str_one_line.split(';')
+    return [gutil.point_from_str_coord_yx(
+      landmark_str.split(':')[-1]) for landmark_str in ladmarks_str_list]
+  
+  def get_specific_landmark(self, landmarks_str_one_line, landmark_name):
+
+    ladmarks_str_list = landmarks_str_one_line.split(';')
+
+    landmark_found = None
+    for landmark_str in ladmarks_str_list:
+      if landmark_name in landmark_str:
+        landmark_found = gutil.point_from_str_coord_yx(landmark_str.split(':')[-1])
+
+    return landmark_found
 
     
   def create_dataset(self, infer_only: bool = False
@@ -106,21 +145,21 @@ class Dataset:
         self.text_tokenizer,
         self.s2_tokenizer,
         self.train, self.s2level, unique_cells_df, 
-        self.cellid_to_label, dprob)
+        self.cellid_to_label, self.model_type, dprob)
       logging.info(
         f"Finished to create the train-set with {len(train_dataset)} samples")
       val_dataset = dataset_item.TextGeoSplit(
         self.text_tokenizer,
         self.s2_tokenizer, 
         self.valid, self.s2level, unique_cells_df, 
-        self.cellid_to_label, dprob)
+        self.cellid_to_label, self.model_type, dprob)
       logging.info(
         f"Finished to create the valid-set with {len(val_dataset)} samples")
     test_dataset = dataset_item.TextGeoSplit(
       self.text_tokenizer,
       self.s2_tokenizer,
       self.test, self.s2level, unique_cells_df, 
-      self.cellid_to_label, dprob)
+      self.cellid_to_label, self.model_type, dprob)
     logging.info(
       f"Finished to create the test-set with {len(test_dataset)} samples")
 
@@ -128,6 +167,17 @@ class Dataset:
       train_dataset, val_dataset, test_dataset, 
       np.array(self.unique_cellid), 
       tens_cells, self.label_to_cellid)
+
+
+  def get_fixed_point_along_route(self, points_list, n_points=4):
+    avg_number = round(len(points_list)/n_points)
+    fixed_points = []
+    for i in range(n_points):
+      curr_point = points_list[i*avg_number]
+      fixed_points.append(curr_point)
+    
+    assert len(fixed_points) == n_points
+    return fixed_points
 
 
 class HumanDataset(Dataset):
@@ -163,15 +213,35 @@ class HumanDataset(Dataset):
     ds['end_point'] = ds['rvs_goal_point'].apply(gutil.point_from_str_coord_xy)
     ds['start_point'] = ds['rvs_start_point'].apply(gutil.point_from_str_coord_xy)
 
+    if 'landmarks' in ds:
+      ds['near_pivot'] = ds.landmarks.apply(
+        lambda x: self.get_specific_landmark(x, 'near_pivot'))
+      ds['main_pivot'] = ds.landmarks.apply(
+        lambda x: self.get_specific_landmark(x, 'main_pivot'))
+    
+      ds['landmarks'] = ds.landmarks.apply(self.process_landmarks)
+    
+    if 'route' in ds:
+      ds['route'] = ds.route.apply(self.process_route)
+      ds['route_fixed'] = ds.route.apply(self.get_fixed_point_along_route)
+    
+    ds['start_end'] = ds.route.apply(self.get_fixed_point_along_route)
     columns_keep = ds.columns.difference(
-      ['instructions', 'end_point', 'start_point'])
+      [
+        'instructions', 
+        'end_point', 
+        'start_point', 
+        'landmarks', 
+        'route', 
+        'near_pivot',
+        'main_pivot',
+        'route_fixed'])
     ds.drop(columns_keep, 1, inplace=True)
 
     ds = shuffle(ds)
     ds.reset_index(inplace=True, drop=True)
     return ds
 
-  
 
 class RUNDataset(Dataset):
   def __init__(
@@ -235,7 +305,6 @@ class RUNDataset(Dataset):
     test_ds = ds.iloc[train_size + valid_size:]
     return train_ds, valid_ds, test_ds, ds
 
-
 class RVSDataset(Dataset):
   def __init__(
     self, data_dir: str, s2level: int, region: Optional[str], model_type: str = "RVS"):
@@ -264,15 +333,33 @@ class RVSDataset(Dataset):
     ds = pd.read_json(path_ds, lines=lines)
         
     logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
+    
+    if 'geo_landmarks' in ds:
+      ds['landmarks'] =  ds.geo_landmarks.apply(self.process_landmarks)
+    
+    if 'route' in ds: 
+      ds['route'] = ds.route.apply(self.process_route)
+      ds['route_fixed'] = ds.route.apply(self.get_fixed_point_along_route)
+
 
     ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
 
     ds['end_osmid'] = ds.end_point.apply(lambda x: x[1])
     ds['start_osmid'] = ds.start_point.apply(lambda x: x[1])
     ds['end_pivot'] = ds.end_point
-    ds['end_point'] = ds.end_point.apply(lambda x: gutil.point_from_list_coord(x[3]))
-    ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord(x[3]))
+    ds['end_point'] = ds.end_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))
+    ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))    
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
     return ds    
+
+  def process_landmarks(self, landmarks_dict):
+    ladmarks_list = list(landmarks_dict.values())
+    return [gutil.point_from_list_coord_yx(
+      landmark_l[-1]) for landmark_l in ladmarks_list if landmark_l[-1]]
+
+  def process_route(self, route_list):
+    return [
+      gutil.point_from_list_coord_xy(landmark) for landmark in route_list]
+  
 
 

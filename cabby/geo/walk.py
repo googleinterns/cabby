@@ -1097,9 +1097,11 @@ class Walker:
 def load_entities(path: str) -> Sequence[geo_item.GeoEntity]:
   if not os.path.exists(path):
     return []
+
   geo_types_all = {}
   for landmark_type in LANDMARK_TYPES:
     geo_types_all[landmark_type] = gpd.read_file(path, layer=landmark_type)
+
   geo_types_all['route'] = gpd.read_file(path, layer='path_features')['geometry']
   geo_types_all['path_features'] = gpd.read_file(path, layer='path_features')
   geo_entities = []

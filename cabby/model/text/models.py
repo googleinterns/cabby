@@ -19,7 +19,7 @@ import sys
 import torch
 import torch.nn as nn
 from transformers import DistilBertModel, DistilBertForSequenceClassification
-from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model, PhrasalConstraint
+from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model
 
 from typing import Dict, Sequence 
 
@@ -35,12 +35,14 @@ criterion = nn.CosineEmbeddingLoss()
 
 
 class GeneralModel(nn.Module):
-  def __init__(self):
+  def __init__(self, device):
     super(GeneralModel, self).__init__()
     self.is_generation = False
-  def forward(self, text_feat, cellid):
+    self.device = device
+
+  def get_embed(self, text_feat, cellid):
     return text_feat, cellid
-  def compute_loss(self, text: Dict, *args
+  def forward(self, text: Dict, *args
   ):
     sys.exit("Implement compute_loss function in model")
  
@@ -57,9 +59,8 @@ class DualEncoder(GeneralModel):
     s2cell_dim=64, 
     output_dim=100, 
     ):
-    GeneralModel.__init__(self)
+    GeneralModel.__init__(self, device)
     
-    self.device = device
     self.hidden_layer = nn.Linear(text_dim, hidden_dim)
     self.softmax = nn.Softmax(dim=-1)
     self.tanh = nn.Tanh()
@@ -79,10 +80,10 @@ class DualEncoder(GeneralModel):
     self.cos = nn.CosineSimilarity(dim=2)
 
 
-  def forward(self, text_feat, cellid):
+  def get_embed(self, text_feat, cellid):
     
     text_embedding = self.text_embed(text_feat)
-    cellid_embedding = self.cellid_main(cellid)
+    cellid_embedding = self.cellid_main(cellid.float())
     
     return text_embedding.shape[0], text_embedding, cellid_embedding
 
@@ -90,7 +91,7 @@ class DualEncoder(GeneralModel):
 
   def predict(self, text, all_cells, *args):
 
-    batch_dim, text_embedding_exp, cellid_embedding = self.forward(text, all_cells)
+    batch_dim, text_embedding_exp, cellid_embedding = self.get_embed(text, all_cells)
     cell_dim = cellid_embedding.shape[0]
     output_dim  = cellid_embedding.shape[1]
 
@@ -107,30 +108,27 @@ class DualEncoder(GeneralModel):
     return points
 
 
-  def compute_loss(
-          self,
-          text: Dict,
-          *args
+  def forward(self, text, cellid, *args
   ):
 
-    cellids = args[0]
-    neighbor_cells = args[1]
-    far_cells = args[2]
+    batch = args[0]
+    neighbor_cells = batch['neighbor_cells']
+    far_cells = batch['far_cells']
 
     # Correct cellid.
-    target = torch.ones(cellids.shape[0]).to(self.device)
-    _, text_embedding, cellid_embedding = self.forward(text, cellids)
+    target = torch.ones(cellid.shape[0]).to(self.device)
+    _, text_embedding, cellid_embedding = self.get_embed(text, cellid)
     loss_cellid = criterion(text_embedding, cellid_embedding, target)
 
     # Neighbor cellid.
-    target_neighbor = -1*torch.ones(cellids.shape[0]).to(self.device)
-    _, text_embedding_neighbor, cellid_embedding = self.forward(text, neighbor_cells)
+    target_neighbor = -1*torch.ones(cellid.shape[0]).to(self.device)
+    _, text_embedding_neighbor, cellid_embedding = self.get_embed(text, neighbor_cells)
     loss_neighbor = criterion(text_embedding_neighbor, 
     cellid_embedding, target_neighbor)
 
     # Far cellid.
-    target_far = -1*torch.ones(cellids.shape[0]).to(self.device)
-    _, text_embedding_far, cellid_embedding = self.forward(text, far_cells)
+    target_far = -1*torch.ones(cellid.shape[0]).to(self.device)
+    _, text_embedding_far, cellid_embedding = self.get_embed(text, far_cells)
     loss_far = criterion(text_embedding_far, cellid_embedding, target_far)
 
     loss = loss_cellid + loss_neighbor + loss_far
@@ -145,31 +143,46 @@ class DualEncoder(GeneralModel):
 
 
 class S2GenerationModel(GeneralModel):
-  def __init__(self, label_to_cellid):
-    GeneralModel.__init__(self)
+  def __init__(
+    self, label_to_cellid, device, is_landmarks=False, is_path=False, is_warmup_start_end=False):
+    GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
     self.tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
     self.is_generation = True
     self.label_to_cellid = label_to_cellid
+    self.is_landmarks = is_landmarks
+    self.is_path = is_path
+    self.is_warmup_start_end = is_warmup_start_end
 
     self.max_size = len(str(len(label_to_cellid)))
 
-    self.constraints = []
+    if self.is_landmarks:
+      self.max_size = self.max_size*10
 
-    for constraint_str in '0123456789':
-      constraint_token_ids = self.tokenizer.encode(str(constraint_str))[:-1]  # slice to remove eos token
-      self.constraints += [PhrasalConstraint(token_ids=constraint_token_ids)]
+    if self.is_path:
+      self.max_size = self.max_size*100
 
+  def forward(self, text, cellid, *args):
+    batch = args[0]
 
-  def compute_loss(self, text, cellid, *args):
-    labels = args[2]
-    text_ids = text['input_ids'] 
+    input_ids = text['input_ids'] 
     attention_mask = text['attention_mask'] 
-    cellid_ids = cellid.long()
-    loss = self.model(input_ids=text_ids, attention_mask=attention_mask, labels=cellid_ids).loss
-    return loss
 
-  def forward(self, text, cellid):
+    if self.is_landmarks:
+      labels = batch['landmarks'].long()
+    elif self.is_path:
+      labels = batch['route'].long()
+    elif self.is_warmup_start_end:
+      input_ids = batch['start_end_input_ids'] 
+      attention_mask = batch['start_end_attention_mask']
+      labels = batch['route_fixed'].long()
+    else:
+      labels = cellid.long()
+
+    output = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, return_dict=True)
+    return output.loss
+
+  def get_embed(self, text, cellid):
     text_dim = text['input_ids'].shape[0]
     return text_dim, text, cellid
 
@@ -177,7 +190,6 @@ class S2GenerationModel(GeneralModel):
   def predict(self, text, *args):
 
     label_to_cellid = args[1]
-    default_cell = list(label_to_cellid.values())[0]
 
     output_sequences = self.model.generate(
       **text, num_beams=2, 
@@ -189,8 +201,10 @@ class S2GenerationModel(GeneralModel):
       output_sequences, skip_special_tokens=True)
 
     prediction_cellids = []
+
     for pred_raw in prediction:
-      pred = pred_raw.replace(" ", "")
+
+      pred = pred_raw.split(";")[0].replace(" ", "")
 
       if not pred.isdigit():
         pred = 0
@@ -207,8 +221,8 @@ class S2GenerationModel(GeneralModel):
 
   
 class ClassificationModel(GeneralModel):
-  def __init__(self, n_lables, hidden_dim = 200):
-    GeneralModel.__init__(self)
+  def __init__(self, n_lables, device, hidden_dim = 200):
+    GeneralModel.__init__(self, device)
     self.is_generation = True
 
     self.model = DistilBertForSequenceClassification.from_pretrained(
@@ -216,8 +230,8 @@ class ClassificationModel(GeneralModel):
 
     self.criterion = nn.CrossEntropyLoss()
 
-  def compute_loss(self, text, cellid, *args):
-    labels = args[2]
+  def forward(self, text, cellid, *args):
+    labels =  args[0]['label']
 
     outputs = self.model(
       input_ids = text['input_ids'], 
@@ -235,7 +249,3 @@ class ClassificationModel(GeneralModel):
 
     points = mutil.predictions_to_points(predictions, label_to_cellid)
     return points
-
-
-
-

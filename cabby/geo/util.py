@@ -506,7 +506,7 @@ def get_line_length(line: LineString) -> float:
   return dist
 
 
-def point_from_list_coord(coord: Sequence) -> Point:
+def point_from_list_coord_yx(coord: Sequence) -> Point:
   '''Converts coordinates in list format (latitude and longtitude) to Point.
   E.g, of list [40.715865, -74.037258].
   Arguments:
@@ -519,16 +519,33 @@ def point_from_list_coord(coord: Sequence) -> Point:
 
   return Point(lon, lat)
 
-
-def point_from_str_coord_yx(coord_str: Text) -> Point:
-  '''Converts coordinates in string format (latitude and longtitude) to Point.
-  E.g, of string '(40.715865, -74.037258)' or 'POINT(40.715865 -74.037258)'. 
+def point_from_list_coord_xy(coord: Sequence) -> Point:
+  '''Converts coordinates in list format (longtitude and latitude) to Point.
+  E.g, of list [-74.037258, 40.715865].
   Arguments:
     coord: A lat-lng coordinate to be converted to a point.
   Returns:
     A point.
   '''
-  list_coords_str = coord_str.replace("POINT", "").replace("(", "").replace(")", "").split(',')
+  lat = coord[1]
+  lon = coord[0]
+
+  return Point(lon, lat)
+
+
+def point_from_str_coord_yx(coord_str: Text) -> Point:
+  '''Converts coordinates in string format (latitude and longtitude) to Point.
+  E.g, of string '(40.715865, -74.037258)' or '[40.715865, -74.037258]' or 'POINT(40.715865 -74.037258)'. 
+  Arguments:
+    coord: A lat-lng coordinate to be converted to a point.
+  Returns:
+    A point.
+  '''
+  coord_str = coord_str.replace("POINT", "").replace("(", "").replace(")", "")
+  coord_str = coord_str.replace("[", "").replace("]", "")
+  
+  list_coords_str = coord_str.split(',')
+
   if len(list_coords_str)==1:
     list_coords_str = list_coords_str[0].split(' ')
   
@@ -540,9 +557,9 @@ def point_from_str_coord_yx(coord_str: Text) -> Point:
 
 def point_from_str_coord_xy(coord_str: Text) -> Point:
   '''Converts coordinates in string format (latitude and longtitude) to Point.
-  E.g, of string '(40.715865, -74.037258)' or 'POINT(40.715865 -74.037258)'. 
+  E.g, of string '(-74.037258, 40.715865)' or '[-74.037258, 40.715865]' or 'POINT(-74.037258 40.715865)'. 
   Arguments:
-    coord: A lat-lng coordinate to be converted to a point.
+    coord: A lng-lat coordinate to be converted to a point.
   Returns:
     A point.
   '''

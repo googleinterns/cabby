@@ -26,7 +26,9 @@ NOT_PRIVIEW_TAGS = ['osmid', 'main_tag']
 PIVOTS_COLORS = {"end_point":'red', "start_point":'green'} 
 ICON_TAGS = ['tourism','amenity', 'shop', 'leisure']
 
-icon_dir = os.path.abspath("./static/osm_icons")
+dirname = os.path.dirname(__file__)
+icon_dir = os.path.join(dirname, "./static/osm_icons")
+
 
 onlyfiles = [
   f for f in os.listdir(icon_dir) if os.path.isfile(os.path.join(icon_dir, f))]

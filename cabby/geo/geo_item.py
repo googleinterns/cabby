@@ -149,6 +149,7 @@ class RVSSample:
   geo_landmarks: Dict[str, gpd.GeoDataFrame] = attr.ib()
   geo_features: Dict[str, Any] = attr.ib()
   route_len: int = attr.ib()
+  route: list = attr.ib()
   instructions: str = attr.ib()
   id: int = attr.ib()
   version: float = attr.ib()
@@ -169,6 +170,7 @@ class RVSSample:
               landmark_list,
               geo_entity.geo_features,
               route_length,
+              geo_entity.route.coords[:],
               instructions,
               id,
               VERSION,
@@ -205,6 +207,7 @@ def save(entities: Sequence[GeoEntity], path_to_save: str):
     mode = 'w'
     
   for geo_type, pivots_gdf in geo_types_all.items():
+    pivots_gdf = pivots_gdf.set_crs('epsg:4326')
     pivots_gdf.to_file(
         path_to_save, layer=geo_type, mode=mode, driver=_Geo_DataFrame_Driver)
 

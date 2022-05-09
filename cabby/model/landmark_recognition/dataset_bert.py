@@ -82,7 +82,8 @@ def create_dataset(
   Returns:
     The train, validate and test sets.
   '''
-  rvs_dataset = datasets.RVSDataset(data_dir, s2level, region, split_data = True)
+  rvs_dataset = datasets.RVSDataset(
+    data_dir, s2level, region, model_type = 'Dual-Encoder-Bert')
   train_dataset = EntityRecognitionSplit(rvs_dataset.train, pivot_type)
   logging.info(
     f"Finished to create the train-set with {len(train_dataset)} samples")

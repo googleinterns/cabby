@@ -42,7 +42,8 @@ class Trainer:
           num_epochs: int,
           cells_tensor: torch.tensor,
           label_to_cellid: Dict[int, int],
-          is_distance_distribution: bool
+          is_distance_distribution: bool,
+          best_valid_loss: float = float("Inf")
 
           ):
 
@@ -58,7 +59,7 @@ class Trainer:
     self.cells_tensor = cells_tensor.float().to(self.device)
     self.label_to_cellid = label_to_cellid
     self.cos = nn.CosineSimilarity(dim=2)
-    self.best_valid_loss = float("Inf")
+    self.best_valid_loss = best_valid_loss
     if not os.path.exists(self.file_path):
       os.mkdir(self.file_path)
     self.model_path = os.path.join(self.file_path, 'model.pt')
@@ -90,17 +91,24 @@ class Trainer:
 
         text = {key: val.to(self.device) for key, val in batch['text'].items()}
         cellids = batch['cellid'].float().to(self.device)
-        neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
-        far_cells = batch['far_cells'].float().to(self.device)
-        labels = batch['label'].to(self.device)
-        loss = self.model.compute_loss(text, cellids, neighbor_cells, far_cells, labels)
+
+        batch = {k:v.to(self.device) for k,v in batch.items() if torch.is_tensor(v)}
+
+        loss = self.model(
+            text, 
+            cellids, 
+            batch
+            )
+
+     
         loss_val_total+=loss
 
         predictions = self.model.predict(text, self.cells_tensor, self.label_to_cellid)
+
         predictions_list.append(predictions)
-        labels = batch['label'].numpy()
+        labels = batch['label'].cpu()
         true_vals.append(labels)
-        true_points_list.append(batch['point'])
+        true_points_list.append(batch['end_point'].cpu())
 
     true_points_list = np.concatenate(true_points_list, axis=0)
     pred_points_list = np.concatenate(predictions_list, axis=0)
@@ -128,12 +136,14 @@ class Trainer:
         self.optimizer.zero_grad()
         text = {key: val.to(self.device) for key, val in batch['text'].items()}
         cellids = batch['cellid'].float().to(self.device)
-        neighbor_cells = batch['neighbor_cells'].float().to(self.device) 
-        far_cells = batch['far_cells'].float().to(self.device)
-        labels = batch['label'].to(self.device)
+        batch = {k:v.to(self.device) for k,v in batch.items() if torch.is_tensor(v)}
 
-        loss = self.model.compute_loss(
-          text, cellids, neighbor_cells, far_cells, labels)
+        loss = self.model(
+            text, 
+            cellids, 
+            batch
+        )
+
 
         loss.backward()
 
@@ -214,10 +224,3 @@ def infer_text(model: torch.nn.Module, text: str):
   else:
     return model.text_embed(text)
     
-  
-
-
-  
-
-
-

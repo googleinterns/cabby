@@ -116,17 +116,19 @@ class TextGeoSplit(torch.utils.data.Dataset):
   """
   def __init__(self, text_tokenizer, s2_tokenizer, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int], 
-    dprob: util.DistanceProbability, is_dist: Boolean = False):
+    model_type: str, dprob: util.DistanceProbability, is_dist: Boolean = False):
 
     self.text_tokenizer = text_tokenizer
     self.s2_tokenizer = s2_tokenizer
 
     self.is_dist = is_dist
     
-    data = data.assign(point=data.end_point)
+    data = data.assign(end_point=data.end_point)
 
-    data['cellid'] = data.point.apply(
+
+    data['cellid'] = data.end_point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
+
 
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.neighbor_cellid(x))
@@ -149,11 +151,12 @@ class TextGeoSplit(torch.utils.data.Dataset):
     data['far_cells'] = data.cellid.apply(
       lambda cellid: unique_cells_df[unique_cells_df['cellid']==cellid].far.iloc[0])
 
+
     cellids_array = np.array(data.cellid.tolist())
     neighbor_cells_array = np.array(data.neighbor_cells.tolist())
     far_cells_array = np.array(data.far_cells.tolist())
 
-    self.points = data.point.apply(
+    self.end_point = data.end_point.apply(
       lambda x: gutil.tuple_from_point(x)).tolist()
 
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
@@ -162,6 +165,48 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.neighbor_cells = self.s2_tokenizer(neighbor_cells_array)
 
     self.far_cells = self.s2_tokenizer(far_cells_array)
+
+
+    if 'T5' in model_type and 'landmarks' in data:
+      data['landmarks'] = data.landmarks.apply(
+        lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
+
+      self.landmarks = self.s2_tokenizer(data.landmarks.tolist())
+
+
+    else:
+      self.landmarks = [0] * len(self.cellids)
+      logging.warning("Landmarks not processed")
+
+
+    if 'T5' in model_type and 'route' in data:
+      data['route'] = data.route.apply(
+        lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
+      route_array = np.array(data.route.tolist())
+      self.route = self.s2_tokenizer(route_array)
+
+      data['route_fixed'] = data.route_fixed.apply(
+        lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
+      self.route_fixed = self.s2_tokenizer(data.route_fixed.tolist())
+
+      start_point_cells = data.start_point.apply(
+        lambda x: gutil.cellid_from_point(x, s2level))
+
+      
+      start_point_list = [
+        '; '.join(
+          [str(cellid_to_label[e]), str(cellid_to_label[s])]) for s, e in zip(
+            start_point_cells.tolist(), data.cellid.tolist())]
+      self.start_end = self.text_tokenizer(
+        start_point_list, truncation=True, padding=True, add_special_tokens=True)
+
+    else:
+      self.route = [0] * len(self.cellids)
+      self.route_fixed = [0] * len(self.cellids)
+      self.start_end = {
+        'attention_mask': [0] * len(self.cellids),
+        'input_ids': [0] * len(self.cellids)}
+      logging.warning("Route not processed")
 
 
   def __getitem__(self, idx: int):
@@ -175,10 +220,19 @@ class TextGeoSplit(torch.utils.data.Dataset):
     '''
     text = {key: torch.tensor(val[idx])
         for key, val in self.encodings.items()}
-    cellid = self.cellids[idx]
+        
+    cellid =  torch.tensor(self.cellids[idx])
+    landmarks =  torch.tensor(self.landmarks[idx])
+
+    route =  torch.tensor(self.route[idx])
+    route_fixed =  torch.tensor(self.route_fixed[idx])
+
+    start_end = {key: torch.tensor(val[idx])
+        for key, val in self.start_end.items()}
+
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
-    point = torch.tensor(self.points[idx])
+    end_point = torch.tensor(self.end_point[idx])
     label = torch.tensor(self.labels[idx])
     if self.is_dist:
       prob = torch.tensor(self.prob[idx])
@@ -186,7 +240,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
       prob = torch.tensor([])
     
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
-      'far_cells': far_cells, 'point': point, 'label': label, 'prob': prob}
+      'far_cells': far_cells, 'end_point': end_point, 'label': label, 'prob': prob, 
+      'landmarks': landmarks, 'route': route, 'route_fixed': route_fixed, 
+      'start_end_input_ids': start_end['input_ids'], 'start_end_attention_mask': start_end['attention_mask']}
 
     return sample
 
@@ -196,5 +252,3 @@ class TextGeoSplit(torch.utils.data.Dataset):
 def calc_dist(start, unique_cells_df):
   return unique_cells_df.swifter.apply(
     lambda end: gutil.get_distance_between_points(start, end.point), axis=1)
-
-
