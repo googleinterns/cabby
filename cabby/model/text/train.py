@@ -231,6 +231,10 @@ class Trainer:
         loss = torch.tensor([0.0]).to(self.device)
         self.optimizer.zero_grad()
         for batch_idx in range(len(self.train_loader)):
+          if batch_idx==2:
+            self.model.is_landmarks=False
+          else:
+            self.model.is_landmarks=True
           batch  = batches[batch_idx]
           text = {key: val.to(self.device) for key, val in batch['text'].items()}
           cellids = batch['cellid'].float().to(self.device)
