@@ -211,6 +211,8 @@ def main(argv):
     run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_path=True, device=device)
   elif FLAGS.model == 'S2-Generation-T5-Warmup-start-end':
     run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_start_end=True, device=device)   
+  elif FLAGS.model == 'S2-Generation-T5-Warmup-Landmarks-NER':
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_ner_landmarks=True, device=device)   
   elif FLAGS.model == 'Classification-Bert':
     run_model = models.ClassificationModel(n_cells, device=device)
   else: 

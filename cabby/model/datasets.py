@@ -36,6 +36,7 @@ MODELS = [
   'S2-Generation-T5', 
   'S2-Generation-T5-Landmarks', 
   'S2-Generation-T5-Warmup-start-end', 
+  'S2-Generation-T5-Warmup-Landmarks-NER', 
   'S2-Generation-T5-Path',
   ]
 
@@ -336,7 +337,8 @@ class RVSDataset(Dataset):
     
     if 'geo_landmarks' in ds:
       ds['landmarks'] =  ds.geo_landmarks.apply(self.process_landmarks)
-    
+      ds['landmarks_ner'] =  ds.geo_landmarks.apply(self.process_landmarks_ner)
+
     if 'route' in ds: 
       ds['route'] = ds.route.apply(self.process_route)
       ds['route_fixed'] = ds.route.apply(self.get_fixed_point_along_route)
@@ -356,6 +358,13 @@ class RVSDataset(Dataset):
     ladmarks_list = list(landmarks_dict.values())
     return [gutil.point_from_list_coord_yx(
       landmark_l[-1]) for landmark_l in ladmarks_list if landmark_l[-1]]
+
+
+  def process_landmarks_ner(self, landmarks_dict):
+    ladmarks_list = list(landmarks_dict.values())
+
+    ladmarks_ner_list = [l[2] for l in ladmarks_list if l[2]!='None']
+    return '; '.join(ladmarks_ner_list)
 
   def process_route(self, route_list):
     return [
