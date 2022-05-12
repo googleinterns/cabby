@@ -361,9 +361,14 @@ class RVSDataset(Dataset):
 
 
   def process_landmarks_ner(self, landmarks_dict):
-    ladmarks_list = list(landmarks_dict.values())
+    main_pivot = landmarks_dict['main_pivot'][2]
+    near_pivot = landmarks_dict['near_pivot'][2]
+    end_point = landmarks_dict['end_point'][2]
 
-    ladmarks_ner_list = list(set([l[2] for l in ladmarks_list if l[2]!='None']))
+    
+    ladmarks_list = list(set([main_pivot, near_pivot, end_point]))
+
+    ladmarks_ner_list = [l for l in ladmarks_list if l!='None']
     return '; '.join(ladmarks_ner_list)
 
   def process_route(self, route_list):
