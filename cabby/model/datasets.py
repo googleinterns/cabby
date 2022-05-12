@@ -363,7 +363,7 @@ class RVSDataset(Dataset):
   def process_landmarks_ner(self, landmarks_dict):
     ladmarks_list = list(landmarks_dict.values())
 
-    ladmarks_ner_list = [l[2] for l in ladmarks_list if l[2]!='None']
+    ladmarks_ner_list = list(set([l[2] for l in ladmarks_list if l[2]!='None']))
     return '; '.join(ladmarks_ner_list)
 
   def process_route(self, route_list):
