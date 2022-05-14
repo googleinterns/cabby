@@ -200,7 +200,7 @@ class S2GenerationModel(GeneralModel):
       **text, num_beams=2, 
       max_length=self.max_size+2, 
       min_length=1, 
-      remove_invalid_values=True)
+      )
 
     prediction = self.tokenizer.batch_decode(
       output_sequences, skip_special_tokens=True)

@@ -264,16 +264,15 @@ def main(argv):
       true_points, 
       pred_points)
 
-    accuracy = accuracy_score(true_vals, predictions)
-
     evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(trainer.metrics_path)
-    _, mean_distance, median_distance, max_error, norm_auc = (
-      evaluator.compute_metrics(error_distances))
+    _, mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
 
-    logging.info(f"\nTest Accuracy: {accuracy}, \n" +
-    f"Mean distance: {mean_distance},\nMedian distance: {median_distance},\n" +
-    f"Max error: {max_error},\nNorm AUC: {norm_auc}")
+    logging.info(f"\
+          Mean distance: {mean_distance}, \
+          Median distance: {median_distance}, \
+          Max error: {max_error}, \
+          Norm AUC: {norm_auc}")
 
   else: 
     logging.info("Starting to train model.")
