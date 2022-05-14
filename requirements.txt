@@ -92,7 +92,7 @@ itsdangerous==1.1.0
 jdcal==1.4.1
 jedi @ file:///home/conda/feedstock_root/build_artifacts/jedi_1592619900914/work
 jeepney==0.4.3
-Jinja2==2.11.2
+Jinja2==2.11.3
 jmespath==0.10.0
 joblib @ file:///tmp/build/80754af9/joblib_1594236160679/work
 json5 @ file:///home/conda/feedstock_root/build_artifacts/json5_1591810480056/work
