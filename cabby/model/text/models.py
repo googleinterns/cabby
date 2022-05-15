@@ -149,7 +149,9 @@ class S2GenerationModel(GeneralModel):
       device, 
       is_landmarks=False, 
       is_path=False, 
-      is_warmup_start_end=False):
+      is_warmup_start_end=False,
+      is_warmup_ner_landmarks=False):
+
     GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
     self.tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
@@ -158,6 +160,8 @@ class S2GenerationModel(GeneralModel):
     self.is_landmarks = is_landmarks
     self.is_path = is_path
     self.is_warmup_start_end = is_warmup_start_end
+    self.is_warmup_ner_landmarks = is_warmup_ner_landmarks
+
 
     self.max_size = len(str(len(label_to_cellid)))
 
@@ -175,17 +179,28 @@ class S2GenerationModel(GeneralModel):
 
     if self.is_landmarks:
       labels = batch['landmarks'].long()
+
     elif self.is_path:
       labels = batch['route'].long()
+
     elif self.is_warmup_start_end:
       input_ids = batch['start_end_input_ids'] 
       attention_mask = batch['start_end_attention_mask']
       labels = batch['route_fixed'].long()
+    elif self.is_warmup_ner_landmarks:
+      labels = batch['landmarks_ner'].long()
     else:
       labels = cellid.long()
 
     output = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, return_dict=True)
     return output.loss
+
+  def reset_setup_false(self):
+    self.is_landmarks = False
+    self.is_path = False
+    self.is_warmup_start_end = False
+    self.is_warmup_ner_landmarks = False
+
 
   def get_embed(self, text, cellid):
     text_dim = text['input_ids'].shape[0]
@@ -200,7 +215,7 @@ class S2GenerationModel(GeneralModel):
       **text, num_beams=2, 
       max_length=self.max_size+2, 
       min_length=1, 
-      remove_invalid_values=True)
+      )
 
     prediction = self.tokenizer.batch_decode(
       output_sequences, skip_special_tokens=True)

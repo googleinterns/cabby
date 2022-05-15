@@ -223,17 +223,23 @@ class Trainer:
 
     # Training loop.
     self.model.train()
+    self.model.reset_setup_false()
 
     for epoch in range(self.num_epochs):
       running_loss = 0.0
       logging.info("Epoch number: {}".format(epoch))
-      for batches in zip(self.train_loader[0], self.train_loader[1], self.train_loader[2]):
+      for batches in zip(*self.train_loader):
+
         loss = torch.tensor([0.0]).to(self.device)
         self.optimizer.zero_grad()
         for batch_idx in range(len(self.train_loader)):
-          if batch_idx==2:
-            self.model.is_landmarks=False
-          else:
+          if batch_idx==2: # warmup start+end
+            self.model.is_warmup_start_end=True
+          elif batch_idx==3: # warmup start+end
+            self.model.is_warmup_start_end=True
+          elif batch_idx==4: # warmup ner landmarks
+            self.model.is_landmarks_ner=True
+          else: 
             self.model.is_landmarks=True
           batch  = batches[batch_idx]
           text = {key: val.to(self.device) for key, val in batch['text'].items()}
@@ -245,6 +251,8 @@ class Trainer:
               cellids, 
               batch
           )
+
+          self.model.reset_setup_false()
 
         loss.backward()
 
