@@ -78,8 +78,6 @@ flags.DEFINE_string("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4", None,
 flags.DEFINE_string("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5", None,
           "The directory from which to load the dataset.")
 
-flags.DEFINE_string("dataset_dir_T5_Warmup_Landmarks_NER", None,
-          "The directory from which to load the dataset.")
           
 
 flags.DEFINE_enum(
@@ -138,7 +136,8 @@ flags.mark_flag_as_required("dataset_dir_T5_landmarks_RVS")
 flags.mark_flag_as_required("dataset_dir_T5_landmarks_human")
 flags.mark_flag_as_required("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4")
 flags.mark_flag_as_required("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5")
-flags.mark_flag_as_required("dataset_dir_T5_Warmup_Landmarks_NER")
+
+
 
 
 def main(argv):
@@ -196,22 +195,12 @@ def main(argv):
     unique_cellid_path = unique_cellid_path, 
     tensor_cellid_path = tensor_cellid_path)
 
-  dataset_t5_warmup_landmark_ner = dataset_item.TextGeoDataset.load(
-    dataset_dir = FLAGS.dataset_dir_T5_Warmup_Landmarks_NER, 
-    model_type = "S2-Generation-T5-Warmup-Landmarks-NER",
-    s2_level = FLAGS.s2_level,
-    label_to_cellid_path = label_to_cellid_path, 
-    unique_cellid_path = unique_cellid_path, 
-    tensor_cellid_path = tensor_cellid_path)
 
   train_loader_t5_rvs = DataLoader(
     dataset_t5_rvs.train, batch_size=FLAGS.train_batch_size, shuffle=True)
 
   train_loader_t5_human = DataLoader(
     dataset_t5_human.train, batch_size=FLAGS.train_batch_size, shuffle=True)
-
-  train_loader_t5_warmup_landmark_ner = DataLoader(
-    dataset_t5_warmup_landmark_ner.train, batch_size=FLAGS.train_batch_size, shuffle=True)
 
 
   train_loader_t5_warmup_4 = DataLoader(
@@ -251,7 +240,8 @@ def main(argv):
       train_loader_t5_human, 
       train_loader_t5_warmup_4,
       train_loader_t5_warmup_5,
-      train_loader_t5_warmup_landmark_ner],
+      train_loader_t5_warmup_5,
+      train_loader_t5_warmup_5],
     valid_loader=valid_loader_t5_human,
     test_loader=test_loader_t5_human,
     unique_cells = dataset_t5_human.unique_cellids,
