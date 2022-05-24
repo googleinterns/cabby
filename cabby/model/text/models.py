@@ -146,10 +146,11 @@ class S2GenerationModel(GeneralModel):
   def __init__(
       self, 
       label_to_cellid, 
-      device, 
-      is_landmarks=False, 
+      device, is_landmarks=False, 
       is_path=False, 
-      is_warmup_start_end=False):
+      is_warmup_start_end=False,
+      is_warmup_ner_landmarks=False):
+
     GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
     self.tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
@@ -158,6 +159,7 @@ class S2GenerationModel(GeneralModel):
     self.is_landmarks = is_landmarks
     self.is_path = is_path
     self.is_warmup_start_end = is_warmup_start_end
+    self.is_warmup_ner_landmarks = is_warmup_ner_landmarks
 
     self.max_size = len(str(len(label_to_cellid)))
 
@@ -181,6 +183,8 @@ class S2GenerationModel(GeneralModel):
       input_ids = batch['start_end_input_ids'] 
       attention_mask = batch['start_end_attention_mask']
       labels = batch['route_fixed'].long()
+    elif self.is_warmup_ner_landmarks:
+      labels = batch['landmarks_ner'].long()
     else:
       labels = cellid.long()
 
@@ -200,7 +204,7 @@ class S2GenerationModel(GeneralModel):
       **text, num_beams=2, 
       max_length=self.max_size+2, 
       min_length=1, 
-      remove_invalid_values=True)
+      )
 
     prediction = self.tokenizer.batch_decode(
       output_sequences, skip_special_tokens=True)
