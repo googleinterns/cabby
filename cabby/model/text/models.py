@@ -146,8 +146,7 @@ class S2GenerationModel(GeneralModel):
   def __init__(
       self, 
       label_to_cellid, 
-      device, 
-      is_landmarks=False, 
+      device, is_landmarks=False, 
       is_path=False, 
       is_warmup_start_end=False,
       is_warmup_ner_landmarks=False,
@@ -163,7 +162,6 @@ class S2GenerationModel(GeneralModel):
     self.is_warmup_start_end = is_warmup_start_end
     self.is_warmup_ner_landmarks = is_warmup_ner_landmarks
     self.is_warmup_ner_landmarks_2_cell = is_warmup_ner_landmarks_2_cell
-
 
     self.max_size = len(str(len(label_to_cellid)))
 

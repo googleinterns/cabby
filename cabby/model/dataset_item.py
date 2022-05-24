@@ -211,7 +211,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.landmark_s2cell = [0] * len(self.cellids)
 
 
-
     if not 'landmarks_ner' in data:
       data = data.assign(landmarks_ner='')
       logging.warning("Landmarks NER not processed")

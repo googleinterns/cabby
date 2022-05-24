@@ -359,7 +359,7 @@ class RVSDataset(Dataset):
       ds['landmarks_ner'] =  ds.geo_landmarks.apply(self.process_landmarks_ner)
       ds['landmarks_ner_and_point'] =  ds.geo_landmarks.apply(self.process_landmarks_ner_single)
 
-    
+
     if 'route' in ds: 
       ds['route'] = ds.route.apply(self.process_route)
       ds['route_fixed'] = ds.route.apply(self.get_fixed_point_along_route)
@@ -383,6 +383,7 @@ class RVSDataset(Dataset):
     points = [gutil.point_from_list_coord_yx(
       coord) for coord in landmarks_corrds]
     return points
+
 
   def process_landmarks_ner(self, landmarks_dict):
     main_pivot = landmarks_dict['main_pivot'][2]
