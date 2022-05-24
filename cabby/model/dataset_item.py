@@ -178,6 +178,15 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.landmarks = [0] * len(self.cellids)
       logging.warning("Landmarks not processed")
 
+    if not 'landmarks_ner' in data:
+      data = data.assign(landmarks_ner='')
+      logging.warning("Landmarks NER not processed")
+
+    self.landmarks_ner = self.text_tokenizer(
+      data.landmarks_ner.tolist(), truncation=True,
+      padding=True, add_special_tokens=True).input_ids
+
+
 
     if 'T5' in model_type and 'route' in data:
       data['route'] = data.route.apply(
@@ -221,8 +230,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
     text = {key: torch.tensor(val[idx])
         for key, val in self.encodings.items()}
         
-    cellid =  torch.tensor(self.cellids[idx])
-    landmarks =  torch.tensor(self.landmarks[idx])
+    cellid = torch.tensor(self.cellids[idx])
+    landmarks = torch.tensor(self.landmarks[idx])
+    landmarks_ner = torch.tensor(self.landmarks_ner[idx])
 
     route =  torch.tensor(self.route[idx])
     route_fixed =  torch.tensor(self.route_fixed[idx])
@@ -242,7 +252,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
     sample = {'text': text, 'cellid': cellid, 'neighbor_cells': neighbor_cells, 
       'far_cells': far_cells, 'end_point': end_point, 'label': label, 'prob': prob, 
       'landmarks': landmarks, 'route': route, 'route_fixed': route_fixed, 
-      'start_end_input_ids': start_end['input_ids'], 'start_end_attention_mask': start_end['attention_mask']}
+      'start_end_input_ids': start_end['input_ids'], 
+      'start_end_attention_mask': start_end['attention_mask'],
+      'landmarks_ner': landmarks_ner}
 
     return sample
 
