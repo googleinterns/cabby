@@ -108,9 +108,9 @@ class Dataset:
 
   def process_route(self, route_str):
     route_str = route_str.replace('LINESTRING', "").replace('(', "").replace(')', "")
-    ladmarks_str_list = route_str.split(',')
+    landmarks_str_list = route_str.split(',')
     return [
-      gutil.point_from_str_coord_xy(landmark_str) for landmark_str in ladmarks_str_list]
+      gutil.point_from_str_coord_xy(landmark_str) for landmark_str in landmarks_str_list]
 
 
   def process_landmarks(self, row):
@@ -119,10 +119,10 @@ class Dataset:
   
   def get_specific_landmark(self, landmarks_str_one_line, landmark_name):
 
-    ladmarks_str_list = landmarks_str_one_line.split(';')
+    landmarks_str_list = landmarks_str_one_line.split(';')
 
     landmark_found = None
-    for landmark_str in ladmarks_str_list:
+    for landmark_str in landmarks_str_list:
       if landmark_name in landmark_str:
         landmark_found = gutil.point_from_str_coord_yx(landmark_str.split(':')[-1])
 
@@ -390,10 +390,10 @@ class RVSDataset(Dataset):
     end_point = landmarks_dict['end_point'][2]
 
     
-    ladmarks_list = list(set([main_pivot, near_pivot, end_point]))
+    landmarks_list = list(set([main_pivot, near_pivot, end_point]))
 
-    ladmarks_ner_list = [l for l in ladmarks_list if l!='None']
-    return '; '.join(ladmarks_ner_list)
+    landmarks_ner_list = [l for l in landmarks_list if l!='None']
+    return '; '.join(landmarks_ner_list)
 
 
   def process_landmarks_ner_single(self, landmarks_dict):
@@ -407,13 +407,13 @@ class RVSDataset(Dataset):
     end_point_point = landmarks_dict['end_point'][-1]
     start_point_point = landmarks_dict['start_point'][-1]
     
-    ladmarks_list = [
+    landmarks_list = [
       (main_pivot, gutil.point_from_list_coord_yx(main_pivot_point)),
       (near_pivot, gutil.point_from_list_coord_yx(near_pivot_point)), 
       (end_point, gutil.point_from_list_coord_yx(end_point_point)),
       (start_point, gutil.point_from_list_coord_yx(start_point_point))]
 
-    return sample(ladmarks_list, 1)[0]
+    return sample(landmarks_list, 1)[0]
     
   def process_route(self, route_list):
     return [
