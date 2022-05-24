@@ -159,9 +159,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
     if 'T5' in model_type:
       # Add prompt
       instruction_list = [model_type + ": " + t for t in instruction_list]
+      logging.info(instruction_list[0])
     
-    logging.info(f"An example of the text encoded: '{instruction_list[0]}'")
-
     self.encodings = self.text_tokenizer(
       instruction_list, truncation=True,
       padding=True, add_special_tokens=True)
@@ -206,6 +205,14 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 
 
+    if not 'landmarks_ner' in data:
+      data = data.assign(landmarks_ner='')
+      logging.warning("Landmarks NER not processed")
+
+    self.landmarks_ner = self.text_tokenizer(
+      data.landmarks_ner.tolist(), truncation=True,
+      padding=True, add_special_tokens=True).input_ids
+
     if 'T5' in model_type and 'route' in data:
       data['route'] = data.route.apply(
         lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
@@ -248,9 +255,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
     text = {key: torch.tensor(val[idx])
         for key, val in self.encodings.items()}
         
-    cellid = torch.tensor(self.cellids[idx])
-    landmarks = torch.tensor(self.landmarks[idx])
+    cellid =  torch.tensor(self.cellids[idx])
+    landmarks =  torch.tensor(self.landmarks[idx])
     landmarks_ner = torch.tensor(self.landmarks_ner[idx])
+
 
     route =  torch.tensor(self.route[idx])
     route_fixed =  torch.tensor(self.route_fixed[idx])

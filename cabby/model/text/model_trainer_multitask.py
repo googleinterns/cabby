@@ -72,9 +72,15 @@ flags.DEFINE_string("dataset_dir_T5_landmarks_RVS", None,
 flags.DEFINE_string("dataset_dir_T5_landmarks_human", None,
           "The directory from which to load the dataset.")
 
-flags.DEFINE_string("dataset_dir_T5_Warmup_start_end_RVS", None,
+flags.DEFINE_string("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4", None,
           "The directory from which to load the dataset.")
 
+flags.DEFINE_string("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5", None,
+          "The directory from which to load the dataset.")
+
+flags.DEFINE_string("dataset_dir_T5_Warmup_Landmarks_NER", None,
+          "The directory from which to load the dataset.")
+          
 
 flags.DEFINE_enum(
   "region", None, regions.SUPPORTED_REGION_NAMES, 
@@ -130,7 +136,10 @@ flags.mark_flag_as_required("region")
 flags.mark_flag_as_required("s2_level")
 flags.mark_flag_as_required("dataset_dir_T5_landmarks_RVS")
 flags.mark_flag_as_required("dataset_dir_T5_landmarks_human")
-flags.mark_flag_as_required("dataset_dir_T5_Warmup_start_end_RVS")
+flags.mark_flag_as_required("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4")
+flags.mark_flag_as_required("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5")
+flags.mark_flag_as_required("dataset_dir_T5_Warmup_Landmarks_NER")
+
 
 def main(argv):
   
@@ -147,7 +156,8 @@ def main(argv):
     f for f in [
       FLAGS.dataset_dir_T5_landmarks_RVS, 
       FLAGS.dataset_dir_T5_landmarks_human, 
-      FLAGS.dataset_dir_T5_Warmup_start_end_RVS] if os.path.isfile(f)]
+      FLAGS.dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4,
+      FLAGS.dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5] if os.path.isfile(f)]
   
   if not all(path_exists):
     sys.exit()
@@ -170,9 +180,25 @@ def main(argv):
     unique_cellid_path = unique_cellid_path, 
     tensor_cellid_path = tensor_cellid_path)
 
-  dataset_t5_warmup = dataset_item.TextGeoDataset.load(
-    dataset_dir = FLAGS.dataset_dir_T5_Warmup_start_end_RVS, 
+  dataset_t5_warmup_4 = dataset_item.TextGeoDataset.load(
+    dataset_dir = FLAGS.dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4, 
     model_type = "S2-Generation-T5-Warmup-start-end",
+    s2_level = FLAGS.s2_level,
+    label_to_cellid_path = label_to_cellid_path, 
+    unique_cellid_path = unique_cellid_path, 
+    tensor_cellid_path = tensor_cellid_path)
+
+  dataset_t5_warmup_5 = dataset_item.TextGeoDataset.load(
+    dataset_dir = FLAGS.dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5, 
+    model_type = "S2-Generation-T5-Warmup-start-end",
+    s2_level = FLAGS.s2_level,
+    label_to_cellid_path = label_to_cellid_path, 
+    unique_cellid_path = unique_cellid_path, 
+    tensor_cellid_path = tensor_cellid_path)
+
+  dataset_t5_warmup_landmark_ner = dataset_item.TextGeoDataset.load(
+    dataset_dir = FLAGS.dataset_dir_T5_Warmup_Landmarks_NER, 
+    model_type = "S2-Generation-T5-Warmup-Landmarks-NER",
     s2_level = FLAGS.s2_level,
     label_to_cellid_path = label_to_cellid_path, 
     unique_cellid_path = unique_cellid_path, 
@@ -180,10 +206,19 @@ def main(argv):
 
   train_loader_t5_rvs = DataLoader(
     dataset_t5_rvs.train, batch_size=FLAGS.train_batch_size, shuffle=True)
+
   train_loader_t5_human = DataLoader(
     dataset_t5_human.train, batch_size=FLAGS.train_batch_size, shuffle=True)
-  train_loader_t5_warmup = DataLoader(
-    dataset_t5_warmup.train, batch_size=FLAGS.train_batch_size, shuffle=True)
+
+  train_loader_t5_warmup_landmark_ner = DataLoader(
+    dataset_t5_warmup_landmark_ner.train, batch_size=FLAGS.train_batch_size, shuffle=True)
+
+
+  train_loader_t5_warmup_4 = DataLoader(
+    dataset_t5_warmup_4.train, batch_size=FLAGS.train_batch_size, shuffle=True)
+
+  train_loader_t5_warmup_5 = DataLoader(
+    dataset_t5_warmup_5.train, batch_size=FLAGS.train_batch_size, shuffle=True)
 
 
   valid_loader_t5_human = DataLoader(
@@ -205,12 +240,18 @@ def main(argv):
   
   run_model.best_valid_loss = float("Inf")
 
+
   trainer = train.Trainer(
     model=run_model,
     device=device,
     num_epochs=FLAGS.num_epochs,
     optimizer=optimizer,
-    train_loader=[train_loader_t5_rvs, train_loader_t5_human, train_loader_t5_warmup],
+    train_loader=[
+      train_loader_t5_rvs, 
+      train_loader_t5_human, 
+      train_loader_t5_warmup_4,
+      train_loader_t5_warmup_5,
+      train_loader_t5_warmup_landmark_ner],
     valid_loader=valid_loader_t5_human,
     test_loader=test_loader_t5_human,
     unique_cells = dataset_t5_human.unique_cellids,

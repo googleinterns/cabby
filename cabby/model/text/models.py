@@ -177,8 +177,10 @@ class S2GenerationModel(GeneralModel):
 
     if self.is_landmarks:
       labels = batch['landmarks'].long()
+
     elif self.is_path:
       labels = batch['route'].long()
+
     elif self.is_warmup_start_end:
       input_ids = batch['start_end_input_ids'] 
       attention_mask = batch['start_end_attention_mask']
@@ -190,6 +192,13 @@ class S2GenerationModel(GeneralModel):
 
     output = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, return_dict=True)
     return output.loss
+
+  def reset_setup_false(self):
+    self.is_landmarks = False
+    self.is_path = False
+    self.is_warmup_start_end = False
+    self.is_warmup_ner_landmarks = False
+
 
   def get_embed(self, text, cellid):
     text_dim = text['input_ids'].shape[0]

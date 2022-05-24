@@ -53,11 +53,19 @@ tokenizerT5 = T5Tokenizer.from_pretrained(T5_TYPE)
 
 
 class Dataset: 
-  def __init__(self, data_dir: str, s2level: int, region: Optional[str], model_type: str):
+  def __init__(
+    self, 
+    data_dir: str, 
+    s2level: int, 
+    region: Optional[str], 
+    model_type: str,
+    n_fixed_points: int
+    ):
     self.data_dir = data_dir
     self.s2level = s2level
     self.region = region
     self.model_type = model_type
+    self.n_fixed_points = n_fixed_points
 
     self.unique_cellid = {}
     self.cellid_to_label = {}
@@ -169,14 +177,14 @@ class Dataset:
       tens_cells, self.label_to_cellid)
 
 
-  def get_fixed_point_along_route(self, points_list, n_points=4):
-    avg_number = round(len(points_list)/n_points)
+  def get_fixed_point_along_route(self, points_list):
+    avg_number = round(len(points_list)/self.n_fixed_points)
     fixed_points = []
-    for i in range(n_points):
+    for i in range(self.n_fixed_points):
       curr_point = points_list[i*avg_number]
       fixed_points.append(curr_point)
     
-    assert len(fixed_points) == n_points
+    assert len(fixed_points) == self.n_fixed_points
     return fixed_points
 
 
@@ -185,9 +193,10 @@ class HumanDataset(Dataset):
     self, data_dir: str, 
     s2level: int, 
     region: Optional[str], 
+    n_fixed_points: int,
     model_type: str = "Dual-Encoder-Bert"):
 
-    Dataset.__init__(self, data_dir, s2level, region, model_type)
+    Dataset.__init__(self, data_dir, s2level, region, model_type, n_fixed_points)
     self.train = self.load_data(data_dir, 'train', lines=True)
     self.valid = self.load_data(data_dir, 'dev', lines=True)
     self.test = self.load_data(data_dir, 'test', lines=True)
@@ -249,9 +258,12 @@ class RUNDataset(Dataset):
     data_dir: str, 
     s2level: int, 
     region: Optional[str], 
+    n_fixed_points: int = 4,
     model_type: str = "Dual-Encoder-Bert"):
 
-    Dataset.__init__(self, data_dir, s2level, None, model_type)
+    Dataset.__init__(
+      self, data_dir, s2level, None, model_type, n_fixed_points
+)
 
     train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=False)
 
@@ -307,8 +319,14 @@ class RUNDataset(Dataset):
 
 class RVSDataset(Dataset):
   def __init__(
-    self, data_dir: str, s2level: int, region: Optional[str], model_type: str = "RVS"):
-    Dataset.__init__(self, data_dir, s2level, region, model_type)
+    self, 
+    data_dir: str, 
+    s2level: int, 
+    region: Optional[str], 
+    n_fixed_points: int,
+    model_type: str = "RVS"):
+    Dataset.__init__(
+      self, data_dir, s2level, region, model_type, n_fixed_points)
     train_ds = self.load_data(data_dir, 'train', True)
     valid_ds = self.load_data(data_dir, 'dev', True)
     test_ds = self.load_data(data_dir, 'test', True)
@@ -326,7 +344,6 @@ class RVSDataset(Dataset):
     self.label_to_cellid = label_to_cellid
     self.cellid_to_label = cellid_to_label
 
-
   def load_data(self, data_dir: str, split: str, lines: bool):
     path_ds= os.path.join(data_dir, f'ds_{split}.json')
     assert os.path.exists(path_ds), path_ds
@@ -338,10 +355,10 @@ class RVSDataset(Dataset):
       ds['landmarks'] =  ds.geo_landmarks.apply(self.process_landmarks)
       ds['landmarks_ner'] =  ds.geo_landmarks.apply(self.process_landmarks_ner)
 
+
     if 'route' in ds: 
       ds['route'] = ds.route.apply(self.process_route)
       ds['route_fixed'] = ds.route.apply(self.get_fixed_point_along_route)
-
 
     ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
 

@@ -104,6 +104,11 @@ flags.DEFINE_integer(
   'num_epochs', default=5,
   help=('Number of training epochs.'))
 
+flags.DEFINE_integer(
+  'n_fixed_points', default=4,
+  help=('In case model is S2-Generation-T5-Warmup-start-end pick number of fixed points to generate.'))
+  
+
 flags.DEFINE_bool(
   'infer_only', default=False,
   help=('Train and infer\ just infer.'))
@@ -173,7 +178,8 @@ def main(argv):
       data_dir = FLAGS.data_dir, 
       region = FLAGS.region, 
       s2level = FLAGS.s2_level, 
-      model_type = FLAGS.model)
+      model_type = FLAGS.model,
+      n_fixed_points = FLAGS.n_fixed_points)
 
     if not os.path.exists(dataset_model_path):
       os.mkdir(dataset_model_path)
@@ -222,9 +228,9 @@ def main(argv):
       dataset_text.label_to_cellid, is_path=True, device=device)
   elif FLAGS.model == 'S2-Generation-T5-Warmup-start-end':
     run_model = models.S2GenerationModel(
-      dataset_text.label_to_cellid, is_warmup_start_end=True, device=device)   
+      dataset_text.label_to_cellid, is_warmup_start_end=True, device=device)
   elif FLAGS.model == 'S2-Generation-T5-Warmup-Landmarks-NER':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_ner_landmarks=True, device=device)   
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_ner_landmarks=True, device=device)    
   elif FLAGS.model == 'Classification-Bert':
     run_model = models.ClassificationModel(n_cells, device=device)
   else: 
