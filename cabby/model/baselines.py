@@ -85,7 +85,8 @@ def main(argv):
       )
     ds_test = ds.ds
   else: # RVS
-    ds = datasets.RVSDataset(FLAGS.data_dir, 18, FLAGS.region)
+    ds = datasets.RVSDataset(
+      FLAGS.data_dir, 18, FLAGS.region, 4, "Dual-Encoder-Bert")
     ds_test = ds.test
   
   util.save_metrics_last_only(

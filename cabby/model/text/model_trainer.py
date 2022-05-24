@@ -229,12 +229,15 @@ def main(argv):
   elif FLAGS.model == 'S2-Generation-T5-Warmup-start-end':
     run_model = models.S2GenerationModel(
       dataset_text.label_to_cellid, is_warmup_start_end=True, device=device)
-  elif FLAGS.model == 'S2-Generation-T5-Warmup-Landmarks-NER':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_ner_landmarks=True, device=device)    
+  elif FLAGS.model == 'Text-2-Landmarks-NER-Generation-T5-Warmup':
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_ner_landmarks=True, device=device)  
+  elif FLAGS.model == 'Landmarks-NER-2-S2-Generation-T5-Warmup':
+    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_ner_landmarks_2_cell=True, device=device)    
   elif FLAGS.model == 'Classification-Bert':
     run_model = models.ClassificationModel(n_cells, device=device)
   else: 
     sys.exit("Model invalid")
+
 
     
   if FLAGS.model_path is not None:

@@ -17,8 +17,10 @@ from absl import logging
 import numpy as np
 import os
 import pandas as pd
+from random import sample
 from sklearn.utils import shuffle
 import torch
+
 
 from typing import Optional
 
@@ -36,7 +38,8 @@ MODELS = [
   'S2-Generation-T5', 
   'S2-Generation-T5-Landmarks', 
   'S2-Generation-T5-Warmup-start-end', 
-  'S2-Generation-T5-Warmup-Landmarks-NER', 
+  'Text-2-Landmarks-NER-Generation-T5-Warmup', 
+  'Landmarks-NER-2-S2-Generation-T5-Warmup', 
   'S2-Generation-T5-Path',
   ]
 
@@ -82,7 +85,7 @@ class Dataset:
     if self.model_type in ['Dual-Encoder-Bert', 'Classification-Bert']:      
       self.text_tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_TYPE)
       self.s2_tokenizer = util.binary_representation
-    elif 'S2-Generation-T5' in self.model_type:
+    elif 'T5' in self.model_type:
       self.text_tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
       self.s2_tokenizer = self.tokenize_cell
     
@@ -105,9 +108,9 @@ class Dataset:
 
   def process_route(self, route_str):
     route_str = route_str.replace('LINESTRING', "").replace('(', "").replace(')', "")
-    ladmarks_str_list = route_str.split(',')
+    landmarks_str_list = route_str.split(',')
     return [
-      gutil.point_from_str_coord_xy(landmark_str) for landmark_str in ladmarks_str_list]
+      gutil.point_from_str_coord_xy(landmark_str) for landmark_str in landmarks_str_list]
 
 
   def process_landmarks(self, row):
@@ -116,10 +119,10 @@ class Dataset:
   
   def get_specific_landmark(self, landmarks_str_one_line, landmark_name):
 
-    ladmarks_str_list = landmarks_str_one_line.split(';')
+    landmarks_str_list = landmarks_str_one_line.split(';')
 
     landmark_found = None
-    for landmark_str in ladmarks_str_list:
+    for landmark_str in landmarks_str_list:
       if landmark_name in landmark_str:
         landmark_found = gutil.point_from_str_coord_yx(landmark_str.split(':')[-1])
 
@@ -354,6 +357,7 @@ class RVSDataset(Dataset):
     if 'geo_landmarks' in ds:
       ds['landmarks'] =  ds.geo_landmarks.apply(self.process_landmarks)
       ds['landmarks_ner'] =  ds.geo_landmarks.apply(self.process_landmarks_ner)
+      ds['landmarks_ner_and_point'] =  ds.geo_landmarks.apply(self.process_landmarks_ner_single)
 
 
     if 'route' in ds: 
@@ -387,11 +391,31 @@ class RVSDataset(Dataset):
     end_point = landmarks_dict['end_point'][2]
 
     
-    ladmarks_list = list(set([main_pivot, near_pivot, end_point]))
+    landmarks_list = list(set([main_pivot, near_pivot, end_point]))
 
-    ladmarks_ner_list = [l for l in ladmarks_list if l!='None']
-    return '; '.join(ladmarks_ner_list)
+    landmarks_ner_list = [l for l in landmarks_list if l!='None']
+    return '; '.join(landmarks_ner_list)
 
+
+  def process_landmarks_ner_single(self, landmarks_dict):
+    main_pivot = landmarks_dict['main_pivot'][2]
+    near_pivot = landmarks_dict['near_pivot'][2]
+    end_point = landmarks_dict['end_point'][2]
+    start_point = landmarks_dict['start_point'][2]
+
+    main_pivot_point = landmarks_dict['main_pivot'][-1]
+    near_pivot_point = landmarks_dict['near_pivot'][-1]
+    end_point_point = landmarks_dict['end_point'][-1]
+    start_point_point = landmarks_dict['start_point'][-1]
+    
+    landmarks_list = [
+      (main_pivot, gutil.point_from_list_coord_yx(main_pivot_point)),
+      (near_pivot, gutil.point_from_list_coord_yx(near_pivot_point)), 
+      (end_point, gutil.point_from_list_coord_yx(end_point_point)),
+      (start_point, gutil.point_from_list_coord_yx(start_point_point))]
+
+    return sample(landmarks_list, 1)[0]
+    
   def process_route(self, route_list):
     return [
       gutil.point_from_list_coord_xy(landmark) for landmark in route_list]

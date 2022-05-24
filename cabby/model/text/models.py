@@ -149,7 +149,8 @@ class S2GenerationModel(GeneralModel):
       device, is_landmarks=False, 
       is_path=False, 
       is_warmup_start_end=False,
-      is_warmup_ner_landmarks=False):
+      is_warmup_ner_landmarks=False,
+      is_warmup_ner_landmarks_2_cell=False):
 
     GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
@@ -160,6 +161,7 @@ class S2GenerationModel(GeneralModel):
     self.is_path = is_path
     self.is_warmup_start_end = is_warmup_start_end
     self.is_warmup_ner_landmarks = is_warmup_ner_landmarks
+    self.is_warmup_ner_landmarks_2_cell = is_warmup_ner_landmarks_2_cell
 
     self.max_size = len(str(len(label_to_cellid)))
 
@@ -187,6 +189,10 @@ class S2GenerationModel(GeneralModel):
       labels = batch['route_fixed'].long()
     elif self.is_warmup_ner_landmarks:
       labels = batch['landmarks_ner'].long()
+    elif self.is_warmup_ner_landmarks_2_cell:
+      input_ids = batch['landmarks_ner_input_ids'] 
+      attention_mask = batch['landmarks_ner_input_attention']
+      labels = batch['landmark_s2cell'].long()
     else:
       labels = cellid.long()
 
@@ -198,6 +204,7 @@ class S2GenerationModel(GeneralModel):
     self.is_path = False
     self.is_warmup_start_end = False
     self.is_warmup_ner_landmarks = False
+    self.is_warmup_ner_landmarks_2_cell = False
 
 
   def get_embed(self, text, cellid):

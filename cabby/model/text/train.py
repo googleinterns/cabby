@@ -233,12 +233,14 @@ class Trainer:
         loss = torch.tensor([0.0]).to(self.device)
         self.optimizer.zero_grad()
         for batch_idx in range(len(self.train_loader)):
-          if batch_idx==2: # warmup start+end
+          if batch_idx==2: # warmup start+end -> 4 fixed points
             self.model.is_warmup_start_end=True
-          elif batch_idx==3: # warmup start+end
+          elif batch_idx==3: # warmup start+end -> 5 fixed points
             self.model.is_warmup_start_end=True
-          elif batch_idx==4: # warmup ner landmarks
+          elif batch_idx==4: # warmup text -> ner landmarks
             self.model.is_landmarks_ner=True
+          elif batch_idx==5: # warmup ner landmarks -> cells
+            self.model.is_warmup_ner_landmarks_2_cell=True
           else: 
             self.model.is_landmarks=True
           batch  = batches[batch_idx]
@@ -259,7 +261,7 @@ class Trainer:
         self.optimizer.step()
 
         # Update running values.
-        running_loss += loss.item()
+        running_loss += loss.item() / len(self.train_loader)
         global_step += 1
       
 
