@@ -195,6 +195,15 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.landmarks = [0] * len(self.cellids)
       logging.warning("Landmarks not processed")
 
+    if not 'landmarks_ner' in data:
+      data = data.assign(landmarks_ner='')
+      logging.warning("Landmarks NER not processed")
+
+    self.landmarks_ner = self.text_tokenizer(
+      data.landmarks_ner.tolist(), truncation=True,
+      padding=True, add_special_tokens=True).input_ids
+
+
 
     if not 'landmarks_ner' in data:
       data = data.assign(landmarks_ner='')

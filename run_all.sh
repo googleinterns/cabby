@@ -51,6 +51,10 @@ echo "*                 S2-Generation-T5-Warmup-Landmarks-NER   - RVS DATA      
 bazel-bin/cabby/model/text/model_trainer  --data_dir ~/cabby/cabby/model/text/dataSamples/rvs --dataset_dir $OUTPUT_DIR_MODEL_RVS --region Manhattan --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-Warmup-Landmarks-NER
 
 
+echo "*                 S2-Generation-T5-Warmup-Landmarks-NER   - RVS DATA            *"
+bazel-bin/cabby/model/text/model_trainer  --data_dir ~/cabby/cabby/model/text/dataSamples/rvs --dataset_dir $OUTPUT_DIR_MODEL_RVS --region Manhattan --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-Warmup-Landmarks-NER
+
+
 echo "****************************************"
 echo "*                 Geo                  *"
 echo "****************************************"
