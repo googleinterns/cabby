@@ -91,6 +91,7 @@ flags.DEFINE_float(
 flags.DEFINE_string("model_path", None,
           "A path of a model the model to be fine tuned\ evaluated.")
 
+
 flags.DEFINE_integer(
   'train_batch_size', default=4,
   help=('Batch size for training.'))
@@ -106,6 +107,10 @@ flags.DEFINE_integer(
 flags.DEFINE_bool(
   'infer_only', default=False,
   help=('Train and infer\ just infer.'))
+
+flags.DEFINE_bool(
+  'is_single_sample_train', default=False,
+  help=('Train on a single sample and do not evaluate.'))
 
 
 flags.DEFINE_bool(
@@ -150,23 +155,26 @@ def main(argv):
   else: 
     sys.exit("Dataset invalid")
 
-  dataset = dataset_init(
-    data_dir = FLAGS.data_dir, 
-    region = FLAGS.region, 
-    s2level = FLAGS.s2_level, 
-    model_type = FLAGS.model)
- 
+  
+  if FLAGS.is_single_sample_train:
+    FLAGS.train_batch_size = 1
+
   if os.path.exists(dataset_path):
     dataset_text = dataset_item.TextGeoDataset.load(
-      dataset_path = dataset_path, 
-      train_path_dataset = train_path_dataset, 
-      valid_path_dataset = valid_path_dataset, 
-      test_path_dataset = test_path_dataset, 
+      dataset_dir = FLAGS.dataset_dir, 
+      model_type = str(FLAGS.model),
+      s2_level = FLAGS.s2_level,
       label_to_cellid_path = label_to_cellid_path, 
       unique_cellid_path = unique_cellid_path, 
       tensor_cellid_path = tensor_cellid_path)
 
   else:
+    dataset = dataset_init(
+      data_dir = FLAGS.data_dir, 
+      region = FLAGS.region, 
+      s2level = FLAGS.s2_level, 
+      model_type = FLAGS.model)
+
     if not os.path.exists(dataset_model_path):
       os.mkdir(dataset_model_path)
     logging.info("Preparing data.")
@@ -204,13 +212,17 @@ def main(argv):
   if 'Dual-Encoder' in FLAGS.model:
     run_model = models.DualEncoder(device=device)
   elif FLAGS.model == 'S2-Generation-T5':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, device=device)
+    run_model = models.S2GenerationModel(
+      dataset_text.label_to_cellid, device=device)
   elif FLAGS.model == 'S2-Generation-T5-Landmarks':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_landmarks=True, device=device)
+    run_model = models.S2GenerationModel(
+      dataset_text.label_to_cellid, is_landmarks=True, device=device)
   elif FLAGS.model == 'S2-Generation-T5-Path':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_path=True, device=device)
+    run_model = models.S2GenerationModel(
+      dataset_text.label_to_cellid, is_path=True, device=device)
   elif FLAGS.model == 'S2-Generation-T5-Warmup-start-end':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_start_end=True, device=device)   
+    run_model = models.S2GenerationModel(
+      dataset_text.label_to_cellid, is_warmup_start_end=True, device=device)   
   elif FLAGS.model == 'S2-Generation-T5-Warmup-Landmarks-NER':
     run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_ner_landmarks=True, device=device)   
   elif FLAGS.model == 'Classification-Bert':
@@ -252,7 +264,8 @@ def main(argv):
     cells_tensor = dataset_text.unique_cellids_binary,
     label_to_cellid = dataset_text.label_to_cellid,
     is_distance_distribution = FLAGS.is_distance_distribution,
-    best_valid_loss = run_model.best_valid_loss
+    best_valid_loss = run_model.best_valid_loss,
+    is_single_sample_train = FLAGS.is_single_sample_train
     )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")

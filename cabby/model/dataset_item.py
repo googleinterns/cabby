@@ -65,15 +65,25 @@ class TextGeoDataset:
     )
 
   @classmethod
-  def load(cls, dataset_path: Text, train_path_dataset: Text,
-    valid_path_dataset: Text, test_path_dataset: Text, 
-    unique_cellid_path: Text, tensor_cellid_path: Text, 
+  def load(cls, dataset_dir: Text, model_type: Text,
+    s2_level: Text, unique_cellid_path: Text, tensor_cellid_path: Text, 
     label_to_cellid_path: Text):
+
+    dataset_model_path = os.path.join(dataset_dir, str(model_type))
+    dataset_path = os.path.join(dataset_model_path, str(s2_level))
+    train_path_dataset = os.path.join(dataset_path,'train.pth')
+    valid_path_dataset = os.path.join(dataset_path,'valid.pth')
+    test_path_dataset = os.path.join(dataset_path,'test.pth')
+    unique_cellid_path = os.path.join(dataset_path,"unique_cellid.npy")
+    tensor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
+    label_to_cellid_path = os.path.join(dataset_path,"label_to_cellid.npy")
 
     logging.info("Loading dataset from <== {}.".format(dataset_path))
     train_dataset = torch.load(train_path_dataset)
     valid_dataset = torch.load(valid_path_dataset)
     test_dataset = torch.load(test_path_dataset)
+    logging.info(f"Size of train set: {len(train_dataset)}" +
+     f", Size of validation set: {len(valid_dataset)}, Size of test set: {len(test_dataset)}")
 
     unique_cellid = np.load(unique_cellid_path, allow_pickle='TRUE')
     label_to_cellid = np.load(
@@ -144,8 +154,16 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 
     # Tokenize instructions.
+
+    instruction_list = data.instructions.tolist()
+    if 'T5' in model_type:
+      # Add prompt
+      instruction_list = [model_type + ": " + t for t in instruction_list]
+    
+    logging.info(f"An example of the text encoded: '{instruction_list[0]}'")
+
     self.encodings = self.text_tokenizer(
-      data.instructions.tolist(), truncation=True,
+      instruction_list, truncation=True,
       padding=True, add_special_tokens=True)
 
     data['far_cells'] = data.cellid.apply(

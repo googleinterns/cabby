@@ -102,10 +102,9 @@ class Dataset:
       gutil.point_from_str_coord_xy(landmark_str) for landmark_str in ladmarks_str_list]
 
 
-  def process_landmarks(self, landmarks_str_one_line):
-    ladmarks_str_list = landmarks_str_one_line.split(';')
-    return [gutil.point_from_str_coord_yx(
-      landmark_str.split(':')[-1]) for landmark_str in ladmarks_str_list]
+  def process_landmarks(self, row):
+    points = [row['end_point'], row['start_point'], row['main_pivot'], row['near_pivot']]
+    return points
   
   def get_specific_landmark(self, landmarks_str_one_line, landmark_name):
 
@@ -119,7 +118,7 @@ class Dataset:
     return landmark_found
 
     
-  def create_dataset(self, infer_only: bool = False
+  def create_dataset(self, infer_only: bool = False,
   ) -> dataset_item.TextGeoDataset:
     '''Loads data and creates datasets and train, validate and test sets.
     Returns:
@@ -220,13 +219,13 @@ class HumanDataset(Dataset):
       ds['main_pivot'] = ds.landmarks.apply(
         lambda x: self.get_specific_landmark(x, 'main_pivot'))
     
-      ds['landmarks'] = ds.landmarks.apply(self.process_landmarks)
+      ds['landmarks'] = ds.apply(self.process_landmarks, axis=1)
     
     if 'route' in ds:
       ds['route'] = ds.route.apply(self.process_route)
       ds['route_fixed'] = ds.route.apply(self.get_fixed_point_along_route)
     
-    ds['start_end'] = ds.route.apply(self.get_fixed_point_along_route)
+      ds['start_end'] = ds.route.apply(self.get_fixed_point_along_route)
     columns_keep = ds.columns.difference(
       [
         'instructions', 
@@ -355,9 +354,14 @@ class RVSDataset(Dataset):
     return ds    
 
   def process_landmarks(self, landmarks_dict):
-    ladmarks_list = list(landmarks_dict.values())
-    return [gutil.point_from_list_coord_yx(
-      landmark_l[-1]) for landmark_l in ladmarks_list if landmark_l[-1]]
+    landmarks_corrds = [
+      landmarks_dict['end_point'][-1], 
+      landmarks_dict['start_point'][-1],
+      landmarks_dict['main_pivot'][-1],
+      landmarks_dict['near_pivot'][-1]]
+    points = [gutil.point_from_list_coord_yx(
+      coord) for coord in landmarks_corrds]
+    return points
 
 
   def process_landmarks_ner(self, landmarks_dict):

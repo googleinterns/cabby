@@ -24,6 +24,22 @@ py_binary(
     ],
 )
 
+py_binary(
+    name = 'model_trainer_multitask',
+    main = 'model_trainer_multitask.py',
+    srcs = ['model_trainer_multitask.py'],
+    deps = [
+        '//cabby/model/text:train',
+        '//cabby/model:datasets',
+        '//cabby/model:dataset_item',
+        "//cabby/model:util",
+        "//cabby/geo:util",
+        ':models'        
+
+    ],
+)
+
+
 
 py_binary(
     name = 'models',
