@@ -102,6 +102,8 @@ class TextGeoDataset:
     test_path_dataset: Text,  unique_cellid_path: Text, 
     tensor_cellid_path: Text, label_to_cellid_path: Text):
 
+
+
     os.mkdir(dataset_path)
     torch.save(dataset_text.train, train_path_dataset)
     torch.save(dataset_text.valid, valid_path_dataset)
@@ -196,6 +198,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.landmarks = [0] * len(self.cellids)
       logging.warning("Landmarks not processed")
 
+    self.landmark_s2cell = [0] * len(self.cellids)
+
     if 'T5' in model_type and 'landmarks_ner_and_point' in data:
       data.landmarks_ner_input = [
         ner for ner, point in data.landmarks_ner_and_point.tolist()]
@@ -206,9 +210,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
           point, s2level) for ner, point in data.landmarks_ner_and_point.tolist()]
 
       self.landmark_s2cell = self.s2_tokenizer(data.landmark_point)
-    else: 
-      
-      self.landmark_s2cell = [0] * len(self.cellids)
+
 
 
     if not 'landmarks_ner' in data:
