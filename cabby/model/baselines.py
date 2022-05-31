@@ -51,8 +51,6 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
 
-flags.DEFINE_string("dataset_dir", None,
-          "The directory to save\load dataloader.")
 
 flags.DEFINE_string("metrics_dir", None,
           "The directory where the metrics evaluation witll be save to.")
@@ -92,22 +90,12 @@ def main(argv):
     sys.exit("Dataset invalid")
 
 
-  if FLAGS.dataset_dir and os.path.exists(FLAGS.dataset_dir):
-    dataset_text = dataset_item.TextGeoDataset.load(
-      dataset_dir = FLAGS.dataset_dir, 
-      model_type = "Dual-Encoder-Bert",
-      s2_level = 18,
-      label_to_cellid_path = label_to_cellid_path, 
-      unique_cellid_path = unique_cellid_path, 
-      tensor_cellid_path = tensor_cellid_path)
-
-  else:
-    dataset = dataset_init(
-      data_dir = FLAGS.data_dir, 
-      region = FLAGS.region, 
-      s2level = 18, 
-      n_fixed_points = 4,
-      )
+  dataset = dataset_init(
+    data_dir = FLAGS.data_dir, 
+    region = FLAGS.region, 
+    s2level = 18, 
+    n_fixed_points = 4,
+    )
 
   end_points = dataset.test.end_point.apply(gutil.list_yx_from_point).tolist()
   start_point = dataset.test.start_point.apply(gutil.list_yx_from_point).tolist()

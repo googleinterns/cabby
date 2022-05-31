@@ -184,14 +184,14 @@ class S2GenerationModel(GeneralModel):
       labels = batch['route'].long()
 
     elif self.is_warmup_start_end:
-      input_ids = batch['start_end_input_ids'] 
-      attention_mask = batch['start_end_attention_mask']
+      input_ids = batch['start_end_and_prompt_input_ids'] 
+      attention_mask = batch['start_end_and_prompt_attention_mask']
       labels = batch['route_fixed'].long()
     elif self.is_warmup_ner_landmarks:
       labels = batch['landmarks_ner'].long()
     elif self.is_warmup_ner_landmarks_2_cell:
-      input_ids = batch['landmarks_ner_input_ids'] 
-      attention_mask = batch['landmarks_ner_input_attention']
+      input_ids = batch['landmarks_ner_and_prompt_input_ids'] 
+      attention_mask = batch['landmarks_ner_and_prompt_input_attention']
       labels = batch['landmark_s2cell'].long()
     else:
       labels = cellid.long()

@@ -86,7 +86,7 @@ class Dataset:
       self.text_tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_TYPE)
       self.s2_tokenizer = util.binary_representation
     elif 'T5' in self.model_type:
-      self.text_tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
+      self.text_tokenizer = tokenizerT5
       self.s2_tokenizer = self.tokenize_cell
     
   def tokenize_cell(self, list_cells):
