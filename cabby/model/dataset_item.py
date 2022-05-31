@@ -133,8 +133,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.text_tokenizer = text_tokenizer
     self.s2_tokenizer = s2_tokenizer
     self.cellid_to_label = cellid_to_label
-
+    self.s2level = s2level
     self.is_dist = is_dist
+    self.model_type = model_type
     
     data = data.assign(end_point=data.end_point)
 
@@ -161,11 +162,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
     instruction_list = data.instructions.tolist()
     if 'T5' in model_type:
       # Add prompt
-      instruction_list = [model_type + ": " + t for t in instruction_list]
+      data.instructions = [model_type + ": " + t for t in instruction_list]
       logging.info(instruction_list[0])
     
     self.encodings = self.text_tokenizer(
-      instruction_list, truncation=True,
+      data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True)
 
     data['far_cells'] = data.cellid.apply(
@@ -181,122 +182,26 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
 
+    self.start_point_cells = data.start_point.apply(
+        lambda x: gutil.cellid_from_point(x, s2level))
+
+    self.start_point_labels = self.get_cell_to_lablel(self.start_point_cells.tolist()) 
+
     self.cellids = self.s2_tokenizer(cellids_array)
     self.neighbor_cells = self.s2_tokenizer(neighbor_cells_array)
 
     self.far_cells = self.s2_tokenizer(far_cells_array)
 
+    self.set_S2_Generation_T5_Landmarks(data)
 
-    if 'T5' in model_type and 'landmarks' in data:
-      data['landmarks'] = data.landmarks.apply(
-        lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
+    self.set_Landmarks_NER_2_S2_Generation_T5_Warmup(data)
 
-      self.landmarks = self.s2_tokenizer(data.landmarks.tolist())
+    self.set_Text_2_Landmarks_NER_Generation_T5_Warmup(data)
+          
+    self.set_S2_Generation_T5_Path(data)
 
+    self.set_S2_Generation_T5_Warmup_start_end(data)
 
-
-    else:
-      self.landmarks = [0] * len(self.cellids)
-      logging.warning("Landmarks not processed")
-
-    self.landmark_s2cell = [0] * len(self.cellids)
-
-    if 'T5' in model_type and 'landmarks_ner_and_point' in data:
-      landmarks_ner_input = [
-        f"{model_type}: {ner}" for ner, point in data.landmarks_ner_and_point.tolist()]
-      data = data.assign(landmarks_ner_and_prompt_input = landmarks_ner_input)
-
-
-      landmark_cells = [
-        gutil.cellid_from_point(
-          point, s2level) for ner, point in data.landmarks_ner_and_point.tolist()]
-
-      landmark_label = self.get_cell_to_lablel(landmark_cells) 
-      
-      if model_type=='Landmarks-NER-2-S2-Generation-T5-Warmup':
-        logging.info(
-          f"\n Example {model_type}: \n"+ 
-          f"  Input: '{data.landmarks_ner_and_prompt_input.tolist()[0]}'\n" +
-          f"  Output: {landmark_label[0]}" )
-
-      self.landmark_s2cell = self.text_tokenizer(
-        landmark_label, truncation=True, padding=True, add_special_tokens=True).input_ids
-
-
-
-    if not 'landmarks_ner' in data:
-      data = data.assign(landmarks_ner='')
-      logging.warning("Landmarks NER not processed")
-    
-    if not 'landmarks_ner_and_prompt_input' in data:
-      data = data.assign(landmarks_ner_and_prompt_input='')
-
-
-    if model_type=='Text-2-Landmarks-NER-Generation-T5-Warmup':
-      logging.info(
-        f"\n Example {model_type}: \n"+ 
-        f"  Input: '{instruction_list[0]}'\n" +
-        f"  Output: {data.landmarks_ner.tolist()[0]}" )
-            
-    self.landmarks_ner = self.text_tokenizer(
-      data.landmarks_ner.tolist(), truncation=True,
-      padding=True, add_special_tokens=True).input_ids
-
-    self.landmarks_ner_and_prompt_input = self.text_tokenizer(
-      data.landmarks_ner_and_prompt_input.tolist(), truncation=True, padding=True, add_special_tokens=True)
-
-
-    if 'T5' in model_type and 'route' in data:
-      data['route'] = data.route.apply(
-        lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
-
-      route_label = self.get_cell_to_lablel(data.route.tolist()) 
-
-      self.route = self.text_tokenizer(
-        route_label, truncation=True, padding=True, add_special_tokens=True).input_ids
-
-
-      data['route_fixed'] = data.route_fixed.apply(
-        lambda l: [gutil.cellid_from_point(x, s2level) for x in l])
-
-
-      route_fixed_label = self.get_cell_to_lablel(data.route_fixed.tolist())
-
-
-      self.route_fixed = self.text_tokenizer(
-        route_fixed_label, truncation=True, padding=True, add_special_tokens=True).input_ids
-
-      start_point_cells = data.start_point.apply(
-        lambda x: gutil.cellid_from_point(x, s2level))
-
-      
-      start_end_point_list = [
-        f"{model_type}: {str(cellid_to_label[e])}, {str(cellid_to_label[s])}" for s, e in zip(
-            start_point_cells.tolist(), data.cellid.tolist())]
-
-
-      if model_type=='S2-Generation-T5-Warmup-start-end':
-        logging.info(
-          f"\n Example {model_type}: \n"+ 
-          f"  Input: '{start_end_point_list[0]}'\n" +
-          f"  Output: {route_fixed_label[0]}" )
-      elif model_type=='S2-Generation-T5-Path':
-        logging.info(
-          f"\n Example {model_type}: \n"+ 
-          f"  Input: '{instruction_list[0]}'\n" +
-          f"  Output: {route_label[0]}" )
-
-      self.start_end_and_prompt = self.text_tokenizer(
-        start_end_point_list, truncation=True, padding=True, add_special_tokens=True)
-
-    else:
-      self.route = [0] * len(self.cellids)
-      self.route_fixed = [0] * len(self.cellids)
-      self.start_end_and_prompt = {
-        'attention_mask': [0] * len(self.cellids),
-        'input_ids': [0] * len(self.cellids)}
-      
-      logging.warning("Route not processed")
 
   def get_cell_to_lablel(self, list_cells):
     if isinstance(list_cells[0], list): 
@@ -313,6 +218,139 @@ class TextGeoSplit(torch.utils.data.Dataset):
     
     return labels
 
+  def set_S2_Generation_T5_Landmarks(self, data):
+    if 'T5' in self.model_type and 'landmarks' in data:
+      data['landmarks'] = data.landmarks.apply(
+        lambda l: [gutil.cellid_from_point(x, self.s2level) for x in l])
+
+      landmark_label = self.get_cell_to_lablel(data['landmarks'].tolist()) 
+
+      self.print_sample(
+        mode_expected='S2-Generation-T5-Landmarks', 
+        input=data.instructions.tolist()[0], 
+        output=landmark_label[0])
+
+      self.landmarks = self.text_tokenizer(
+        landmark_label, truncation=True, padding=True, add_special_tokens=True).input_ids
+
+    else:
+      self.landmarks = [0] * len(self.cellids)
+      logging.warning("Landmarks not processed")
+
+
+  def set_Landmarks_NER_2_S2_Generation_T5_Warmup(self, data):
+    if not ('T5' in self.model_type and 'landmarks_ner_and_point' in data):
+      data = data.assign(landmarks_ner_and_prompt_input='')
+
+      self.landmark_s2cell = [0] * len(self.cellids)
+      
+
+    else:
+
+      landmarks_ner_input = [
+        f"{self.model_type}: {ner}" for ner, point in data.landmarks_ner_and_point.tolist()]
+
+      data = data.assign(landmarks_ner_and_prompt_input = landmarks_ner_input)
+
+      landmark_cells = [
+        gutil.cellid_from_point(
+          point, self.s2level) for ner, point in data.landmarks_ner_and_point.tolist()]
+
+      landmark_label = self.get_cell_to_lablel(landmark_cells) 
+      
+      self.print_sample(
+        mode_expected='Landmarks-NER-2-S2-Generation-T5-Warmup', 
+        input=data.landmarks_ner_and_prompt_input.tolist()[0], 
+        output=landmark_label[0])
+
+      self.landmark_s2cell = self.text_tokenizer(
+        landmark_label, truncation=True, padding=True, add_special_tokens=True).input_ids
+      
+    self.landmarks_ner_and_prompt_input = self.text_tokenizer(
+      data.landmarks_ner_and_prompt_input.tolist(), truncation=True, padding=True, add_special_tokens=True)
+
+
+
+  def set_Text_2_Landmarks_NER_Generation_T5_Warmup(self, data):
+    if not 'landmarks_ner' in data:
+      data = data.assign(landmarks_ner='')
+      logging.warning("Landmarks NER not processed")
+    
+    self.print_sample(
+      mode_expected='Text-2-Landmarks-NER-Generation-T5-Warmup', 
+      input=data.instructions.tolist()[0], 
+      output=data.landmarks_ner.tolist()[0])
+
+    self.landmarks_ner = self.text_tokenizer(
+      data.landmarks_ner.tolist(), truncation=True,
+      padding=True, add_special_tokens=True).input_ids
+
+  def set_S2_Generation_T5_Warmup_start_end(self, data):
+    
+    if 'T5' in self.model_type and 'route' in data:
+
+      data['route_fixed'] = data.route_fixed.apply(
+        lambda l: [gutil.cellid_from_point(x, self.s2level) for x in l])
+
+
+      route_fixed_label = self.get_cell_to_lablel(data.route_fixed.tolist())
+
+
+      self.route_fixed = self.text_tokenizer(
+        route_fixed_label, truncation=True, padding=True, add_special_tokens=True).input_ids
+
+
+      start_point_cells = data.start_point.apply(
+        lambda x: gutil.cellid_from_point(x, self.s2level))
+
+      
+      start_end_point_list = [
+        f"{self.model_type}: {str(e)}, {str(s)}" for s, e in zip(
+            self.start_point_labels, self.labels)]
+
+      self.print_sample(
+        mode_expected='S2-Generation-T5-Warmup-start-end', 
+        input=start_end_point_list[0], 
+        output=route_fixed_label[0])
+
+      self.start_end_and_prompt = self.text_tokenizer(
+        start_end_point_list, truncation=True, padding=True, add_special_tokens=True)
+
+    else:
+      self.route = [0] * len(self.cellids)
+      logging.warning("Route not processed")
+          
+  def set_S2_Generation_T5_Path(self, data):
+
+    if 'T5' in self.model_type and 'route' in data:
+      
+      data['route'] = data.route.apply(
+        lambda l: [gutil.cellid_from_point(x, self.s2level) for x in l])
+
+      route_label = self.get_cell_to_lablel(data.route.tolist()) 
+
+      self.route = self.text_tokenizer(
+        route_label, truncation=True, padding=True, add_special_tokens=True).input_ids
+
+      self.print_sample(
+        mode_expected='S2-Generation-T5-Path', 
+        input=data.instructions.tolist()[0], 
+        output=route_label[0])
+    else:
+      self.route_fixed = [0] * len(self.cellids)
+      self.start_end_and_prompt = {
+        'attention_mask': [0] * len(self.cellids),
+        'input_ids': [0] * len(self.cellids)}
+
+  def print_sample(self, mode_expected, input, output):
+    if self.model_type==mode_expected:
+      logging.info(
+        f"\n Example {self.model_type}: \n"+ 
+        f"  Input: '{input}'\n" +
+        f"  Output: {output}\n" +
+        f"  Goal: {self.labels[0]}\n" + 
+        f"  Start: {self.start_point_labels[0]}" 
+        )
 
   def __getitem__(self, idx: int):
     '''Supports indexing such that TextGeoDataset[i] can be used to get 
