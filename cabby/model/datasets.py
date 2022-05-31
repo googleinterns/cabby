@@ -327,7 +327,7 @@ class RVSDataset(Dataset):
     s2level: int, 
     region: Optional[str], 
     n_fixed_points: int,
-    model_type: str = "RVS"):
+    model_type: str = "Dual-Encoder-Bert"):
     Dataset.__init__(
       self, data_dir, s2level, region, model_type, n_fixed_points)
     train_ds = self.load_data(data_dir, 'train', True)
@@ -351,9 +351,7 @@ class RVSDataset(Dataset):
     path_ds= os.path.join(data_dir, f'ds_{split}.json')
     assert os.path.exists(path_ds), path_ds
     ds = pd.read_json(path_ds, lines=lines)
-        
-    logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
-    
+            
     if 'geo_landmarks' in ds:
       ds['landmarks'] =  ds.geo_landmarks.apply(self.process_landmarks)
       ds['landmarks_ner'] =  ds.geo_landmarks.apply(self.process_landmarks_ner)
@@ -371,7 +369,14 @@ class RVSDataset(Dataset):
     ds['end_pivot'] = ds.end_point
     ds['end_point'] = ds.end_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))
     ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))    
+
+    logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
+
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
+
+    logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
+
+
     return ds    
 
   def process_landmarks(self, landmarks_dict):

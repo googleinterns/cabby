@@ -16,8 +16,8 @@
 Baseline models evaluation: 
 (1) NO-MOVE - Uses the start point as the predicted target.
 RUN - 
-$ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
-  --data_dir ~/data/RUN  \
+$ bazel-bin/cabby/model/baselines \
+  --data_dir ~/data/  \
   --metrics_dir ~/eval/ \
 
 """
@@ -44,12 +44,15 @@ from cabby.geo import regions
 
 
 
-TASKS = ["RVS", "RUN"]
+TASKS = ["RVS", "RUN", "human"]
 
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
+
+flags.DEFINE_string("dataset_dir", None,
+          "The directory to save\load dataloader.")
 
 flags.DEFINE_string("metrics_dir", None,
           "The directory where the metrics evaluation witll be save to.")
@@ -77,22 +80,43 @@ def main(argv):
 
   metrics_path = os.path.join(FLAGS.metrics_dir, 'metrics.tsv')
 
-  if FLAGS.task == "RUN":
-    ds = datasets.RUNDataset(
-      data_dir=FLAGS.data_dir, 
-      s2level=18,
-      region="Manhattan",
+
+  assert FLAGS.task in TASKS
+  if FLAGS.task == "RVS": 
+    dataset_init = datasets.RVSDataset
+  elif FLAGS.task == 'RUN':
+    dataset_init = datasets.RUNDataset
+  elif FLAGS.task == 'human':
+    dataset_init = datasets.HumanDataset
+  else: 
+    sys.exit("Dataset invalid")
+
+
+  if FLAGS.dataset_dir and os.path.exists(FLAGS.dataset_dir):
+    dataset_text = dataset_item.TextGeoDataset.load(
+      dataset_dir = FLAGS.dataset_dir, 
+      model_type = "Dual-Encoder-Bert",
+      s2_level = 18,
+      label_to_cellid_path = label_to_cellid_path, 
+      unique_cellid_path = unique_cellid_path, 
+      tensor_cellid_path = tensor_cellid_path)
+
+  else:
+    dataset = dataset_init(
+      data_dir = FLAGS.data_dir, 
+      region = FLAGS.region, 
+      s2level = 18, 
+      n_fixed_points = 4,
       )
-    ds_test = ds.ds
-  else: # RVS
-    ds = datasets.RVSDataset(
-      FLAGS.data_dir, 18, FLAGS.region, 4, "Dual-Encoder-Bert")
-    ds_test = ds.test
-  
+
+  end_points = dataset.test.end_point.apply(gutil.list_yx_from_point).tolist()
+  start_point = dataset.test.start_point.apply(gutil.list_yx_from_point).tolist()
+
+  logging.info(f"dataset.test.end_point.tolist(): {dataset.test.end_point.tolist()[0]}")
   util.save_metrics_last_only(
       metrics_path, 
-      ds_test.end_point.tolist(), 
-      ds_test.start_point.tolist())
+      end_points, 
+      start_point)
 
   logging.info(f"NO-MOVE evaluation for task {FLAGS.task}:")
   evaluator = eu.Evaluator()

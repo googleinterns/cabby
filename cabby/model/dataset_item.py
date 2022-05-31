@@ -201,15 +201,17 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.landmark_s2cell = [0] * len(self.cellids)
 
     if 'T5' in model_type and 'landmarks_ner_and_point' in data:
-      data.landmarks_ner_input = [
-        ner for ner, point in data.landmarks_ner_and_point.tolist()]
+      landmarks_ner_input = [
+        f"{model_type}: {ner}" for ner, point in data.landmarks_ner_and_point.tolist()]
+      data = data.assign(landmarks_ner_input = landmarks_ner_input)
+      logging.info(f"Example of input of Landmarks-NER-2-S2-Generation-T5-Warmup: '{landmarks_ner_input[0]}'")
 
 
-      data.landmark_point = [
+      landmark_point = [
         gutil.cellid_from_point(
           point, s2level) for ner, point in data.landmarks_ner_and_point.tolist()]
 
-      self.landmark_s2cell = self.s2_tokenizer(data.landmark_point)
+      self.landmark_s2cell = self.s2_tokenizer(landmark_point)
 
 
 
@@ -243,12 +245,15 @@ class TextGeoSplit(torch.utils.data.Dataset):
         lambda x: gutil.cellid_from_point(x, s2level))
 
       
-      start_point_list = [
-        '; '.join(
-          [str(cellid_to_label[e]), str(cellid_to_label[s])]) for s, e in zip(
+      start_end_point_list = [
+        f"{model_type}: {str(cellid_to_label[e])}, {str(cellid_to_label[s])}" for s, e in zip(
             start_point_cells.tolist(), data.cellid.tolist())]
+
+      logging.info(f"Example input of S2-Generation-T5-Warmup-start-end: '{start_end_point_list[0]}'")
+
+
       self.start_end = self.text_tokenizer(
-        start_point_list, truncation=True, padding=True, add_special_tokens=True)
+        start_end_point_list, truncation=True, padding=True, add_special_tokens=True)
 
     else:
       self.route = [0] * len(self.cellids)
