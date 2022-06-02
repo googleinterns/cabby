@@ -123,6 +123,11 @@ flags.DEFINE_bool(
   help=('In case the model is loaded - should the validation loss use the models current loss.'))
 
 flags.DEFINE_bool(
+  'is_dist', default=False,
+  help=('Use dist between start point and candidate cells.'))
+
+
+flags.DEFINE_bool(
   'is_distance_distribution', default=False,
   help=(
     'Add probability over cells according to the distance from start point.'+ 
@@ -185,7 +190,8 @@ def main(argv):
       os.mkdir(dataset_model_path)
     logging.info("Preparing data.")
     dataset_text = dataset.create_dataset(
-            infer_only= FLAGS.infer_only,
+            infer_only = FLAGS.infer_only, 
+            is_dist = FLAGS.is_dist
     )
 
     dataset_item.TextGeoDataset.save(

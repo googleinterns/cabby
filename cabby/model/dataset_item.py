@@ -28,10 +28,21 @@ import swifter
 from typing import Any, Dict, Text 
 import torch
 
+import mapply
+
+
 import attr
 
 from cabby.geo import util as gutil
 from cabby.model import util 
+
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+mapply.init(
+    n_workers=-1,
+    progressbar=True,
+)
 
 
 @attr.s
@@ -128,7 +139,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
   """
   def __init__(self, text_tokenizer, s2_tokenizer, data: pd.DataFrame, s2level: int, 
     unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int], 
-    model_type: str, dprob: util.DistanceProbability, is_dist: Boolean = False):
+    model_type: str, dprob: util.DistanceProbability, dist_matrix: pd.DataFrame, 
+    is_dist: Boolean = False,
+    ):
 
     self.text_tokenizer = text_tokenizer
     self.s2_tokenizer = s2_tokenizer
@@ -136,6 +149,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.s2level = s2level
     self.is_dist = is_dist
     self.model_type = model_type
+    self.dist_matrix = dist_matrix
     
     data = data.assign(end_point=data.end_point)
 
@@ -146,15 +160,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     data['neighbor_cells'] = data.cellid.apply(
       lambda x: gutil.neighbor_cellid(x))
-
-    if is_dist:
-      dist_lists = data.start_point.apply(
-        lambda start: calc_dist(start, unique_cells_df)
-      )
-      
-      self.prob = dist_lists.swifter.apply(
-        lambda row: [dprob(dist) for dist in row.values.tolist()], axis=1) 
-      self.prob = self.prob.tolist()
 
 
     # Tokenize instructions.
@@ -172,7 +177,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
     data['far_cells'] = data.cellid.apply(
       lambda cellid: unique_cells_df[unique_cells_df['cellid']==cellid].far.iloc[0])
 
-
     cellids_array = np.array(data.cellid.tolist())
     neighbor_cells_array = np.array(data.neighbor_cells.tolist())
     far_cells_array = np.array(data.far_cells.tolist())
@@ -184,6 +188,15 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.start_point_cells = data.start_point.apply(
         lambda x: gutil.cellid_from_point(x, s2level))
+
+    if is_dist:
+
+      dist_lists = self.start_point_cells.apply(self.calc_dist)
+
+      self.prob = dist_lists.mapply(
+        lambda row: [dprob(dist) for dist in row.tolist()]) 
+  
+      self.prob = self.prob.tolist()
 
     self.start_point_labels = self.get_cell_to_lablel(self.start_point_cells.tolist()) 
 
@@ -405,6 +418,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def __len__(self):
     return len(self.cellids)
 
-def calc_dist(start, unique_cells_df):
-  return unique_cells_df.swifter.apply(
-    lambda end: gutil.get_distance_between_points(start, end.point), axis=1)
+  def calc_dist(self, start_point_cell):
+
+    label = self.cellid_to_label[start_point_cell]
+
+    dists = self.dist_matrix[label]
+
+    return dists

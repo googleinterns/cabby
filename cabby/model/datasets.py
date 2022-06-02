@@ -138,7 +138,7 @@ class Dataset:
     return landmark_found
 
     
-  def create_dataset(self, infer_only: bool = False,
+  def create_dataset(self, infer_only: bool = False, is_dist = False
   ) -> dataset_item.TextGeoDataset:
     '''Loads data and creates datasets and train, validate and test sets.
     Returns:
@@ -150,6 +150,14 @@ class Dataset:
     unique_cells_df = pd.DataFrame(
       {'point': points, 'cellid': self.unique_cellid})
     
+
+    dist_matrix = unique_cells_df.point.mapply(
+        lambda x: calc_dist(x, unique_cells_df)
+      )
+
+
+    dist_matrix = dist_matrix.to_numpy()
+
     unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
         lambda x: gutil.far_cellid(x, unique_cells_df))
 
@@ -165,21 +173,27 @@ class Dataset:
         self.text_tokenizer,
         self.s2_tokenizer,
         self.train, self.s2level, unique_cells_df, 
-        self.cellid_to_label, self.model_type, dprob)
+        self.cellid_to_label, self.model_type, dprob, 
+        is_dist=is_dist,
+        dist_matrix=dist_matrix)
       logging.info(
         f"Finished to create the train-set with {len(train_dataset)} samples")
       val_dataset = dataset_item.TextGeoSplit(
         self.text_tokenizer,
         self.s2_tokenizer, 
         self.valid, self.s2level, unique_cells_df, 
-        self.cellid_to_label, self.model_type, dprob)
+        self.cellid_to_label, self.model_type, dprob,
+        is_dist=is_dist,
+        dist_matrix=dist_matrix)
       logging.info(
         f"Finished to create the valid-set with {len(val_dataset)} samples")
     test_dataset = dataset_item.TextGeoSplit(
       self.text_tokenizer,
       self.s2_tokenizer,
       self.test, self.s2level, unique_cells_df, 
-      self.cellid_to_label, self.model_type, dprob)
+      self.cellid_to_label, self.model_type, dprob,
+      is_dist=is_dist,
+      dist_matrix=dist_matrix)
     logging.info(
       f"Finished to create the test-set with {len(test_dataset)} samples")
 
@@ -452,3 +466,8 @@ class RVSDataset(Dataset):
   
 
 
+def calc_dist(start, unique_cells_df):
+  dists = unique_cells_df.apply(
+    lambda end: gutil.get_distance_between_points(start, end.point), axis=1)
+
+  return dists
