@@ -123,11 +123,6 @@ flags.DEFINE_bool(
   help=('In case the model is loaded - should the validation loss use the models current loss.'))
 
 flags.DEFINE_bool(
-  'is_dist', default=False,
-  help=('Use dist between start point and candidate cells.'))
-
-
-flags.DEFINE_bool(
   'is_distance_distribution', default=False,
   help=(
     'Add probability over cells according to the distance from start point.'+ 
@@ -191,7 +186,7 @@ def main(argv):
     logging.info("Preparing data.")
     dataset_text = dataset.create_dataset(
             infer_only = FLAGS.infer_only, 
-            is_dist = FLAGS.is_dist
+            is_dist = FLAGS.is_distance_distribution
     )
 
     dataset_item.TextGeoDataset.save(
@@ -222,7 +217,8 @@ def main(argv):
   
   logging.info(f"Using model: {FLAGS.model}")
   if 'Dual-Encoder' in FLAGS.model:
-    run_model = models.DualEncoder(device=device)
+    run_model = models.DualEncoder(
+      device=device, is_distance_distribution=FLAGS.is_distance_distribution)
   elif FLAGS.model == 'S2-Generation-T5':
     run_model = models.S2GenerationModel(
       dataset_text.label_to_cellid, device=device)
@@ -278,7 +274,6 @@ def main(argv):
     file_path=FLAGS.output_dir, 
     cells_tensor = dataset_text.unique_cellids_binary,
     label_to_cellid = dataset_text.label_to_cellid,
-    is_distance_distribution = FLAGS.is_distance_distribution,
     best_valid_loss = run_model.best_valid_loss,
     is_single_sample_train = FLAGS.is_single_sample_train
     )
