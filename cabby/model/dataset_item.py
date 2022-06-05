@@ -28,6 +28,9 @@ import swifter
 from typing import Any, Dict, Text 
 import torch
 
+import _pickle as pickle
+
+
 import mapply
 
 
@@ -82,6 +85,7 @@ class TextGeoDataset:
 
     dataset_model_path = os.path.join(dataset_dir, str(model_type))
     dataset_path = os.path.join(dataset_model_path, str(s2_level))
+    
     train_path_dataset = os.path.join(dataset_path,'train.pth')
     valid_path_dataset = os.path.join(dataset_path,'valid.pth')
     test_path_dataset = os.path.join(dataset_path,'test.pth')
@@ -113,9 +117,8 @@ class TextGeoDataset:
     test_path_dataset: Text,  unique_cellid_path: Text, 
     tensor_cellid_path: Text, label_to_cellid_path: Text):
 
-
-
     os.mkdir(dataset_path)
+
     torch.save(dataset_text.train, train_path_dataset)
     torch.save(dataset_text.valid, valid_path_dataset)
     torch.save(dataset_text.test, test_path_dataset)
@@ -149,7 +152,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.s2level = s2level
     self.is_dist = is_dist
     self.model_type = model_type
-    self.dist_matrix = dist_matrix
     
     data = data.assign(end_point=data.end_point)
 
@@ -191,7 +193,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     if is_dist:
 
-      dist_lists = self.start_point_cells.apply(self.calc_dist)
+      dist_lists = self.start_point_cells.apply(lambda start: self.calc_dist(start, dist_matrix))
 
       self.prob = dist_lists.mapply(
         lambda row: [dprob(dist) for dist in row.tolist()]) 
@@ -201,6 +203,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.start_point_labels = self.get_cell_to_lablel(self.start_point_cells.tolist()) 
 
     self.cellids = self.s2_tokenizer(cellids_array)
+    
     self.neighbor_cells = self.s2_tokenizer(neighbor_cells_array)
 
     self.far_cells = self.s2_tokenizer(far_cells_array)
@@ -214,7 +217,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.set_S2_Generation_T5_Path(data)
 
     self.set_S2_Generation_T5_Warmup_start_end(data)
-
+    
 
   def get_cell_to_lablel(self, list_cells):
     if isinstance(list_cells[0], list): 
@@ -250,7 +253,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.landmarks = [0] * len(self.cellids)
       logging.warning("Landmarks not processed")
 
-
   def set_Landmarks_NER_2_S2_Generation_T5_Warmup(self, data):
     if not ('T5' in self.model_type and 'landmarks_ner_and_point' in data):
       data = data.assign(landmarks_ner_and_prompt_input='')
@@ -281,8 +283,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
       
     self.landmarks_ner_and_prompt_input = self.text_tokenizer(
       data.landmarks_ner_and_prompt_input.tolist(), truncation=True, padding=True, add_special_tokens=True)
-
-
 
   def set_Text_2_Landmarks_NER_Generation_T5_Warmup(self, data):
     if not 'landmarks_ner' in data:
@@ -418,10 +418,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def __len__(self):
     return len(self.cellids)
 
-  def calc_dist(self, start_point_cell):
+  def calc_dist(self, start_point_cell, dist_matrix):
 
     label = self.cellid_to_label[start_point_cell]
 
-    dists = self.dist_matrix[label]
+    dists = dist_matrix[label]
 
     return dists
