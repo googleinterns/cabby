@@ -122,11 +122,6 @@ flags.DEFINE_bool(
   'is_val_loss_from_model', default=False,
   help=('In case the model is loaded - should the validation loss use the models current loss.'))
 
-flags.DEFINE_bool(
-  'is_distance_distribution', default=False,
-  help=(
-    'Add probability over cells according to the distance from start point.'+ 
-    'This is optional only for RVS and RUN.'))
 
 
 # Required flags.
@@ -248,7 +243,6 @@ def main(argv):
     file_path=FLAGS.output_dir, 
     cells_tensor = dataset_t5_human.unique_cellids_binary,
     label_to_cellid = dataset_t5_human.label_to_cellid,
-    is_distance_distribution = FLAGS.is_distance_distribution,
     best_valid_loss = run_model.best_valid_loss,
     is_single_sample_train = FLAGS.is_single_sample_train
     )
