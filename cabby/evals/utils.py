@@ -89,7 +89,6 @@ class Evaluator:
     accuracy_100m = float(
       len(np.where(np.array(error_distances) <= 100.)[0])) / num_examples
 
-
     mean_distance, median_distance, max_error = np.mean(error_distances), np.median(
       error_distances), np.max(error_distances)
     log_distance = np.sort(
