@@ -208,7 +208,6 @@ class Trainer:
     if not self.model.is_generation:
       self.save_cell_embed()
 
-
   def multi_train_model(self):
 
     '''Main function for training model.'''
