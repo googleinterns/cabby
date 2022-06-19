@@ -412,6 +412,7 @@ class Map:
 
   def add_poi_to_graph(self):
     '''Add all POI to nx_graph(currently contains only the roads).'''
+    self.num_poi = self.poi.shape[0]
     logging.info(f"Number of POI to add to graph: {self.num_poi}")
     edges_to_add_list = self.poi.apply(self.add_single_poi_to_graph, axis=1)
     edges_to_add_list = edges_to_add_list.dropna()
