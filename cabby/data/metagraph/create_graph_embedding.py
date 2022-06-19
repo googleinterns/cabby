@@ -45,7 +45,7 @@ FLAGS = flags.FLAGS
 def main(argv):
   del argv  # Unused.
 
-  utils.construct_metagraph(region=FLAGS.region,
+  utils.construct_metagraph(region=regions.get_region(FLAGS.region),
                             s2_level=FLAGS.s2_level,
                             s2_node_levels=FLAGS.s2_node_levels,
                             base_osm_map_filepath=FLAGS.base_osm_map_filepath,
