@@ -95,5 +95,7 @@ def main(argv):
   # Save embeddings for later use
   model.wv.save_word2vec_format(FLAGS.save_embedding_path)
 
+  logging.info(f"Saved graph embedding to => {FLAGS.save_embedding_path}")
+
 if __name__ == '__main__':
   app.run(main)
