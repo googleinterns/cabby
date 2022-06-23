@@ -20,7 +20,6 @@ from absl import logging
 
 from node2vec import Node2Vec
 
-
 from cabby.geo import regions
 from cabby.data.metagraph import utils
 
