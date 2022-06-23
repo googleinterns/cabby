@@ -48,9 +48,10 @@ def get_distance_between_points(start_point: Point, end_point: Point) -> float:
   Returns:
     Distance length in meters.
   '''
-
-  return ox.distance.great_circle_vec(
+  dist = ox.distance.great_circle_vec(
     start_point.y, start_point.x, end_point.y, end_point.x)
+  assert dist >=0 , f"start_point: {Point} | end_point: {end_point}"
+  return dist
 
 def far_cellid(
   point: Point, cells: pd.DataFrame, far_distance = FAR_DISTANCE_THRESHOLD
@@ -648,6 +649,7 @@ def get_distance_between_points(point_1: Point, point_2: Point) -> int:
   dist = ox.distance.great_circle_vec(
     point_1.y, point_1.x, point_2.y, point_2.x)
 
+  assert dist>=0
   return dist
 
 

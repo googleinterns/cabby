@@ -16,8 +16,8 @@
 Baseline models evaluation: 
 (1) NO-MOVE - Uses the start point as the predicted target.
 RUN - 
-$ bazel-bin/cabby/model/text/dual_encoder/model_trainer \
-  --data_dir ~/data/RUN  \
+$ bazel-bin/cabby/model/baselines \
+  --data_dir ~/data/  \
   --metrics_dir ~/eval/ \
 
 """
@@ -44,12 +44,13 @@ from cabby.geo import regions
 
 
 
-TASKS = ["RVS", "RUN"]
+TASKS = ["RVS", "RUN", "human"]
 
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
+
 
 flags.DEFINE_string("metrics_dir", None,
           "The directory where the metrics evaluation witll be save to.")
@@ -77,22 +78,33 @@ def main(argv):
 
   metrics_path = os.path.join(FLAGS.metrics_dir, 'metrics.tsv')
 
-  if FLAGS.task == "RUN":
-    ds = datasets.RUNDataset(
-      data_dir=FLAGS.data_dir, 
-      s2level=18,
-      region="Manhattan",
-      )
-    ds_test = ds.ds
-  else: # RVS
-    ds = datasets.RVSDataset(
-      FLAGS.data_dir, 18, FLAGS.region, 4, "Dual-Encoder-Bert")
-    ds_test = ds.test
-  
+
+  assert FLAGS.task in TASKS
+  if FLAGS.task == "RVS": 
+    dataset_init = datasets.RVSDataset
+  elif FLAGS.task == 'RUN':
+    dataset_init = datasets.RUNDataset
+  elif FLAGS.task == 'human':
+    dataset_init = datasets.HumanDataset
+  else: 
+    sys.exit("Dataset invalid")
+
+
+  dataset = dataset_init(
+    data_dir = FLAGS.data_dir, 
+    region = FLAGS.region, 
+    s2level = 18, 
+    n_fixed_points = 4,
+    )
+
+  end_points = dataset.test.end_point.apply(gutil.list_yx_from_point).tolist()
+  start_point = dataset.test.start_point.apply(gutil.list_yx_from_point).tolist()
+
+  logging.info(f"dataset.test.end_point.tolist(): {dataset.test.end_point.tolist()[0]}")
   util.save_metrics_last_only(
       metrics_path, 
-      ds_test.end_point.tolist(), 
-      ds_test.start_point.tolist())
+      end_points, 
+      start_point)
 
   logging.info(f"NO-MOVE evaluation for task {FLAGS.task}:")
   evaluator = eu.Evaluator()

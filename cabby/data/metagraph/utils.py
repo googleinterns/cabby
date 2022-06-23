@@ -13,6 +13,9 @@
 # limitations under the License.
 
 '''Utils for metagraph construction'''
+
+from absl import logging
+
 import collections
 import networkx as nx
 import numpy as np
@@ -80,10 +83,8 @@ def convert_pandas_df_to_metagraph(
 
 def get_osmid_from_wd_relations_row(row: pd.Series) -> int:
   """Gets a fake Open Street Map ID (OSMID) for an arbitrary POI.
-
   This is used for POIs that were found in a Wikidata bounding box
   for a region, but for one reason or another were not pulled from OSM.
-
   Arguments:
     row: an arbitrary sequence of data on the POI. Should uniquely ID
       the POI to get a unique fake OSMID.
@@ -98,7 +99,6 @@ def get_osmid_from_wd_relations_row(row: pd.Series) -> int:
 def update_osm_map(osm_map: Map,
                    wd_relations: pd.DataFrame):
   """Adds new POIs found in wikidata_relations to osm_map.
-
   Arguments:
     osm_map: map class containing all info about a region.
     wd_relations: dataframe of wikidata items in the region.
@@ -146,7 +146,6 @@ def update_osm_map(osm_map: Map,
 def convert_multidi_to_weighted_undir_graph(
   in_graph: nx.MultiDiGraph, agg_function: Any) -> nx.Graph:
   """Convert a graph with multiple edges to a graph with no multiple edges.
-
   Arguments:
     in_graph: graph with (potentially) multiple directed edges per node pair.
     agg_function: a function that takes an iterable of floats and returns
@@ -184,14 +183,11 @@ def construct_metagraph(region: Region,
                         base_osm_map_filepath: str,
                         agg_function=np.sum) -> nx.Graph:
   """Builds metagraph from existing OSM data and Wikidata/S2 nodes in a region.
-
-  The region, s2_level, and base_osm_filepath arguments are passed to the 
+  The region, s2_level, and base_osm_filepath arguments are passed to the
   constructor of map_structure.Map.
-
   # TODO(palowitch): add detail on weight scale & weights for different types.
-
   Arguments:
-    Region: region to build the graph on. 
+    Region: region to build the graph on.
     s2_level: S2 level of the map_structure.Map to be loaded.
     s2_node_levels: iterable of S2 cell levels (ints) to add to the graph.
     base_osm_map_filepath: location of the map_structure.Map to be loaded.
@@ -267,10 +263,12 @@ def construct_metagraph(region: Region,
   attributes_to_add = collections.defaultdict(dict)
   for node in metagraph:
     nodedata = metagraph.nodes[node]
+    node = str(node)
     if node[1] == PROJECTED_POI_2ND_CHAR:
       attributes_to_add[node]["type"] = TYPE_PROJECTED_POI
     else:
       assert "type" in nodedata, "node %s has no type and is not a projected POI" % node
   nx.set_node_attributes(metagraph, values=attributes_to_add)
 
+  logging.info("Finished constructing graph")
   return metagraph

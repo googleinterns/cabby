@@ -42,7 +42,6 @@ class Trainer:
           num_epochs: int,
           cells_tensor: torch.tensor,
           label_to_cellid: Dict[int, int],
-          is_distance_distribution: bool,
           is_single_sample_train: bool = False,
           best_valid_loss: float = float("Inf")
 
@@ -65,7 +64,6 @@ class Trainer:
       os.mkdir(self.file_path)
     self.model_path = os.path.join(self.file_path, 'model.pt')
     self.metrics_path = os.path.join(self.file_path, 'metrics.tsv')
-    self.is_distance_distribution = is_distance_distribution
     self.is_single_sample_train = is_single_sample_train
     self.evaluator = eu.Evaluator()
     
@@ -104,7 +102,8 @@ class Trainer:
      
         loss_val_total+=loss
 
-        predictions = self.model.predict(text, self.cells_tensor, self.label_to_cellid)
+        predictions = self.model.predict(
+          text, self.cells_tensor, self.label_to_cellid, batch)
 
         predictions_list.append(predictions)
         labels = batch['label'].cpu()
@@ -118,7 +117,6 @@ class Trainer:
 
     return (average_valid_loss, predictions_list, true_vals, 
     true_points_list, pred_points_list)
-
 
 
   def train_model(self):
@@ -203,13 +201,7 @@ class Trainer:
 
     evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(self.metrics_path)
-    _, mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
-
-    logging.info(f"\
-          Mean distance: {mean_distance}, \
-          Median distance: {median_distance}, \
-          Max error: {max_error}, \
-          Norm AUC: {norm_auc}")
+    evaluator.compute_metrics(error_distances)
 
     if not self.model.is_generation:
       self.save_cell_embed()
@@ -310,13 +302,7 @@ class Trainer:
 
     evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(self.metrics_path)
-    _, mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
-
-    logging.info(f"\
-          Mean distance: {mean_distance}, \
-          Median distance: {median_distance}, \
-          Max error: {max_error}, \
-          Norm AUC: {norm_auc}")
+    evaluator.compute_metrics(error_distances)
 
     if not self.model.is_generation:
       self.save_cell_embed()

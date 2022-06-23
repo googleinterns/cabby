@@ -59,7 +59,7 @@ class DistanceProbability:
 
   def __call__(self, dist_meters: float) -> float:
     '''Computes the probability for a given distance in meters.'''
-    assert(dist_meters >= 0.0)
+    assert(dist_meters >= 0.0), dist_meters
     return self.gamma_dist.pdf(dist_meters/self.scale_meters)
 
   def cdf(self, dist_meters: float) -> float:

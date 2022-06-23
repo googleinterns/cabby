@@ -57,7 +57,8 @@ class DualEncoder(GeneralModel):
     text_dim=768, 
     hidden_dim=200, 
     s2cell_dim=64, 
-    output_dim=100, 
+    output_dim=100,
+    is_distance_distribution=False 
     ):
     GeneralModel.__init__(self, device)
     
@@ -65,6 +66,7 @@ class DualEncoder(GeneralModel):
     self.softmax = nn.Softmax(dim=-1)
     self.tanh = nn.Tanh()
     self.relu = nn.ReLU()
+    self.is_distance_distribution = is_distance_distribution
   
     self.model = DistilBertModel.from_pretrained(
       BERT_TYPE, return_dict=True)
@@ -101,7 +103,15 @@ class DualEncoder(GeneralModel):
     label_to_cellid = args[0]
     assert cellid_embedding_exp.shape == text_embedding_exp.shape
     output = self.cos(cellid_embedding_exp, text_embedding_exp)
+
+    if self.is_distance_distribution:
+      batch = args[1]
+      prob = batch['prob'].float().to(self.device) 
+      output = output*prob
+
     output = output.detach().cpu().numpy()
+
+
     predictions = np.argmax(output, axis=1)
 
     points = mutil.predictions_to_points(predictions, label_to_cellid)
@@ -184,14 +194,14 @@ class S2GenerationModel(GeneralModel):
       labels = batch['route'].long()
 
     elif self.is_warmup_start_end:
-      input_ids = batch['start_end_input_ids'] 
-      attention_mask = batch['start_end_attention_mask']
+      input_ids = batch['start_end_and_prompt_input_ids'] 
+      attention_mask = batch['start_end_and_prompt_attention_mask']
       labels = batch['route_fixed'].long()
     elif self.is_warmup_ner_landmarks:
       labels = batch['landmarks_ner'].long()
     elif self.is_warmup_ner_landmarks_2_cell:
-      input_ids = batch['landmarks_ner_input_ids'] 
-      attention_mask = batch['landmarks_ner_input_attention']
+      input_ids = batch['landmarks_ner_and_prompt_input_ids'] 
+      attention_mask = batch['landmarks_ner_and_prompt_input_attention']
       labels = batch['landmark_s2cell'].long()
     else:
       labels = cellid.long()
