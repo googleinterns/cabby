@@ -268,7 +268,7 @@ traitlets==4.3.3
 transformers==4.1.1
 typed-ast==1.4.1
 typing-extensions @ file:///tmp/build/80754af9/typing_extensions_1592847887441/work
-ujson==1.35
+ujson==5.2.0
 unicodecsv==0.14.1
 urllib3 @ file:///tmp/build/80754af9/urllib3_1597086586889/work
 wasabi @ file:///home/conda/feedstock_root/build_artifacts/wasabi_1594929739383/work
