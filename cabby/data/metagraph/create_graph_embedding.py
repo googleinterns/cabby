@@ -27,17 +27,17 @@ from cabby.data.metagraph import utils
 flags.DEFINE_enum(
   "region", None, regions.SUPPORTED_REGION_NAMES, regions.REGION_SUPPORT_MESSAGE)
 flags.DEFINE_integer(
-    "s2_level", None, "S2 level of the S2Cells.")
+  "s2_level", None, "S2 level of the S2Cells.")
 flags.DEFINE_multi_integer(
-    "s2_node_levels",
-    None,
-    "Iterable of S2 cell levels (ints) to add to the graph." +
-    "The flag can be specified more than once on the command line (the result is a Python list integers).")
+  "s2_node_levels",
+  None,
+  "Iterable of S2 cell levels (ints) to add to the graph." +
+  "The flag can be specified more than once on the command line (the result is a Python list integers).")
 flags.DEFINE_string(
-    "base_osm_map_filepath", None, "Location of the map_structure.Map to be loaded.")
+  "base_osm_map_filepath", None, "Location of the map_structure.Map to be loaded.")
 
 flags.DEFINE_string(
-    "save_embedding_path", None, "Location of the embedding to be saved.")
+  "save_embedding_path", None, "Location of the embedding to be saved.")
 
 
 flags.DEFINE_integer(
