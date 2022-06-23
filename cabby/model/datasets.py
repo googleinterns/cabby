@@ -86,7 +86,7 @@ class Dataset:
       self.text_tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_TYPE)
       self.s2_tokenizer = util.binary_representation
     elif 'T5' in self.model_type:
-      self.text_tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
+      self.text_tokenizer = tokenizerT5
       self.s2_tokenizer = self.tokenize_cell
     
   def tokenize_cell(self, list_cells):
@@ -106,15 +106,24 @@ class Dataset:
       labels, padding=True, truncation=True).input_ids
     
 
-  def process_route(self, route_str):
+  def process_route(self, row):
+    route_str = row.route
     route_str = route_str.replace('LINESTRING', "").replace('(', "").replace(')', "")
     landmarks_str_list = route_str.split(',')
-    return [
-      gutil.point_from_str_coord_xy(landmark_str) for landmark_str in landmarks_str_list]
+
+    route = [
+      gutil.point_from_str_coord_xy(landmark_str) for landmark_str in reversed(landmarks_str_list)]
+
+    route.insert(0, row['end_point'])
+    
+    assert route[0] == row['end_point'], f"end: {row['end_point']} route: {route[0]} - {route[-1]}"
+    return route
 
 
   def process_landmarks(self, row):
-    points = [row['end_point'], row['start_point'], row['main_pivot'], row['near_pivot']]
+    points = [row['end_point'], row['near_pivot'], row['main_pivot'], row['start_point']]
+
+    assert points[0] == row['end_point']
     return points
   
   def get_specific_landmark(self, landmarks_str_one_line, landmark_name):
@@ -122,14 +131,14 @@ class Dataset:
     landmarks_str_list = landmarks_str_one_line.split(';')
 
     landmark_found = None
-    for landmark_str in landmarks_str_list:
+    for landmark_str in reversed(landmarks_str_list):
       if landmark_name in landmark_str:
         landmark_found = gutil.point_from_str_coord_yx(landmark_str.split(':')[-1])
 
     return landmark_found
 
     
-  def create_dataset(self, infer_only: bool = False,
+  def create_dataset(self, infer_only: bool = False, is_dist = False
   ) -> dataset_item.TextGeoDataset:
     '''Loads data and creates datasets and train, validate and test sets.
     Returns:
@@ -141,6 +150,14 @@ class Dataset:
     unique_cells_df = pd.DataFrame(
       {'point': points, 'cellid': self.unique_cellid})
     
+
+    dist_matrix = unique_cells_df.point.mapply(
+        lambda x: calc_dist(x, unique_cells_df)
+      )
+
+
+    dist_matrix = dist_matrix.to_numpy()
+
     unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
         lambda x: gutil.far_cellid(x, unique_cells_df))
 
@@ -156,21 +173,27 @@ class Dataset:
         self.text_tokenizer,
         self.s2_tokenizer,
         self.train, self.s2level, unique_cells_df, 
-        self.cellid_to_label, self.model_type, dprob)
+        self.cellid_to_label, self.model_type, dprob, 
+        is_dist=is_dist,
+        dist_matrix=dist_matrix)
       logging.info(
         f"Finished to create the train-set with {len(train_dataset)} samples")
       val_dataset = dataset_item.TextGeoSplit(
         self.text_tokenizer,
         self.s2_tokenizer, 
         self.valid, self.s2level, unique_cells_df, 
-        self.cellid_to_label, self.model_type, dprob)
+        self.cellid_to_label, self.model_type, dprob,
+        is_dist=is_dist,
+        dist_matrix=dist_matrix)
       logging.info(
         f"Finished to create the valid-set with {len(val_dataset)} samples")
     test_dataset = dataset_item.TextGeoSplit(
       self.text_tokenizer,
       self.s2_tokenizer,
       self.test, self.s2level, unique_cells_df, 
-      self.cellid_to_label, self.model_type, dprob)
+      self.cellid_to_label, self.model_type, dprob,
+      is_dist=is_dist,
+      dist_matrix=dist_matrix)
     logging.info(
       f"Finished to create the test-set with {len(test_dataset)} samples")
 
@@ -180,7 +203,9 @@ class Dataset:
       tens_cells, self.label_to_cellid)
 
 
-  def get_fixed_point_along_route(self, points_list):
+  def get_fixed_point_along_route(self, row):
+    points_list = row.route
+    end_point = row.end_point
     avg_number = round(len(points_list)/self.n_fixed_points)
     fixed_points = []
     for i in range(self.n_fixed_points):
@@ -188,7 +213,11 @@ class Dataset:
       fixed_points.append(curr_point)
     
     assert len(fixed_points) == self.n_fixed_points
-    return fixed_points
+
+    fixed_points.append(row.end_point)
+    reversed_points = list(reversed(fixed_points))
+    assert reversed_points[0] == end_point
+    return reversed_points
 
 
 class HumanDataset(Dataset):
@@ -234,10 +263,10 @@ class HumanDataset(Dataset):
       ds['landmarks'] = ds.apply(self.process_landmarks, axis=1)
     
     if 'route' in ds:
-      ds['route'] = ds.route.apply(self.process_route)
-      ds['route_fixed'] = ds.route.apply(self.get_fixed_point_along_route)
+      ds['route'] = ds.apply(self.process_route, axis=1)
+      ds['route_fixed'] = ds.apply(self.get_fixed_point_along_route, axis=1)
     
-      ds['start_end'] = ds.route.apply(self.get_fixed_point_along_route)
+      ds['start_end'] = ds.apply(self.get_fixed_point_along_route, axis=1)
     columns_keep = ds.columns.difference(
       [
         'instructions', 
@@ -327,7 +356,7 @@ class RVSDataset(Dataset):
     s2level: int, 
     region: Optional[str], 
     n_fixed_points: int,
-    model_type: str = "RVS"):
+    model_type: str = "Dual-Encoder-Bert"):
     Dataset.__init__(
       self, data_dir, s2level, region, model_type, n_fixed_points)
     train_ds = self.load_data(data_dir, 'train', True)
@@ -351,18 +380,12 @@ class RVSDataset(Dataset):
     path_ds= os.path.join(data_dir, f'ds_{split}.json')
     assert os.path.exists(path_ds), path_ds
     ds = pd.read_json(path_ds, lines=lines)
-        
-    logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
-    
+            
     if 'geo_landmarks' in ds:
-      ds['landmarks'] =  ds.geo_landmarks.apply(self.process_landmarks)
+      ds['landmarks'] =  ds.apply(self.process_landmarks, axis=1)
       ds['landmarks_ner'] =  ds.geo_landmarks.apply(self.process_landmarks_ner)
       ds['landmarks_ner_and_point'] =  ds.geo_landmarks.apply(self.process_landmarks_ner_single)
 
-
-    if 'route' in ds: 
-      ds['route'] = ds.route.apply(self.process_route)
-      ds['route_fixed'] = ds.route.apply(self.get_fixed_point_along_route)
 
     ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
 
@@ -371,17 +394,34 @@ class RVSDataset(Dataset):
     ds['end_pivot'] = ds.end_point
     ds['end_point'] = ds.end_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))
     ds['start_point'] = ds.start_point.apply(lambda x: gutil.point_from_list_coord_yx(x[3]))    
+
+
+    if 'route' in ds: 
+      ds['route'] = ds.apply(self.process_route, axis=1)
+      ds['route_fixed'] = ds.apply(self.get_fixed_point_along_route, axis=1)
+
+    logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
+
     ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
+
+    logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
+
+
     return ds    
 
-  def process_landmarks(self, landmarks_dict):
-    landmarks_corrds = [
+  def process_landmarks(self, row):
+    landmarks_dict = row.geo_landmarks
+    landmarks_coords = [
       landmarks_dict['end_point'][-1], 
-      landmarks_dict['start_point'][-1],
+      landmarks_dict['near_pivot'][-1],
       landmarks_dict['main_pivot'][-1],
-      landmarks_dict['near_pivot'][-1]]
+      landmarks_dict['start_point'][-1],
+      ]
     points = [gutil.point_from_list_coord_yx(
-      coord) for coord in landmarks_corrds]
+      coord) for coord in landmarks_coords]
+
+    assert landmarks_coords[0] == landmarks_dict['end_point'][-1]
+    
     return points
 
 
@@ -391,7 +431,7 @@ class RVSDataset(Dataset):
     end_point = landmarks_dict['end_point'][2]
 
     
-    landmarks_list = list(set([main_pivot, near_pivot, end_point]))
+    landmarks_list = list(set([end_point, near_pivot, main_pivot]))
 
     landmarks_ner_list = [l for l in landmarks_list if l!='None']
     return '; '.join(landmarks_ner_list)
@@ -416,9 +456,18 @@ class RVSDataset(Dataset):
 
     return sample(landmarks_list, 1)[0]
     
-  def process_route(self, route_list):
-    return [
-      gutil.point_from_list_coord_xy(landmark) for landmark in route_list]
+  def process_route(self, row):
+    route_list = row.route
+    end_point = row.end_point
+    route = [
+      gutil.point_from_list_coord_xy(landmark) for landmark in reversed(route_list)]
+    assert route[0] == end_point
+    return route
   
 
 
+def calc_dist(start, unique_cells_df):
+  dists = unique_cells_df.apply(
+    lambda end: gutil.get_distance_between_points(start, end.point), axis=1)
+
+  return dists
