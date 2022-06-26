@@ -207,7 +207,6 @@ class Trainer:
 
     # Training loop.
     self.model.train()
-    self.model.reset_setup_false()
 
     for epoch in range(self.num_epochs):
       running_loss = 0.0
@@ -218,15 +217,15 @@ class Trainer:
         self.optimizer.zero_grad()
         for batch_idx in range(len(self.train_loader)):
           if batch_idx == 2:  # warmup start+end -> 4 fixed points
-            self.model.is_warmup_start_end = True
+            self.model_type = 'S2-Generation-T5-Warmup-start-end'
           elif batch_idx == 3:  # warmup start+end -> 5 fixed points
-            self.model.is_warmup_start_end = True
+            self.model_type = 'S2-Generation-T5-Warmup-start-end'
           elif batch_idx == 4:  # warmup text -> ner landmarks
-            self.model.is_landmarks_ner = True
+            self.model_type = 'Text-2-Landmarks-NER-Generation-T5-Warmup'
           elif batch_idx == 5:  # warmup ner landmarks -> cells
-            self.model.is_warmup_ner_landmarks_2_cell = True
+            self.model_type = 'Landmarks-NER-2-S2-Generation-T5-Warmup'
           else:
-            self.model.is_landmarks = True
+            self.model_type = 'S2-Generation-T5-Landmarks'
           batch = batches[batch_idx]
           text = {key: val.to(self.device) for key, val in batch['text'].items()}
           cellids = batch['cellid'].float().to(self.device)
@@ -237,8 +236,6 @@ class Trainer:
             cellids,
             batch
           )
-
-          self.model.reset_setup_false()
 
         loss.backward()
 

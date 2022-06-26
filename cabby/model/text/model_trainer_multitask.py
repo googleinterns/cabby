@@ -215,7 +215,7 @@ def main(argv):
   
 
   run_model = models.S2GenerationModel(
-      dataset_t5_rvs.label_to_cellid, is_landmarks=True, is_warmup_start_end=True, device=device)
+      dataset_t5_rvs.label_to_cellid ,device=device)
 
   run_model.to(device)
 

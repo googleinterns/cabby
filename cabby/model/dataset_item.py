@@ -161,7 +161,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     if 'T5' in model_type:
       # Add prompt
       data.instructions = [model_type + ": " + t for t in instruction_list]
-      logging.info(instruction_list[0])
+      logging.info(data.instructions.iloc[0])
 
     self.encodings = self.text_tokenizer(
       data.instructions.tolist(), truncation=True,
@@ -198,6 +198,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.far_cells = self.s2_tokenizer(far_cells_array)
 
+    self.set_S2_Generation_start_text_input(data)
+
     self.set_S2_Generation_T5_Landmarks(data)
 
     self.set_Landmarks_NER_2_S2_Generation_T5_Warmup(data)
@@ -222,6 +224,21 @@ class TextGeoSplit(torch.utils.data.Dataset):
       labels = [str(util.get_valid_label(self.cellid_to_label, c)) for c in list_cells]
 
     return labels
+
+  def set_S2_Generation_start_text_input(self, data):
+
+    start_text_input_list = [
+      f"{self.model_type}: {str(s)}, {str(i)}" for s, i in zip(
+        self.start_point_labels, data.instructions.tolist())]
+
+    self.print_sample(
+      mode_expected='S2-Generation-T5-start-text-input',
+      input=start_text_input_list[0],
+      output=data.cellid.iloc[0])
+
+    self.start_text_and_prompt = self.text_tokenizer(
+      start_text_input_list, truncation=True, padding=True, add_special_tokens=True)
+
 
   def set_S2_Generation_T5_Landmarks(self, data):
     if 'T5' in self.model_type and 'landmarks' in data:
@@ -372,6 +389,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
     start_end_and_prompt = {key: torch.tensor(val[idx])
                             for key, val in self.start_end_and_prompt.items()}
 
+    start_text_and_prompt = {key: torch.tensor(val[idx])
+                            for key, val in self.start_text_and_prompt.items()}
+
     landmarks_ner_and_prompt_input = {
       key: torch.tensor(val[idx])
       for key, val in self.landmarks_ner_and_prompt_input.items()}
@@ -392,7 +412,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
               'start_end_and_prompt_attention_mask': start_end_and_prompt['attention_mask'],
               'landmarks_ner': landmarks_ner, 'landmark_s2cell': landmark_s2cell,
               'landmarks_ner_and_prompt_input_ids': landmarks_ner_and_prompt_input['input_ids'],
-              'landmarks_ner_and_prompt_input_attention': landmarks_ner_and_prompt_input['attention_mask']}
+              'landmarks_ner_and_prompt_input_attention': landmarks_ner_and_prompt_input['attention_mask'],
+              'start_text_and_prompt_ids': start_text_and_prompt['input_ids'],
+              'start_text_and_prompt_attention': start_text_and_prompt['attention_mask'],
+              }
 
     return sample
 
