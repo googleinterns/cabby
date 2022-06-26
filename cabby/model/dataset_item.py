@@ -228,13 +228,13 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def set_S2_Generation_start_text_input(self, data):
 
     start_text_input_list = [
-      f"{self.model_type}: {str(s)}, {str(i)}" for s, i in zip(
+      str(i).replace(':', f': Start at {str(s)}.') for s, i in zip(
         self.start_point_labels, data.instructions.tolist())]
 
     self.print_sample(
       mode_expected='S2-Generation-T5-start-text-input',
       input=start_text_input_list[0],
-      output=data.cellid.iloc[0])
+      output=self.labels[0])
 
     self.start_text_and_prompt = self.text_tokenizer(
       start_text_input_list, truncation=True, padding=True, add_special_tokens=True)

@@ -37,6 +37,11 @@ bazel-bin/cabby/model/text/model_trainer  --data_dir ~/cabby/cabby/model/text/da
 echo "*                 S2-Generation-T5    - RVS DATA           *"
 bazel-bin/cabby/model/text/model_trainer  --data_dir ~/cabby/cabby/model/text/dataSamples/rvs --dataset_dir $OUTPUT_DIR_MODEL_RVS --region Manhattan --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5
 
+echo "*                 S2-Generation-T5-start-text-input    - HUMAN DATA           *"
+bazel-bin/cabby/model/text/model_trainer  --data_dir ~/cabby/cabby/model/text/dataSamples/human --dataset_dir $OUTPUT_DIR_MODEL_HUMAN --region Manhattan --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_HUMAN --num_epochs 1 --task human --model S2-Generation-T5-start-text-input
+echo "*                 S2-Generation-T5-start-text-input    - RVS DATA          *"
+bazel-bin/cabby/model/text/model_trainer  --data_dir ~/cabby/cabby/model/text/dataSamples/rvs --dataset_dir $OUTPUT_DIR_MODEL_RVS --region Manhattan --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-start-text-input
+
 echo "*                 S2-Generation-T5-Landmarks   - HUMAN DATA            *"
 bazel-bin/cabby/model/text/model_trainer  --data_dir ~/cabby/cabby/model/text/dataSamples/human --dataset_dir $OUTPUT_DIR_MODEL_HUMAN --region Manhattan --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_HUMAN --num_epochs 1 --task human --model S2-Generation-T5-Landmarks
 echo "*                 S2-Generation-T5-Landmarks   - RVS DATA            *"

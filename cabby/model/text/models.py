@@ -176,7 +176,8 @@ class S2GenerationModel(GeneralModel):
     batch = args[0]
 
     input_ids = text['input_ids'] 
-    attention_mask = text['attention_mask'] 
+    attention_mask = text['attention_mask']
+    labels = cellid.long()
 
     if self.model_type == 'S2-Generation-T5-Landmarks':
       labels = batch['landmarks'].long()
@@ -194,8 +195,11 @@ class S2GenerationModel(GeneralModel):
       input_ids = batch['landmarks_ner_and_prompt_input_ids'] 
       attention_mask = batch['landmarks_ner_and_prompt_input_attention']
       labels = batch['landmark_s2cell'].long()
+    elif self.model_type == 'S2-Generation-T5-start-text-input':
+      input_ids = batch['start_text_and_prompt_ids']
+      attention_mask = batch['start_text_and_prompt_attention']
     elif self.model_type == 'S2-Generation-T5':
-      labels = cellid.long()
+      pass
     else:
       sys.exit(f"Problem with model {self.model_type}. Add to model.py file.")
 
