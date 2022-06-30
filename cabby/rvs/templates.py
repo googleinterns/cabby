@@ -24,10 +24,10 @@ from absl import logging
 import json
 import os
 import random
-
 import flashtext
 import inflect
 from typing import Dict, Sequence, Text, Tuple
+import traceback
 import nltk
 from nltk import CFG, Production
 from nltk.parse.generate import Nonterminal
@@ -430,7 +430,10 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
       A dictionary of entities (keys) and spans (values).
   '''
   # Generate instructions.
-  gen_samples = []
+  uniq_samples = {}
+
+  save_instruction_path = os.path.join(save_instruction_dir, f"ds_{split}.json")
+
   for entity_idx, entity in enumerate(entities):
     entity.geo_features['SPATIAL_SAME'] = None
     entity.geo_features['SPATIAL_ACROSS'] = None
@@ -518,28 +521,34 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
       entity_span=entity_span
     )
 
-    gen_samples.append(rvs_entity)
+    if rvs_entity.instructions not in uniq_samples:
+      uniq_samples[rvs_entity.instructions] = 1
+    else:
+      uniq_samples[rvs_entity.instructions] += 1
+      continue
 
-  logging.info(f"RVS {split}-set generated: {len(gen_samples)}")
+    # Save to file.
+    with open(save_instruction_path, 'a') as outfile:
+      try:
+        rvs_entity_dict = rvs_entity.__dict__
+        if is_jsonable(rvs_entity_dict, entity_idx):
+          json.dump(rvs_entity_dict, outfile)
+          outfile.write('\n')
+          outfile.flush()
+      except Exception as e:
+        logging.info(f"Failed writing sample {entity_idx}. Error: {e}")
+        logging.info(traceback.format_exc())
 
-  uniq_samples = {}
-  for gen in gen_samples:
-    uniq_samples[gen.instructions] = gen
-  logging.info(f"Unique RVS {split}-set generated: {len(uniq_samples)}")
-
-  save_instruction_path = os.path.join(save_instruction_dir, f"ds_{split}.json")
 
   logging.info(
-    f"Writing {len(uniq_samples)} samples to file => " +
+    f"Finished writing {len(uniq_samples)} samples for {split}-set to file => " +
     f"{save_instruction_path}")
-  # Save to file.
-  with open(save_instruction_path, 'a') as outfile:
-    for sample_idx, sample in enumerate(uniq_samples.values()):
-      try:
-        json.dump(sample, outfile, default=lambda o: o.__dict__)
-        outfile.write('\n')
-        outfile.flush()
-      except AttributeError:
-        logging.info(f"Failed writting sample {sample_idx}. Error: {AttributeError}")
 
-  logging.info(f"Finished writing {split}-set to file.")
+
+def is_jsonable(sample_dict, idx):
+  try:
+    json.dumps(sample_dict)
+    return True
+  except Exception as e:
+    logging.info(f"Failed writing sample {idx}. Error: {e}")
+    return False
