@@ -21,7 +21,7 @@ from random import sample
 from sklearn.utils import shuffle
 import torch
 
-from typing import Optional
+from typing import Optional, Any
 
 from cabby.geo import regions
 from cabby.geo import util as gutil
@@ -38,7 +38,8 @@ MODELS = [
   'Text-2-Landmarks-NER-Generation-T5-Warmup',
   'Landmarks-NER-2-S2-Generation-T5-Warmup',
   'S2-Generation-T5-Path',
-  'S2-Generation-T5-start-text-input'
+  'S2-Generation-T5-start-text-input',
+  'S2-Generation-T5-Warmup-cell-embed-to-cell-label'
 ]
 
 T5_TYPE = "t5-small"
@@ -59,13 +60,15 @@ class Dataset:
     s2level: int,
     region: Optional[str],
     model_type: str,
-    n_fixed_points: int
+    n_fixed_points: int = 4,
+    graph_embed_file: Any = None,
   ):
     self.data_dir = data_dir
     self.s2level = s2level
     self.region = region
     self.model_type = model_type
     self.n_fixed_points = n_fixed_points
+    self.graph_embed_file = graph_embed_file
 
     self.unique_cellid = {}
     self.cellid_to_label = {}
@@ -167,7 +170,8 @@ class Dataset:
         self.train, self.s2level, unique_cells_df,
         self.cellid_to_label, self.model_type, dprob,
         is_dist=is_dist,
-        dist_matrix=dist_matrix)
+        dist_matrix=dist_matrix,
+        graph_embed_file=self.graph_embed_file)
       logging.info(
         f"Finished to create the train-set with {len(train_dataset)} samples")
       val_dataset = dataset_item.TextGeoSplit(
@@ -176,7 +180,8 @@ class Dataset:
         self.valid, self.s2level, unique_cells_df,
         self.cellid_to_label, self.model_type, dprob,
         is_dist=is_dist,
-        dist_matrix=dist_matrix)
+        dist_matrix=dist_matrix,
+        graph_embed_file=self.graph_embed_file)
       logging.info(
         f"Finished to create the valid-set with {len(val_dataset)} samples")
     test_dataset = dataset_item.TextGeoSplit(
@@ -185,7 +190,8 @@ class Dataset:
       self.test, self.s2level, unique_cells_df,
       self.cellid_to_label, self.model_type, dprob,
       is_dist=is_dist,
-      dist_matrix=dist_matrix)
+      dist_matrix=dist_matrix,
+      graph_embed_file=self.graph_embed_file)
     logging.info(
       f"Finished to create the test-set with {len(test_dataset)} samples")
 
@@ -216,10 +222,12 @@ class HumanDataset(Dataset):
     self, data_dir: str,
     s2level: int,
     region: Optional[str],
-    n_fixed_points: int,
+    n_fixed_points: int = 4,
+    graph_embed_file: Any = None,
     model_type: str = "Dual-Encoder-Bert"):
 
-    Dataset.__init__(self, data_dir, s2level, region, model_type, n_fixed_points)
+    Dataset.__init__(
+      self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_file)
     self.train = self.load_data(data_dir, 'train', lines=True)
     self.valid = self.load_data(data_dir, 'dev', lines=True)
     self.test = self.load_data(data_dir, 'test', lines=True)
@@ -280,10 +288,11 @@ class RUNDataset(Dataset):
     data_dir: str,
     s2level: int,
     region: Optional[str],
+    graph_embed_file: Any = None,
     n_fixed_points: int = 4,
     model_type: str = "Dual-Encoder-Bert"):
     Dataset.__init__(
-      self, data_dir, s2level, None, model_type, n_fixed_points
+      self, data_dir, s2level, None, model_type, n_fixed_points, graph_embed_file
     )
 
     train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=False)
@@ -345,10 +354,12 @@ class RVSDataset(Dataset):
     data_dir: str,
     s2level: int,
     region: Optional[str],
-    n_fixed_points: int,
-    model_type: str = "Dual-Encoder-Bert"):
+    n_fixed_points: int = 4,
+    graph_embed_file: Any = None,
+    model_type: str = "Dual-Encoder-Bert"
+    ):
     Dataset.__init__(
-      self, data_dir, s2level, region, model_type, n_fixed_points)
+      self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_file)
     train_ds = self.load_data(data_dir, 'train', True)
     valid_ds = self.load_data(data_dir, 'dev', True)
     test_ds = self.load_data(data_dir, 'test', True)
@@ -447,7 +458,6 @@ class RVSDataset(Dataset):
       gutil.point_from_list_coord_xy(landmark) for landmark in reversed(route_list)]
     assert route[0] == end_point
     return route
-
 
 def calc_dist(start, unique_cells_df):
   dists = unique_cells_df.apply(

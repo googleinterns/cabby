@@ -84,7 +84,6 @@ def main(argv):
     data_dir=FLAGS.data_dir,
     region=FLAGS.region,
     s2level=18,
-    n_fixed_points=4,
   )
 
   end_points = dataset.test.end_point.apply(gutil.list_yx_from_point).tolist()

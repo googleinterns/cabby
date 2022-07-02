@@ -53,6 +53,8 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from transformers import AdamW
+from gensim.models import KeyedVectors
+
 
 from cabby.evals import utils as eu
 from cabby.model.text import train
@@ -90,6 +92,10 @@ flags.DEFINE_float(
 
 flags.DEFINE_string("model_path", None,
           "A path of a model the model to be fine tuned\ evaluated.")
+
+
+flags.DEFINE_string("graph_embed_path", default="",
+          help="The path to the graph embedding.")
 
 
 flags.DEFINE_integer(
@@ -164,6 +170,10 @@ def main(argv):
   if FLAGS.is_single_sample_train:
     FLAGS.train_batch_size = 1
 
+  graph_embed_file = None
+  if os.path.exists(FLAGS.graph_embed_path):
+    graph_embed_file = KeyedVectors.load_word2vec_format(FLAGS.graph_embed_path)
+
   if os.path.exists(dataset_path):
     dataset_text = dataset_item.TextGeoDataset.load(
       dataset_dir = FLAGS.dataset_dir, 
@@ -179,7 +189,8 @@ def main(argv):
       region = FLAGS.region, 
       s2level = FLAGS.s2_level, 
       model_type = FLAGS.model,
-      n_fixed_points = FLAGS.n_fixed_points)
+      n_fixed_points = FLAGS.n_fixed_points,
+      graph_embed_file = graph_embed_file)
 
     if not os.path.exists(dataset_model_path):
       os.mkdir(dataset_model_path)
