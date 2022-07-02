@@ -22,3 +22,15 @@ py_library(
 
     ],
 )
+
+
+py_test(
+    name = "graph_embedding_test",
+    srcs = ["graph_embedding_test.py"],
+    python_version = "PY3",
+    deps = [
+        "//cabby/geo:regions",
+        ":utils",
+        '//cabby/geo/map_processing:map_structure'
+    ],
+)
