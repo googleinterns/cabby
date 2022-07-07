@@ -29,7 +29,6 @@ from cabby.geo import util
 
 CELLID_DIM = 64
 
-
 class DistanceProbability:
   '''Calculates Gamma distribution probability of a given distance in meters.
 
