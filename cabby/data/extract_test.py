@@ -58,6 +58,5 @@ class GeoSetTest(unittest.TestCase):
           'Figleaf and building and East Carson Street.')
     self.assertTrue(foundFigleaf)
 
-
 if __name__ == "__main__":
   unittest.main()
