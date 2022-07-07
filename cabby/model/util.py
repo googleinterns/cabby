@@ -210,8 +210,8 @@ def get_valid_cell_label(dict_lables: Dict[int, int], cellid: int):
   return dict_lables[cellid]
 
 
-def get_valid_graph_embed(dict_lables: Dict[str, str], cellid: str):
-  while str(cellid) not in dict_lables.index_to_key:
+def get_valid_graph_embed(gensim_dict_lables: Any, cellid: str):
+  while str(cellid) not in gensim_dict_lables.index_to_key:
     cellid = str(util.neighbor_cellid(int(cellid)))
 
-  return dict_lables[cellid]
+  return gensim_dict_lables[cellid]

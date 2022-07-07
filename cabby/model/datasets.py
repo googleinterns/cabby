@@ -39,7 +39,8 @@ MODELS = [
   'Landmarks-NER-2-S2-Generation-T5-Warmup',
   'S2-Generation-T5-Path',
   'S2-Generation-T5-start-text-input',
-  'S2-Generation-T5-Warmup-cell-embed-to-cell-label'
+  'S2-Generation-T5-Warmup-cell-embed-to-cell-label',
+  'S2-Generation-T5-start-embedding-text-input',
 ]
 
 T5_TYPE = "t5-small"
