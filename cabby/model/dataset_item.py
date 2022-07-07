@@ -146,6 +146,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.s2level = s2level
     self.is_dist = is_dist
     self.model_type = model_type
+    self.graph_embed_file = graph_embed_file
 
     data = data.assign(end_point=data.end_point)
 
@@ -182,7 +183,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.start_point_cells = data.start_point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
 
-
     if is_dist:
       dist_lists = self.start_point_cells.apply(lambda start: self.calc_dist(start, dist_matrix))
 
@@ -211,9 +211,17 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.set_S2_Generation_T5_Warmup_start_end(data)
 
+
     if graph_embed_file:
-      self.graph_embed_start = self.start_point_cells.apply(lambda cell: graph_embed_file[cell])
+
+      logging.info(f"!!!!!!!!! {gutil.get_centers_from_s2cellids(data['cellid'].tolist())[0]}")
+      self.graph_embed_end = data['cellid'].apply(
+        lambda cell: util.get_valid_graph_embed(self.graph_embed_file, str(cell)))
       self.set_S2_Generation_T5_Warmup_cell_embed_to_cell_label(data)
+
+    else:
+      self.graph_embed_start_and_prompt = self.text_tokenizer(
+        ['']*len(self.cellids), truncation=True, padding=True, add_special_tokens=True)
 
   def get_cell_to_lablel(self, list_cells):
     if isinstance(list_cells[0], list):
@@ -226,7 +234,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
         labels.append('; '.join(list_lables))
 
     else:
-      labels = [str(util.get_valid_label(self.cellid_to_label, c)) for c in list_cells]
+      labels = [str(util.get_valid_cell_label(self.cellid_to_label, int(c))) for c in list_cells]
 
     return labels
 
@@ -361,23 +369,17 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
   def set_S2_Generation_T5_Warmup_cell_embed_to_cell_label(self, data):
 
-
-    route_fixed_label = self.get_cell_to_lablel(data.route_fixed.tolist())
-
-    self.route_fixed = self.text_tokenizer(
-      route_fixed_label, truncation=True, padding=True, add_special_tokens=True).input_ids
-
-    graph_embed_start_and_prompt = [
-      f"{self.model_type}: {str(e)}" for e in self.graph_embed_start
+    graph_embed_end_and_prompt = [
+      f"{self.model_type}: {str(e)}" for e in self.graph_embed_end
     ]
 
     self.print_sample(
       mode_expected='S2-Generation-T5-Warmup-cell-embed-to-cell-label',
-      input=graph_embed_start_and_prompt[0],
+      input=graph_embed_end_and_prompt[0],
       output=self.labels[0])
 
     self.graph_embed_start_and_prompt = self.text_tokenizer(
-      graph_embed_start_and_prompt, truncation=True, padding=True, add_special_tokens=True)
+      graph_embed_end_and_prompt, truncation=True, padding=True, add_special_tokens=True)
 
 
 

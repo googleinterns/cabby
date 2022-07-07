@@ -45,6 +45,8 @@ MODELS = [
 T5_TYPE = "t5-small"
 BERT_TYPE = 'distilbert-base-uncased'
 
+FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
+
 # DISTRIBUTION_SCALE_DISTANCEA is a factor (in meters) that gives the overall
 # scale in meters for the distribution.
 DISTRIBUTION_SCALE_DISTANCE = 1000
@@ -100,7 +102,7 @@ class Dataset:
         labels.append('; '.join(list_lables))
 
     else:
-      labels = [str(util.get_valid_label(self.cellid_to_label, c)) for c in list_cells]
+      labels = [str(util.get_valid_cell_label(self.cellid_to_label, int(c))) for c in list_cells]
 
     return tokenizerT5(
       labels, padding=True, truncation=True).input_ids
@@ -135,7 +137,9 @@ class Dataset:
 
     return landmark_found
 
-  def create_dataset(self, infer_only: bool = False, is_dist=False
+  def create_dataset(
+    self, infer_only: bool = False, is_dist: bool = False,
+    far_cell_dist: int = FAR_DISTANCE_THRESHOLD
                      ) -> dataset_item.TextGeoDataset:
     '''Loads data and creates datasets and train, validate and test sets.
     Returns:
@@ -154,7 +158,7 @@ class Dataset:
     dist_matrix = dist_matrix.to_numpy()
 
     unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
-      lambda x: gutil.far_cellid(x, unique_cells_df))
+      lambda x: gutil.far_cellid(x, unique_cells_df, far_cell_dist))
 
     vec_cells = self.s2_tokenizer(unique_cells_df.cellid.tolist())
     tens_cells = torch.tensor(vec_cells)

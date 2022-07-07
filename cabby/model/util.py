@@ -203,9 +203,28 @@ def predictions_to_points(preds: Sequence,
   coords = util.get_center_from_s2cellids(cellids)
   return coords
 
-def get_valid_label(dict_cells_lables: Dict, cellid: str):
-  while cellid not in dict_cells_lables:
-    cellid = util.neighbor_cellid(int(cellid))
+def get_valid_cell_label(dict_lables: Dict[int, int], cellid: int):
+  while cellid not in dict_lables:
+    cellid = util.neighbor_cellid(cellid)
 
-  return dict_cells_lables[cellid]
-  
+  return dict_lables[cellid]
+
+
+def get_valid_graph_embed(dict_lables: Dict[str, str], cellid: str):
+  # logging.info(f"??????? bbbbbbbbb {type(cellid)}")
+  # logging.info(f"2222222222 {type(dict_lables)}")
+  # logging.info(f"333333333333333 {type(dict_lables.key_to_index)}")
+  # logging.info(f"444444444 {dict_lables.index_to_key[1]}")
+  # logging.info(f"5555555555 {dict_lables.key_to_index[0]}")
+  #
+  #
+  # keys = dict_lables.index_to_key[0]
+  # values = dict_lables.key_to_index[keys]
+
+  while str(cellid) not in dict_lables.index_to_key:
+    cellid = str(util.neighbor_cellid(int(cellid)))
+    # logging.info(f"!!!!!!!!!!!!!! {type(cellid)} {cellid} {dict_lables.index_to_key}")
+    # logging.info(f"!!!!!!!!!!!!! bbbbbbbbb {type(cellid)} {type(keys)} {type(values)}")
+
+
+  return dict_lables[cellid]

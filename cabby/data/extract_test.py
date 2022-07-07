@@ -43,7 +43,8 @@ class GeoSetTest(unittest.TestCase):
     self.assertEqual(wikidata_sample.sample_type, 'Wikidata')
     self.assertEqual(
         wikidata_sample.text,
-        ('Renaissance Revival architecture, building, building in '
+        ('Renaissance Revival architecture, school'
+         ' building, building in '
          'Pennsylvania, United States, Birmingham Public School.')
     )
 

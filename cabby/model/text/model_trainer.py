@@ -70,11 +70,14 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string("data_dir", None,
           "The directory from which to load the dataset.")
+
 flags.DEFINE_string("dataset_dir", None,
           "The directory to save\load dataloader.")
+
 flags.DEFINE_enum(
   "region", None, regions.SUPPORTED_REGION_NAMES, 
   regions.REGION_SUPPORT_MESSAGE)
+
 flags.DEFINE_enum(
   "task", "WikiGeo", TASKS, 
   f"Supported datasets to train\evaluate on: {','.join(TASKS)}. ")
@@ -84,8 +87,10 @@ flags.DEFINE_enum(
   f"Supported models to train\evaluate on:  {','.join(datasets.MODELS)}.")
 
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
+
 flags.DEFINE_string("output_dir", None,
           "The directory where the model and results will be save to.")
+
 flags.DEFINE_float(
   'learning_rate', default=5e-5,
   help=('The learning rate for the Adam optimizer.'))
@@ -93,10 +98,8 @@ flags.DEFINE_float(
 flags.DEFINE_string("model_path", None,
           "A path of a model the model to be fine tuned\ evaluated.")
 
-
-flags.DEFINE_string("graph_embed_path", default="",
+flags.DEFINE_string("save_graph_embed_path", default="",
           help="The path to the graph embedding.")
-
 
 flags.DEFINE_integer(
   'train_batch_size', default=4,
@@ -113,7 +116,11 @@ flags.DEFINE_integer(
 flags.DEFINE_integer(
   'n_fixed_points', default=4,
   help=('In case model is S2-Generation-T5-Warmup-start-end pick number of fixed points to generate.'))
-  
+
+flags.DEFINE_integer(
+  'far_distance_threshold', default=2000,
+  help=('Used when sampling far cells.' +
+        'A far cell is defined be a minimum distance (in meters) from a certain cell.'))
 
 flags.DEFINE_bool(
   'infer_only', default=False,
@@ -123,7 +130,6 @@ flags.DEFINE_bool(
   'is_single_sample_train', default=False,
   help=('Train on a single sample and do not evaluate.'))
 
-
 flags.DEFINE_bool(
   'is_val_loss_from_model', default=False,
   help=('In case the model is loaded - should the validation loss use the models current loss.'))
@@ -131,7 +137,7 @@ flags.DEFINE_bool(
 flags.DEFINE_bool(
   'is_distance_distribution', default=False,
   help=(
-    'Add probability over cells according to the distance from start point.'+ 
+    'Add probability over cells according to the distance from start point.' +
     'This is optional only for RVS and RUN.'))
 
 
@@ -171,8 +177,8 @@ def main(argv):
     FLAGS.train_batch_size = 1
 
   graph_embed_file = None
-  if os.path.exists(FLAGS.graph_embed_path):
-    graph_embed_file = KeyedVectors.load_word2vec_format(FLAGS.graph_embed_path)
+  if os.path.exists(FLAGS.save_graph_embed_path):
+    graph_embed_file = KeyedVectors.load_word2vec_format(FLAGS.save_graph_embed_path)
 
   if os.path.exists(dataset_path):
     dataset_text = dataset_item.TextGeoDataset.load(
@@ -197,7 +203,8 @@ def main(argv):
     logging.info("Preparing data.")
     dataset_text = dataset.create_dataset(
             infer_only = FLAGS.infer_only, 
-            is_dist = FLAGS.is_distance_distribution
+            is_dist = FLAGS.is_distance_distribution,
+            far_cell_dist = FLAGS.far_distance_threshold
     )
 
     dataset_item.TextGeoDataset.save(

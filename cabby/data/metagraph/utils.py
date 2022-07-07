@@ -224,7 +224,7 @@ def construct_metagraph(region: Region,
   for _, row in osm_map.poi.iterrows():
     node_id = row["osmid"]
     for field in IMPORTANT_POI_METADATA_FIELDS:
-      if isinstance(row[field], str):
+      if field in row and isinstance(row[field], str):
         attributes_to_add[node_id][field] = row[field]
         if field == "wikidata":
           wikidata_to_nodeid[row[field]] = node_id
