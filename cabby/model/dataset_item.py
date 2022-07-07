@@ -213,8 +213,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 
     if graph_embed_file:
-
-      logging.info(f"!!!!!!!!! {gutil.get_centers_from_s2cellids(data['cellid'].tolist())[0]}")
       self.graph_embed_end = data['cellid'].apply(
         lambda cell: util.get_valid_graph_embed(self.graph_embed_file, str(cell)))
       self.set_S2_Generation_T5_Warmup_cell_embed_to_cell_label(data)
