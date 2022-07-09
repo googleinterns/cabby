@@ -331,7 +331,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
       self.landmark_s2cell = [0] * len(self.cellids)
 
-
     else:
 
       landmarks_ner_input = [
