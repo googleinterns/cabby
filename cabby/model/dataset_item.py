@@ -202,7 +202,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.set_S2_Generation_start_text_input(data)
 
-
+    # Landmarks
     self.set_S2_Generation_T5_Landmarks(data)
 
     self.set_Landmarks_NER_2_S2_Generation_T5_Warmup(data)
@@ -213,26 +213,39 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.set_S2_Generation_T5_Warmup_start_end(data)
 
-
     if graph_embed_file:
 
       self.graph_embed_end = data['cellid'].apply(
         lambda cell: util.get_valid_graph_embed(self.graph_embed_file, str(cell)))
       self.graph_embed_start = self.start_point_cells.apply(
         lambda cell: util.get_valid_graph_embed(self.graph_embed_file, str(cell)))
+
+      self.graph_embed_landmarks = data.landmarks.apply(
+        lambda l: [util.get_valid_graph_embed(
+          self.graph_embed_file, str(cell)) for cell in l])
+
       self.set_S2_Generation_T5_Warmup_cell_embed_to_cell_label(data)
       self.set_S2_Generation_start_embedding_text_input(data)
+      self.set_S2_Generation_T5_Landmarks_Embedding(data)
 
     else:
 
-      self.graph_embed_start_and_prompt = self.text_tokenizer(
+      default_empty = self.text_tokenizer(
         ['']*len(self.cellids), truncation=True, padding=True, add_special_tokens=True)
 
-      self.start_text_and_prompt = self.text_tokenizer(
-        ['']*len(self.cellids), truncation=True, padding=True, add_special_tokens=True)
+      self.graph_embed_start_and_prompt = default_empty
 
-      self.start_embedding_text_and_prompt = self.text_tokenizer(
-        ['']*len(self.cellids), truncation=True, padding=True, add_special_tokens=True)
+      self.start_text_and_prompt = default_empty
+
+      self.start_embedding_text_and_prompt = default_empty
+
+      self.landmarks_embed = default_empty.input_ids
+
+
+    del self.graph_embed_file
+    del self.start_point_cells
+    del self.s2_tokenizer
+    del self.text_tokenizer
 
   def get_cell_to_lablel(self, list_cells):
     if isinstance(list_cells[0], list):
@@ -296,6 +309,21 @@ class TextGeoSplit(torch.utils.data.Dataset):
     else:
       self.landmarks = [0] * len(self.cellids)
       logging.warning("Landmarks not processed")
+
+
+  def set_S2_Generation_T5_Landmarks_Embedding(self, data):
+
+    landmarks_embed = [
+      f"{end}; {landmarks}" for landmarks, end in zip(self.graph_embed_landmarks, self.labels)]
+
+    self.print_sample(
+      mode_expected='S2-Generation-T5-Landmarks',
+      input=data.instructions.tolist()[0],
+      output=landmarks_embed[0])
+
+    self.landmarks_embed = self.text_tokenizer(
+      landmarks_embed, truncation=True, padding=True, add_special_tokens=True).input_ids
+
 
   def set_Landmarks_NER_2_S2_Generation_T5_Warmup(self, data):
     if not ('T5' in self.model_type and 'landmarks_ner_and_point' in data):
@@ -457,7 +485,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       key: torch.tensor(val[idx])
       for key, val in self.graph_embed_start_and_prompt.items()}
 
-
+    landmarks_embed = torch.tensor(self.landmarks_embed[idx])
 
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
@@ -481,7 +509,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
               'start_embedding_text_and_prompt_ids': start_embedding_text_and_prompt['input_ids'],
               'start_embedding_text_and_prompt_attention': start_embedding_text_and_prompt['attention_mask'],
               'graph_embed_start_and_prompt_ids': graph_embed_start_and_prompt['input_ids'],
-              'graph_embed_start_and_prompt_attention': graph_embed_start_and_prompt['attention_mask']
+              'graph_embed_start_and_prompt_attention': graph_embed_start_and_prompt['attention_mask'],
+              'landmarks_embed': landmarks_embed
               }
 
     return sample
