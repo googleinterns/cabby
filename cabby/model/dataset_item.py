@@ -264,17 +264,17 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
   def set_S2_Generation_start_embedding_text_input(self, data):
 
-    start_text_input_list = [
+    self.start_text_input_list = [
       str(i).replace(':', f': Start at {str(s)}.') for s, i in zip(
         self.graph_embed_start, data.instructions.tolist())]
 
     self.print_sample(
       mode_expected='S2-Generation-T5-start-embedding-text-input',
-      input=start_text_input_list[0],
+      input=self.start_text_input_list[0],
       output=self.labels[0])
 
     self.start_embedding_text_and_prompt = self.text_tokenizer(
-      start_text_input_list, truncation=True, padding=True, add_special_tokens=True)
+      self.start_text_input_list, truncation=True, padding=True, add_special_tokens=True)
 
 
   def set_S2_Generation_start_text_input(self, data):
@@ -317,8 +317,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
       f"{end}; {landmarks}" for landmarks, end in zip(self.graph_embed_landmarks, self.labels)]
 
     self.print_sample(
-      mode_expected='S2-Generation-T5-Landmarks',
-      input=data.instructions.tolist()[0],
+      mode_expected='S2-Generation-T5-start-embedding-text-to-landmarks',
+      input=self.start_text_input_list[0],
       output=landmarks_embed[0])
 
     self.landmarks_embed = self.text_tokenizer(
