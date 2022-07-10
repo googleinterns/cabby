@@ -193,21 +193,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.set_S2_Generation_T5_Warmup_start_end(data)
 
-    if is_dist:
-      logging.info(f"Calculating distances between {dist_matrix.shape[0]} cells")
-      dist_lists = self.start_point_cells.apply(lambda start: self.calc_dist(start, dist_matrix))
-
-      self.prob = dist_lists.mapply(
-        lambda row: [dprob(dist) for dist in row.tolist()])
-
-      self.prob = self.prob.tolist()
-
-      self.set_S2_Generation_T5_Warmup_start_end_to_dist(data, dist_matrix)
-
-    else:
-      self.dists_start_end = self.text_tokenizer(
-        ['']*len(self.cellids), truncation=True, padding=True, add_special_tokens=True).input_ids
-
     self.set_S2_Generation_start_text_input(data)
 
     # Landmarks
@@ -218,6 +203,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.set_Text_2_Landmarks_NER_Generation_T5_Warmup(data)
 
     self.set_S2_Generation_T5_Path(data)
+
+    default_empty = self.text_tokenizer(
+      [''] * len(self.cellids), truncation=True, padding=True, add_special_tokens=True)
 
     if graph_embed_file:
 
@@ -236,9 +224,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     else:
 
-      default_empty = self.text_tokenizer(
-        ['']*len(self.cellids), truncation=True, padding=True, add_special_tokens=True)
-
       self.graph_embed_start_and_prompt = default_empty
 
       self.start_text_and_prompt = default_empty
@@ -247,6 +232,23 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
       self.landmarks_embed = default_empty.input_ids
 
+
+    if is_dist:
+      logging.info(f"Calculating distances between {dist_matrix.shape[0]} cells")
+      dist_lists = self.start_point_cells.apply(lambda start: self.calc_dist(start, dist_matrix))
+
+      self.prob = dist_lists.mapply(
+        lambda row: [dprob(dist) for dist in row.tolist()])
+
+      self.prob = self.prob.tolist()
+
+      self.set_S2_Generation_T5_Warmup_start_end_to_dist(data)
+
+      self.set_S2_Generation_text_start_to_end_dist(data)
+
+    else:
+      self.dists_start_end = default_empty.input_ids
+      self.end_dist = default_empty.input_ids
 
     del self.graph_embed_file
     del self.start_point_cells
@@ -268,34 +270,48 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     return labels
 
+  def set_S2_Generation_text_start_to_end_dist(self, data):
+
+    end_dist = [f"{e_l} distance: {round(gutil.get_distance_between_points(s_p, e_p))}"
+      for e_l, e_p, s_p in zip(
+        self.labels, self.end_point, data.start_point)]
+
+    self.print_sample(
+      mode_expected='S2-Generation-T5-text-start-to-end-dist',
+      input=self.start_text_input_list[0],
+      output=end_dist[0])
+
+    self.end_dist = self.text_tokenizer(
+      end_dist, truncation=True, padding=True, add_special_tokens=True).input_ids
+
   def set_S2_Generation_start_embedding_text_input(self, data):
 
-    self.start_text_input_list = [
+    self.start_embed_text_input_list = [
       str(i).replace(':', f': Start at {str(s)}.') for s, i in zip(
         self.graph_embed_start, data.instructions.tolist())]
 
     self.print_sample(
       mode_expected='S2-Generation-T5-start-embedding-text-input',
-      input=self.start_text_input_list[0],
+      input=self.start_embed_text_input_list[0],
       output=self.labels[0])
 
     self.start_embedding_text_and_prompt = self.text_tokenizer(
-      self.start_text_input_list, truncation=True, padding=True, add_special_tokens=True)
+      self.start_embed_text_input_list, truncation=True, padding=True, add_special_tokens=True)
 
 
   def set_S2_Generation_start_text_input(self, data):
 
-    start_text_input_list = [
+    self.start_text_input_list = [
       str(i).replace(':', f': Start at {str(s)}.') for s, i in zip(
         self.start_point_labels, data.instructions.tolist())]
 
     self.print_sample(
       mode_expected='S2-Generation-T5-start-text-input',
-      input=start_text_input_list[0],
+      input=self.start_text_input_list[0],
       output=self.labels[0])
 
     self.start_text_and_prompt = self.text_tokenizer(
-      start_text_input_list, truncation=True, padding=True, add_special_tokens=True)
+      self.start_text_input_list, truncation=True, padding=True, add_special_tokens=True)
 
   def set_S2_Generation_T5_Landmarks(self, data):
     if 'T5' in self.model_type and 'landmarks' in data:
@@ -324,7 +340,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.print_sample(
       mode_expected='S2-Generation-T5-start-embedding-text-to-landmarks',
-      input=self.start_text_input_list[0],
+      input=self.start_embed_text_input_list[0],
       output=landmarks_embed[0])
 
     self.landmarks_embed = self.text_tokenizer(
@@ -376,7 +392,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       padding=True, add_special_tokens=True).input_ids
 
 
-  def set_S2_Generation_T5_Warmup_start_end_to_dist(self, data, dist_matrix):
+  def set_S2_Generation_T5_Warmup_start_end_to_dist(self, data):
 
     dists_start_end = [
       f"Distance: {round(gutil.get_distance_between_points(s, e))}" for s, e in zip(
@@ -534,7 +550,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
               'graph_embed_start_and_prompt_ids': graph_embed_start_and_prompt['input_ids'],
               'graph_embed_start_and_prompt_attention': graph_embed_start_and_prompt['attention_mask'],
               'landmarks_embed': landmarks_embed,
-              'dists_start_end': dists_start_end
+              'dists_start_end': dists_start_end,
+              'end_dist': torch.tensor(self.end_dist[idx])
               }
 
     return sample
