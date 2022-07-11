@@ -44,6 +44,7 @@ MODELS = [
   'S2-Generation-T5-start-embedding-text-to-landmarks',
   'S2-Generation-T5-Warmup-start-end-to-dist',
   'S2-Generation-T5-text-start-to-end-dist',
+  'S2-Generation-T5-text-start-to-landmarks-dist',
 
 ]
 
@@ -274,17 +275,6 @@ class HumanDataset(Dataset):
       ds['route_fixed'] = ds.apply(self.get_fixed_point_along_route, axis=1)
 
       ds['start_end'] = ds.apply(self.get_fixed_point_along_route, axis=1)
-    columns_keep = ds.columns.difference(
-      [
-        'instructions',
-        'end_point',
-        'start_point',
-        'landmarks',
-        'route',
-        'near_pivot',
-        'main_pivot',
-        'route_fixed'])
-    ds.drop(columns_keep, 1, inplace=True)
 
     ds = shuffle(ds)
     ds.reset_index(inplace=True, drop=True)
