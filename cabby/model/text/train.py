@@ -199,7 +199,7 @@ class Trainer:
     if not self.model.is_generation:
       self.save_cell_embed()
 
-  def multi_train_model(self):
+  def multi_train_model(self, model_types):
 
     '''Main function for training model.'''
     # Initialize running values.
@@ -215,17 +215,8 @@ class Trainer:
 
         loss = torch.tensor([0.0]).to(self.device)
         self.optimizer.zero_grad()
-        for batch_idx in range(len(self.train_loader)):
-          if batch_idx == 2:  # warmup start+end -> 4 fixed points
-            self.model_type = 'S2-Generation-T5-Warmup-start-end'
-          elif batch_idx == 3:  # warmup start+end -> 5 fixed points
-            self.model_type = 'S2-Generation-T5-Warmup-start-end'
-          elif batch_idx == 4:  # warmup text -> ner landmarks
-            self.model_type = 'Text-2-Landmarks-NER-Generation-T5-Warmup'
-          elif batch_idx == 5:  # warmup ner landmarks -> cells
-            self.model_type = 'Landmarks-NER-2-S2-Generation-T5-Warmup'
-          else:
-            self.model_type = 'S2-Generation-T5-Landmarks'
+        for batch_idx, model_type in zip(range(len(self.train_loader)),model_types):
+          self.model_type = model_type
           batch = batches[batch_idx]
           text = {key: val.to(self.device) for key, val in batch['text'].items()}
           cellids = batch['cellid'].float().to(self.device)

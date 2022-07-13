@@ -74,20 +74,21 @@ class TextGeoDataset:
     )
 
   @classmethod
-  def load(cls, dataset_dir: Text, model_type: Text,
-           s2_level: Text, unique_cellid_path: Text, tensor_cellid_path: Text,
-           label_to_cellid_path: Text):
-    dataset_model_path = os.path.join(dataset_dir, str(model_type))
-    dataset_path = os.path.join(dataset_model_path, str(s2_level))
+  def load(cls, dataset_dir: Text, model_type: Text = None,
+           s2_level: Text = None):
+    if model_type:
+      dataset_dir = os.path.join(dataset_dir, str(model_type))
+    if s2_level:
+      dataset_dir = os.path.join(dataset_dir, str(s2_level))
 
-    train_path_dataset = os.path.join(dataset_path, 'train.pth')
-    valid_path_dataset = os.path.join(dataset_path, 'valid.pth')
-    test_path_dataset = os.path.join(dataset_path, 'test.pth')
-    unique_cellid_path = os.path.join(dataset_path, "unique_cellid.npy")
-    tensor_cellid_path = os.path.join(dataset_path, "tensor_cellid.pth")
-    label_to_cellid_path = os.path.join(dataset_path, "label_to_cellid.npy")
+    train_path_dataset = os.path.join(dataset_dir, 'train.pth')
+    valid_path_dataset = os.path.join(dataset_dir, 'valid.pth')
+    test_path_dataset = os.path.join(dataset_dir, 'test.pth')
+    unique_cellid_path = os.path.join(dataset_dir, "unique_cellid.npy")
+    tensor_cellid_path = os.path.join(dataset_dir, "tensor_cellid.pth")
+    label_to_cellid_path = os.path.join(dataset_dir, "label_to_cellid.npy")
 
-    logging.info("Loading dataset from <== {}.".format(dataset_path))
+    logging.info("Loading dataset from <== {}.".format(dataset_dir))
     train_dataset = torch.load(train_path_dataset)
     valid_dataset = torch.load(valid_path_dataset)
     test_dataset = torch.load(test_path_dataset)
@@ -98,7 +99,6 @@ class TextGeoDataset:
     label_to_cellid = np.load(
       label_to_cellid_path, allow_pickle='TRUE').item()
     tens_cells = torch.load(tensor_cellid_path)
-    n_cells = len(unique_cellid)
     dataset_text = TextGeoDataset(
       train_dataset, valid_dataset, test_dataset,
       unique_cellid, tens_cells, label_to_cellid)

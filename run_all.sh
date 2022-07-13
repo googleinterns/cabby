@@ -109,7 +109,7 @@ echo "*                 Landmarks-NER-2-S2-Generation-T5-Warmup   - RVS DATA    
 bazel-bin/cabby/model/text/model_trainer  --data_dir ~/cabby/cabby/model/text/dataSamples/rvs --dataset_dir $OUTPUT_DIR_MODEL_RVS --region Manhattan --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model Landmarks-NER-2-S2-Generation-T5-Warmup
 
 echo "*                multitask           *"
-bazel-bin/cabby/model/text/model_trainer_multitask  --dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5 $OUTPUT_DIR_MODEL_RVS_FIXED_5 --dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4 $OUTPUT_DIR_MODEL_RVS_FIXED_4 --dataset_dir_T5_landmarks_human $OUTPUT_DIR_MODEL_HUMAN --dataset_dir_T5_landmarks_RVS $OUTPUT_DIR_MODEL_RVS --region Manhattan -s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1
+bazel-bin/cabby/model/text/model_trainer_multitask  --dataset_dir_train $OUTPUT_DIR_MODEL_RVS/S2-Generation-T5-start-text-input/15 --dataset_dir_train $OUTPUT_DIR_MODEL_RVS_FIXED_5/S2-Generation-T5-Warmup-start-end/15 --dataset_dir_train $OUTPUT_DIR_MODEL_RVS_FIXED_4/S2-Generation-T5-Warmup-start-end/15 --dataset_dir_test $OUTPUT_DIR_MODEL_HUMAN/S2-Generation-T5-Landmarks/15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1
 
 echo "*                Baseline           *"
 bazel-bin/cabby/model/baselines --data_dir ~/cabby/cabby/model/text/dataSamples/human  --metrics_dir $OUTPUT_DIR_MODEL_HUMAN  --task human --region Manhattan
