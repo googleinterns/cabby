@@ -66,21 +66,16 @@ TASKS = ["WikiGeo", "RVS", "RUN", "human"]
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_multi_string("dataset_dir_train", None,
-          "The directory from which to load the dataset for train.")
+flags.DEFINE_multi_string(
+  "dataset_dir_train", None,
+  "The directory from which to load the dataset for train." +
+  "The flag can be specified more than once on the command line.")
 
 
 flags.DEFINE_string("dataset_dir_test", None,
           "The directory from which to load the dataset for test.")
 
 
-# flags.DEFINE_enum(
-#   "region", None, regions.SUPPORTED_REGION_NAMES,
-#   regions.REGION_SUPPORT_MESSAGE)
-  
-
-
-# flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
 flags.DEFINE_string("output_dir", None,
           "The directory where the model and results will be save to.")
 flags.DEFINE_float(
