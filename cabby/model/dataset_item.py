@@ -232,6 +232,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.landmarks_embed = default_empty.input_ids
 
 
+    self.dists_start_end = default_empty.input_ids
+    self.end_dist = default_empty.input_ids
+    self.landmarks_dist = default_empty.input_ids
+    self.landmarks_embed_dist = default_empty.input_ids
+
     if is_dist:
       logging.info(f"Calculating distances between {dist_matrix.shape[0]} cells")
       dist_lists = self.start_point_cells.apply(lambda start: self.calc_dist(start, dist_matrix))
@@ -247,10 +252,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
       self.set_S2_Generation_text_start_to_landmarks_dist(data)
 
-    else:
-      self.dists_start_end = default_empty.input_ids
-      self.end_dist = default_empty.input_ids
-      self.landmarks_dist = default_empty.input_ids
+      if graph_embed_file:
+        self.set_S2_Generation_text_start_to_landmarks_dist_embed(data)
+
 
     del self.graph_embed_file
     del self.start_point_cells
@@ -354,6 +358,27 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.landmarks = [0] * len(self.cellids)
       logging.warning("Landmarks not processed")
 
+
+  def set_S2_Generation_text_start_to_landmarks_dist_embed(self, data):
+
+    landmarks_embed_dist = []
+
+    for e_l, s_p, lan_l, lan_p in zip(
+      self.labels, data.start_point.tolist(), self.graph_embed_landmarks, data.landmarks.tolist()):
+      landmark_dist_cur = []
+      for e_p, l in zip(lan_p, lan_l):
+        dist = round(gutil.get_distance_between_points(s_p, e_p))
+        landmark_dist_cur.append(f"{l} distance: {dist}")
+
+      landmarks_embed_dist.append(f"{e_l}; {'; '.join(landmark_dist_cur)}")
+
+    self.print_sample(
+      mode_expected='S2-Generation-T5-text-start-to-landmarks-embedding-dist',
+      input=self.start_embed_text_input_list[0],
+      output=landmarks_embed_dist[0])
+
+    self.landmarks_embed_dist = self.text_tokenizer(
+      landmarks_embed_dist, truncation=True, padding=True, add_special_tokens=True).input_ids
 
   def set_S2_Generation_T5_Landmarks_Embedding(self, data):
 
@@ -574,7 +599,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
               'landmarks_embed': landmarks_embed,
               'dists_start_end': dists_start_end,
               'end_dist': torch.tensor(self.end_dist[idx]),
-              'landmarks_dist': torch.tensor((self.landmarks_dist[idx]))
+              'landmarks_dist': torch.tensor((self.landmarks_dist[idx])),
+              'landmarks_embed_dist': torch.tensor((self.landmarks_embed_dist[idx]))
+
               }
 
     return sample

@@ -45,6 +45,7 @@ MODELS = [
   'S2-Generation-T5-Warmup-start-end-to-dist',
   'S2-Generation-T5-text-start-to-end-dist',
   'S2-Generation-T5-text-start-to-landmarks-dist',
+  'S2-Generation-T5-text-start-to-landmarks-embedding-dist',
 
 ]
 
