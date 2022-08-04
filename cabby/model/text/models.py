@@ -201,6 +201,9 @@ class S2GenerationModel(GeneralModel):
     elif self.model_type == 'S2-Generation-T5-Warmup-cell-embed-to-cell-label':
       input_ids = batch['graph_embed_start_and_prompt_ids']
       attention_mask = batch['graph_embed_start_and_prompt_attention']
+    elif self.model_type == 'S2-Generation-T5-start-embedding-text-input':
+      input_ids = batch['start_embedding_text_and_prompt_ids']
+      attention_mask = batch['start_embedding_text_and_prompt_attention']
     elif self.model_type == 'S2-Generation-T5':
       pass
     else:
