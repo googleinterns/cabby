@@ -215,7 +215,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 
     if graph_embed_file:
-
       self.graph_embed_end = data['cellid'].apply(
         lambda cell: util.get_valid_graph_embed(self.graph_embed_file, str(cell)))
       self.graph_embed_start = self.start_point_cells.apply(
