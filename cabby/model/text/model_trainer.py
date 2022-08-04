@@ -184,10 +184,8 @@ def main(argv):
     dataset_text = dataset_item.TextGeoDataset.load(
       dataset_dir = FLAGS.dataset_dir, 
       model_type = str(FLAGS.model),
-      s2_level = FLAGS.s2_level,
-      label_to_cellid_path = label_to_cellid_path, 
-      unique_cellid_path = unique_cellid_path, 
-      tensor_cellid_path = tensor_cellid_path)
+      s2_level = FLAGS.s2_level
+    )
 
   else:
     dataset = dataset_init(

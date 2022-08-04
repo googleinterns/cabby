@@ -60,33 +60,22 @@ from cabby.model import dataset_item
 from cabby.model.text import models
 from cabby.model import datasets
 from cabby.model import util
-from cabby.geo import regions
+# from cabby.geo import regions
 
 TASKS = ["WikiGeo", "RVS", "RUN", "human"]
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string("dataset_dir_T5_landmarks_RVS", None,
-          "The directory from which to load the dataset.")
-
-flags.DEFINE_string("dataset_dir_T5_landmarks_human", None,
-          "The directory from which to load the dataset.")
-
-flags.DEFINE_string("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4", None,
-          "The directory from which to load the dataset.")
-
-flags.DEFINE_string("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5", None,
-          "The directory from which to load the dataset.")
-
-          
-
-flags.DEFINE_enum(
-  "region", None, regions.SUPPORTED_REGION_NAMES, 
-  regions.REGION_SUPPORT_MESSAGE)
-  
+flags.DEFINE_multi_string(
+  "dataset_dir_train", None,
+  "The directory from which to load the dataset for train." +
+  "The flag can be specified more than once on the command line.")
 
 
-flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
+flags.DEFINE_string("dataset_dir_test", None,
+          "The directory from which to load the dataset for test.")
+
+
 flags.DEFINE_string("output_dir", None,
           "The directory where the model and results will be save to.")
 flags.DEFINE_float(
@@ -125,97 +114,48 @@ flags.DEFINE_bool(
 
 
 # Required flags.
-flags.mark_flag_as_required("region")
-flags.mark_flag_as_required("s2_level")
-flags.mark_flag_as_required("dataset_dir_T5_landmarks_RVS")
-flags.mark_flag_as_required("dataset_dir_T5_landmarks_human")
-flags.mark_flag_as_required("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4")
-flags.mark_flag_as_required("dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5")
-
+flags.mark_flag_as_required("dataset_dir_train")
+flags.mark_flag_as_required("dataset_dir_test")
 
 
 
 def main(argv):
-  
-  
-  dataset_model_path = os.path.join(FLAGS.dataset_dir_T5_landmarks_RVS, "S2-Generation-T5-Landmarks")
-  dataset_path = os.path.join(dataset_model_path, str(FLAGS.s2_level))
 
-  unique_cellid_path = os.path.join(dataset_path,"unique_cellid.npy")
-  tensor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
-  label_to_cellid_path = os.path.join(dataset_path,"label_to_cellid.npy")
+  trainer_loader_list = []
+  model_types = []
+  for dataset_model_path in FLAGS.dataset_dir_train:
+    if not os.path.isdir(dataset_model_path):
+      sys.exit(f"The directory {dataset_model_path} does not exits")
 
-  
-  path_exists = [
-    f for f in [
-      FLAGS.dataset_dir_T5_landmarks_RVS, 
-      FLAGS.dataset_dir_T5_landmarks_human, 
-      FLAGS.dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4,
-      FLAGS.dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5] if os.path.isfile(f)]
-  
-  if not all(path_exists):
-    sys.exit()
+    dataset_train = dataset_item.TextGeoDataset.load(
+      dataset_dir=dataset_model_path
+    )
+    model_types.append(dataset_train.train.model_type)
 
+    train_loader = DataLoader(
+      dataset_train.train, batch_size=FLAGS.train_batch_size, shuffle=True)
 
-  dataset_t5_rvs = dataset_item.TextGeoDataset.load(
-    dataset_dir = FLAGS.dataset_dir_T5_landmarks_RVS, 
-    model_type = "S2-Generation-T5-Landmarks",
-    s2_level = FLAGS.s2_level,
-    label_to_cellid_path = label_to_cellid_path, 
-    unique_cellid_path = unique_cellid_path, 
-    tensor_cellid_path = tensor_cellid_path)
+    trainer_loader_list.append(train_loader)
 
+  if not os.path.isdir(FLAGS.dataset_dir_test):
+    sys.exit(f"The directory {FLAGS.dataset_dir_test} does not exits")
 
-  dataset_t5_human = dataset_item.TextGeoDataset.load(
-    dataset_dir = FLAGS.dataset_dir_T5_landmarks_human, 
-    model_type = "S2-Generation-T5-Landmarks",
-    s2_level = FLAGS.s2_level,
-    label_to_cellid_path = label_to_cellid_path, 
-    unique_cellid_path = unique_cellid_path, 
-    tensor_cellid_path = tensor_cellid_path)
+  dataset_valid_test = dataset_item.TextGeoDataset.load(
+    dataset_dir = FLAGS.dataset_dir_test
+  )
 
-  dataset_t5_warmup_4 = dataset_item.TextGeoDataset.load(
-    dataset_dir = FLAGS.dataset_dir_T5_Warmup_start_end_RVS_fixed_n_4, 
-    model_type = "S2-Generation-T5-Warmup-start-end",
-    s2_level = FLAGS.s2_level,
-    label_to_cellid_path = label_to_cellid_path, 
-    unique_cellid_path = unique_cellid_path, 
-    tensor_cellid_path = tensor_cellid_path)
+  valid_loader = DataLoader(
+    dataset_valid_test.valid, batch_size=FLAGS.train_batch_size, shuffle=True)
 
-  dataset_t5_warmup_5 = dataset_item.TextGeoDataset.load(
-    dataset_dir = FLAGS.dataset_dir_T5_Warmup_start_end_RVS_fixed_n_5, 
-    model_type = "S2-Generation-T5-Warmup-start-end",
-    s2_level = FLAGS.s2_level,
-    label_to_cellid_path = label_to_cellid_path, 
-    unique_cellid_path = unique_cellid_path, 
-    tensor_cellid_path = tensor_cellid_path)
+  test_loader = DataLoader(
+    dataset_valid_test.test, batch_size=FLAGS.train_batch_size, shuffle=True)
 
-
-  train_loader_t5_rvs = DataLoader(
-    dataset_t5_rvs.train, batch_size=FLAGS.train_batch_size, shuffle=True)
-
-  train_loader_t5_human = DataLoader(
-    dataset_t5_human.train, batch_size=FLAGS.train_batch_size, shuffle=True)
-
-
-  train_loader_t5_warmup_4 = DataLoader(
-    dataset_t5_warmup_4.train, batch_size=FLAGS.train_batch_size, shuffle=True)
-
-  train_loader_t5_warmup_5 = DataLoader(
-    dataset_t5_warmup_5.train, batch_size=FLAGS.train_batch_size, shuffle=True)
-
-
-  valid_loader_t5_human = DataLoader(
-    dataset_t5_human.valid, batch_size=FLAGS.test_batch_size, shuffle=False)
-  test_loader_t5_human = DataLoader(
-    dataset_t5_human.test, batch_size=FLAGS.test_batch_size, shuffle=False)
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
   
-
   run_model = models.S2GenerationModel(
-      dataset_t5_rvs.label_to_cellid ,device=device)
+      dataset_valid_test.label_to_cellid ,device=device)
 
   run_model.to(device)
 
@@ -230,25 +170,19 @@ def main(argv):
     device=device,
     num_epochs=FLAGS.num_epochs,
     optimizer=optimizer,
-    train_loader=[
-      train_loader_t5_rvs, 
-      train_loader_t5_human, 
-      train_loader_t5_warmup_4,
-      train_loader_t5_warmup_5,
-      train_loader_t5_warmup_5,
-      train_loader_t5_warmup_5],
-    valid_loader=valid_loader_t5_human,
-    test_loader=test_loader_t5_human,
-    unique_cells = dataset_t5_human.unique_cellids,
+    train_loader=trainer_loader_list,
+    valid_loader=valid_loader,
+    test_loader=test_loader,
+    unique_cells=dataset_valid_test.unique_cellids,
     file_path=FLAGS.output_dir, 
-    cells_tensor = dataset_t5_human.unique_cellids_binary,
-    label_to_cellid = dataset_t5_human.label_to_cellid,
-    best_valid_loss = run_model.best_valid_loss,
-    is_single_sample_train = FLAGS.is_single_sample_train
+    cells_tensor=dataset_valid_test.unique_cellids_binary,
+    label_to_cellid=dataset_valid_test.label_to_cellid,
+    best_valid_loss=run_model.best_valid_loss,
+    is_single_sample_train=FLAGS.is_single_sample_train
     )
   
   logging.info("Starting to train model.")
-  trainer.multi_train_model()
+  trainer.multi_train_model(model_types)
     
 
 if __name__ == '__main__':

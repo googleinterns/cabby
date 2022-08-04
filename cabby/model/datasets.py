@@ -41,12 +41,11 @@ MODELS = [
   'S2-Generation-T5-start-text-input',
   'S2-Generation-T5-Warmup-cell-embed-to-cell-label',
   'S2-Generation-T5-start-embedding-text-input',
-  'S2-Generation-T5-start-embedding-text-to-landmarks',
   'S2-Generation-T5-Warmup-start-end-to-dist',
   'S2-Generation-T5-text-start-to-end-dist',
   'S2-Generation-T5-text-start-to-landmarks-dist',
-  'S2-Generation-T5-text-start-to-landmarks-embedding-dist',
-
+  'S2-Generation-T5-text-start-embedding-to-landmarks',
+  'S2-Generation-T5-text-start-embedding-to-landmarks-dist'
 ]
 
 T5_TYPE = "t5-small"
@@ -109,6 +108,7 @@ class Dataset:
         labels.append('; '.join(list_lables))
 
     else:
+
       labels = [str(util.get_valid_cell_label(self.cellid_to_label, int(c))) for c in list_cells]
 
     return tokenizerT5(

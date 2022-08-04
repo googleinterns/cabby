@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 '''Library to support models.'''
+import sys
 
 import scipy.stats
 
@@ -204,8 +205,12 @@ def predictions_to_points(preds: Sequence,
   return coords
 
 def get_valid_cell_label(dict_lables: Dict[int, int], cellid: int):
+  counter = 0
   while cellid not in dict_lables:
+    counter+=1
     cellid = util.neighbor_cellid(cellid)
+    if counter>15:
+      sys.exit(f"Cell id {cellid} not found in dictionary")
 
   return dict_lables[cellid]
 
