@@ -28,7 +28,7 @@ EvalDataTuple = collections.namedtuple(
 EvalMetrics = collections.namedtuple(
   "EvalMetrics",
   [
-    "accuracy", 'accuracy_10m', 'accuracy_100m', "mean_distance",
+    "accuracy", 'accuracy_10m', 'accuracy_100m', 'accuracy_1000m', "mean_distance",
     "median_distance", "max_error", "norm_auc"])
 # 20039 kms is half of earth's circumference (max. great circle distance)
 _MAX_LOG_HAVERSINE_DIST = np.log(20039 * 1000)  # in meters.
@@ -89,6 +89,9 @@ class Evaluator:
     accuracy_100m = float(
       len(np.where(np.array(error_distances) <= 100.)[0])) / num_examples
 
+    accuracy_1000m = float(
+      len(np.where(np.array(error_distances) <= 1000.)[0])) / num_examples
+
     mean_distance, median_distance, max_error = np.mean(error_distances), np.median(
       error_distances), np.max(error_distances)
     log_distance = np.sort(
@@ -101,9 +104,9 @@ class Evaluator:
 
     self.eval_logger.info(
       "Metrics: \nExact accuracy : [%.2f]\n10 m accuracy : [%.2f]\n100 m accuracy : [%.2f]" +
-      "\nmean error [%.2f], " +
+      "\n1000 m accuracy : [%.2f]" + "\nmean error [%.2f], " +
       "\nmedian error [%.2f]\nmax error [%.2f]\n" +
-      "AUC of error curve [%.2f]", accuracy, accuracy_10m, accuracy_100m,
+      "AUC of error curve [%.2f]", accuracy, accuracy_10m, accuracy_100m, accuracy_1000m,
       mean_distance, median_distance, max_error, norm_auc)
-    return EvalMetrics(accuracy, accuracy_10m, accuracy_100m,
+    return EvalMetrics(accuracy, accuracy_10m, accuracy_100m, accuracy_1000m,
                mean_distance, median_distance, max_error, norm_auc)

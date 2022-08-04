@@ -30,22 +30,22 @@ from cabby.model import util
 
 class Trainer:
   def __init__(
-          self,
-          model: torch.nn.Module,
-          device: torch.device,
-          optimizer: torch.optim.Adam,
-          file_path: str,
-          train_loader: Any,
-          valid_loader: DataLoader,
-          test_loader: DataLoader,
-          unique_cells: Sequence[int],
-          num_epochs: int,
-          cells_tensor: torch.tensor,
-          label_to_cellid: Dict[int, int],
-          is_single_sample_train: bool = False,
-          best_valid_loss: float = float("Inf")
+    self,
+    model: torch.nn.Module,
+    device: torch.device,
+    optimizer: torch.optim.Adam,
+    file_path: str,
+    train_loader: Any,
+    valid_loader: DataLoader,
+    test_loader: DataLoader,
+    unique_cells: Sequence[int],
+    num_epochs: int,
+    cells_tensor: torch.tensor,
+    label_to_cellid: Dict[int, int],
+    is_single_sample_train: bool = False,
+    best_valid_loss: float = float("Inf")
 
-          ):
+  ):
 
     self.model = model
     self.device = device
@@ -66,7 +66,6 @@ class Trainer:
     self.metrics_path = os.path.join(self.file_path, 'metrics.tsv')
     self.is_single_sample_train = is_single_sample_train
     self.evaluator = eu.Evaluator()
-    
 
   def evaluate(self, validation_set: bool = True):
     '''Validate the model.'''
@@ -79,7 +78,7 @@ class Trainer:
 
     # Validation loop.
     true_points_list, pred_points_list = [], []
-    predictions_list, true_vals  = [], []
+    predictions_list, true_vals = [], []
     correct = 0
     total = 0
     loss_val_total = 0
@@ -87,20 +86,18 @@ class Trainer:
     self.model.eval()
     with torch.no_grad():
       for batch in data_loader:
-
         text = {key: val.to(self.device) for key, val in batch['text'].items()}
         cellids = batch['cellid'].float().to(self.device)
 
-        batch = {k:v.to(self.device) for k,v in batch.items() if torch.is_tensor(v)}
+        batch = {k: v.to(self.device) for k, v in batch.items() if torch.is_tensor(v)}
 
         loss = self.model(
-            text, 
-            cellids, 
-            batch
-            )
+          text,
+          cellids,
+          batch
+        )
 
-     
-        loss_val_total+=loss
+        loss_val_total += loss
 
         predictions = self.model.predict(
           text, self.cells_tensor, self.label_to_cellid, batch)
@@ -115,9 +112,8 @@ class Trainer:
     true_vals = np.concatenate(true_vals, axis=0)
     average_valid_loss = loss_val_total / len(data_loader)
 
-    return (average_valid_loss, predictions_list, true_vals, 
-    true_points_list, pred_points_list)
-
+    return (average_valid_loss, predictions_list, true_vals,
+            true_points_list, pred_points_list)
 
   def train_model(self):
 
@@ -135,14 +131,13 @@ class Trainer:
         self.optimizer.zero_grad()
         text = {key: val.to(self.device) for key, val in batch['text'].items()}
         cellids = batch['cellid'].float().to(self.device)
-        batch = {k:v.to(self.device) for k,v in batch.items() if torch.is_tensor(v)}
+        batch = {k: v.to(self.device) for k, v in batch.items() if torch.is_tensor(v)}
 
         loss = self.model(
-            text, 
-            cellids, 
-            batch
+          text,
+          cellids,
+          batch
         )
-
 
         loss.backward()
 
@@ -154,7 +149,6 @@ class Trainer:
 
         if self.is_single_sample_train:
           break
-      
 
       # Evaluation step.
       valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
@@ -166,9 +160,9 @@ class Trainer:
 
       logging.info('Epoch [{}/{}], Step [{}/{}], \
           Train Loss: {:.4f}, Valid Loss: {:.4f}'
-            .format(epoch+1, self.num_epochs, global_step,
-                self.num_epochs*len(self.train_loader),
-                average_train_loss, valid_loss))
+                   .format(epoch + 1, self.num_epochs, global_step,
+                           self.num_epochs * len(self.train_loader),
+                           average_train_loss, valid_loss))
 
       # Save model and results in checkpoint.
       if self.best_valid_loss > valid_loss:
@@ -180,7 +174,6 @@ class Trainer:
       if self.is_single_sample_train:
         return
 
-
     logging.info('Finished Training.')
 
     model_state = util.load_checkpoint(self.model_path, self.model, self.device)
@@ -188,16 +181,16 @@ class Trainer:
 
     logging.info(
       f'Loaded best model (with validation loss {valid_loss}) for testing.')
-    
+
     logging.info('Start testing.')
 
     test_loss, predictions, true_vals, true_points, pred_points = self.evaluate(
-      validation_set = False)
+      validation_set=False)
 
     util.save_metrics_last_only(
-          self.metrics_path, 
-          true_points, 
-          pred_points)
+      self.metrics_path,
+      true_points,
+      pred_points)
 
     evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(self.metrics_path)
@@ -205,7 +198,6 @@ class Trainer:
 
     if not self.model.is_generation:
       self.save_cell_embed()
-
 
   def multi_train_model(self):
 
@@ -215,7 +207,6 @@ class Trainer:
 
     # Training loop.
     self.model.train()
-    self.model.reset_setup_false()
 
     for epoch in range(self.num_epochs):
       running_loss = 0.0
@@ -225,28 +216,26 @@ class Trainer:
         loss = torch.tensor([0.0]).to(self.device)
         self.optimizer.zero_grad()
         for batch_idx in range(len(self.train_loader)):
-          if batch_idx==2: # warmup start+end -> 4 fixed points
-            self.model.is_warmup_start_end=True
-          elif batch_idx==3: # warmup start+end -> 5 fixed points
-            self.model.is_warmup_start_end=True
-          elif batch_idx==4: # warmup text -> ner landmarks
-            self.model.is_landmarks_ner=True
-          elif batch_idx==5: # warmup ner landmarks -> cells
-            self.model.is_warmup_ner_landmarks_2_cell=True
-          else: 
-            self.model.is_landmarks=True
-          batch  = batches[batch_idx]
+          if batch_idx == 2:  # warmup start+end -> 4 fixed points
+            self.model_type = 'S2-Generation-T5-Warmup-start-end'
+          elif batch_idx == 3:  # warmup start+end -> 5 fixed points
+            self.model_type = 'S2-Generation-T5-Warmup-start-end'
+          elif batch_idx == 4:  # warmup text -> ner landmarks
+            self.model_type = 'Text-2-Landmarks-NER-Generation-T5-Warmup'
+          elif batch_idx == 5:  # warmup ner landmarks -> cells
+            self.model_type = 'Landmarks-NER-2-S2-Generation-T5-Warmup'
+          else:
+            self.model_type = 'S2-Generation-T5-Landmarks'
+          batch = batches[batch_idx]
           text = {key: val.to(self.device) for key, val in batch['text'].items()}
           cellids = batch['cellid'].float().to(self.device)
-          batch = {k:v.to(self.device) for k,v in batch.items() if torch.is_tensor(v)}
+          batch = {k: v.to(self.device) for k, v in batch.items() if torch.is_tensor(v)}
 
           loss += self.model(
-              text, 
-              cellids, 
-              batch
+            text,
+            cellids,
+            batch
           )
-
-          self.model.reset_setup_false()
 
         loss.backward()
 
@@ -255,7 +244,6 @@ class Trainer:
         # Update running values.
         running_loss += loss.item() / len(self.train_loader)
         global_step += 1
-      
 
       # Evaluation step.
       valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
@@ -267,9 +255,9 @@ class Trainer:
 
       logging.info('Epoch [{}/{}], Step [{}/{}], \
           Train Loss: {:.4f}, Valid Loss: {:.4f}'
-            .format(epoch+1, self.num_epochs, global_step,
-                self.num_epochs*len(self.train_loader),
-                average_train_loss, valid_loss))
+                   .format(epoch + 1, self.num_epochs, global_step,
+                           self.num_epochs * len(self.train_loader),
+                           average_train_loss, valid_loss))
 
       # Save model and results in checkpoint.
       if self.best_valid_loss > valid_loss:
@@ -281,7 +269,6 @@ class Trainer:
       if self.is_single_sample_train:
         return
 
-
     logging.info('Finished Training.')
 
     model_state = util.load_checkpoint(self.model_path, self.model, self.device)
@@ -289,16 +276,16 @@ class Trainer:
 
     logging.info(
       f'Loaded best model (with validation loss {valid_loss}) for testing.')
-    
+
     logging.info('Start testing.')
 
     test_loss, predictions, true_vals, true_points, pred_points = self.evaluate(
-      validation_set = False)
+      validation_set=False)
 
     util.save_metrics_last_only(
-          self.metrics_path, 
-          true_points, 
-          pred_points)
+      self.metrics_path,
+      true_points,
+      pred_points)
 
     evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(self.metrics_path)
@@ -306,7 +293,6 @@ class Trainer:
 
     if not self.model.is_generation:
       self.save_cell_embed()
-
 
   def save_cell_embed(self):
     if isinstance(self.model, nn.DataParallel):
@@ -319,9 +305,9 @@ class Trainer:
     torch.save(cellid_to_embed, path_to_save)
     logging.info(f'Cell embedding saved to ==> {path_to_save}')
 
+
 def infer_text(model: torch.nn.Module, text: str):
   if isinstance(model, nn.DataParallel):
     return model.module.text_embed(text)
   else:
     return model.text_embed(text)
-    

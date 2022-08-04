@@ -34,14 +34,13 @@ from nltk.parse.generate import Nonterminal
 import pandas as pd
 import re
 
-
 from cabby.geo import geo_item
 from cabby.geo import walk
 
 inflect_engine = inflect.engine()
 STREET_FEATURES = ["next_block", "next_intersection", "blocks"] \
                   + walk.FEATURES_TYPES + walk.LANDMARK_TYPES \
-                    + ['SPATIAL_SAME', 'SPATIAL_ACROSS']
+                  + ['SPATIAL_SAME', 'SPATIAL_ACROSS']
 
 GOAL_POSITION_OPTION = {
   'first_intersection': [
@@ -57,18 +56,18 @@ GOAL_POSITION_OPTION = {
     "on the CARDINAL_POSITION corner of the block",
     "near the corner of the block",
     "near the CARDINAL_POSITION corner of the block",
-    ],
-    'second_intersection': [
-      "near the last intersection passed",
-      "on the far corner",
-      "on the opposite side of the corner of that block",
-      "near the far corner",
-      "near the CARDINAL_POSITION corner of the block",
-      "on the CARDINAL_POSITION corner of the block",
-      "on the CARDINAL_POSITION corner",
-    ],
-    'middle_block': ["in the middle of the block"]
-    }
+  ],
+  'second_intersection': [
+    "near the last intersection passed",
+    "on the far corner",
+    "on the opposite side of the corner of that block",
+    "near the far corner",
+    "near the CARDINAL_POSITION corner of the block",
+    "on the CARDINAL_POSITION corner of the block",
+    "on the CARDINAL_POSITION corner",
+  ],
+  'middle_block': ["in the middle of the block"]
+}
 
 # Terminals in the grammar.
 MAIN_NO_V = [
@@ -124,7 +123,6 @@ MAIN = [
 
 ]
 
-
 V1 = ['Go', 'Walk', 'Head', 'Proceed', 'Travel']
 
 V2 = [
@@ -135,20 +133,20 @@ V2 = [
 ]
 
 MAIN_NEAR_END = [
-    ". Before reaching the destination, you will see MAIN_NEAR_PIVOT.",
-    ". Before reaching the destination, you will pass MAIN_NEAR_PIVOT.",
-    ". You will pass MAIN_NEAR_PIVOT before reaching the destination.",
-    ". You will see MAIN_NEAR_PIVOT before reaching the destination.",
-    ". It will be on your SPATIAL_REL_GOAL, you will see MAIN_NEAR_PIVOT before reaching the destination.",
-    ". It will be on your SPATIAL_REL_GOAL, you will pass MAIN_NEAR_PIVOT before reaching the destination.",
-    ". Before reaching the destination on your SPATIAL_REL_GOAL, you will see MAIN_NEAR_PIVOT.",
-    ". Before reaching the destination on your SPATIAL_REL_GOAL, you will pass MAIN_NEAR_PIVOT.",
-    ". You will see MAIN_NEAR_PIVOT before reaching the destination on your SPATIAL_REL_GOAL.",
-    ". You will pass MAIN_NEAR_PIVOT before reaching the destination on your SPATIAL_REL_GOAL.",
-    ". It will be across the street from the SPATIAL_ACROSS.",
-    ". It will be across from the SPATIAL_ACROSS.",
-    ". It will be on the same side of the street as the SPATIAL_SAME.",
-    ". It will be on the same side as the SPATIAL_SAME.",
+  ". Before reaching the destination, you will see MAIN_NEAR_PIVOT.",
+  ". Before reaching the destination, you will pass MAIN_NEAR_PIVOT.",
+  ". You will pass MAIN_NEAR_PIVOT before reaching the destination.",
+  ". You will see MAIN_NEAR_PIVOT before reaching the destination.",
+  ". It will be on your SPATIAL_REL_GOAL, you will see MAIN_NEAR_PIVOT before reaching the destination.",
+  ". It will be on your SPATIAL_REL_GOAL, you will pass MAIN_NEAR_PIVOT before reaching the destination.",
+  ". Before reaching the destination on your SPATIAL_REL_GOAL, you will see MAIN_NEAR_PIVOT.",
+  ". Before reaching the destination on your SPATIAL_REL_GOAL, you will pass MAIN_NEAR_PIVOT.",
+  ". You will see MAIN_NEAR_PIVOT before reaching the destination on your SPATIAL_REL_GOAL.",
+  ". You will pass MAIN_NEAR_PIVOT before reaching the destination on your SPATIAL_REL_GOAL.",
+  ". It will be across the street from the SPATIAL_ACROSS.",
+  ". It will be across from the SPATIAL_ACROSS.",
+  ". It will be on the same side of the street as the SPATIAL_SAME.",
+  ". It will be on the same side as the SPATIAL_SAME.",
 
 ]
 
@@ -159,7 +157,7 @@ NEAR_GOAL_END = [
   ". Meet at the END_POINT, which is right next to a NEAR_PIVOT.",
   ". Meet at the END_POINT, which will be on your SPATIAL_REL_GOAL, right next to a NEAR_PIVOT.",
   ". If you see a NEAR_PIVOT, you should find the END_POINT close by.",
-  ". If you see a NEAR_PIVOT, you should find on the SPATIAL_REL_GOAL side of the street"+
+  ". If you see a NEAR_PIVOT, you should find on the SPATIAL_REL_GOAL side of the street" +
   " the END_POINT close by.",
   ". The END_POINT is not far from NEAR_PIVOT."
 ]
@@ -198,7 +196,7 @@ GOAL = ["the END_POINT"]
 
 
 def add_rules(nonterminal_name: Text,
-        list_terminals: Sequence[Text]) -> Sequence[Production]:
+              list_terminals: Sequence[Text]) -> Sequence[Production]:
   """Create the production rules for a givn nonterminal and a
    list of terminals corresponding to it.
   Arguments:
@@ -221,10 +219,10 @@ def create_templates():
   prods = [
     # Specific verb with goal and the rest of instruction body.
     Production(Nonterminal('S'), (Nonterminal('V2'),
-                    Nonterminal('V2_BODY'))),
+                                  Nonterminal('V2_BODY'))),
     # A verb and rest of the instruction body assuming goal already mentioned.
     Production(Nonterminal('V2_BODY'), (Nonterminal('V1'),
-                      Nonterminal('M_G_ALREADY_V'))),
+                                        Nonterminal('M_G_ALREADY_V'))),
     # A verb and the rest of the instruction body assuming the goal wasn't
     # mentioned before.
     Production(Nonterminal('S'), (Nonterminal(
@@ -232,48 +230,48 @@ def create_templates():
     # The goal in the begining and the rest of the instruction body assuming
     # goal already mentioned.
     Production(Nonterminal('S'), (Nonterminal('V1_GOAL'),
-                    Nonterminal('WITH_GOAL'))),
+                                  Nonterminal('WITH_GOAL'))),
     # A verb and 'to the' and then goal mention and the rest of the instruction
     # body.
     Production(Nonterminal('V1_GOAL'), (Nonterminal('V1'),
-                      Nonterminal('V1_CON'))),
+                                        Nonterminal('V1_CON'))),
     # A goal mention and the rest of the instruction body.
     Production(Nonterminal('WITH_GOAL'), (Nonterminal('GOAL'),
-                        Nonterminal('M_G'))),
+                                          Nonterminal('M_G'))),
     # Main part of the instruction without verb in begining and resuming
     # sentence.
     Production(Nonterminal('M_G_ALREADY_V'), (Nonterminal('MAIN_NO_V'),
-                    Nonterminal('END_NEAR_GOAL_KNOWN'))),
+                                              Nonterminal('END_NEAR_GOAL_KNOWN'))),
     # # Main part of the instruction, adding a new sentence.
     Production(Nonterminal('M_G'), (Nonterminal('MAIN'),
-                    Nonterminal('END_NEAR_GOAL_KNOWN'))),
+                                    Nonterminal('END_NEAR_GOAL_KNOWN'))),
     # End part - (1) near pivot assuming goal already mentioned; and (2) avoid
     # sentence.
     Production(
       Nonterminal('END_NEAR_GOAL_KNOWN'), (Nonterminal('NEAR_GOAL_START'),
-                    Nonterminal('AVOID'))),
+                                           Nonterminal('AVOID'))),
     # End part - (1) near pivot on the way assuming goal already mentioned; and (2) avoid
     # sentence.
     Production(
       Nonterminal('END_NEAR_GOAL_KNOWN'), (Nonterminal('MAIN_NEAR_END'),
-                    Nonterminal('AVOID'))),
+                                           Nonterminal('AVOID'))),
     # End part - (1) near pivot assuming goal not mentioned yet; and (2) avoid
     # sentence.
     Production(Nonterminal(
       'END_NEAR_GOAL_KNOWN'), (Nonterminal('NEAR_GOAL_END'),
-                    Nonterminal('AVOID'))),
+                               Nonterminal('AVOID'))),
     # Main part of the instruction without verb in begining and resuming
     # sentence assuming no goal mentioned before.
     Production(Nonterminal('NO_GOAL'), (Nonterminal('MAIN_NO_V'),
-                      Nonterminal('END_NEAR_GOAL_UNKNOWN'))),
+                                        Nonterminal('END_NEAR_GOAL_UNKNOWN'))),
     # Add Goal to main part and then resume instruction by adding an
     # ending(near+avoid).
     Production(Nonterminal('END_NEAR_GOAL_UNKNOWN'), (Nonterminal('GOAL_END'),
-                    Nonterminal('END_NEAR_GOAL_KNOWN'))),
+                                                      Nonterminal('END_NEAR_GOAL_KNOWN'))),
     # Add Goal with near and then add an avoid sentenece.
     Production(
       Nonterminal('END_NEAR_GOAL_UNKNOWN'), (Nonterminal('NEAR_GOAL_END'),
-                    Nonterminal('AVOID'))),
+                                             Nonterminal('AVOID'))),
     # Termial for IN+DT after verb.
     Production(Nonterminal('V1_CON'), ('to the',)),
 
@@ -312,7 +310,7 @@ def create_templates():
   templates_df = pd.DataFrame(
     templates, columns=['sentence']).drop_duplicates()
   # Save templates
-  templates_df.to_csv('templates.csv', index=False, header = False)
+  templates_df.to_csv('templates.csv', index=False, header=False)
 
   # Flag features.
   for column in STREET_FEATURES:
@@ -323,7 +321,7 @@ def create_templates():
 
 
 def add_features_to_template(template: Text, entity: geo_item.GeoEntity
-) -> Tuple[Text, Dict[str, Tuple[int, int]]]:
+                             ) -> Tuple[Text, Dict[str, Tuple[int, int]]]:
   '''Add the entity features to the picked template to create an instruction.
   Arguments:
     template: The chosen template.
@@ -335,7 +333,7 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity
 
   intersections = entity.geo_features['intersections']
   intersections = -1 if not intersections else int(intersections)
-  blocks = str(intersections-1)
+  blocks = str(intersections - 1)
 
   if entity.geo_landmarks['end_point'].main_tag[0].isupper():
     template = template.replace('The END_POINT', 'END_POINT')
@@ -356,7 +354,7 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity
 
     if landmark.main_tag:
 
-      template = template.replace("?UP?"+landmark_type.upper(),
+      template = template.replace("?UP?" + landmark_type.upper(),
                                   landmark.main_tag.capitalize())
 
       template = template.replace(landmark_type.upper(),
@@ -366,13 +364,13 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity
         entities_tags.append(landmark.main_tag)
 
   for feature_type, feature in entity.geo_features.items():
-    if feature_type=='goal_position' and feature:
+    if feature_type == 'goal_position' and feature:
       if not feature:
         continue
       cardinal_and_position = feature.split(";")
 
       cardinal_position = None
-      if len(cardinal_and_position)>1:
+      if len(cardinal_and_position) > 1:
         cardinal_position = cardinal_and_position[-1]
 
       feature_list = GOAL_POSITION_OPTION[cardinal_and_position[0]]
@@ -380,7 +378,7 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity
 
       if cardinal_position and 'CARDINAL_POSITION' in feature:
         feature = feature.replace('CARDINAL_POSITION', cardinal_position)
-      
+
     template = template.replace(feature_type.upper(),
                                 str(feature))
 
@@ -388,7 +386,7 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity
   template = template.replace('The The', 'The')
   template = template.replace('the The', 'the')
 
-  re_indef_vowel  = re.compile(r'\ba ([aeiou])')
+  re_indef_vowel = re.compile(r'\ba ([aeiou])')
   template = re_indef_vowel.sub(r'an \1', template)
 
   entities_span_dict = {}
@@ -398,6 +396,7 @@ def add_features_to_template(template: Text, entity: geo_item.GeoEntity
   template = template.replace('_', ' ')
 
   return template, entities_span_dict
+
 
 def add_entity_span(entity_tag: str, instruction: str) -> Dict[str, Tuple[int, int]]:
   '''Adds the entity span to a dictionary of entites (keys) and spans (value).
@@ -437,17 +436,17 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
 
     if not entity.geo_features['spatial_rel_main_near']:
       pass
-    elif entity.geo_features['spatial_rel_main_near']==entity.geo_features['spatial_rel_goal']:
+    elif entity.geo_features['spatial_rel_main_near'] == entity.geo_features['spatial_rel_goal']:
       entity.geo_features['SPATIAL_SAME'] = entity.geo_landmarks['main_near_pivot']
     else:
       entity.geo_features['SPATIAL_ACROSS'] = entity.geo_landmarks['main_near_pivot']
-      
+
     current_templates = gen_templates.copy()  # Candidate templates.
 
     # Filter templates by intersection
-    
+
     num_intersections = entity.geo_features['intersections']
-    num_intersections = -1 if num_intersections  is None else int(num_intersections)
+    num_intersections = -1 if num_intersections is None else int(num_intersections)
 
     if num_intersections > 0:
       if num_intersections == 1:
@@ -466,13 +465,13 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
             current_templates = current_templates[
               current_templates['next_block'] == True]
 
-          else: # Multiple blocks.
+          else:  # Multiple blocks.
             # Filter out templates without mentions of the number of blocks
             # that should be passed.
             current_templates = current_templates[
               current_templates['blocks'] == True]
 
-        else: # Multiple intersections.
+        else:  # Multiple intersections.
           # Filter out templates without mentions of the number of
           # intersections that should be passed.
           current_templates = current_templates[
@@ -492,7 +491,7 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
       if landmark_type in walk.main_pivots + walk.around_pivots:
         continue
 
-      if not landmark.main_tag or landmark.main_tag=='None':
+      if not landmark.main_tag or landmark.main_tag == 'None':
         current_templates = current_templates[
           current_templates[landmark_type] == False]
 
@@ -504,13 +503,13 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
       if not feature:
         current_templates = current_templates[
           current_templates[feature_type] == False]
-      
+
     # From the candidates left, pick randomly one template.
     choosen_template = current_templates.sample(1)['sentence'].iloc[0]
 
     gen_instructions, entity_span = add_features_to_template(
       choosen_template, entity)
-    
+
     rvs_entity = geo_item.RVSSample.to_rvs_sample(
       instructions=gen_instructions,
       id=entity_idx,
@@ -536,10 +535,20 @@ def generate_instruction_by_split(entities, gen_templates, split, save_instructi
   with open(save_instruction_path, 'a') as outfile:
     for sample_idx, sample in enumerate(uniq_samples.values()):
       try:
-        json.dump(sample, outfile, default=lambda o: o.__dict__)
-        outfile.write('\n')
-        outfile.flush()
-      except AttributeError:
-        logging.info(f"Failed writting sample {sample_idx}. Error: {AttributeError}")
+        rvs_entity_dict = sample.__dict__
+        if is_jsonable(rvs_entity_dict, sample_idx):
+          json.dump(rvs_entity_dict, outfile)
+          outfile.write('\n')
+          outfile.flush()
+      except Exception as e:
+        logging.info(f"Failed writing sample {sample_idx}. Error: {e}")
 
   logging.info(f"Finished writing {split}-set to file.")
+
+def is_jsonable(sample_dict, idx):
+  try:
+    json.dumps(sample_dict)
+    return True
+  except Exception as e:
+    logging.info(f"Failed writing sample {idx}. Error: {e}")
+    return False

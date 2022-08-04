@@ -219,22 +219,9 @@ def main(argv):
   if 'Dual-Encoder' in FLAGS.model:
     run_model = models.DualEncoder(
       device=device, is_distance_distribution=FLAGS.is_distance_distribution)
-  elif FLAGS.model == 'S2-Generation-T5':
+  elif 'T5' in FLAGS.model:
     run_model = models.S2GenerationModel(
-      dataset_text.label_to_cellid, device=device)
-  elif FLAGS.model == 'S2-Generation-T5-Landmarks':
-    run_model = models.S2GenerationModel(
-      dataset_text.label_to_cellid, is_landmarks=True, device=device)
-  elif FLAGS.model == 'S2-Generation-T5-Path':
-    run_model = models.S2GenerationModel(
-      dataset_text.label_to_cellid, is_path=True, device=device)
-  elif FLAGS.model == 'S2-Generation-T5-Warmup-start-end':
-    run_model = models.S2GenerationModel(
-      dataset_text.label_to_cellid, is_warmup_start_end=True, device=device)
-  elif FLAGS.model == 'Text-2-Landmarks-NER-Generation-T5-Warmup':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_ner_landmarks=True, device=device)  
-  elif FLAGS.model == 'Landmarks-NER-2-S2-Generation-T5-Warmup':
-    run_model = models.S2GenerationModel(dataset_text.label_to_cellid, is_warmup_ner_landmarks_2_cell=True, device=device)    
+      dataset_text.label_to_cellid, device=device, model_type=FLAGS.model)
   elif FLAGS.model == 'Classification-Bert':
     run_model = models.ClassificationModel(n_cells, device=device)
   else: 
@@ -289,13 +276,7 @@ def main(argv):
 
     evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(trainer.metrics_path)
-    _, mean_distance, median_distance, max_error, norm_auc = evaluator.compute_metrics(error_distances)
-
-    logging.info(f"\
-          Mean distance: {mean_distance}, \
-          Median distance: {median_distance}, \
-          Max error: {max_error}, \
-          Norm AUC: {norm_auc}")
+    evaluator.compute_metrics(error_distances)
 
   else: 
     logging.info("Starting to train model.")

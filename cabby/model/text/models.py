@@ -156,66 +156,55 @@ class S2GenerationModel(GeneralModel):
   def __init__(
       self, 
       label_to_cellid, 
-      device, is_landmarks=False, 
-      is_path=False, 
-      is_warmup_start_end=False,
-      is_warmup_ner_landmarks=False,
-      is_warmup_ner_landmarks_2_cell=False):
+      device,
+      model_type='S2-Generation-T5'
+  ):
 
     GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
     self.tokenizer = T5Tokenizer.from_pretrained(T5_TYPE)
     self.is_generation = True
     self.label_to_cellid = label_to_cellid
-    self.is_landmarks = is_landmarks
-    self.is_path = is_path
-    self.is_warmup_start_end = is_warmup_start_end
-    self.is_warmup_ner_landmarks = is_warmup_ner_landmarks
-    self.is_warmup_ner_landmarks_2_cell = is_warmup_ner_landmarks_2_cell
+    self.model_type = model_type
 
     self.max_size = len(str(len(label_to_cellid)))
 
-    if self.is_landmarks:
-      self.max_size = self.max_size*10
-
-    if self.is_path:
+    if model_type not in ['S2-Generation-T5']:
       self.max_size = self.max_size*100
 
   def forward(self, text, cellid, *args):
     batch = args[0]
 
     input_ids = text['input_ids'] 
-    attention_mask = text['attention_mask'] 
+    attention_mask = text['attention_mask']
+    labels = cellid.long()
 
-    if self.is_landmarks:
+    if self.model_type == 'S2-Generation-T5-Landmarks':
       labels = batch['landmarks'].long()
 
-    elif self.is_path:
+    elif self.model_type == 'S2-Generation-T5-Path':
       labels = batch['route'].long()
 
-    elif self.is_warmup_start_end:
+    elif self.model_type == 'S2-Generation-T5-Warmup-start-end':
       input_ids = batch['start_end_and_prompt_input_ids'] 
       attention_mask = batch['start_end_and_prompt_attention_mask']
       labels = batch['route_fixed'].long()
-    elif self.is_warmup_ner_landmarks:
+    elif self.model_type == 'Text-2-Landmarks-NER-Generation-T5-Warmup':
       labels = batch['landmarks_ner'].long()
-    elif self.is_warmup_ner_landmarks_2_cell:
+    elif self.model_type == 'Landmarks-NER-2-S2-Generation-T5-Warmup':
       input_ids = batch['landmarks_ner_and_prompt_input_ids'] 
       attention_mask = batch['landmarks_ner_and_prompt_input_attention']
       labels = batch['landmark_s2cell'].long()
+    elif self.model_type == 'S2-Generation-T5-start-text-input':
+      input_ids = batch['start_text_and_prompt_ids']
+      attention_mask = batch['start_text_and_prompt_attention']
+    elif self.model_type == 'S2-Generation-T5':
+      pass
     else:
-      labels = cellid.long()
+      sys.exit(f"Problem with model {self.model_type}. Add to model.py file.")
 
     output = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, return_dict=True)
     return output.loss
-
-  def reset_setup_false(self):
-    self.is_landmarks = False
-    self.is_path = False
-    self.is_warmup_start_end = False
-    self.is_warmup_ner_landmarks = False
-    self.is_warmup_ner_landmarks_2_cell = False
-
 
   def get_embed(self, text, cellid):
     text_dim = text['input_ids'].shape[0]
