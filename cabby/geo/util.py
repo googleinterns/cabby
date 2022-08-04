@@ -34,7 +34,6 @@ import sys
 from typing import List, Optional, Tuple, Sequence, Any, Text
 import webbrowser
 
-FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
 MAX_FAILED_ATTEMPTS = 50
 
 CoordsYX = namedtuple('CoordsYX', ('y x'))
@@ -54,7 +53,7 @@ def get_distance_between_points(start_point: Point, end_point: Point) -> float:
   return dist
 
 def far_cellid(
-  point: Point, cells: pd.DataFrame, far_distance = FAR_DISTANCE_THRESHOLD
+  point: Point, cells: pd.DataFrame, far_distance: int
   ) -> Optional[float]:
   '''Get a cell id far from the given cell point. 
   Arguments:

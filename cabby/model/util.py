@@ -203,9 +203,15 @@ def predictions_to_points(preds: Sequence,
   coords = util.get_center_from_s2cellids(cellids)
   return coords
 
-def get_valid_label(dict_cells_lables: Dict, cellid: str):
-  while cellid not in dict_cells_lables:
-    cellid = util.neighbor_cellid(int(cellid))
+def get_valid_cell_label(dict_lables: Dict[int, int], cellid: int):
+  while cellid not in dict_lables:
+    cellid = util.neighbor_cellid(cellid)
 
-  return dict_cells_lables[cellid]
-  
+  return dict_lables[cellid]
+
+
+def get_valid_graph_embed(dict_lables: Dict[str, str], cellid: str):
+  while str(cellid) not in dict_lables.index_to_key:
+    cellid = str(util.neighbor_cellid(int(cellid)))
+
+  return dict_lables[cellid]

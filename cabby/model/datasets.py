@@ -21,7 +21,7 @@ from random import sample
 from sklearn.utils import shuffle
 import torch
 
-from typing import Optional
+from typing import Optional, Any
 
 from cabby.geo import regions
 from cabby.geo import util as gutil
@@ -38,11 +38,14 @@ MODELS = [
   'Text-2-Landmarks-NER-Generation-T5-Warmup',
   'Landmarks-NER-2-S2-Generation-T5-Warmup',
   'S2-Generation-T5-Path',
-  'S2-Generation-T5-start-text-input'
+  'S2-Generation-T5-start-text-input',
+  'S2-Generation-T5-Warmup-cell-embed-to-cell-label'
 ]
 
 T5_TYPE = "t5-small"
 BERT_TYPE = 'distilbert-base-uncased'
+
+FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
 
 # DISTRIBUTION_SCALE_DISTANCEA is a factor (in meters) that gives the overall
 # scale in meters for the distribution.
@@ -59,13 +62,15 @@ class Dataset:
     s2level: int,
     region: Optional[str],
     model_type: str,
-    n_fixed_points: int
+    n_fixed_points: int = 4,
+    graph_embed_file: Any = None,
   ):
     self.data_dir = data_dir
     self.s2level = s2level
     self.region = region
     self.model_type = model_type
     self.n_fixed_points = n_fixed_points
+    self.graph_embed_file = graph_embed_file
 
     self.unique_cellid = {}
     self.cellid_to_label = {}
@@ -97,7 +102,7 @@ class Dataset:
         labels.append('; '.join(list_lables))
 
     else:
-      labels = [str(util.get_valid_label(self.cellid_to_label, c)) for c in list_cells]
+      labels = [str(util.get_valid_cell_label(self.cellid_to_label, int(c))) for c in list_cells]
 
     return tokenizerT5(
       labels, padding=True, truncation=True).input_ids
@@ -132,7 +137,9 @@ class Dataset:
 
     return landmark_found
 
-  def create_dataset(self, infer_only: bool = False, is_dist=False
+  def create_dataset(
+    self, infer_only: bool = False, is_dist: bool = False,
+    far_cell_dist: int = FAR_DISTANCE_THRESHOLD
                      ) -> dataset_item.TextGeoDataset:
     '''Loads data and creates datasets and train, validate and test sets.
     Returns:
@@ -151,7 +158,7 @@ class Dataset:
     dist_matrix = dist_matrix.to_numpy()
 
     unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
-      lambda x: gutil.far_cellid(x, unique_cells_df))
+      lambda x: gutil.far_cellid(x, unique_cells_df, far_cell_dist))
 
     vec_cells = self.s2_tokenizer(unique_cells_df.cellid.tolist())
     tens_cells = torch.tensor(vec_cells)
@@ -167,7 +174,8 @@ class Dataset:
         self.train, self.s2level, unique_cells_df,
         self.cellid_to_label, self.model_type, dprob,
         is_dist=is_dist,
-        dist_matrix=dist_matrix)
+        dist_matrix=dist_matrix,
+        graph_embed_file=self.graph_embed_file)
       logging.info(
         f"Finished to create the train-set with {len(train_dataset)} samples")
       val_dataset = dataset_item.TextGeoSplit(
@@ -176,7 +184,8 @@ class Dataset:
         self.valid, self.s2level, unique_cells_df,
         self.cellid_to_label, self.model_type, dprob,
         is_dist=is_dist,
-        dist_matrix=dist_matrix)
+        dist_matrix=dist_matrix,
+        graph_embed_file=self.graph_embed_file)
       logging.info(
         f"Finished to create the valid-set with {len(val_dataset)} samples")
     test_dataset = dataset_item.TextGeoSplit(
@@ -185,7 +194,8 @@ class Dataset:
       self.test, self.s2level, unique_cells_df,
       self.cellid_to_label, self.model_type, dprob,
       is_dist=is_dist,
-      dist_matrix=dist_matrix)
+      dist_matrix=dist_matrix,
+      graph_embed_file=self.graph_embed_file)
     logging.info(
       f"Finished to create the test-set with {len(test_dataset)} samples")
 
@@ -216,10 +226,12 @@ class HumanDataset(Dataset):
     self, data_dir: str,
     s2level: int,
     region: Optional[str],
-    n_fixed_points: int,
+    n_fixed_points: int = 4,
+    graph_embed_file: Any = None,
     model_type: str = "Dual-Encoder-Bert"):
 
-    Dataset.__init__(self, data_dir, s2level, region, model_type, n_fixed_points)
+    Dataset.__init__(
+      self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_file)
     self.train = self.load_data(data_dir, 'train', lines=True)
     self.valid = self.load_data(data_dir, 'dev', lines=True)
     self.test = self.load_data(data_dir, 'test', lines=True)
@@ -280,10 +292,11 @@ class RUNDataset(Dataset):
     data_dir: str,
     s2level: int,
     region: Optional[str],
+    graph_embed_file: Any = None,
     n_fixed_points: int = 4,
     model_type: str = "Dual-Encoder-Bert"):
     Dataset.__init__(
-      self, data_dir, s2level, None, model_type, n_fixed_points
+      self, data_dir, s2level, None, model_type, n_fixed_points, graph_embed_file
     )
 
     train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=False)
@@ -345,10 +358,12 @@ class RVSDataset(Dataset):
     data_dir: str,
     s2level: int,
     region: Optional[str],
-    n_fixed_points: int,
-    model_type: str = "Dual-Encoder-Bert"):
+    n_fixed_points: int = 4,
+    graph_embed_file: Any = None,
+    model_type: str = "Dual-Encoder-Bert"
+    ):
     Dataset.__init__(
-      self, data_dir, s2level, region, model_type, n_fixed_points)
+      self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_file)
     train_ds = self.load_data(data_dir, 'train', True)
     valid_ds = self.load_data(data_dir, 'dev', True)
     test_ds = self.load_data(data_dir, 'test', True)
@@ -447,7 +462,6 @@ class RVSDataset(Dataset):
       gutil.point_from_list_coord_xy(landmark) for landmark in reversed(route_list)]
     assert route[0] == end_point
     return route
-
 
 def calc_dist(start, unique_cells_df):
   dists = unique_cells_df.apply(

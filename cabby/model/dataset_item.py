@@ -137,7 +137,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def __init__(self, text_tokenizer, s2_tokenizer, data: pd.DataFrame, s2level: int,
                unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int],
                model_type: str, dprob: util.DistanceProbability, dist_matrix: pd.DataFrame,
-               is_dist: Boolean = False,
+               graph_embed_file:Any = None, is_dist: Boolean = False
                ):
 
     self.text_tokenizer = text_tokenizer
@@ -146,6 +146,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.s2level = s2level
     self.is_dist = is_dist
     self.model_type = model_type
+    self.graph_embed_file = graph_embed_file
 
     data = data.assign(end_point=data.end_point)
 
@@ -210,6 +211,16 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.set_S2_Generation_T5_Warmup_start_end(data)
 
+
+    if graph_embed_file:
+      self.graph_embed_end = data['cellid'].apply(
+        lambda cell: util.get_valid_graph_embed(self.graph_embed_file, str(cell)))
+      self.set_S2_Generation_T5_Warmup_cell_embed_to_cell_label(data)
+
+    else:
+      self.graph_embed_start_and_prompt = self.text_tokenizer(
+        ['']*len(self.cellids), truncation=True, padding=True, add_special_tokens=True)
+
   def get_cell_to_lablel(self, list_cells):
     if isinstance(list_cells[0], list):
       labels = []
@@ -221,7 +232,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
         labels.append('; '.join(list_lables))
 
     else:
-      labels = [str(util.get_valid_label(self.cellid_to_label, c)) for c in list_cells]
+      labels = [str(util.get_valid_cell_label(self.cellid_to_label, int(c))) for c in list_cells]
 
     return labels
 
@@ -238,7 +249,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.start_text_and_prompt = self.text_tokenizer(
       start_text_input_list, truncation=True, padding=True, add_special_tokens=True)
-
 
   def set_S2_Generation_T5_Landmarks(self, data):
     if 'T5' in self.model_type and 'landmarks' in data:
@@ -355,6 +365,22 @@ class TextGeoSplit(torch.utils.data.Dataset):
         'attention_mask': [0] * len(self.cellids),
         'input_ids': [0] * len(self.cellids)}
 
+  def set_S2_Generation_T5_Warmup_cell_embed_to_cell_label(self, data):
+
+    graph_embed_end_and_prompt = [
+      f"{self.model_type}: {str(e)}" for e in self.graph_embed_end
+    ]
+
+    self.print_sample(
+      mode_expected='S2-Generation-T5-Warmup-cell-embed-to-cell-label',
+      input=graph_embed_end_and_prompt[0],
+      output=self.labels[0])
+
+    self.graph_embed_start_and_prompt = self.text_tokenizer(
+      graph_embed_end_and_prompt, truncation=True, padding=True, add_special_tokens=True)
+
+
+
   def print_sample(self, mode_expected, input, output):
     if self.model_type == mode_expected:
       logging.info(
@@ -396,6 +422,12 @@ class TextGeoSplit(torch.utils.data.Dataset):
       key: torch.tensor(val[idx])
       for key, val in self.landmarks_ner_and_prompt_input.items()}
 
+    graph_embed_start_and_prompt = {
+      key: torch.tensor(val[idx])
+      for key, val in self.graph_embed_start_and_prompt.items()}
+
+
+
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
     end_point = torch.tensor(self.end_point[idx])
@@ -415,6 +447,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
               'landmarks_ner_and_prompt_input_attention': landmarks_ner_and_prompt_input['attention_mask'],
               'start_text_and_prompt_ids': start_text_and_prompt['input_ids'],
               'start_text_and_prompt_attention': start_text_and_prompt['attention_mask'],
+              'graph_embed_start_and_prompt_ids': graph_embed_start_and_prompt['input_ids'],
+              'graph_embed_start_and_prompt_attention': graph_embed_start_and_prompt['attention_mask']
               }
 
     return sample
