@@ -204,10 +204,14 @@ class S2GenerationModel(GeneralModel):
     elif self.model_type == 'S2-Generation-T5-start-embedding-text-input':
       input_ids = batch['start_embedding_text_and_prompt_ids']
       attention_mask = batch['start_embedding_text_and_prompt_attention']
+    elif self.model_type == 'S2-Generation-T5-start-embedding-text-to-landmarks':
+      input_ids = batch['start_embedding_text_and_prompt_ids']
+      attention_mask = batch['start_embedding_text_and_prompt_attention']
+      labels = batch['landmarks_embed']
     elif self.model_type == 'S2-Generation-T5':
       pass
     else:
-      sys.exit(f"Problem with model {self.model_type}. Add to model.py file.")
+      sys.exit(f"Problem with model '{self.model_type}'. Add to model.py file.")
 
     output = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, return_dict=True)
     return output.loss

@@ -41,6 +41,7 @@ MODELS = [
   'S2-Generation-T5-start-text-input',
   'S2-Generation-T5-Warmup-cell-embed-to-cell-label',
   'S2-Generation-T5-start-embedding-text-input',
+  'S2-Generation-T5-start-embedding-text-to-landmarks',
 ]
 
 T5_TYPE = "t5-small"
