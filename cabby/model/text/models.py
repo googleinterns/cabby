@@ -42,7 +42,7 @@ class GeneralModel(nn.Module):
 
   def get_embed(self, text_feat, cellid):
     return text_feat, cellid
-  def forward(self, text: Dict, *args
+  def forward(self, text: Dict, is_print, *args
   ):
     sys.exit("Implement compute_loss function in model")
  
@@ -92,7 +92,7 @@ class DualEncoder(GeneralModel):
 
 
   def predict(self, text, all_cells, *args):
-
+    batch = args[1]
     batch_dim, text_embedding_exp, cellid_embedding = self.get_embed(text, all_cells)
     cell_dim = cellid_embedding.shape[0]
     output_dim  = cellid_embedding.shape[1]
@@ -105,8 +105,7 @@ class DualEncoder(GeneralModel):
     output = self.cos(cellid_embedding_exp, text_embedding_exp)
 
     if self.is_distance_distribution:
-      batch = args[1]
-      prob = batch['prob'].float().to(self.device) 
+      prob = batch['prob'].float().to(self.device)
       output = output*prob
 
     output = output.detach().cpu().numpy()
@@ -118,7 +117,7 @@ class DualEncoder(GeneralModel):
     return points
 
 
-  def forward(self, text, cellid, *args
+  def forward(self, text, cellid, is_print, *args
   ):
 
     batch = args[0]
@@ -172,64 +171,20 @@ class S2GenerationModel(GeneralModel):
     if model_type not in ['S2-Generation-T5']:
       self.max_size = self.max_size*100
 
-  def forward(self, text, cellid, *args):
+    self.quant = torch.quantization.QuantStub()
+
+  def forward(self, text, cellid, is_print, *args):
     batch = args[0]
 
-    input_ids = text['input_ids'] 
-    attention_mask = text['attention_mask']
-    labels = cellid.long()
-
-    if self.model_type == 'S2-Generation-T5-Landmarks':
-      labels = batch['landmarks'].long()
-
-    elif self.model_type == 'S2-Generation-T5-Path':
-      labels = batch['route'].long()
-
-    elif self.model_type == 'S2-Generation-T5-Warmup-start-end':
-      input_ids = batch['start_end_and_prompt_input_ids'] 
-      attention_mask = batch['start_end_and_prompt_attention_mask']
-      labels = batch['route_fixed'].long()
-    elif self.model_type == 'Text-2-Landmarks-NER-Generation-T5-Warmup':
-      labels = batch['landmarks_ner'].long()
-    elif self.model_type == 'Landmarks-NER-2-S2-Generation-T5-Warmup':
-      input_ids = batch['landmarks_ner_and_prompt_input_ids'] 
-      attention_mask = batch['landmarks_ner_and_prompt_input_attention']
-      labels = batch['landmark_s2cell'].long()
-    elif self.model_type == 'S2-Generation-T5-start-text-input':
-      input_ids = batch['start_text_and_prompt_ids']
-      attention_mask = batch['start_text_and_prompt_attention']
-    elif self.model_type == 'S2-Generation-T5-Warmup-cell-embed-to-cell-label':
-      input_ids = batch['graph_embed_start_and_prompt_ids']
-      attention_mask = batch['graph_embed_start_and_prompt_attention']
-    elif self.model_type == 'S2-Generation-T5-start-embedding-text-input':
-      input_ids = batch['start_embedding_text_and_prompt_ids']
-      attention_mask = batch['start_embedding_text_and_prompt_attention']
-    elif self.model_type == 'S2-Generation-T5-start-embedding-text-to-landmarks':
-      input_ids = batch['start_embedding_text_and_prompt_ids']
-      attention_mask = batch['start_embedding_text_and_prompt_attention']
-      labels = batch['landmarks_embed']
-    elif self.model_type == 'S2-Generation-T5-Warmup-start-end-to-dist':
-      input_ids = batch['start_end_and_prompt_input_ids']
-      attention_mask = batch['start_end_and_prompt_attention_mask']
-      labels = batch['dists_start_end'].long()
-    elif self.model_type == 'S2-Generation-T5-text-start-to-end-dist':
-      input_ids = batch['start_text_and_prompt_ids']
-      attention_mask = batch['start_text_and_prompt_attention']
-      labels = batch['end_dist']
-    elif self.model_type == 'S2-Generation-T5-text-start-to-landmarks-dist':
-      input_ids = batch['start_text_and_prompt_ids']
-      attention_mask = batch['start_text_and_prompt_attention']
-      labels = batch['landmarks_dist']
-    elif self.model_type == 'S2-Generation-T5-text-start-to-landmarks-embedding-dist':
-      input_ids = batch['start_embedding_text_and_prompt_ids']
-      attention_mask = batch['start_embedding_text_and_prompt_attention']
-      labels = batch['landmarks_embed_dist']
-    elif self.model_type == 'S2-Generation-T5':
-      pass
-    else:
-      sys.exit(f"Problem with model '{self.model_type}'. Add to model.py file.")
+    input_ids, attention_mask, labels = self.get_input_output(batch, text, cellid)
 
     output = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, return_dict=True)
+
+    if is_print:
+      input_ids_decoded = self.tokenizer.batch_decode(
+        input_ids, skip_special_tokens=True)
+      logging.info(f"Actual input decoded: {input_ids_decoded[0]}")
+
     return output.loss
 
   def get_embed(self, text, cellid):
@@ -240,9 +195,15 @@ class S2GenerationModel(GeneralModel):
   def predict(self, text, *args):
 
     label_to_cellid = args[1]
+    batch = args[-1]
+
+    input_ids, attention_mask, _ = self.get_input_output(batch, text)
+
 
     output_sequences = self.model.generate(
-      **text, num_beams=2, 
+      input_ids=input_ids,
+      attention_mask=attention_mask,
+      num_beams=2,
       max_length=self.max_size+2, 
       min_length=1, 
       )
@@ -269,6 +230,63 @@ class S2GenerationModel(GeneralModel):
     
     return prediction_coords
 
+  def get_input_output(self, batch, text, cellid=None):
+    input_ids = text['input_ids']
+    attention_mask = text['attention_mask']
+    labels = batch['cellid']
+    if self.model_type == 'S2-Generation-T5-Landmarks':
+      labels = batch['landmarks'].long()
+
+    elif self.model_type == 'S2-Generation-T5-Path':
+      labels = batch['route'].long()
+
+    elif self.model_type == 'S2-Generation-T5-Warmup-start-end':
+      input_ids = batch['start_end_and_prompt_input_ids']
+      attention_mask = batch['start_end_and_prompt_attention_mask']
+      labels = batch['route_fixed'].long()
+    elif self.model_type == 'Text-2-Landmarks-NER-Generation-T5-Warmup':
+      labels = batch['landmarks_ner'].long()
+    elif self.model_type == 'Landmarks-NER-2-S2-Generation-T5-Warmup':
+      input_ids = batch['landmarks_ner_and_prompt_input_ids']
+      attention_mask = batch['landmarks_ner_and_prompt_input_attention']
+      labels = batch['landmark_s2cell'].long()
+    elif self.model_type == 'S2-Generation-T5-start-text-input':
+      input_ids = batch['start_text_and_prompt_ids']
+      attention_mask = batch['start_text_and_prompt_attention']
+    elif self.model_type == 'S2-Generation-T5-Warmup-cell-embed-to-cell-label':
+      input_ids = batch['graph_embed_start_and_prompt_ids']
+      attention_mask = batch['graph_embed_start_and_prompt_attention']
+    elif self.model_type == 'S2-Generation-T5-start-embedding-text-input':
+      input_ids = batch['start_embedding_text_and_prompt_ids']
+      attention_mask = batch['start_embedding_text_and_prompt_attention']
+    elif self.model_type == 'S2-Generation-T5-Warmup-start-end-to-dist':
+      input_ids = batch['start_end_and_prompt_input_ids']
+      attention_mask = batch['start_end_and_prompt_attention_mask']
+      labels = batch['dists_start_end'].long()
+    elif self.model_type == 'S2-Generation-T5-text-start-to-end-dist':
+      input_ids = batch['start_text_and_prompt_ids']
+      attention_mask = batch['start_text_and_prompt_attention']
+      labels = batch['end_dist']
+    elif self.model_type == 'S2-Generation-T5-text-start-to-landmarks-dist':
+      input_ids = batch['start_text_and_prompt_ids']
+      attention_mask = batch['start_text_and_prompt_attention']
+      labels = batch['landmarks_dist']
+    elif self.model_type == 'S2-Generation-T5-text-start-embedding-to-landmarks':
+      input_ids = batch['start_embedding_text_and_prompt_ids']
+      attention_mask = batch['start_embedding_text_and_prompt_attention']
+      labels = batch['landmarks']
+
+    elif self.model_type == 'S2-Generation-T5-text-start-embedding-to-landmarks-dist':
+      input_ids = batch['start_embedding_text_and_prompt_ids']
+      attention_mask = batch['start_embedding_text_and_prompt_attention']
+      labels = batch['landmarks_dist']
+
+    elif self.model_type == 'S2-Generation-T5':
+      pass
+    else:
+      sys.exit(f"Problem with model '{self.model_type}'. Add to model.py file.")
+
+    return input_ids, attention_mask, labels
   
 class ClassificationModel(GeneralModel):
   def __init__(self, n_lables, device, hidden_dim = 200):
@@ -280,7 +298,7 @@ class ClassificationModel(GeneralModel):
 
     self.criterion = nn.CrossEntropyLoss()
 
-  def forward(self, text, cellid, *args):
+  def forward(self, text, cellid, is_print, *args):
     labels =  args[0]['label']
 
     outputs = self.model(

@@ -84,16 +84,20 @@ class Trainer:
     loss_val_total = 0
 
     self.model.eval()
+    is_print = False
+
     with torch.no_grad():
-      for batch in data_loader:
+      for batch_idx, batch in enumerate(data_loader):
         text = {key: val.to(self.device) for key, val in batch['text'].items()}
         cellids = batch['cellid'].float().to(self.device)
-
+        if batch_idx == 0:
+          is_print = True
         batch = {k: v.to(self.device) for k, v in batch.items() if torch.is_tensor(v)}
 
         loss = self.model(
           text,
           cellids,
+          is_print,
           batch
         )
 
@@ -132,11 +136,14 @@ class Trainer:
         text = {key: val.to(self.device) for key, val in batch['text'].items()}
         cellids = batch['cellid'].float().to(self.device)
         batch = {k: v.to(self.device) for k, v in batch.items() if torch.is_tensor(v)}
-
+        is_print = False
+        if epoch == 0 and batch_idx == 0:
+          is_print = True
         loss = self.model(
           text,
           cellids,
-          batch
+          is_print,
+          batch,
         )
 
         loss.backward()
@@ -208,6 +215,7 @@ class Trainer:
     # Training loop.
     self.model.train()
 
+    is_print = False
     for epoch in range(self.num_epochs):
       running_loss = 0.0
       logging.info("Epoch number: {}".format(epoch))
@@ -225,6 +233,7 @@ class Trainer:
           loss += self.model(
             text,
             cellids,
+            is_print,
             batch
           )
 
