@@ -217,6 +217,10 @@ class S2GenerationModel(GeneralModel):
       input_ids = batch['start_text_and_prompt_ids']
       attention_mask = batch['start_text_and_prompt_attention']
       labels = batch['end_dist']
+    elif self.model_type == 'S2-Generation-T5-text-start-to-landmarks-dist':
+      input_ids = batch['start_text_and_prompt_ids']
+      attention_mask = batch['start_text_and_prompt_attention']
+      labels = batch['landmarks_dist']
     elif self.model_type == 'S2-Generation-T5':
       pass
     else:

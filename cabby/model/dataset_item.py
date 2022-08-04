@@ -213,7 +213,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.graph_embed_start = self.start_point_cells.apply(
         lambda cell: util.get_valid_graph_embed(self.graph_embed_file, str(cell)))
 
-      self.graph_embed_landmarks = data.landmarks.apply(
+      self.graph_embed_landmarks = data.landmarks_cells.apply(
         lambda l: [util.get_valid_graph_embed(
           self.graph_embed_file, str(cell)) for cell in l])
 
@@ -245,9 +245,12 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
       self.set_S2_Generation_text_start_to_end_dist(data)
 
+      self.set_S2_Generation_text_start_to_landmarks_dist(data)
+
     else:
       self.dists_start_end = default_empty.input_ids
       self.end_dist = default_empty.input_ids
+      self.landmarks_dist = default_empty.input_ids
 
     del self.graph_embed_file
     del self.start_point_cells
@@ -269,19 +272,39 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     return labels
 
+  def set_S2_Generation_text_start_to_landmarks_dist(self, data):
+
+    landmarks_dist = []
+
+    for s_p, lan_l, lan_p in zip(data.start_point.tolist(), self.landmark_label, data.landmarks.tolist()):
+      landmark_dist_cur = []
+      for e_p, l in zip(lan_p, lan_l.split(";")):
+        dist = round(gutil.get_distance_between_points(s_p, e_p))
+        landmark_dist_cur.append(f"{l} distance: {dist}")
+
+      landmarks_dist.append('; '.join(landmark_dist_cur))
+
+    self.print_sample(
+      mode_expected='S2-Generation-T5-text-start-to-landmarks-dist',
+      input=self.start_text_input_list[0],
+      output=landmarks_dist[0])
+
+    self.landmarks_dist = self.text_tokenizer(
+      landmarks_dist, truncation=True, padding=True, add_special_tokens=True).input_ids
+
   def set_S2_Generation_text_start_to_end_dist(self, data):
 
-    end_dist = [f"{e_l} distance: {round(gutil.get_distance_between_points(s_p, e_p))}"
+    self.end_dist_raw = [f"{e_l} distance: {round(gutil.get_distance_between_points(s_p, e_p))}"
       for e_l, e_p, s_p in zip(
         self.labels, self.end_point, data.start_point)]
 
     self.print_sample(
       mode_expected='S2-Generation-T5-text-start-to-end-dist',
       input=self.start_text_input_list[0],
-      output=end_dist[0])
+      output=self.end_dist_raw[0])
 
     self.end_dist = self.text_tokenizer(
-      end_dist, truncation=True, padding=True, add_special_tokens=True).input_ids
+      self.end_dist_raw, truncation=True, padding=True, add_special_tokens=True).input_ids
 
   def set_S2_Generation_start_embedding_text_input(self, data):
 
@@ -314,18 +337,18 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
   def set_S2_Generation_T5_Landmarks(self, data):
     if 'T5' in self.model_type and 'landmarks' in data:
-      data['landmarks'] = data.landmarks.apply(
+      data['landmarks_cells'] = data.landmarks.apply(
         lambda l: [gutil.cellid_from_point(x, self.s2level) for x in l])
 
-      landmark_label = self.get_cell_to_lablel(data['landmarks'].tolist())
+      self.landmark_label = self.get_cell_to_lablel(data['landmarks_cells'].tolist())
 
       self.print_sample(
         mode_expected='S2-Generation-T5-Landmarks',
         input=data.instructions.tolist()[0],
-        output=landmark_label[0])
+        output=self.landmark_label[0])
 
       self.landmarks = self.text_tokenizer(
-        landmark_label, truncation=True, padding=True, add_special_tokens=True).input_ids
+        self.landmark_label, truncation=True, padding=True, add_special_tokens=True).input_ids
 
     else:
       self.landmarks = [0] * len(self.cellids)
@@ -550,7 +573,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
               'graph_embed_start_and_prompt_attention': graph_embed_start_and_prompt['attention_mask'],
               'landmarks_embed': landmarks_embed,
               'dists_start_end': dists_start_end,
-              'end_dist': torch.tensor(self.end_dist[idx])
+              'end_dist': torch.tensor(self.end_dist[idx]),
+              'landmarks_dist': torch.tensor((self.landmarks_dist[idx]))
               }
 
     return sample
