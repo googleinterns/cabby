@@ -124,7 +124,6 @@ class TextGeoDataset:
 
 class TextGeoSplit(torch.utils.data.Dataset):
   """A split of of the RUN dataset.
-
   `points`: The ground true end-points of the samples.
   `labels`: The ground true label of the cellid.
   `cellids`: The ground truth S2Cell id.
@@ -154,7 +153,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       lambda x: gutil.cellid_from_point(x, s2level))
 
     data['neighbor_cells'] = data.cellid.apply(
-      lambda x: gutil.neighbor_cellid(x))
+      lambda x: gutil.neighbor_cellid(x, unique_cells_df.cellid.tolist()))
 
     # Tokenize instructions.
 

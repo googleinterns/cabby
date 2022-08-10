@@ -208,15 +208,17 @@ def get_valid_cell_label(dict_lables: Dict[int, int], cellid: int):
   counter = 0
   while cellid not in dict_lables:
     counter+=1
-    cellid = util.neighbor_cellid(cellid)
+    cellid = util.neighbor_cellid(cellid, list(dict_lables.keys()))
     if counter>15:
-      sys.exit(f"Cell id {cellid} not found in dictionary")
+      first_key = list(dict_lables.keys())[0]
+      sys.exit(f"Cell id {cellid} not found in dictionary. Type of cell is {type(cellid)}. "
+               f"Type of Dictionary keys: {type(first_key)}")
 
   return dict_lables[cellid]
 
 
 def get_valid_graph_embed(gensim_dict_lables: Any, cellid: str):
   while str(cellid) not in gensim_dict_lables.index_to_key:
-    cellid = str(util.neighbor_cellid(int(cellid)))
+    cellid = str(util.neighbor_cellid(int(cellid), gensim_dict_lables.index_to_key))
 
   return gensim_dict_lables[cellid]

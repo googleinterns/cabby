@@ -112,11 +112,9 @@ flags.DEFINE_bool(
   help=('In case the model is loaded - should the validation loss use the models current loss.'))
 
 
-
 # Required flags.
 flags.mark_flag_as_required("dataset_dir_train")
 flags.mark_flag_as_required("dataset_dir_test")
-
 
 
 def main(argv):
@@ -149,7 +147,6 @@ def main(argv):
 
   test_loader = DataLoader(
     dataset_valid_test.test, batch_size=FLAGS.train_batch_size, shuffle=True)
-
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')

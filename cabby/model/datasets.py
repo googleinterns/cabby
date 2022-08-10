@@ -108,7 +108,6 @@ class Dataset:
         labels.append('; '.join(list_lables))
 
     else:
-
       labels = [str(util.get_valid_cell_label(self.cellid_to_label, int(c))) for c in list_cells]
 
     return tokenizerT5(
