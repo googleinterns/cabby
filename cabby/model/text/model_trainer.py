@@ -13,17 +13,15 @@
 # limitations under the License.
 
 """Model framework for text and S2Cellids matching.
-
 Example command line call:
 $ bazel-bin/cabby/model/text/model_trainer \
   --data_dir ~/data/wikigeo/pittsburgh  \
   --dataset_dir ~/model/dataset/pittsburgh \
-  --region Pittsburgh \ 
+  --region Pittsburgh \
   --s2_level 12 \
   --output_dir ~/tmp/output/\
   --train_batch_size 32 \
   --test_batch_size 32 \
-
 For infer:
 $ bazel-bin/cabby/model/text/model_trainer \
   --data_dir ~/data/wikigeo/pittsburgh  \
@@ -35,9 +33,6 @@ $ bazel-bin/cabby/model/text/model_trainer \
   --model_path ~/tmp/model/ \
   --output_dir ~/tmp/output/\
   --task RVS
-
-
-
 """
 
 from absl import app
@@ -45,7 +40,7 @@ from absl import flags
 
 from absl import logging
 import numpy as np
-import os 
+import os
 import sys
 from sklearn.metrics import accuracy_score
 import torch
@@ -54,7 +49,6 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from transformers import AdamW
 from gensim.models import KeyedVectors
-
 
 from cabby.evals import utils as eu
 from cabby.model.text import train
@@ -69,37 +63,37 @@ TASKS = ["WikiGeo", "RVS", "RUN", "human"]
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string("data_dir", None,
-          "The directory from which to load the dataset.")
+                    "The directory from which to load the dataset.")
 
 flags.DEFINE_string("dataset_dir", None,
-          "The directory to save\load dataloader.")
+                    "The directory to save\load dataloader.")
 
 flags.DEFINE_enum(
-  "region", None, regions.SUPPORTED_REGION_NAMES, 
+  "region", None, regions.SUPPORTED_REGION_NAMES,
   regions.REGION_SUPPORT_MESSAGE)
 
 flags.DEFINE_enum(
-  "task", "WikiGeo", TASKS, 
+  "task", "WikiGeo", TASKS,
   f"Supported datasets to train\evaluate on: {','.join(TASKS)}. ")
 
 flags.DEFINE_enum(
-  "model", "Dual-Encoder-Bert", datasets.MODELS, 
+  "model", "Dual-Encoder-Bert", datasets.MODELS,
   f"Supported models to train\evaluate on:  {','.join(datasets.MODELS)}.")
 
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
 
 flags.DEFINE_string("output_dir", None,
-          "The directory where the model and results will be save to.")
+                    "The directory where the model and results will be save to.")
 
 flags.DEFINE_float(
   'learning_rate', default=5e-5,
   help=('The learning rate for the Adam optimizer.'))
 
 flags.DEFINE_string("model_path", None,
-          "A path of a model the model to be fine tuned\ evaluated.")
+                    "A path of a model the model to be fine tuned\ evaluated.")
 
 flags.DEFINE_string("save_graph_embed_path", default="",
-          help="The path to the graph embedding.")
+                    help="The path to the graph embedding.")
 
 flags.DEFINE_integer(
   'train_batch_size', default=4,
@@ -140,39 +134,38 @@ flags.DEFINE_bool(
     'Add probability over cells according to the distance from start point.' +
     'This is optional only for RVS and RUN.'))
 
-
 # Required flags.
 flags.mark_flag_as_required("data_dir")
 flags.mark_flag_as_required("dataset_dir")
 flags.mark_flag_as_required("region")
 flags.mark_flag_as_required("s2_level")
 
+
 def main(argv):
-  
   if not os.path.exists(FLAGS.dataset_dir):
     sys.exit("Dataset path doesn't exist: {}.".format(FLAGS.dataset_dir))
-  
+
   dataset_model_path = os.path.join(FLAGS.dataset_dir, str(FLAGS.model))
   dataset_path = os.path.join(dataset_model_path, str(FLAGS.s2_level))
-  train_path_dataset = os.path.join(dataset_path,'train.pth')
-  valid_path_dataset = os.path.join(dataset_path,'valid.pth')
-  test_path_dataset = os.path.join(dataset_path,'test.pth')
-  unique_cellid_path = os.path.join(dataset_path,"unique_cellid.npy")
-  tensor_cellid_path = os.path.join(dataset_path,"tensor_cellid.pth")
-  label_to_cellid_path = os.path.join(dataset_path,"label_to_cellid.npy")
+  train_path_dataset = os.path.join(dataset_path, 'train.pth')
+  valid_path_dataset = os.path.join(dataset_path, 'valid.pth')
+  test_path_dataset = os.path.join(dataset_path, 'test.pth')
+  unique_cellid_path = os.path.join(dataset_path, "unique_cellid.npy")
+  tensor_cellid_path = os.path.join(dataset_path, "tensor_cellid.pth")
+  label_to_cellid_path = os.path.join(dataset_path, "label_to_cellid.npy")
+  coord_to_cellid_path = os.path.join(dataset_path, "coord_to_cellid.npy")
 
 
   assert FLAGS.task in TASKS
-  if FLAGS.task == "RVS": 
+  if FLAGS.task == "RVS":
     dataset_init = datasets.RVSDataset
   elif FLAGS.task == 'RUN':
     dataset_init = datasets.RUNDataset
   elif FLAGS.task == 'human':
     dataset_init = datasets.HumanDataset
-  else: 
+  else:
     sys.exit("Dataset invalid")
 
-  
   if FLAGS.is_single_sample_train:
     FLAGS.train_batch_size = 1
 
@@ -182,42 +175,43 @@ def main(argv):
 
   if os.path.exists(dataset_path):
     dataset_text = dataset_item.TextGeoDataset.load(
-      dataset_dir = FLAGS.dataset_dir, 
-      model_type = str(FLAGS.model),
-      s2_level = FLAGS.s2_level
+      dataset_dir=FLAGS.dataset_dir,
+      model_type=str(FLAGS.model),
+      s2_level=FLAGS.s2_level
     )
 
   else:
     dataset = dataset_init(
-      data_dir = FLAGS.data_dir, 
-      region = FLAGS.region, 
-      s2level = FLAGS.s2_level, 
-      model_type = FLAGS.model,
-      n_fixed_points = FLAGS.n_fixed_points,
-      graph_embed_file = graph_embed_file)
+      data_dir=FLAGS.data_dir,
+      region=FLAGS.region,
+      s2level=FLAGS.s2_level,
+      model_type=FLAGS.model,
+      n_fixed_points=FLAGS.n_fixed_points,
+      graph_embed_file=graph_embed_file)
 
     if not os.path.exists(dataset_model_path):
       os.mkdir(dataset_model_path)
     logging.info("Preparing data.")
     dataset_text = dataset.create_dataset(
-            infer_only = FLAGS.infer_only, 
-            is_dist = FLAGS.is_distance_distribution,
-            far_cell_dist = FLAGS.far_distance_threshold
+      infer_only=FLAGS.infer_only,
+      is_dist=FLAGS.is_distance_distribution,
+      far_cell_dist=FLAGS.far_distance_threshold
     )
 
     dataset_item.TextGeoDataset.save(
-      dataset_text = dataset_text,
-      dataset_path = dataset_path, 
-      train_path_dataset = train_path_dataset, 
-      valid_path_dataset = valid_path_dataset, 
-      test_path_dataset = test_path_dataset, 
-      label_to_cellid_path = label_to_cellid_path, 
-      unique_cellid_path = unique_cellid_path, 
-      tensor_cellid_path = tensor_cellid_path)
-  
+      dataset_text=dataset_text,
+      dataset_path=dataset_path,
+      train_path_dataset=train_path_dataset,
+      valid_path_dataset=valid_path_dataset,
+      test_path_dataset=test_path_dataset,
+      label_to_cellid_path=label_to_cellid_path,
+      unique_cellid_path=unique_cellid_path,
+      tensor_cellid_path=tensor_cellid_path,
+      coord_to_cellid_path=coord_to_cellid_path)
+
   n_cells = len(dataset_text.unique_cellids)
   logging.info("Number of unique cells: {}".format(
-  n_cells))
+    n_cells))
   train_loader = None
   valid_loader = None
   if FLAGS.infer_only == False:
@@ -230,21 +224,19 @@ def main(argv):
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
-  
+
   logging.info(f"Using model: {FLAGS.model}")
   if 'Dual-Encoder' in FLAGS.model:
     run_model = models.DualEncoder(
       device=device, is_distance_distribution=FLAGS.is_distance_distribution)
   elif 'T5' in FLAGS.model:
     run_model = models.S2GenerationModel(
-      dataset_text.label_to_cellid, device=device, model_type=FLAGS.model)
+      dataset_text.coord_to_cellid, device=device, model_type=FLAGS.model)
   elif FLAGS.model == 'Classification-Bert':
     run_model = models.ClassificationModel(n_cells, device=device)
-  else: 
+  else:
     sys.exit("Model invalid")
 
-
-    
   if FLAGS.model_path is not None:
     if not os.path.exists(FLAGS.model_path):
       sys.exit(f"The model's path does not exists: {FLAGS.model_path}")
@@ -258,8 +250,8 @@ def main(argv):
 
   optimizer = torch.optim.Adam(
     run_model.parameters(), lr=FLAGS.learning_rate)
-  
-  if FLAGS.is_distance_distribution and FLAGS.task=='WikiGeo':
+
+  if FLAGS.is_distance_distribution and FLAGS.task == 'WikiGeo':
     sys.exit("Wikigeo does not have a distance distribution option.")
 
   if not FLAGS.is_val_loss_from_model:
@@ -273,31 +265,31 @@ def main(argv):
     train_loader=train_loader,
     valid_loader=valid_loader,
     test_loader=test_loader,
-    unique_cells = dataset_text.unique_cellids,
-    file_path=FLAGS.output_dir, 
-    cells_tensor = dataset_text.unique_cellids_binary,
-    label_to_cellid = dataset_text.label_to_cellid,
-    best_valid_loss = run_model.best_valid_loss,
-    is_single_sample_train = FLAGS.is_single_sample_train
-    )
+    unique_cells=dataset_text.unique_cellids,
+    file_path=FLAGS.output_dir,
+    cells_tensor=dataset_text.unique_cellids_binary,
+    label_to_cellid=dataset_text.label_to_cellid,
+    best_valid_loss=run_model.best_valid_loss,
+    is_single_sample_train=FLAGS.is_single_sample_train
+  )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")
     valid_loss, predictions, true_vals, true_points, pred_points = (
-      trainer.evaluate(validation_set = False))
+      trainer.evaluate(validation_set=False))
 
     util.save_metrics_last_only(
-      trainer.metrics_path, 
-      true_points, 
+      trainer.metrics_path,
+      true_points,
       pred_points)
 
     evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(trainer.metrics_path)
     evaluator.compute_metrics(error_distances)
 
-  else: 
+  else:
     logging.info("Starting to train model.")
     trainer.train_model()
-    
+
 
 if __name__ == '__main__':
   app.run(main)

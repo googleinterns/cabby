@@ -39,6 +39,7 @@ MAX_FAILED_ATTEMPTS = 50
 CoordsYX = namedtuple('CoordsYX', ('y x'))
 CoordsXY = namedtuple('CoordsXY', ('x y'))
 
+
 def get_distance_between_points(start_point: Point, end_point: Point) -> float:
   '''Calculate the line length in meters.
   Arguments:
@@ -49,12 +50,13 @@ def get_distance_between_points(start_point: Point, end_point: Point) -> float:
   '''
   dist = ox.distance.great_circle_vec(
     start_point.y, start_point.x, end_point.y, end_point.x)
-  assert dist >=0 , f"start_point: {Point} | end_point: {end_point}"
+  assert dist >= 0, f"start_point: {Point} | end_point: {end_point}"
   return dist
+
 
 def far_cellid(
   point: Point, cells: pd.DataFrame, far_distance: int
-  ) -> Optional[float]:
+) -> Optional[float]:
   '''Get a cell id far from the given cell point. 
   Arguments:
     point: The center point of the cell.
@@ -76,7 +78,9 @@ def far_cellid(
 
   return far_cell_found
 
-def neighbor_cellid(cellid: int) -> int:
+
+
+def neighbor_cellid(cellid: int, celllist: Optional[List[int]]) -> int:
   '''Get a neighbor cell id.
   Arguments:
     cellid: The cellid of the cell to return a neighbor cellid for.
@@ -85,7 +89,34 @@ def neighbor_cellid(cellid: int) -> int:
   '''
 
   cell = s2.S2CellId(cellid)
-  return cell.next().id()
+
+  four_neighbors = cell.GetEdgeNeighbors()
+  if not celllist:
+    logging.info(f"!!!!!!!!!!!!!!!!!!")
+    return four_neighbors[0].id()
+
+  neighbor_cell = None
+
+  stop_counter = 0
+  checked = []
+  while not neighbor_cell and stop_counter < 200:
+    stop_counter += 1
+    for cell_n in four_neighbors:
+      if cell_n.id() in celllist:
+        neighbor_cell = cell_n.id()
+        break
+    checked +=four_neighbors
+    four_neighbors = list(
+      set([cell.next() for cell in four_neighbors] + [cell.prev() for cell in four_neighbors]
+          + [cell.GetEdgeNeighbors()[2] for cell in four_neighbors] + [cell.GetEdgeNeighbors()[1] for cell in four_neighbors]))
+
+  checked_hex = list(set([hex(cell.id()) for cell in checked]))
+
+
+
+  assert neighbor_cell, f"Didn't find neighbor for cell {cellid} "
+  return neighbor_cell
+
 
 def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]:
   '''Converts a sequence of S2CellIds to a sequence of ids of the S2CellIds.
@@ -108,9 +139,8 @@ def s2cellids_from_cellids(list_ids: Sequence[int]) -> Sequence[s2.S2CellId]:
   return [s2.S2Cell(s2.S2CellId(cellid)) for cellid in list_ids]
 
 
-
 def get_s2cover_for_s2polygon(s2polygon: s2.S2Polygon,
-                level: int) -> Optional[List]:
+                              level: int) -> Optional[List]:
   '''Returns the cellids that cover the shape (point/polygon/polyline).
   Arguments:
     s2polygon(S2Polygon): The S2Polygon to which S2Cells covering will be
@@ -144,7 +174,6 @@ def s2polygon_from_shapely_point(shapely_point: Point) -> s2.S2Polygon:
   y, x = shapely_point.y, shapely_point.x
   latlng = s2.S2LatLng.FromDegrees(y, x)
   return s2.S2Polygon(s2.S2Cell(s2.S2CellId(latlng)))
-
 
 
 def s2cellid_from_point(point: Point) -> int:
@@ -216,6 +245,7 @@ def s2polygon_from_shapely_polyline(shapely_polyine: Polygon) -> s2.S2Polygon:
 
   return line
 
+
 def cut(line: LineString, distance: float) -> Sequence[LineString]:
   '''Cut line in two at a distance from its
   starting point.
@@ -226,27 +256,28 @@ def cut(line: LineString, distance: float) -> Sequence[LineString]:
     A list of lines.
   '''
   if distance <= 0.0 or distance >= line.length:
-      return [LineString(line)]
+    return [LineString(line)]
   coords = list(line.coords)
   for i, p in enumerate(coords):
-      pd = line.project(Point(p))
-      if pd == distance:
-          return [
-              LineString(coords[:i+1]),
-              LineString(coords[i:])]
-      if pd > distance:
-          cp = line.interpolate(distance)
-          return [
-              LineString(coords[:i] + [(cp.x, cp.y)]),
-              LineString([(cp.x, cp.y)] + coords[i:])]
+    pd = line.project(Point(p))
+    if pd == distance:
+      return [
+        LineString(coords[:i + 1]),
+        LineString(coords[i:])]
+    if pd > distance:
+      cp = line.interpolate(distance)
+      return [
+        LineString(coords[:i] + [(cp.x, cp.y)]),
+        LineString([(cp.x, cp.y)] + coords[i:])]
 
-  if coords[0]==coords[-1]: # It is a loop.
+  if coords[0] == coords[-1]:  # It is a loop.
     cp = line.interpolate(distance)
     return [
-            LineString(coords[:-1] + [(cp.x, cp.y)]),
-            LineString([(cp.x, cp.y)] + coords[-1:])]
+      LineString(coords[:-1] + [(cp.x, cp.y)]),
+      LineString([(cp.x, cp.y)] + coords[-1:])]
 
   return [LineString(line)]
+
 
 def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
   '''Plot the S2Cell covering.'''
@@ -264,7 +295,7 @@ def plot_cells(cells: s2.S2Cell, location: Sequence[Point], zoom_level: int):
 
       latlng = s2.S2LatLng(vertex)
       vertices.append((latlng.lat().degrees(),
-               latlng.lng().degrees()))
+                       latlng.lng().degrees()))
     gj = folium.GeoJson(
       {
         "type": "Polygon",
@@ -374,6 +405,7 @@ def get_distance_km(start: Point, goal: Point) -> float:
   """
   return geodesic(start.coords, goal.coords).km
 
+
 def concat_numbers(n_1: int, n_2: int) -> int:
   '''Return the concatenation of two numbers.
   Arguments:
@@ -391,6 +423,7 @@ def get_distance_m(start: Point, goal: Point) -> float:
   going over roads and around buildings.
   """
   return geodesic(start.coords, goal.coords).m
+
 
 def tuple_from_point(point: Point) -> CoordsYX:
   '''Convert a Point into a tuple, with latitude as first element, and
@@ -436,7 +469,7 @@ def midpoint(p1: Point, p2: Point) -> Point:
   Returns:
     A lat-lng Point.
   '''
-  return Point((p1.x+p2.x)/2, (p1.y+p2.y)/2)
+  return Point((p1.x + p2.x) / 2, (p1.y + p2.y) / 2)
 
 
 def check_if_geometry_in_polygon(geometry: BaseGeometry, poly: Polygon) -> Polygon:
@@ -452,6 +485,7 @@ def check_if_geometry_in_polygon(geometry: BaseGeometry, poly: Polygon) -> Polyg
   else:
     geometry['geometry'].intersects(poly)
 
+
 def get_distance_between_geometries(geometry: BaseGeometry, point: Point) -> float:
   '''Calculate the distance between point and polygon in meters.
   Arguments:
@@ -464,6 +498,7 @@ def get_distance_between_geometries(geometry: BaseGeometry, point: Point) -> flo
     return get_distance_between_points(geometry, point)
   else:
     return get_distance_between_point_to_geometry(geometry, point)
+
 
 def get_distance_between_point_to_geometry(
   geometry: BaseGeometry, point: Point) -> float:
@@ -519,6 +554,7 @@ def point_from_list_coord_yx(coord: Sequence) -> Point:
 
   return Point(lon, lat)
 
+
 def point_from_list_coord_xy(coord: Sequence) -> Point:
   '''Converts coordinates in list format (longtitude and latitude) to Point.
   E.g, of list [-74.037258, 40.715865].
@@ -535,7 +571,7 @@ def point_from_list_coord_xy(coord: Sequence) -> Point:
 
 def point_from_str_coord_yx(coord_str: Text) -> Point:
   '''Converts coordinates in string format (latitude and longtitude) to Point.
-  E.g, of string '(40.715865, -74.037258)' or '[40.715865, -74.037258]' or 'POINT(40.715865 -74.037258)'. 
+  E.g, of string '(40.715865, -74.037258)' or '[40.715865, -74.037258]' or 'POINT(40.715865 -74.037258)'.
   Arguments:
     coord: A lat-lng coordinate to be converted to a point.
   Returns:
@@ -543,12 +579,12 @@ def point_from_str_coord_yx(coord_str: Text) -> Point:
   '''
   coord_str = coord_str.replace("POINT", "").replace("(", "").replace(")", "")
   coord_str = coord_str.replace("[", "").replace("]", "")
-  
+
   list_coords_str = coord_str.split(',')
 
-  if len(list_coords_str)==1:
+  if len(list_coords_str) == 1:
     list_coords_str = list_coords_str[0].split(' ')
-  
+
   list_coords_str = [x for x in list_coords_str if x]
   coord = list(map(float, list_coords_str))
 
@@ -557,21 +593,20 @@ def point_from_str_coord_yx(coord_str: Text) -> Point:
 
 def point_from_str_coord_xy(coord_str: Text) -> Point:
   '''Converts coordinates in string format (latitude and longtitude) to Point.
-  E.g, of string '(-74.037258, 40.715865)' or '[-74.037258, 40.715865]' or 'POINT(-74.037258 40.715865)'. 
+  E.g, of string '(-74.037258, 40.715865)' or '[-74.037258, 40.715865]' or 'POINT(-74.037258 40.715865)'.
   Arguments:
     coord: A lng-lat coordinate to be converted to a point.
   Returns:
     A point.
   '''
   list_coords_str = coord_str.replace("POINT", "").replace("(", "").replace(")", "").split(',')
-  if len(list_coords_str)==1:
+  if len(list_coords_str) == 1:
     list_coords_str = list_coords_str[0].split(' ')
-  
+
   list_coords_str = [x for x in list_coords_str if x]
   coord = list(map(float, list_coords_str))
 
   return Point(coord[0], coord[1])
-
 
 
 def coords_from_str_coord(coord_str: Text) -> CoordsYX:
@@ -588,8 +623,9 @@ def coords_from_str_coord(coord_str: Text) -> CoordsYX:
 
   return CoordsYX(coord[0], coord[1])
 
+
 def get_centers_from_s2cellids(
-    s2cell_ids: Sequence[int64]) -> Sequence[Point]:
+  s2cell_ids: Sequence[int64]) -> Sequence[Point]:
   """Returns the center latitude and longitude of s2 cells.
   Arguments:
     s2cell_ids: array of valid s2 cell ids. 1D array
@@ -604,8 +640,9 @@ def get_centers_from_s2cellids(
     prediction_coords.append(Point(lng, lat))
   return prediction_coords
 
+
 def get_center_from_s2cellids(
-    s2cell_ids: Sequence[int64]) -> Sequence[CoordsYX]:
+  s2cell_ids: Sequence[int64]) -> Sequence[CoordsYX]:
   """Returns the center latitude and longitude of s2 cells.
   Arguments:
     s2cell_ids: array of valid s2 cell ids. 1D array
@@ -620,6 +657,7 @@ def get_center_from_s2cellids(
     prediction_coords.append([lat, lng])
   return np.array(prediction_coords)
 
+
 def get_linestring_distance(line: LineString) -> int:
   '''Calculate the line length in meters.
   Arguments:
@@ -628,13 +666,14 @@ def get_linestring_distance(line: LineString) -> int:
     Line length in meters.
   '''
   dist = 0
-  point_1 =  Point(line.coords[0])
+  point_1 = Point(line.coords[0])
   for coord in line.coords[1:]:
     point_2 = Point(coord)
     dist += get_distance_between_points(point_1, point_2)
     point_1 = point_2
 
   return dist
+
 
 def get_distance_between_points(point_1: Point, point_2: Point) -> int:
   '''Calculate the line length in meters.
@@ -648,7 +687,7 @@ def get_distance_between_points(point_1: Point, point_2: Point) -> int:
   dist = ox.distance.great_circle_vec(
     point_1.y, point_1.x, point_2.y, point_2.x)
 
-  assert dist>=0
+  assert dist >= 0
   return dist
 
 
@@ -660,8 +699,8 @@ def point_str_to_shapely_point(point_str: Text) -> Point:
   Returns:
     A Point.
   '''
-  point_str=point_str.split('(')[-1]
-  point_str=point_str.split(')')[0]
+  point_str = point_str.split('(')[-1]
+  point_str = point_str.split(')')[0]
   coords = point_str.split(" ")
   x, y = float(coords[0]), float(coords[1])
-  return Point(x,y)
+  return Point(x, y)

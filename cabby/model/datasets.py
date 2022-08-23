@@ -19,6 +19,8 @@ import os
 import pandas as pd
 from random import sample
 from sklearn.utils import shuffle
+from s2geometry import pywraps2 as s2
+
 import torch
 
 from typing import Optional, Any
@@ -103,13 +105,12 @@ class Dataset:
       for c_list in list_cells:
         list_lables = []
         for c in c_list:
-          list_lables.append(str(self.cellid_to_label[c]))
+          list_lables.append(self.cellid_to_coord[c])
 
         labels.append('; '.join(list_lables))
 
     else:
-
-      labels = [str(util.get_valid_cell_label(self.cellid_to_label, int(c))) for c in list_cells]
+      labels = [util.get_valid_cell_label(self.cellid_to_coord, c) for c in list_cells]
 
     return tokenizerT5(
       labels, padding=True, truncation=True).input_ids
@@ -158,6 +159,9 @@ class Dataset:
     unique_cells_df = pd.DataFrame(
       {'point': points, 'cellid': self.unique_cellid})
 
+
+    self.cellid_to_coord, self.coord_to_cellid = self.create_grid(unique_cells_df)
+
     dist_matrix = unique_cells_df.point.mapply(
       lambda x: calc_dist(x, unique_cells_df)
     )
@@ -179,7 +183,8 @@ class Dataset:
         self.text_tokenizer,
         self.s2_tokenizer,
         self.train, self.s2level, unique_cells_df,
-        self.cellid_to_label, self.model_type, dprob,
+        self.cellid_to_label, self.model_type,
+        dprob, self.cellid_to_coord,
         is_dist=is_dist,
         dist_matrix=dist_matrix,
         graph_embed_file=self.graph_embed_file)
@@ -189,7 +194,8 @@ class Dataset:
         self.text_tokenizer,
         self.s2_tokenizer,
         self.valid, self.s2level, unique_cells_df,
-        self.cellid_to_label, self.model_type, dprob,
+        self.cellid_to_label, self.model_type,
+        dprob, self.cellid_to_coord,
         is_dist=is_dist,
         dist_matrix=dist_matrix,
         graph_embed_file=self.graph_embed_file)
@@ -199,7 +205,8 @@ class Dataset:
       self.text_tokenizer,
       self.s2_tokenizer,
       self.test, self.s2level, unique_cells_df,
-      self.cellid_to_label, self.model_type, dprob,
+      self.cellid_to_label, self.model_type,
+      dprob, self.cellid_to_coord,
       is_dist=is_dist,
       dist_matrix=dist_matrix,
       graph_embed_file=self.graph_embed_file)
@@ -209,7 +216,114 @@ class Dataset:
     return dataset_item.TextGeoDataset.from_TextGeoSplit(
       train_dataset, val_dataset, test_dataset,
       np.array(self.unique_cellid),
-      tens_cells, self.label_to_cellid)
+      tens_cells, self.label_to_cellid, self.cellid_to_coord)
+
+  def create_grid(self, unique_cells_df):
+
+    unique_cells_df['lon'] = unique_cells_df.point.apply(lambda p: p.x)
+    unique_cells_df['lat'] = unique_cells_df.point.apply(lambda p: p.y)
+
+    unique_cells_df = unique_cells_df.sort_values(by=['lat','lon'], ascending=True)
+
+    cellid_to_coord = {}
+    coord_to_cellid = {}
+
+    full_cellid_list = unique_cells_df.cellid.tolist()
+    empty_cellid_list = []
+
+    x_current = 0
+    y_current = 0
+
+    current_cellid = unique_cells_df.cellid.tolist()[0]
+
+    for i in range(100):
+      cell = s2.S2CellId(current_cellid)
+      prev_cell = cell.GetEdgeNeighbors()[0]
+      prev_cell_id = prev_cell.id()
+      current_cellid = prev_cell_id
+
+    while current_cellid not in full_cellid_list:
+      cell = s2.S2CellId(current_cellid)
+      next_cell = cell.GetEdgeNeighbors()[2]
+      current_cellid = next_cell.id()
+
+    while True:
+      cell = s2.S2CellId(current_cellid)
+      next_cell = cell.GetEdgeNeighbors()[2]
+      next_cellid = next_cell.id()
+
+      is_next = False
+
+
+      if current_cellid in full_cellid_list:
+
+        cellid_to_coord[current_cellid] = (x_current, y_current)
+
+        full_cellid_list.remove(current_cellid)
+        empty_cellid_list.append(current_cellid)
+        x_current+=1
+        current_cellid = next_cellid
+        is_next = True
+
+
+      if not is_next:
+        y_current += 1
+
+        upper_cell = cell.GetEdgeNeighbors()[3]
+        current_cellid = upper_cell.id()
+        prev_cell = upper_cell.GetEdgeNeighbors()[0]
+        prev_cell_id = prev_cell.id()
+        while prev_cell_id in full_cellid_list:
+          cell = s2.S2CellId(current_cellid)
+          prev_cell = cell.GetEdgeNeighbors()[0]
+          prev_cell_id = prev_cell.id()
+          current_cellid = prev_cell_id
+          x_current -= 1
+
+        for i in range(500):
+          cell = s2.S2CellId(current_cellid)
+          prev_cell = cell.GetEdgeNeighbors()[0]
+          prev_cell_id = prev_cell.id()
+          current_cellid = prev_cell_id
+          x_current -= 1
+
+        counter_2 = 0
+        while current_cellid not in full_cellid_list and counter_2<2000:
+          counter_2 +=1
+          cell = s2.S2CellId(current_cellid)
+          next_cell = cell.GetEdgeNeighbors()[2]
+          next_cell_id = next_cell.id()
+          current_cellid = next_cell_id
+          x_current += 1
+
+
+      if len(full_cellid_list) == 0:
+        break
+
+
+    min_x = min(cellid_to_coord.items(), key=lambda x: x[1][0])[1][0]
+
+    if min_x<0:
+      add_x = -1*min_x
+      new_cellid_to_coord = {}
+      for cellid, (x, y) in cellid_to_coord.items():
+        new_x = x + add_x
+        new_cellid_to_coord[cellid] = (new_x, y)
+
+      cellid_to_coord = new_cellid_to_coord
+
+    min_x = min(cellid_to_coord.items(), key=lambda x: x[1][0])[1][0]
+    min_y = min(cellid_to_coord.items(), key=lambda x: x[1][1])[1][1]
+
+    assert min_x >= 0 and min_y >= 0
+
+    coord_format_to_cellid = {dataset_item.coord_format(coord): cellid for cellid, coord in cellid_to_coord.items()}
+    cellid_to_coord_format = {cellid: dataset_item.coord_format(coord) for cellid, coord in cellid_to_coord.items()}
+
+    assert len(full_cellid_list)==0, f"full_cellid_list: {len(full_cellid_list)} empty_cellid_list:{len(empty_cellid_list)}"
+    assert len(cellid_to_coord_format) == unique_cells_df.cellid.shape[0]
+    return cellid_to_coord_format, coord_format_to_cellid
+
 
   def get_fixed_point_along_route(self, row):
     points_list = row.route

@@ -20,6 +20,7 @@ import collections
 import networkx as nx
 import numpy as np
 import pandas as pd
+from s2geometry import pywraps2 as s2
 
 from shapely.geometry import point
 from typing import Any, Dict, Sequence
@@ -248,14 +249,31 @@ def construct_metagraph(region: Region,
 
   # Step 5: Add S2 nodes and edges
   edges_to_add = []
+  cellid_add = []
   for node, data in metagraph.nodes.data():
     if "geometry" not in data:
       continue
     geometry = data["geometry"]
     for level in s2_node_levels:
       s2_cell_node_id = util.cellid_from_point(geometry, level)
+      if s2_cell_node_id not in cellid_add:
+        cellid_add.append(s2_cell_node_id)
       edges_to_add.append((node, s2_cell_node_id, {"weight": 1.0}))
       attributes_to_add[s2_cell_node_id]["type"] = TYPE_S2
+
+  # Add all cellid in region
+  unique_cellid = util.cellids_from_polygon(region.polygon, s2_level)
+  for s2_cell_node_id in unique_cellid:
+    if s2_cell_node_id not in cellid_add:
+      # Node
+      attributes_to_add[s2_cell_node_id]["type"] = TYPE_S2
+    # Edges
+    cell = s2.S2CellId(s2_cell_node_id)
+    four_neighbor_cells = cell.GetEdgeNeighbors()
+    for neighbor_cells in four_neighbor_cells:
+      if neighbor_cells.id() in unique_cellid:
+        edges_to_add.append((neighbor_cells.id(), s2_cell_node_id, {"weight": 1.0}))
+
   metagraph.add_edges_from(edges_to_add)
   nx.set_node_attributes(metagraph, values=attributes_to_add)
 
