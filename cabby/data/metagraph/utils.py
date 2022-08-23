@@ -267,12 +267,12 @@ def construct_metagraph(region: Region,
     if cellid not in cellid_add:
       # Node
       attributes_to_add[cellid]["type"] = TYPE_S2
-      # Edges
-      cell = s2.S2CellId(cellid)
-      four_neighbor_cells = cell.GetEdgeNeighbors()
-      for neighbor_cells in four_neighbor_cells:
-        if neighbor_cells.id() in unique_cellid:
-          edges_to_add.append((neighbor_cells.id(), cellid, {"weight": 1.0}))
+    # Edges
+    cell = s2.S2CellId(cellid)
+    four_neighbor_cells = cell.GetEdgeNeighbors()
+    for neighbor_cells in four_neighbor_cells:
+      if neighbor_cells.id() in unique_cellid:
+        edges_to_add.append((neighbor_cells.id(), cellid, {"weight": 1.0}))
 
   metagraph.add_edges_from(edges_to_add)
   nx.set_node_attributes(metagraph, values=attributes_to_add)
