@@ -92,15 +92,30 @@ def neighbor_cellid(cellid: int, celllist: Optional[List[int]]) -> int:
 
   four_neighbors = cell.GetEdgeNeighbors()
   if not celllist:
+    logging.info(f"!!!!!!!!!!!!!!!!!!")
     return four_neighbors[0].id()
-  for cell_n in four_neighbors:
-    if cell_n.id() in celllist:
-      neighbot_cell = cell_n.id()
-      break
 
-  assert neighbot_cell in celllist, f"{neighbot_cell} of type {type(neighbot_cell)} " \
-                                    f"not in cell list of type {type(celllist[0])}"
-  return neighbot_cell
+  neighbor_cell = None
+
+  stop_counter = 0
+  checked = []
+  while not neighbor_cell and stop_counter < 200:
+    stop_counter += 1
+    for cell_n in four_neighbors:
+      if cell_n.id() in celllist:
+        neighbor_cell = cell_n.id()
+        break
+    checked +=four_neighbors
+    four_neighbors = list(
+      set([cell.next() for cell in four_neighbors] + [cell.prev() for cell in four_neighbors]
+          + [cell.GetEdgeNeighbors()[2] for cell in four_neighbors] + [cell.GetEdgeNeighbors()[1] for cell in four_neighbors]))
+
+  checked_hex = list(set([hex(cell.id()) for cell in checked]))
+
+
+
+  assert neighbor_cell, f"Didn't find neighbor for cell {cellid} "
+  return neighbor_cell
 
 
 def cellids_from_s2cellids(list_s2cells: Sequence[s2.S2CellId]) -> Sequence[int]:

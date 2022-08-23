@@ -153,6 +153,8 @@ def main(argv):
   unique_cellid_path = os.path.join(dataset_path, "unique_cellid.npy")
   tensor_cellid_path = os.path.join(dataset_path, "tensor_cellid.pth")
   label_to_cellid_path = os.path.join(dataset_path, "label_to_cellid.npy")
+  coord_to_cellid_path = os.path.join(dataset_path, "coord_to_cellid.npy")
+
 
   assert FLAGS.task in TASKS
   if FLAGS.task == "RVS":
@@ -204,7 +206,8 @@ def main(argv):
       test_path_dataset=test_path_dataset,
       label_to_cellid_path=label_to_cellid_path,
       unique_cellid_path=unique_cellid_path,
-      tensor_cellid_path=tensor_cellid_path)
+      tensor_cellid_path=tensor_cellid_path,
+      coord_to_cellid_path=coord_to_cellid_path)
 
   n_cells = len(dataset_text.unique_cellids)
   logging.info("Number of unique cells: {}".format(
@@ -228,7 +231,7 @@ def main(argv):
       device=device, is_distance_distribution=FLAGS.is_distance_distribution)
   elif 'T5' in FLAGS.model:
     run_model = models.S2GenerationModel(
-      dataset_text.label_to_cellid, device=device, model_type=FLAGS.model)
+      dataset_text.coord_to_cellid, device=device, model_type=FLAGS.model)
   elif FLAGS.model == 'Classification-Bert':
     run_model = models.ClassificationModel(n_cells, device=device)
   else:
