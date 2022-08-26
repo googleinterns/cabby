@@ -220,7 +220,6 @@ def get_valid_cell_label(dict_lables: Dict[int, Any], cellid: int):
 
 def get_valid_graph_embed(gensim_dict_lables: Any, cellid: str):
   while cellid not in gensim_dict_lables.index_to_key:
-    logging.info(f"!!!!!!!!!!!!!!! cellid:{cellid} type: {type(cellid)}")
     cellid = str(util.neighbor_cellid(int(cellid), gensim_dict_lables.index_to_key))
 
   return gensim_dict_lables[cellid]
