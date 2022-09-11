@@ -1,5 +1,29 @@
-# Cabby Project
+# Installation:
+## Install conda environment
+```
+conda env create -f environment.yml
+```
 
-This is a new project on grounding language descriptions. More details to come.
+## Install BAZEL
+```
+apt install bazel
+```
 
-**This is not an officially supported Google product.**
+## BAZEL: Build
+```
+source build_all.sh
+```
+
+## BAZEL: Test
+```
+source test_all.sh
+```
+
+## BAZEL: Run
+```
+source run_all.sh
+```
+
+
+
+
