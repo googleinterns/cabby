@@ -198,7 +198,7 @@ def load_metrics(load_path: Text, device: torch.device) -> Dict[Text, float]:
 def predictions_to_points(preds: Sequence,
   label_to_cellid: Dict[int, int]) -> Sequence[Tuple[float, float]]:
   default_cell = list(label_to_cellid.values())[0]
-  cellids = [] 
+  cellids = []
   for label in preds:
     cellids.append(label_to_cellid[label] if label in label_to_cellid else default_cell)
   coords = util.get_center_from_s2cellids(cellids)
@@ -220,7 +220,6 @@ def get_valid_cell_label(dict_lables: Dict[int, Any], cellid: int):
 
 def get_valid_graph_embed(gensim_dict_lables: Any, cellid: str):
   while cellid not in gensim_dict_lables.index_to_key:
-    logging.info(f"!!!!!!!!!!!!!!! cellid:{cellid} type: {type(cellid)}")
     cellid = str(util.neighbor_cellid(int(cellid), gensim_dict_lables.index_to_key))
 
   return gensim_dict_lables[cellid]
