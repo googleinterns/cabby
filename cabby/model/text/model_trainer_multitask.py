@@ -86,6 +86,9 @@ flags.DEFINE_string("model_path", None,
           "A path of a model the model to be fine tuned\ evaluated.")
 
 
+flags.DEFINE_string("graph_embed_path", default="",
+                    help="The path to the graph embedding.")
+
 flags.DEFINE_integer(
   'train_batch_size', default=4,
   help=('Batch size for training.'))
@@ -152,7 +155,7 @@ def main(argv):
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
   
   run_model = models.S2GenerationModel(
-      dataset_valid_test.label_to_cellid ,device=device)
+    dataset_valid_test.label_to_cellid, device=device, vq_dim=dataset_train.graph_embed_size)
 
   run_model.to(device)
 

@@ -33,7 +33,7 @@ echo "*                 graph embeddings     *"
 echo "****************************************"
 
 GRAPH_EMBEDDING_PATH=$MAP_DIR/graph_embedding.pth
-bazel-bin/cabby/data/metagraph/create_graph_embedding  --region $REGION_NAME --s2_level 15 --s2_node_levels 15 --base_osm_map_filepath $MAP_DIR --save_embedding_path $GRAPH_EMBEDDING_PATH --num_walks 2 --walk_length 2
+bazel-bin/cabby/data/metagraph/create_graph_embedding  --region $REGION_NAME --dimensions 224 --s2_level 15 --s2_node_levels 15 --base_osm_map_filepath $MAP_DIR --save_embedding_path $GRAPH_EMBEDDING_PATH --num_walks 2 --walk_length 2
 
 echo "****************************************"
 echo "*                 models               *"
@@ -45,17 +45,16 @@ mkdir -p $OUTPUT_DIR_MODEL_RVS_FIXED_5
 mkdir -p $OUTPUT_DIR_MODEL_HUMAN
 
 echo "*                 S2-Generation-T5-text-start-embedding-to-landmarks-dist   - RVS DATA            *"
-bazel-bin/cabby/model/text/model_trainer  --data_dir $OUTPUT_DIR --dataset_dir $OUTPUT_DIR_MODEL_RVS --region $REGION_NAME --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-text-start-embedding-to-landmarks-dist --save_graph_embed_path $GRAPH_EMBEDDING_PATH --far_distance_threshold 10 --is_distance_distribution True
+bazel-bin/cabby/model/text/model_trainer  --data_dir $OUTPUT_DIR --dataset_dir $OUTPUT_DIR_MODEL_RVS --region $REGION_NAME --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-text-start-embedding-to-landmarks-dist --graph_embed_path $GRAPH_EMBEDDING_PATH --far_distance_threshold 10 --is_distance_distribution True
 
 echo "*                 S2-Generation-T5-text-start-embedding-to-landmarks   - RVS DATA            *"
-bazel-bin/cabby/model/text/model_trainer  --data_dir $OUTPUT_DIR --dataset_dir $OUTPUT_DIR_MODEL_RVS --region $REGION_NAME --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-text-start-embedding-to-landmarks --save_graph_embed_path $GRAPH_EMBEDDING_PATH --far_distance_threshold 10
-
+bazel-bin/cabby/model/text/model_trainer  --data_dir $OUTPUT_DIR --dataset_dir $OUTPUT_DIR_MODEL_RVS --region $REGION_NAME --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-text-start-embedding-to-landmarks --graph_embed_path $GRAPH_EMBEDDING_PATH --far_distance_threshold 10
 
 echo "*                 S2-Generation-T5-Warmup-cell-embed-to-cell-label   - RVS DATA            *"
-bazel-bin/cabby/model/text/model_trainer  --data_dir $OUTPUT_DIR --dataset_dir $OUTPUT_DIR_MODEL_RVS --region $REGION_NAME --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-Warmup-cell-embed-to-cell-label --save_graph_embed_path $GRAPH_EMBEDDING_PATH --far_distance_threshold 10
+bazel-bin/cabby/model/text/model_trainer  --data_dir $OUTPUT_DIR --dataset_dir $OUTPUT_DIR_MODEL_RVS --region $REGION_NAME --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-Warmup-cell-embed-to-cell-label --graph_embed_path $GRAPH_EMBEDDING_PATH --far_distance_threshold 10
 
 echo "*                 S2-Generation-T5-start-embedding-text-input   - RVS DATA            *"
-bazel-bin/cabby/model/text/model_trainer  --data_dir $OUTPUT_DIR --dataset_dir $OUTPUT_DIR_MODEL_RVS --region $REGION_NAME --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-start-embedding-text-input --save_graph_embed_path $GRAPH_EMBEDDING_PATH --far_distance_threshold 10
+bazel-bin/cabby/model/text/model_trainer  --data_dir $OUTPUT_DIR --dataset_dir $OUTPUT_DIR_MODEL_RVS --region $REGION_NAME --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model S2-Generation-T5-start-embedding-text-input --graph_embed_path $GRAPH_EMBEDDING_PATH --far_distance_threshold 10
 
 
 echo "*                 S2-Generation-T5-Warmup-start-end-to-dist  - RVS DATA             *"
@@ -110,7 +109,7 @@ echo "*                 Landmarks-NER-2-S2-Generation-T5-Warmup   - RVS DATA    
 bazel-bin/cabby/model/text/model_trainer  --data_dir ~/cabby/cabby/model/text/dataSamples/rvs --dataset_dir $OUTPUT_DIR_MODEL_RVS --region Manhattan --s2_level 15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1 --task RVS --model Landmarks-NER-2-S2-Generation-T5-Warmup
 
 echo "*                multitask           *"
-bazel-bin/cabby/model/text/model_trainer_multitask  --dataset_dir_train $OUTPUT_DIR_MODEL_RVS/S2-Generation-T5-start-text-input/15 --dataset_dir_train $OUTPUT_DIR_MODEL_RVS_FIXED_5/S2-Generation-T5-Warmup-start-end/15 --dataset_dir_train $OUTPUT_DIR_MODEL_RVS_FIXED_4/S2-Generation-T5-Warmup-start-end/15 --dataset_dir_test $OUTPUT_DIR_MODEL_HUMAN/S2-Generation-T5-Landmarks/15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1
+bazel-bin/cabby/model/text/model_trainer_multitask  --dataset_dir_train $OUTPUT_DIR_MODEL_RVS/S2-Generation-T5-text-start-embedding-to-landmarks/15 --dataset_dir_train $OUTPUT_DIR_MODEL_RVS/S2-Generation-T5-Warmup-cell-embed-to-cell-label/15  --dataset_dir_test $OUTPUT_DIR_MODEL_RVS/S2-Generation-T5-text-start-embedding-to-landmarks/15 --output_dir $OUTPUT_DIR_MODEL_RVS --num_epochs 1
 
 echo "*                Baseline           *"
 bazel-bin/cabby/model/baselines --data_dir ~/cabby/cabby/model/text/dataSamples/human  --metrics_dir $OUTPUT_DIR_MODEL_HUMAN  --task human --region Manhattan

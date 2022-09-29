@@ -11,9 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import sys
 
 from absl import logging
 
+from gensim.models import KeyedVectors
 import numpy as np
 import os
 import pandas as pd
@@ -71,14 +73,22 @@ class Dataset:
     region: Optional[str],
     model_type: str,
     n_fixed_points: int = 4,
-    graph_embed_file: Any = None,
+    graph_embed_path: str = "",
   ):
     self.data_dir = data_dir
     self.s2level = s2level
     self.region = region
     self.model_type = model_type
     self.n_fixed_points = n_fixed_points
-    self.graph_embed_file = graph_embed_file
+
+    self.graph_embed_size = 0
+    self.graph_embed_file = None
+    if os.path.exists(graph_embed_path):
+      self.graph_embed_file = KeyedVectors.load_word2vec_format(graph_embed_path)
+      first_cell = self.graph_embed_file.index_to_key[0]
+      self.graph_embed_size = self.graph_embed_file[first_cell].shape[0]
+
+    logging.info(f"Dataset with graph embedding size {self.graph_embed_size}")
 
     self.unique_cellid = {}
     self.cellid_to_label = {}
@@ -159,13 +169,12 @@ class Dataset:
     unique_cells_df = pd.DataFrame(
       {'point': points, 'cellid': self.unique_cellid})
 
-
     self.cellid_to_coord, self.coord_to_cellid = self.create_grid(unique_cells_df)
 
+    logging.info(f"Created grid")
     dist_matrix = unique_cells_df.point.mapply(
       lambda x: calc_dist(x, unique_cells_df)
     )
-
     dist_matrix = dist_matrix.to_numpy()
 
     unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
@@ -216,14 +225,14 @@ class Dataset:
     return dataset_item.TextGeoDataset.from_TextGeoSplit(
       train_dataset, val_dataset, test_dataset,
       np.array(self.unique_cellid),
-      tens_cells, self.label_to_cellid, self.cellid_to_coord)
+      tens_cells, self.label_to_cellid, self.coord_to_cellid, self.graph_embed_size)
 
   def create_grid(self, unique_cells_df):
 
     unique_cells_df['lon'] = unique_cells_df.point.apply(lambda p: p.x)
     unique_cells_df['lat'] = unique_cells_df.point.apply(lambda p: p.y)
 
-    unique_cells_df = unique_cells_df.sort_values(by=['lat','lon'], ascending=True)
+    unique_cells_df = unique_cells_df.sort_values(by=['lat', 'lon'], ascending=True)
 
     cellid_to_coord = {}
     coord_to_cellid = {}
@@ -235,36 +244,66 @@ class Dataset:
     y_current = 0
 
     current_cellid = unique_cells_df.cellid.tolist()[0]
+    size_region = len(unique_cells_df)
+    min_cell = current_cellid
+    tmp = []
+    begin_cell = None
 
-    for i in range(100):
+    for down_idx in range(20):
       cell = s2.S2CellId(current_cellid)
-      prev_cell = cell.GetEdgeNeighbors()[0]
-      prev_cell_id = prev_cell.id()
-      current_cellid = prev_cell_id
+      down_cell = cell.GetEdgeNeighbors()[1]
+      current_cellid = down_cell.id()
 
-    while current_cellid not in full_cellid_list:
+    for up_idx in range(20):
       cell = s2.S2CellId(current_cellid)
-      next_cell = cell.GetEdgeNeighbors()[2]
-      current_cellid = next_cell.id()
+      up_cell = cell.GetEdgeNeighbors()[3]
+      current_cellid = up_cell.id()
+
+      for left_idx in range(round(size_region/20)):
+        cell = s2.S2CellId(current_cellid)
+        left_cell = cell.GetEdgeNeighbors()[0]
+        left_cell_id = left_cell.id()
+        current_cellid = left_cell_id
+        if current_cellid in full_cellid_list:
+          begin_cell = current_cellid
+
+      if begin_cell:
+        break
+
+      for right_idx in range(round(size_region/20)):
+        cell = s2.S2CellId(current_cellid)
+        right_cell = cell.GetEdgeNeighbors()[2]
+        right_cell_id = right_cell.id()
+        current_cellid = right_cell_id
+        if current_cellid in full_cellid_list:
+          begin_cell = current_cellid
+          break
+
+      if begin_cell:
+        break
+
+    current_cellid = begin_cell
+
+    status_cell_list = (len(full_cellid_list), 0)
 
     while True:
       cell = s2.S2CellId(current_cellid)
       next_cell = cell.GetEdgeNeighbors()[2]
       next_cellid = next_cell.id()
 
+
       is_next = False
 
-
       if current_cellid in full_cellid_list:
-
         cellid_to_coord[current_cellid] = (x_current, y_current)
 
         full_cellid_list.remove(current_cellid)
         empty_cellid_list.append(current_cellid)
-        x_current+=1
+
+        status_cell_list = (len(full_cellid_list), 0)
+        x_current += 1
         current_cellid = next_cellid
         is_next = True
-
 
       if not is_next:
         y_current += 1
@@ -273,40 +312,52 @@ class Dataset:
         current_cellid = upper_cell.id()
         prev_cell = upper_cell.GetEdgeNeighbors()[0]
         prev_cell_id = prev_cell.id()
-        while prev_cell_id in full_cellid_list:
+
+        counter_move_left = 0
+        while prev_cell_id in full_cellid_list and counter_move_left<size_region:
+          counter_move_left += 1
           cell = s2.S2CellId(current_cellid)
           prev_cell = cell.GetEdgeNeighbors()[0]
           prev_cell_id = prev_cell.id()
           current_cellid = prev_cell_id
           x_current -= 1
 
-        for i in range(500):
+        for i in range(round(size_region/10)):
           cell = s2.S2CellId(current_cellid)
           prev_cell = cell.GetEdgeNeighbors()[0]
           prev_cell_id = prev_cell.id()
           current_cellid = prev_cell_id
           x_current -= 1
 
-        counter_2 = 0
-        while current_cellid not in full_cellid_list and counter_2<2000:
-          counter_2 +=1
+        counter_move_right = 0
+        while current_cellid not in full_cellid_list and counter_move_right<size_region:
+          counter_move_right += 1
           cell = s2.S2CellId(current_cellid)
           next_cell = cell.GetEdgeNeighbors()[2]
           next_cell_id = next_cell.id()
           current_cellid = next_cell_id
           x_current += 1
 
-
-      if len(full_cellid_list) == 0:
+      size_cell_list = len(full_cellid_list)
+      if size_cell_list == 0:
         break
 
+      if size_cell_list==status_cell_list[0]:
+        status_cell_list = (size_cell_list, status_cell_list[1]+1)
+
+      if status_cell_list[1]>100:
+        sys.exit(f"Problem with creating grid. " +
+                 f"There are still {size_cell_list} cells not in grid: {full_cellid_list}. " +
+                 f"The beginig cell: {begin_cell}")
 
     min_x = min(cellid_to_coord.items(), key=lambda x: x[1][0])[1][0]
 
-    if min_x<0:
-      add_x = -1*min_x
+    if min_x < 0:
+
+      add_x = -1 * min_x
       new_cellid_to_coord = {}
       for cellid, (x, y) in cellid_to_coord.items():
+
         new_x = x + add_x
         new_cellid_to_coord[cellid] = (new_x, y)
 
@@ -320,10 +371,11 @@ class Dataset:
     coord_format_to_cellid = {dataset_item.coord_format(coord): cellid for cellid, coord in cellid_to_coord.items()}
     cellid_to_coord_format = {cellid: dataset_item.coord_format(coord) for cellid, coord in cellid_to_coord.items()}
 
-    assert len(full_cellid_list)==0, f"full_cellid_list: {len(full_cellid_list)} empty_cellid_list:{len(empty_cellid_list)}"
+    assert len(
+      full_cellid_list) == 0, f"full_cellid_list: {len(full_cellid_list)} empty_cellid_list:{len(empty_cellid_list)}"
     assert len(cellid_to_coord_format) == unique_cells_df.cellid.shape[0]
-    return cellid_to_coord_format, coord_format_to_cellid
 
+    return cellid_to_coord_format, coord_format_to_cellid
 
   def get_fixed_point_along_route(self, row):
     points_list = row.route
@@ -348,11 +400,11 @@ class HumanDataset(Dataset):
     s2level: int,
     region: Optional[str],
     n_fixed_points: int = 4,
-    graph_embed_file: Any = None,
+    graph_embed_path: str = "",
     model_type: str = "Dual-Encoder-Bert"):
 
     Dataset.__init__(
-      self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_file)
+      self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_path)
     self.train = self.load_data(data_dir, 'train', lines=True)
     self.valid = self.load_data(data_dir, 'dev', lines=True)
     self.test = self.load_data(data_dir, 'test', lines=True)
@@ -402,11 +454,11 @@ class RUNDataset(Dataset):
     data_dir: str,
     s2level: int,
     region: Optional[str],
-    graph_embed_file: Any = None,
+    graph_embed_path: str = "",
     n_fixed_points: int = 4,
     model_type: str = "Dual-Encoder-Bert"):
     Dataset.__init__(
-      self, data_dir, s2level, None, model_type, n_fixed_points, graph_embed_file
+      self, data_dir, s2level, None, model_type, n_fixed_points, graph_embed_path
     )
 
     train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=False)
@@ -442,7 +494,7 @@ class RUNDataset(Dataset):
     ds['instructions'] = ds.groupby(
       ['id'])['instruction'].transform(lambda x: ' '.join(x))
 
-    ds = ds.drop_duplicates(subset='id', keep="last")
+    ds = ds.drop_duplicates(subset='id', keep="last", ignore_index=True)
 
     columns_keep = ds.columns.difference(
       ['map', 'id', 'instructions', 'end_point', 'start_point'])
@@ -469,11 +521,11 @@ class RVSDataset(Dataset):
     s2level: int,
     region: Optional[str],
     n_fixed_points: int = 4,
-    graph_embed_file: Any = None,
+    graph_embed_path: str = "",
     model_type: str = "Dual-Encoder-Bert"
     ):
     Dataset.__init__(
-      self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_file)
+      self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_path)
     train_ds = self.load_data(data_dir, 'train', True)
     valid_ds = self.load_data(data_dir, 'dev', True)
     test_ds = self.load_data(data_dir, 'test', True)
@@ -501,7 +553,8 @@ class RVSDataset(Dataset):
       ds['landmarks_ner'] = ds.geo_landmarks.apply(self.process_landmarks_ner)
       ds['landmarks_ner_and_point'] = ds.geo_landmarks.apply(self.process_landmarks_ner_single)
 
-    ds = pd.concat([ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
+    ds = pd.concat(
+      [ds.drop(['geo_landmarks'], axis=1), ds['geo_landmarks'].apply(pd.Series)], axis=1)
 
     ds['end_osmid'] = ds.end_point.apply(lambda x: x[1])
     ds['start_osmid'] = ds.start_point.apply(lambda x: x[1])
@@ -515,10 +568,11 @@ class RVSDataset(Dataset):
 
     logging.info(f"Size of dataset before removal of duplication: {ds.shape[0]}")
 
-    ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last')
+    ds = ds.drop_duplicates(subset=['end_osmid', 'start_osmid'], keep='last', ignore_index=True)
 
     logging.info(f"Size of dataset after removal of duplication: {ds.shape[0]}")
 
+    ds = ds.reset_index(drop=True)
     return ds
 
   def process_landmarks(self, row):

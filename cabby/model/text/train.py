@@ -91,7 +91,7 @@ class Trainer:
         cellids = batch['cellid'].float().to(self.device)
 
         is_print = False
-        if batch_idx == 0:
+        if batch_idx == 0 and not validation_set:
           is_print = True
         batch = {k: v.to(self.device) for k, v in batch.items() if torch.is_tensor(v)}
 
@@ -102,10 +102,10 @@ class Trainer:
           batch
         )
 
-        loss_val_total += loss
+        loss_val_total += loss.item()
 
         predictions = self.model.predict(
-          text, self.cells_tensor, self.label_to_cellid, batch)
+          text, is_print, self.cells_tensor, self.label_to_cellid, batch)
 
         predictions_list.append(predictions)
         labels = batch['label'].cpu()
@@ -149,11 +149,12 @@ class Trainer:
         )
 
         loss.backward()
-
+        # ensure_shared_grads(self.model)
         self.optimizer.step()
 
         # Update running values.
         running_loss += loss.item()
+
         global_step += 1
 
         if self.is_single_sample_train:
@@ -166,7 +167,6 @@ class Trainer:
 
       # Resetting running values.
       running_loss = 0.0
-
       logging.info('Epoch [{}/{}], Step [{}/{}], \
           Train Loss: {:.4f}, Valid Loss: {:.4f}'
                    .format(epoch + 1, self.num_epochs, global_step,
@@ -221,7 +221,7 @@ class Trainer:
     for epoch in range(self.num_epochs):
       running_loss = 0.0
       logging.info("Epoch number: {}".format(epoch))
-      for batches in zip(*self.train_loader):
+      for data_idx, batches in enumerate(zip(*self.train_loader)):
 
         loss = torch.tensor([0.0]).to(self.device)
         self.optimizer.zero_grad()
@@ -240,6 +240,7 @@ class Trainer:
           )
 
         loss.backward()
+        # ensure_shared_grads(self.model)
 
         self.optimizer.step()
 
@@ -313,3 +314,18 @@ def infer_text(model: torch.nn.Module, text: str):
     return model.module.text_embed(text)
   else:
     return model.text_embed(text)
+
+
+
+def ensure_shared_grads(model):
+  list_not_learned = []
+  list_learned = []
+  for name, param in model.named_parameters():
+    if param.grad is None or param.grad.float().sum().tolist() == 0:
+      list_not_learned.append(name)
+    if param.grad is not None:
+      list_learned.append(name)
+
+  # print(f"{len(list_learned)} Learned params: {','.join(list_learned)}")
+  print(f"{len(list_not_learned)} Un-Learned params: {','.join(list_not_learned)}")
+

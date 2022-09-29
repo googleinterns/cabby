@@ -48,7 +48,6 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from transformers import AdamW
-from gensim.models import KeyedVectors
 
 from cabby.evals import utils as eu
 from cabby.model.text import train
@@ -92,7 +91,7 @@ flags.DEFINE_float(
 flags.DEFINE_string("model_path", None,
                     "A path of a model the model to be fine tuned\ evaluated.")
 
-flags.DEFINE_string("save_graph_embed_path", default="",
+flags.DEFINE_string("graph_embed_path", default="",
                     help="The path to the graph embedding.")
 
 flags.DEFINE_integer(
@@ -147,13 +146,7 @@ def main(argv):
 
   dataset_model_path = os.path.join(FLAGS.dataset_dir, str(FLAGS.model))
   dataset_path = os.path.join(dataset_model_path, str(FLAGS.s2_level))
-  train_path_dataset = os.path.join(dataset_path, 'train.pth')
-  valid_path_dataset = os.path.join(dataset_path, 'valid.pth')
-  test_path_dataset = os.path.join(dataset_path, 'test.pth')
-  unique_cellid_path = os.path.join(dataset_path, "unique_cellid.npy")
-  tensor_cellid_path = os.path.join(dataset_path, "tensor_cellid.pth")
-  label_to_cellid_path = os.path.join(dataset_path, "label_to_cellid.npy")
-  coord_to_cellid_path = os.path.join(dataset_path, "coord_to_cellid.npy")
+
 
 
   assert FLAGS.task in TASKS
@@ -169,9 +162,6 @@ def main(argv):
   if FLAGS.is_single_sample_train:
     FLAGS.train_batch_size = 1
 
-  graph_embed_file = None
-  if os.path.exists(FLAGS.save_graph_embed_path):
-    graph_embed_file = KeyedVectors.load_word2vec_format(FLAGS.save_graph_embed_path)
 
   if os.path.exists(dataset_path):
     dataset_text = dataset_item.TextGeoDataset.load(
@@ -187,7 +177,7 @@ def main(argv):
       s2level=FLAGS.s2_level,
       model_type=FLAGS.model,
       n_fixed_points=FLAGS.n_fixed_points,
-      graph_embed_file=graph_embed_file)
+      graph_embed_path=FLAGS.graph_embed_path)
 
     if not os.path.exists(dataset_model_path):
       os.mkdir(dataset_model_path)
@@ -201,13 +191,7 @@ def main(argv):
     dataset_item.TextGeoDataset.save(
       dataset_text=dataset_text,
       dataset_path=dataset_path,
-      train_path_dataset=train_path_dataset,
-      valid_path_dataset=valid_path_dataset,
-      test_path_dataset=test_path_dataset,
-      label_to_cellid_path=label_to_cellid_path,
-      unique_cellid_path=unique_cellid_path,
-      tensor_cellid_path=tensor_cellid_path,
-      coord_to_cellid_path=coord_to_cellid_path)
+      graph_embed_size=dataset.graph_embed_size)
 
   n_cells = len(dataset_text.unique_cellids)
   logging.info("Number of unique cells: {}".format(
@@ -231,7 +215,8 @@ def main(argv):
       device=device, is_distance_distribution=FLAGS.is_distance_distribution)
   elif 'T5' in FLAGS.model:
     run_model = models.S2GenerationModel(
-      dataset_text.coord_to_cellid, device=device, model_type=FLAGS.model)
+      dataset_text.coord_to_cellid, device=device, model_type=FLAGS.model,
+      vq_dim=dataset_text.graph_embed_size)
   elif FLAGS.model == 'Classification-Bert':
     run_model = models.ClassificationModel(n_cells, device=device)
   else:
