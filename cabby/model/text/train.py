@@ -91,7 +91,7 @@ class Trainer:
         cellids = batch['cellid'].float().to(self.device)
 
         is_print = False
-        if batch_idx == 0 and not validation_set:
+        if batch_idx == 0:
           is_print = True
         batch = {k: v.to(self.device) for k, v in batch.items() if torch.is_tensor(v)}
 

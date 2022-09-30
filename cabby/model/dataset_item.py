@@ -254,7 +254,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       landmark_dist_cur = []
       for e_p, l in zip(lan_p, lan_l.split(";")):
         dist = round(gutil.get_distance_between_points(s_p, e_p))
-        landmark_dist_cur.append(f"{l} distance: {dist}")
+        landmark_dist_cur.append(f"{l}; distance: {dist}")
 
       self.landmarks_dist_raw.append('; '.join(landmark_dist_cur))
 
