@@ -102,10 +102,13 @@ class Trainer:
           batch
         )
 
-        loss_val_total += loss.item()
-
-        predictions = self.model.predict(
-          text, is_print, self.cells_tensor, self.label_to_cellid, batch)
+        loss_val_total += loss.sum().item()
+        if isinstance(self.model, nn.DataParallel):
+          predictions = self.model.module.predict(
+            text, is_print, self.cells_tensor, self.label_to_cellid, batch)
+        else:
+          predictions = self.model.predict(
+            text, is_print, self.cells_tensor, self.label_to_cellid, batch)
 
         predictions_list.append(predictions)
         labels = batch['label'].cpu()
@@ -147,13 +150,12 @@ class Trainer:
           is_print,
           batch,
         )
-
-        loss.backward()
+        loss.sum().backward()
         # ensure_shared_grads(self.model)
         self.optimizer.step()
 
         # Update running values.
-        running_loss += loss.item()
+        running_loss += loss.sum().item()
 
         global_step += 1
 

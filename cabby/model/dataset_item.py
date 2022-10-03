@@ -209,6 +209,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.coords_start = self.start_cells.apply(lambda x: cellid_to_coord[x]).tolist()
 
+    self.coords_end = data.cellid.apply(lambda x: cellid_to_coord[x]).tolist()
+
     self.start_point_labels = self.get_cell_to_lablel(self.start_cells.tolist())
 
     self.cellids = self.s2_tokenizer(cellids_array)
@@ -223,6 +225,8 @@ class TextGeoSplit(torch.utils.data.Dataset):
       str(i).replace(':', f': Start at {str(s)}.') for s, i in zip(
         self.start_point_labels, data.instructions.tolist())]
 
+
+
     if graph_embed_file:
       self.graph_embed_end = data['cellid'].apply(
         lambda cell: util.get_valid_graph_embed(self.graph_embed_file, str(cell)))
@@ -236,12 +240,15 @@ class TextGeoSplit(torch.utils.data.Dataset):
         lambda l: [util.get_valid_graph_embed(
           self.graph_embed_file, str(cell)) for cell in l])
 
-      self.start_embed_text_input_list = [
-        str(i).replace(':', f': Start at {str(s)}.') for s, i in zip(
-          self.graph_embed_start, data.instructions.tolist())]
+      self.start_text_input_graph_embed_list = [
+        str(i).replace(':', f': Start at {str(s)}.') + f" {g}" for s, i, g in zip(
+          self.start_point_labels, data.instructions.tolist(), self.graph_embed_start)]
+
+      self.end_embed_warmup = [f"{m}: {g}" for m, g in zip(self.model_type, self.graph_embed_end)]
 
     else:
       self.graph_embed_start = np.zeros(len(self.cellids))
+      self.graph_embed_end = np.zeros(len(self.cellids))
 
     self.landmarks_dist_raw = []
 
@@ -313,7 +320,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       output_text, truncation=True, padding=True, add_special_tokens=True).input_ids
 
     self.text_input_tokenized = self.text_tokenizer(
-      input_text, truncation=True, padding='max_length', add_special_tokens=True, max_length=200)
+      input_text, truncation=True, padding='max_length', add_special_tokens=True, max_length=2048)
 
   def set_S2_Generation_T5_text_start_to_landmarks_dist(self, data):
 
@@ -331,7 +338,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
   def set_S2_Generation_T5_start_embedding_text_input(self, data):
 
-    return self.start_text_input_list, self.coords_end
+    return self.start_text_input_graph_embed_list, self.coords_end
 
   def set_S2_Generation_T5_start_text_input(self, data):
 
@@ -342,7 +349,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
     assert 'T5' in self.model_type and 'landmarks' in data, "Landmarks not processed"
 
     return data.instructions.tolist(), self.landmark_label
-
 
   def set_Landmarks_NER_2_S2_Generation_T5_Warmup(self, data):
     assert  ('T5' in self.model_type and 'landmarks_ner_and_point' in data)
@@ -376,7 +382,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     return start_end_point_list_raw, dists_start_end
 
-
   def set_S2_Generation_T5_Warmup_start_end(self, data):
 
     assert 'T5' in self.model_type and 'route' in data, "Route not processed"
@@ -395,7 +400,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
   def set_S2_Generation_T5(self, data):
     return data.instructions.tolist(), self.coords_end
 
-
   def set_S2_Generation_T5_Path(self, data):
 
     assert 'T5' in self.model_type and 'route' in data, "Route not processed"
@@ -411,16 +415,14 @@ class TextGeoSplit(torch.utils.data.Dataset):
     return data.instructions.tolist(), route_label
 
   def set_S2_Generation_T5_text_start_embedding_to_landmarks_dist(self, data):
-    return self.start_text_input_list, self.landmarks_dist_raw
-
+    return self.start_text_input_graph_embed_list, self.landmarks_dist_raw
 
   def set_S2_Generation_T5_text_start_embedding_to_landmarks(self, data):
-    return self.start_text_input_list, self.landmark_label
-
+    return self.start_text_input_graph_embed_list, self.landmark_label
 
   def set_S2_Generation_T5_Warmup_cell_embed_to_cell_label(self, data):
 
-    return [self.model_type]*len(self.coords_start), self.coords_start
+    return self.end_embed_warmup, self.coords_end
 
   def set_Classification_Bert(self, data):
 
@@ -474,6 +476,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       text_input = torch.tensor(self.text_input_tokenized[idx])
 
     graph_embed_start = self.graph_embed_start[idx]
+    graph_embed_end = self.graph_embed_end[idx]
 
 
     text_output = torch.tensor(self.text_output_tokenized[idx])
@@ -481,12 +484,16 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     sample = {'text': text_input, 'cellid': cellid,
               'neighbor_cells': neighbor_cells,
-              'far_cells': far_cells, 'end_point': end_point, 'label': label,
-              'prob': prob, 'text_output': text_output, 'graph_embed_start': graph_embed_start
+              'far_cells': far_cells,
+              'end_point': end_point,
+              'label': label,
+              'prob': prob,
+              'text_output': text_output,
+              'graph_embed_start': graph_embed_start,
+              'graph_embed_end': graph_embed_end
               }
 
     return sample
-
 
 
   def __len__(self):

@@ -157,6 +157,7 @@ def main(argv):
   run_model = models.S2GenerationModel(
     dataset_valid_test.label_to_cellid, device=device, vq_dim=dataset_train.graph_embed_size)
 
+
   run_model.to(device)
 
   optimizer = torch.optim.Adam(

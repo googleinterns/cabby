@@ -196,7 +196,7 @@ class S2GenerationModel(GeneralModel):
     input_ids, attention_mask, labels = self.get_input_output(batch, text)
 
     if self.vq_dim:
-      loss, input_ids = self.get_loss_for_graph_embed(batch, input_ids, labels)
+      loss, labels = self.get_loss_for_graph_embed(batch, input_ids, labels)
 
     else:
       loss = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, return_dict=True).loss
@@ -231,8 +231,8 @@ class S2GenerationModel(GeneralModel):
     )
 
     if self.vq_dim:
-      graph_embed_start = batch['graph_embed_start']
-      input_ids, _, _ = self.get_input_indices_for_embedding(graph_embed_start, input_ids)
+      # graph_embed_start = batch['graph_embed_end']
+      # input_ids, _, _ = self.get_input_indices_for_embedding(graph_embed_start, input_ids)
       output_sequences = self.model.generate(
         input_ids=input_ids,
         num_beams=2,
@@ -275,6 +275,19 @@ class S2GenerationModel(GeneralModel):
 
     return quantized, indices, vq_loss
 
+  def get_output_indices_for_embedding(self, graph_embed_end, labels):
+
+    batch_size = graph_embed_end.shape[0]
+
+    graph_embed = graph_embed_end.unsqueeze(1).expand(batch_size, 1, -1)
+
+    quantized, indices, vq_loss = self.get_vg(graph_embed)
+
+    final_output = torch.cat((labels, indices), axis=-1)
+
+    return final_output, quantized, vq_loss
+
+
   def get_input_indices_for_embedding(self, graph_embed_start, text_input):
 
     batch_size = graph_embed_start.shape[0]
@@ -289,18 +302,20 @@ class S2GenerationModel(GeneralModel):
 
   def get_loss_for_graph_embed(self, batch, text_input, labels):
 
-    graph_embed_start = batch['graph_embed_start']
+    # graph_embed_start = batch['graph_embed_start']
+    graph_embed_end = batch['graph_embed_end']
 
-    graph_size = graph_embed_start.shape[-1]
-    batch_size = graph_embed_start.shape[0]
 
-    final_input, quantized, vq_loss = self.get_input_indices_for_embedding(
-      graph_embed_start, text_input)
+    graph_size = graph_embed_end.shape[-1]
+    batch_size = graph_embed_end.shape[0]
+
+    final_output, quantized, vq_loss = self.get_output_indices_for_embedding(
+      graph_embed_end, labels)
 
     graph_embed_fake = torch.randn(batch_size, graph_size).to(self.device)
 
-    _, quantized_fake, vq_loss_fake = self.get_input_indices_for_embedding(
-      graph_embed_fake, text_input)
+    _, quantized_fake, vq_loss_fake = self.get_output_indices_for_embedding(
+      graph_embed_fake, labels)
 
     bool_masked_pos = torch.randint(
       low=0, high=1, size=(1, self.num_patches)).bool().to(self.device)
@@ -316,11 +331,11 @@ class S2GenerationModel(GeneralModel):
     loss_D = hinge_loss_dis(discriminator_fake, discriminator_true)
 
     loss_t5 = self.model(
-      input_ids=final_input, labels=labels, return_dict=True).loss
+      input_ids=text_input, labels=final_output, return_dict=True).loss
 
     all_loss = vq_loss + decoded_output.loss + loss_t5 + loss_D
 
-    return all_loss, final_input
+    return all_loss, final_output
 
   def get_input_output(self, batch, text_input):
 
