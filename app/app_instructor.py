@@ -18,10 +18,10 @@ from forms import NavigationForm, ReviewForm
 import util
 import visualize
 
-REGION = 'Pittsburgh'
+REGION = 'Manhattan'
 
 try:
-  rvs_path = os.path.abspath("./data/pittsburgh_samples_v3.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v40.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}")
 
@@ -158,6 +158,7 @@ def description_task(
         'region': REGION
         }
 
+
         # save to database
         if 'sandbox' in turkSubmitTo:
           instructions_ref_sandbox.document(id).set(j_req)
@@ -185,6 +186,9 @@ def description_task(
         task_session[session_id] = 1
         address = turkSubmitTo + '/mturk/externalSubmit'
         fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
+        
+        del sample_session[workerId]
+        
         return flask.render_template(
           'end.html', 
           bar=100, 
@@ -359,7 +363,8 @@ def verification_task(
       continue
 
     landmark_geom, desc = visualize.get_landmark_desc_geo(
-      landmark=landmark
+      landmark=landmark,
+      landmark_type=landmark_type,
       )
     if 'main' in landmark_type:
       landmark_main[landmark_type] = (desc, landmark_geom)

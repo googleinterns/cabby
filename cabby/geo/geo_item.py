@@ -34,7 +34,9 @@ NOT_DISPLAY_TAGS = [
   "gnis:id", "in", "nycdoitt:bin", "gnis:feature_id", "element_type", "phone",
   "website", "addr:housenumber", "contact:facebook", "contact:instagram", "opening_hours",
   "reservation", "wikidata", "wikipedia:_en", "wikipedia: en", "addr:postcode", 
-  "addr:street", "addr:state", "addr:city"] 
+  "addr:street", "addr:state", "addr:city", "wikipedia: en:"] 
+
+NOT_DISPLAY_TAG_NAMES = ['wikipedia', 'wikidata', ': en', 'name', ':_en']
 
 
 @attr.s
@@ -84,7 +86,7 @@ class GeoLandmark:
     for k,v in self.pivot_gdf.to_dict().items():
       if str(v)=='nan':
         continue
-      if isinstance(v,str) and v and k not in NOT_DISPLAY_TAGS:
+      if isinstance(v,str) and v and k not in NOT_DISPLAY_TAGS and all(n not in k for n in NOT_DISPLAY_TAG_NAMES):
         if  not(
           self.landmark_type in ['end_point', 'near_pivot', "beyond_pivot"] and 'name' in k):
           landmark_dict[k.replace('_', ' ')] = v.replace('_', ' ')

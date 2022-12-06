@@ -37,7 +37,7 @@ dict_icon_path = {x.replace('.svg', "").split('=')[1].replace('_', " "): x for x
 
 
 def get_osm_map(
-  entity, with_path, with_end_point) -> Sequence[folium.Map]:
+  entity, with_path, with_end_point, with_landmarks) -> Sequence[folium.Map]:
   '''Create the OSM maps.
   Arguments:
     gdf: the GeoDataFrame from which to create the OSM map.
@@ -69,12 +69,15 @@ def get_osm_map(
   for landmark_type, landmark in entity.geo_landmarks.items():
     if not with_end_point and landmark_type=='end_point':
       continue
+    if not with_landmarks and 'pivot' in landmark_type:
+      continue
     color = PIVOTS_COLORS[
       landmark_type] if landmark_type in PIVOTS_COLORS else 'black'
     add_landmark_to_osm_map(
       landmark=landmark,
       map_osm=map_osm,
       color=color,
+      landmark_type=landmark_type
       )
 
   # add path between start and end point
@@ -89,11 +92,13 @@ def get_osm_map(
 
   return map_osm
 
-def get_landmark_desc_geo(landmark):
+def get_landmark_desc_geo(landmark, landmark_type):
   if landmark.geometry is not None:  
     if 'pivot_view' in landmark.pivot_gdf:
-      desc = landmark.pivot_gdf.pivot_view.replace(";", "<br>") 
-      desc = "<b> " + desc.replace("_", "</b>", 1)
+      desc = landmark.pivot_gdf.pivot_view
+      if landmark_type in ['end_point', 'start_point']:
+        desc = landmark_type.replace("end_point", "Goal").replace("_", " ") + ": " + desc
+      desc = "<b> " + desc.replace(";", "<br>").replace("_", "</b>", 1)
     else:
       desc = landmark.pivot_gdf.main_tag
     landmark_geom = util.list_yx_from_point(landmark.geometry)
@@ -101,8 +106,8 @@ def get_landmark_desc_geo(landmark):
   return None, "" 
 
 
-def add_landmark_to_osm_map(landmark, map_osm, color):
-  landmark_geom, desc = get_landmark_desc_geo(landmark)
+def add_landmark_to_osm_map(landmark, map_osm, color, landmark_type):
+  landmark_geom, desc = get_landmark_desc_geo(landmark, landmark_type)
   if landmark_geom:
     folium.Marker(
           landmark_geom,
@@ -123,7 +128,8 @@ def get_goal_icon(goal):
     
 
 def get_maps_and_instructions(
-  path: Text, with_path: bool = True, with_end_point: bool = True
+  path: Text, with_path: bool = True, with_end_point: bool = True, 
+  with_landmarks: bool = True
 ) -> Sequence[Tuple[Sequence, str, Sequence[str], folium.Map, Optional[str]]]:
   '''Create the OSM maps and instructions.
   Arguments:
@@ -137,7 +143,8 @@ def get_maps_and_instructions(
   map_osms_instructions = []
   entities = util.load_entities(path)
   for entity in entities:
-    map_osm = get_osm_map(entity, with_path, with_end_point)
+    map_osm = get_osm_map(
+      entity, with_path, with_end_point, with_landmarks)
     features_list = []
     for feature_type, feature in entity.geo_features.items():
       features_list.append(feature_type + ": " + str(feature))

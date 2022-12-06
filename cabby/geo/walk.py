@@ -47,12 +47,12 @@ SMALL_POI = 4 # Less than 4 S2Cellids.
 SEED = 1
 MAX_SEED = 2**32 - 1
 
-SAVE_ENTITIES_EVERY = 100
+SAVE_ENTITIES_EVERY = 500
 MAX_BATCH_GEN = 100
 MAX_BATCH_GEN = MAX_BATCH_GEN if MAX_BATCH_GEN<SAVE_ENTITIES_EVERY else SAVE_ENTITIES_EVERY
 MAX_PATH_DIST = 2000
 MIN_PATH_DIST = 200
-NEAR_PIVOT_DIST = 80
+NEAR_PIVOT_DIST = 100
 ON_PIVOT_DIST = 10
 
 # The max number of failed tries to generate a single path entities.
@@ -61,7 +61,7 @@ MAX_NUM_GEN_FAILED = 10
 PIVOT_ALONG_ROUTE_MAX_DIST = 0.0007
 MAX_NUM_BEYOND_TRY = 50
 
-N_AROUND_PIVOTS = 10
+N_AROUND_PIVOTS = 15
 N_MAIN_PIVOTS = 15
 
 main_pivots = [f"main_pivot_{n}" for n in range(2, N_MAIN_PIVOTS+1)]
@@ -823,7 +823,7 @@ class Walker:
           end_point, 
           start_point, 
           path_geom, 
-          2*NEAR_PIVOT_DIST, 
+          3*NEAR_PIVOT_DIST, 
           NEAR_PIVOT_DIST, 
           list_around_goal_pivots_osmid)
       list_around_goal_pivots_osmid.append(around_goal_pivot_x['osmid'])
