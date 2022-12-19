@@ -19,6 +19,7 @@ from absl import logging
 import collections
 import networkx as nx
 import numpy as np
+import math
 import pandas as pd
 from s2geometry import pywraps2 as s2
 
@@ -198,22 +199,29 @@ def construct_metagraph(region: Region,
   Returns:
     metagraph: an nx.Graph with undirected edges and weights as described above.
   """
-  # Step 0: Load the OSM graph and add extra wikidata-found places to it.
+  logging.info("Step 0: Load the OSM graph and add extra wikidata-found places to it.")
   wd_relations = query.get_geofenced_wikidata_relations(
     region, extract_qids=True)
   osm_map = Map(region, s2_level, base_osm_map_filepath)
+
   update_osm_map(osm_map, wd_relations)
 
-  # Step 1: Convert the nx.MultiDiGraph into a weighted nx.Graph.
+  logging.info("Step 1: Convert the nx.MultiDiGraph into a weighted nx.Graph.")
   metagraph = convert_multidi_to_weighted_undir_graph(osm_map.nx_graph,
                                                       agg_function)
 
-  # Step 2: Add all geometries to the graph.
-  for _, row in osm_map.nodes.iterrows():
+  logging.info("Step 2: Add all geometries to the graph.")
+  null_idx = osm_map.nodes['osmid'].isnull().index.values.tolist()
+  for idx, row in osm_map.nodes.iterrows():
+    if idx in null_idx:
+      continue
+
     metagraph.nodes[row["osmid"]]["geometry"] = row["geometry"]
     metagraph.nodes[row["osmid"]]["type"] = TYPE_OSM_LOC
-  for _, row in osm_map.poi.iterrows():
-    if "geometry" in metagraph.nodes[row["osmid"]]:
+  
+  null_idx = osm_map.poi['osmid'].isnull().index.values.tolist()
+  for idx, row in osm_map.poi.iterrows():
+    if idx in null_idx or "geometry" in metagraph.nodes[row["osmid"]]:
       continue
     assert isinstance(row["geometry"], Point)
     metagraph.nodes[row["osmid"]]["geometry"] = row["geometry"]
@@ -231,7 +239,7 @@ def construct_metagraph(region: Region,
           wikidata_to_nodeid[row[field]] = node_id
   nx.set_node_attributes(metagraph, values=attributes_to_add)
 
-  # Step 4: Add conceptual nodes, attributes, and edges to the graph.
+  logging.info("Step 4: Add conceptual nodes, attributes, and edges to the graph.")
   attributes_to_add = collections.defaultdict(dict)
   for _, row in wd_relations.iterrows():
     # Add edge.
@@ -247,7 +255,7 @@ def construct_metagraph(region: Region,
     attributes_to_add[concept_node_id]["type"] = TYPE_WD_CONCEPT
   nx.set_node_attributes(metagraph, values=attributes_to_add)
 
-  # Step 5: Add S2 nodes and edges
+  logging.info("Step 5: Add S2 nodes and edges") 
   edges_to_add = []
   cellid_add = []
   for node, data in metagraph.nodes.data():
@@ -261,7 +269,7 @@ def construct_metagraph(region: Region,
       edges_to_add.append((node, s2_cell_node_id, {"weight": 1.0}))
       attributes_to_add[s2_cell_node_id]["type"] = TYPE_S2
 
-  # Add all cellid in region
+  logging.info("Add all cellid in region")
   unique_cellid = util.cellids_from_polygon(region.polygon, s2_level)
   for s2_cell_node_id in unique_cellid:
     if s2_cell_node_id not in cellid_add:
@@ -277,15 +285,17 @@ def construct_metagraph(region: Region,
   metagraph.add_edges_from(edges_to_add)
   nx.set_node_attributes(metagraph, values=attributes_to_add)
 
-  # Step 6: Add types to projected POIs.
+  logging.info("Step 6: Add types to projected POIs.")
   attributes_to_add = collections.defaultdict(dict)
   for node in metagraph:
     nodedata = metagraph.nodes[node]
+    if not nodedata:
+      continue
     node = str(node)
     if node[1] == PROJECTED_POI_2ND_CHAR:
       attributes_to_add[node]["type"] = TYPE_PROJECTED_POI
     else:
-      assert "type" in nodedata, "node %s has no type and is not a projected POI" % node
+      assert "type" in nodedata, f"node {node} has no type and is not a projected POI \n {nodedata}" 
   nx.set_node_attributes(metagraph, values=attributes_to_add)
 
   logging.info("Finished constructing graph")
