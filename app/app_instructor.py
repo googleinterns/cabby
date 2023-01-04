@@ -21,7 +21,7 @@ import visualize
 REGION = 'Manhattan'
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v40.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v51.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}")
 
@@ -154,6 +154,7 @@ def description_task(
         'date_start': str(start_session[session_id]),
         'date_finish': str(datetime.utcnow()),
         'key': id,
+        'valid': False,
         'verified_n': 0,
         'region': REGION
         }
@@ -236,9 +237,13 @@ def verification_task(
             'work_id']!=workerId]
 
   instruction_data_df = pd.DataFrame(instruction_data)
-  instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
-  
-  sample = instruction_data_df.iloc[0]
+
+  not_validated = instruction_data_df[instruction_data_df['valid']==False]
+  if not_validated.shape[0]!=0:
+    sample = not_validated.sample(1).iloc[0]
+  else:
+    instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
+    sample = instruction_data_df.iloc[0]
 
   sample_session[workerId] = sample['rvs_sample_number']
 
