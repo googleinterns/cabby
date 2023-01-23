@@ -23,7 +23,7 @@ import visualize
 REGION = 'Manhattan'
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v55.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v58.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}")
 
@@ -405,4 +405,45 @@ def verification_task(
     else:
       landmark_rest[landmark_type] = (desc, landmark_geom)
 
+
   return flask.render_template('follower_task.html',
+                        end_point=end_point,
+                        start_point=start_point,
+                        nav_instruction=nav_instruction,
+                        bar=progress_task,
+                        title=title,
+                        turkSubmitTo=turkSubmitTo,
+                        n_sample=sample['rvs_sample_number'],
+                        hitId=hitId,
+                        workerId=workerId,
+                        assignmentId=assignmentId,
+                        session_id=session_id,
+                        form=form,
+                        landmark_main=landmark_main,
+                        landmark_around=landmark_around,
+                        landmark_rest=landmark_rest,
+                        icon_path=icon_path
+                        )
+@app.errorhandler(500)
+def internal_server_error(e):
+  return flask.jsonify(error=str(e)), 500
+@app.errorhandler(404)
+def page_not_found(e):
+  return flask.render_template("404.html", exc = e)
+@app.route('/map/<n_sample>', methods=['GET', 'POST'])
+@app.route('/map')
+def map():
+  n_sample = flask.request.args.get("n_sample") 
+  workerId = flask.request.args.get("workerId") 
+  try:
+    return flask.render_template(f'map_{n_sample}.html')
+  except:
+    n_sample = random.randint(0, size_dataset-1)
+    sample_session[workerId] = n_sample
+    folium_map, _, _, _, _ = osm_maps_instructions[n_sample]
+    path_map = os.path.join(dir_map,f"map_{n_sample}.html") 
+    folium_map.save(path_map)
+    return flask.render_template(f'map_{n_sample}.html')
+port = int(os.environ.get('PORT', 5000))
+if __name__ == '__main__':
+  app.run(threaded=True, host='0.0.0.0', port=port)
