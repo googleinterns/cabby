@@ -135,10 +135,44 @@ def point_from_str_point(coord_str: Text) -> Point:
   Returns:
     A point.
   '''
-  list_coords_str = coord_str.replace("POINT (", "").replace(")", "").split(' ')
+  coords_str = coord_str.replace("POINT (", "").replace(")", "").replace('[','').replace(']','')
+  if ',' in coord_str:
+    list_coords_str = coords_str.split(',')
+  else:
+    list_coords_str = coords_str.split(' ')
   coord = list(map(float, list_coords_str))
 
   return Point(coord[0], coord[1])
+
+
+
+
+def point_from_list_coord_yx(coord: Sequence) -> Point:
+  '''Converts coordinates in list format (latitude and longtitude) to Point.
+  E.g, of list [40.715865, -74.037258].
+  Arguments:
+    coord: A lat-lng coordinate to be converted to a point.
+  Returns:
+    A point.
+  '''
+  lat = coord[0]
+  lon = coord[1]
+
+  return Point(lon, lat)
+
+
+def point_from_list_coord_xy(coord: Sequence) -> Point:
+  '''Converts coordinates in list format (longtitude and latitude) to Point.
+  E.g, of list [-74.037258, 40.715865].
+  Arguments:
+    coord: A lat-lng coordinate to be converted to a point.
+  Returns:
+    A point.
+  '''
+  lat = coord[1]
+  lon = coord[0]
+
+  return Point(lon, lat)
 
 
 def list_yx_from_point(point: Point) -> Sequence[float]:

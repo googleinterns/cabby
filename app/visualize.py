@@ -49,18 +49,18 @@ def get_osm_map(
   goal_point = entity.geo_landmarks['end_point'].geometry
   start_point = entity.geo_landmarks['start_point'].geometry
 
-  mid_point = util.midpoint(goal_point, start_point)
-  zoom_location = util.list_yx_from_point(mid_point)
+  zoom_location = util.list_yx_from_point(goal_point)
 
   dist = util.get_distance_m(goal_point, start_point)
-  if dist>2500:
+  if dist>1500:
     zoom_start = 13
-  elif dist>1800:
+  elif dist>1000:
     zoom_start = 14
-  elif dist>400:
+  elif dist>800:
     zoom_start = 15
   else:
     zoom_start = 16
+
   # create a map
   map_osm = folium.Map(location=zoom_location,
                        zoom_start=zoom_start, tiles='OpenStreetMap')
@@ -89,6 +89,7 @@ def get_osm_map(
       'weight': 5,
       'fillOpacity': 1,
     }).add_to(map_osm)
+
 
   return map_osm
 
@@ -129,7 +130,7 @@ def get_goal_icon(goal):
 
 def get_maps_and_instructions(
   path: Text, with_path: bool = True, with_end_point: bool = True, 
-  with_landmarks: bool = True
+  with_landmarks: bool = True, specific_sample: int = -1
 ) -> Sequence[Tuple[Sequence, str, Sequence[str], folium.Map, Optional[str]]]:
   '''Create the OSM maps and instructions.
   Arguments:
@@ -142,7 +143,9 @@ def get_maps_and_instructions(
 
   map_osms_instructions = []
   entities = util.load_entities(path)
-  for entity in entities:
+  for entity_idx, entity in enumerate(entities):
+    if specific_sample !=-1 and entity_idx!=specific_sample:
+      continue
     map_osm = get_osm_map(
       entity, with_path, with_end_point, with_landmarks)
     features_list = []

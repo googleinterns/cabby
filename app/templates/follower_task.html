@@ -85,19 +85,11 @@
     var lat_end = end_point[0]
     var lng_end = end_point[1]
 
-    var mid_point = [
-        (lat_start+lat_end)/2, (lng_start+lng_end)/2]
-
-    var southWest = L.latLng(lat_start-0.02, lng_start-0.02),
-        northEast = L.latLng(lat_start+0.02, lng_start+0.02),
-        bounds = L.latLngBounds(southWest, northEast);
 
     var map = L.map('mapid').setView(
         end_point, 
-        15,
-    ).setMaxBounds(
-        bounds);
-
+        14,
+    )
 
     
     var map_layer= L.tileLayer( 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

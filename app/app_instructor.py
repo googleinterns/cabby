@@ -13,6 +13,7 @@ import random
 from shapely.geometry.point import Point
 import uuid
 import sys
+import time
 
 
 from forms import NavigationForm, ReviewForm
@@ -34,8 +35,13 @@ db = firestore.client()
 instructions_ref = db.collection('instructions')
 instructions_ref_sandbox = db.collection('instructions_sandbox')
 
+
+instructions_ref_get = list(instructions_ref.get()) 
+instructions_ref_sandbox_get = list(instructions_ref_sandbox.get()) 
+
 verification_ref = db.collection('verification')
 verification_ref_sandbox = db.collection('verification_sandbox')
+
 
 logs = db.collection('logs')
 
@@ -61,11 +67,14 @@ size_dataset = len(osm_maps_instructions)
 task_session = {}
 sample_session = {}
 start_session = {}
+validation_session = {}
+
 
 
 N_TASKS_PER_USER = 2
 
 dir_map = os.path.join(app.root_path,"templates")
+
 
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/pub/", methods=['GET', 'POST'])
@@ -77,13 +86,12 @@ def home():
   assignmentId = flask.request.args.get("assignmentId") 
   assignmentId = assignmentId if assignmentId else uuid.uuid4().hex
   hitId = flask.request.args.get("hitId")
-  hitId = hitId if hitId else "2"
+  hitId = hitId if hitId else str(datetime.now().hour)
   turkSubmitTo = flask.request.args.get("turkSubmitTo")
   workerId = flask.request.args.get("workerId")
   workerId = workerId if workerId else "1"
   turkSubmitTo = flask.request.args.get("turkSubmitTo")
   turkSubmitTo = turkSubmitTo if turkSubmitTo else "https://workersandbox.mturk.com"
-
 
   session_id = workerId+hitId
   if session_id not in task_session:
@@ -153,8 +161,8 @@ def description_task(
         'rvs_sample_number': str(sample_session[workerId]),
         'content': content,
         'rvs_path': rvs_path,
-        'rvs_goal_point': str(goal_point),
-        'rvs_start_point': str(start_point),
+        'rvs_goal_point': [goal_point.y, goal_point.x],
+        'rvs_start_point': [start_point.y, start_point.x],
         'task': task_session[session_id],
         'date_start': str(start_session[session_id]),
         'date_finish': str(datetime.utcnow()),
@@ -167,7 +175,9 @@ def description_task(
 
         # save to database
         if 'sandbox' in turkSubmitTo:
-          instructions_ref_sandbox.document(id).set(j_req)
+          # instructions_ref_sandbox.document(id).set(j_req)
+          instructions_ref.document(id).set(j_req)
+
         else:
           instructions_ref.document(id).set(j_req)
       except Exception as e:
@@ -194,6 +204,7 @@ def description_task(
         fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
         
         del sample_session[workerId]
+        del validation_session[workerId]
         
         return flask.render_template(
           'end.html', 
@@ -228,11 +239,15 @@ def verification_task(
 
   # read from database
   if 'sandbox' in turkSubmitTo:
-    instruction_table = instructions_ref_sandbox
+    # instruction_table = instructions_ref_sandbox
+    # instruction_data_all = instructions_ref_sandbox_get
+    instruction_table = instructions_ref
+    instruction_data_all = instructions_ref_get
+
   else:
     instruction_table = instructions_ref
+    instruction_data_all = instructions_ref_get
 
-  instruction_data_all = list(instruction_table.get())
 
   instruction_data = [
     e.to_dict() for e in instruction_data_all if (
@@ -241,24 +256,29 @@ def verification_task(
           'review']=='RVS_excellent')) and e.to_dict()[
             'work_id']!=workerId]
 
+
   instruction_data_df = pd.DataFrame(instruction_data)
 
   not_validated = instruction_data_df[instruction_data_df['valid']==False]
+
+
   if not_validated.shape[0]!=0:
     sample = not_validated.sample(1).iloc[0]
   else:
     instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
     sample = instruction_data_df.iloc[0]
-
-  sample_session[workerId] = sample['rvs_sample_number']
+  
 
   path_data = os.path.abspath(
     sample['rvs_path'].replace("/app_instructor", "."))
 
+    
   entities = util.load_entities(path_data)
 
+  sample_n = int(sample['rvs_sample_number'])
+
   try:
-    entity = entities[int(sample['rvs_sample_number'])]
+    entity = entities[sample_n]
   except Exception as e:
     tb = e.__traceback__
 
@@ -274,104 +294,27 @@ def verification_task(
 
     # save to database
     logs.document(id).set(j_req)
-  
-  instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
-  sample = instruction_data_df.iloc[0]
-  sample_session[workerId] = sample['rvs_sample_number']
+        
+    instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
+    sample = instruction_data_df.iloc[0]
 
-  entity = entities[int(sample['rvs_sample_number'])]
+    path_data = os.path.abspath(sample['rvs_path'].replace("/app_instructor", "."))
+
+    entities = util.load_entities(path_data)
+
+    entity = entities[sample_n]
+
 
   start_point = util.list_yx_from_point(
     entity.geo_landmarks['start_point'].geometry)
   end_point = util.list_yx_from_point(
     entity.geo_landmarks['end_point'].geometry)
   nav_instruction = sample['content']
-
-  if task_session[session_id] == 0:
-    task_bar = 0
-  else:
-    task_bar = task_session[session_id] - 1
-
-  progress_task = round(task_bar / N_TASKS_PER_USER * 100)
-
-  title = 0 if task_session[session_id]==1 else task_session[session_id]
   
-
-  form = ReviewForm()
-
-  if flask.request.method == 'POST': 
-
-    if flask.request.form.get("submit_button"):
-      
-      latlng_dict = flask.json.loads(
-        flask.request.form['latlng'])
-      lng = latlng_dict['lng']
-      lat = latlng_dict['lat']
-      lat_lng = lng + "," + lat
-
-      try:
-          
-        id = workerId + hitId + str(task_session[session_id])
-
-        point_pred = Point(float(lng), float(lat))
-
-        point_true = util.point_from_str_point(sample['rvs_goal_point'])
-
-        dist = round(util.get_distance_between_points(point_true, point_pred))
-
-        j_req = {
-        'hit_id': hitId,
-        'work_id': workerId,
-        'assignmentId': assignmentId, 
-        'rvs_sample_number': str(sample['rvs_sample_number']),
-        'rvs_path': sample['rvs_path'],
-        'predict_goal_point': lat_lng,
-        'rvs_start_point': sample['rvs_start_point'],
-        'task': task_session[session_id],
-        'date_start': str(start_session[session_id]),
-        'date_finish': str(datetime.utcnow()),
-        'rvs_goal_point': sample['rvs_goal_point'],
-        'key_instruction': sample['key'],
-        'key': id,
-        'dist_m': dist,
-        }
-
-        # save to database
-        if 'sandbox' in turkSubmitTo:
-          verification_ref_sandbox.document(id).set(j_req)
-        else:
-          verification_ref.document(id).set(j_req)
-      except Exception as e:
-        return f"An Error Occured: {e}"
-
-      # Update instruction with number of verifications
-      id = sample['key'] 
-      instruction_table.document(id).update(
-        {'verified_n': int(sample['verified_n']+1)})
-
-      sample_session[workerId] = random.randint(0, size_dataset-1)
-      
-      task_session[session_id] = task_session[session_id] + 1
-
-      if task_session[session_id]>N_TASKS_PER_USER:
-        task_session[session_id] = 1
-        address = turkSubmitTo + '/mturk/externalSubmit'
-        fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
-        return flask.render_template(
-          'end.html', 
-          bar=100, 
-          fullUrl=fullUrl,
-        )
-      else:
-        return home()
-
-
-  path_verf = sample['rvs_path'].replace("/app_instructor", ".")
   osm_maps_verification = visualize.get_maps_and_instructions(
-    path_verf, with_path=False)
+    path_data, with_path=False, specific_sample=sample_n)
 
-  _, _, _, entity, icon_path = osm_maps_verification[
-    int(sample_session[workerId])]
+  _, _, _, entity, icon_path = osm_maps_verification[0]
 
   if icon_path:
     icon_path = icon_path.split('osm_icons/')[-1]
@@ -405,24 +348,114 @@ def verification_task(
     else:
       landmark_rest[landmark_type] = (desc, landmark_geom)
 
+  if workerId not in validation_session:
+    validation_session[workerId] = {}
+    validation_session[workerId]['rvs_sample_number'] = sample['rvs_sample_number']
+    validation_session[workerId]['rvs_path'] = sample['rvs_path']
+    validation_session[workerId]['rvs_start_point'] = start_point
+    validation_session[workerId]['rvs_goal_point'] = end_point
+    validation_session[workerId]['nav_instruction'] = nav_instruction
+    validation_session[workerId]['icon_path'] = icon_path
+    validation_session[workerId]['landmark_rest'] = landmark_rest
+    validation_session[workerId]['landmark_around'] = landmark_around
+    validation_session[workerId]['landmark_main'] = landmark_main
+    validation_session[workerId]['key'] = sample['key'] 
+    validation_session[workerId]['verified_n'] = sample['verified_n'] 
+
+    
+
+
+  if task_session[session_id] == 0:
+    task_bar = 0
+  else:
+    task_bar = task_session[session_id] - 1
+
+  progress_task = round(task_bar / N_TASKS_PER_USER * 100)
+
+  title = 0 if task_session[session_id]==1 else task_session[session_id]
+  
+  form = ReviewForm()
+
+  if flask.request.method == 'POST': 
+
+    if flask.request.form.get("submit_button"):
+      
+      latlng_dict = flask.json.loads(
+        flask.request.form['latlng'])
+      lng = latlng_dict['lng']
+      lat = latlng_dict['lat']
+      predicted_point = [lat, lng]
+
+      try:
+          
+        id = workerId + hitId + str(task_session[session_id]) + str(random.randint(0,1000000))
+
+        point_pred = Point(float(lng), float(lat))
+
+        point_true = util.point_from_list_coord_yx(validation_session[workerId]['rvs_goal_point'])
+
+        dist = round(util.get_distance_between_points(point_true, point_pred))
+
+        j_req = {
+        'hit_id': hitId,
+        'work_id': workerId,
+        'assignmentId': assignmentId, 
+        'rvs_sample_number': str(validation_session[workerId]['rvs_sample_number']),
+        'rvs_path': validation_session[workerId]['rvs_path'],
+        'predict_goal_point': predicted_point,
+        'rvs_start_point': validation_session[workerId]['rvs_start_point'],
+        'task': task_session[session_id],
+        'date_start': str(start_session[session_id]),
+        'date_finish': str(datetime.utcnow()),
+        'rvs_goal_point': validation_session[workerId]['rvs_goal_point'],
+        'key_instruction': validation_session[workerId]['key'],
+        'key': id,
+        'dist_m': dist,
+        }
+
+        # save to database
+        if 'sandbox' in turkSubmitTo:
+          # verification_ref_sandbox.document(id).set(j_req)
+          verification_ref.document(id).set(j_req)
+
+        else:
+          verification_ref.document(id).set(j_req)
+      except Exception as e:
+        return f"An Error Occured: {e}"
+
+      # Update instruction with number of verifications
+      id = validation_session[workerId]['key']
+      instruction_table.document(id).update(
+        {'verified_n': int(validation_session[workerId]['verified_n']+1)})
+      
+      task_session[session_id] = task_session[session_id] + 1
+
+      if task_session[session_id]>N_TASKS_PER_USER:
+        task_session[session_id] = 1
+        address = turkSubmitTo + '/mturk/externalSubmit'
+        fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
+        return flask.render_template(
+          'end.html', 
+          bar=100, 
+          fullUrl=fullUrl,
+        )
+
+      else:
+
+        return home()
+
 
   return flask.render_template('follower_task.html',
-                        end_point=end_point,
-                        start_point=start_point,
-                        nav_instruction=nav_instruction,
+                        end_point=validation_session[workerId]['rvs_goal_point'],
+                        start_point=validation_session[workerId]['rvs_start_point'],
+                        nav_instruction=validation_session[workerId]['nav_instruction'],
                         bar=progress_task,
                         title=title,
-                        turkSubmitTo=turkSubmitTo,
-                        n_sample=sample['rvs_sample_number'],
-                        hitId=hitId,
-                        workerId=workerId,
-                        assignmentId=assignmentId,
-                        session_id=session_id,
                         form=form,
-                        landmark_main=landmark_main,
-                        landmark_around=landmark_around,
-                        landmark_rest=landmark_rest,
-                        icon_path=icon_path
+                        landmark_main=validation_session[workerId]['landmark_main'],
+                        landmark_around=validation_session[workerId]['landmark_around'],
+                        landmark_rest=validation_session[workerId]['landmark_rest'],
+                        icon_path=validation_session[workerId]['icon_path']
                         )
 @app.errorhandler(500)
 def internal_server_error(e):
