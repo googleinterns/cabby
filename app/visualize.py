@@ -122,7 +122,7 @@ def get_goal_icon(goal):
       value_goal = goal.pivot_gdf[tag]
       if value_goal is None:
         continue
-      candidate_path = os.path.join(icon_dir, tag+"="+value_goal+".svg")
+      candidate_path = os.path.join(str(icon_dir), str(tag)+"="+str(value_goal)+".svg")
       if os.path.exists(candidate_path):
         return candidate_path
     return None
