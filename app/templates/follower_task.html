@@ -128,7 +128,7 @@
         var icon = blackIcon
         L.marker(
             landmark_main[
-                type][1], {icon: icon}).addTo(map).bindPopup(landmark_main[type][0]);
+                type]["point"], {icon: icon}).addTo(map).bindPopup(landmark_main[type]["desc"]);
 
         };
     
@@ -136,7 +136,7 @@
         var icon = blackIcon
         L.marker(
             landmark_around[
-                type][1], {icon: icon}).addTo(map).bindPopup(landmark_around[type][0]);
+                type]["point"], {icon: icon}).addTo(map).bindPopup(landmark_around[type]["desc"]);
 
         };
 
@@ -149,7 +149,7 @@
         }
         L.marker(
             landmark_rest[
-                type][1], {icon: icon}).addTo(map).bindPopup(landmark_rest[type][0]);
+                type]["point"], {icon: icon}).addTo(map).bindPopup(landmark_rest[type]["desc"]);
 
         };
 

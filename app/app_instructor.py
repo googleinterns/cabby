@@ -21,6 +21,7 @@ import json
 from forms import NavigationForm, ReviewForm
 import util
 import visualize
+import tasks
 
 
 REGION = 'Manhattan'
@@ -28,6 +29,8 @@ DIST_THRESHOLD = 100
 N_TASKS_PER_USER = 2
 DEFAULT_ARGS = "1A"
 SANDBOX_ON = False
+
+
 
 def log_info(content):
 
@@ -39,7 +42,7 @@ def log_info(content):
   logs.document(str(random.randint(0,100000))).set(j_req)
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v58.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v59.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}")
 
@@ -60,6 +63,8 @@ verification_ref_sandbox = db.collection('verification_sandbox')
 
 logs = db.collection('logs')
 
+global_variables_db = db.collection('global_variables')
+
 
 app = Flask(__name__)
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -79,52 +84,44 @@ osm_maps_instructions = visualize.get_maps_and_instructions(rvs_path, with_path=
 
 size_dataset = len(osm_maps_instructions)
 
-global_variables = {}
-
-global_variables_path = 'global_session.json'
-
-if not os.path.exists(global_variables_path):
-  pd.DataFrame(global_variables).to_json(global_variables, orient="split")
-else:
-  global_variables = pd.read_json(global_variables_path, orient='split').to_dict()
-
+def update_global_variables(global_variables, session_id):
+  dict = global_variables.to_dict()
+  global_variables_db.document(session_id).set(dict)
 
 dir_map = os.path.join(app.root_path,"templates")
 
 @app.route("/", methods=['GET', 'POST'])
 @app.route("/home/", methods=['GET', 'POST'])
-def home(workerId=DEFAULT_ARGS):
-
-  global global_variables
+def home():
   
   assignmentId = flask.request.args.get("assignmentId") 
   assignmentId = assignmentId if assignmentId else uuid.uuid4().hex
   hitId = flask.request.args.get("hitId")
   hitId = hitId if hitId else str(datetime.now().hour)
   turkSubmitTo = flask.request.args.get("turkSubmitTo")
-  if workerId==DEFAULT_ARGS:
-    workerId = flask.request.args.get("workerId")
-
+  workerId = flask.request.args.get("workerId")
   workerId = workerId if workerId else DEFAULT_ARGS
   turkSubmitTo = turkSubmitTo if turkSubmitTo else "https://workersandbox.mturk.com"
   
   session_id = str(workerId+hitId)
 
-  try: 
-    if not os.path.exists(global_variables_path):
+  try:     
 
-      pd.DataFrame(global_variables).to_json(global_variables, orient="split")
-    else:
-      global_variables = pd.read_json(global_variables_path, orient='split').to_dict()
+    global_variables = tasks.Tasks(sessions_id=session_id, size_dataset=size_dataset)    
 
-    if session_id not in global_variables:
+    global_variables = init_global_variable(global_variables, session_id)    
+   
+    if global_variables.finished == True: 
+      return end_hit(global_variables, session_id, turkSubmitTo, assignmentId, workerId, hitId)
 
+    if global_variables.task_n>N_TASKS_PER_USER:
 
-      init_global_variable(session_id)    
+      return end_hit(global_variables, session_id, turkSubmitTo, assignmentId, workerId, hitId)
 
-    if global_variables[session_id]['task_n'] % 2!=0:
+    if global_variables.task_n % 2!=0:
 
       return verification_task(
+        global_variables=global_variables,
         workerId=workerId, 
         hitId=hitId, 
         assignmentId=assignmentId, 
@@ -132,6 +129,7 @@ def home(workerId=DEFAULT_ARGS):
         turkSubmitTo=turkSubmitTo)
     
     return description_task(
+        global_variables=global_variables,
         workerId=workerId, 
         hitId=hitId, 
         assignmentId=assignmentId, 
@@ -140,37 +138,41 @@ def home(workerId=DEFAULT_ARGS):
     
   except Exception as e:
     return handle_error(
-      e, workerId, hitId, session_id, assignmentId, turkSubmitTo)
+      global_variables, e, workerId, hitId, session_id, assignmentId, turkSubmitTo)
 
-def init_global_variable(session_id):
+def init_global_variable(global_variables, session_id):
+  if not global_variables.validation.rvs_path:
+    global_variables_specific = global_variables_db.document(session_id)
+    doc = global_variables_specific.get()
 
-  global_variables[session_id] = {}
-  global_variables[session_id]['task_n'] = 1
-  global_variables[session_id]['start_session'] = str(datetime.utcnow()) 
-  global_variables[session_id]['writing_task_n'] = random.randint(0, size_dataset-1)
+    if doc.to_dict():
+      global_variables = tasks.Tasks.from_dict(doc=doc.to_dict(), size_dataset=size_dataset)
+    else:
+      global_variables = tasks.Tasks(sessions_id=session_id, size_dataset=size_dataset)    
+      global_variables_specific.set(global_variables.to_dict())
+
+  return global_variables
 
 
 def end_hit(
-  session_id, turkSubmitTo, assignmentId):
-
-  global global_variables
+  global_variables, session_id, turkSubmitTo, assignmentId, workerId, hitId):
 
   address = turkSubmitTo + '/mturk/externalSubmit'
   fullUrl = address + '?assignmentId=' + assignmentId #+ '&workerId=' + workerId + "&hitId=" + hitId
-  
-  if session_id in global_variables: 
-    del global_variables[session_id]
 
-    pd.DataFrame(global_variables).to_json(global_variables_path, orient="split")
-  
+  try:
+    global_variables.finished = True
+  except:
+    write_error_to_log(global_variables, workerId, hitId, session_id, assignmentId)
+
   return flask.render_template(
     'end.html', 
     bar=100, 
     fullUrl=fullUrl,
   )
 
-def write_log(workerId, hitId, session_id, assignmentId, content):
-  global global_variables
+
+def write_log(global_variables, workerId, hitId, session_id, assignmentId, content):
 
   id = str(random.randint(0,1000000))
 
@@ -184,11 +186,12 @@ def write_log(workerId, hitId, session_id, assignmentId, content):
     'content': content,
     'url': flask.request.url,
     }
-  if session_id in global_variables and 'validation' in global_variables[session_id]:     
-    validation_log = global_variables[session_id]['validation']['rvs_path']
-    j_req['task_session_n'] = global_variables[session_id]['task_n']
-    j_req['sample_session_n'] = global_variables[session_id]['writing_task_n']
-    j_req['start_session'] = global_variables[session_id]['start_session']
+
+  if global_variables and global_variables.session_id:   
+    validation_log = global_variables.validation.rvs_path
+    j_req['task_session_n'] = global_variables.task_n
+    j_req['sample_session_n'] = global_variables.write.writing_task_n
+    j_req['start_session'] = global_variables.start_session
 
   else:
     validation_log = ""
@@ -197,7 +200,8 @@ def write_log(workerId, hitId, session_id, assignmentId, content):
   # save to database
   logs.document(id).set(j_req)
 
-def write_error_to_log(workerId, hitId, session_id, assignmentId):
+
+def write_error_to_log(global_variables, workerId, hitId, session_id, assignmentId):
   # Get current system exception
 
   _, _, ex_traceback = sys.exc_info()
@@ -206,32 +210,37 @@ def write_error_to_log(workerId, hitId, session_id, assignmentId):
   trace_back = traceback.extract_tb(ex_traceback)
 
   # Format stacktrace
-  stack_trace = ['Error LOG']
+  log_state = 'Error LOG'
+  if 'ASSIGNMENT_ID_NOT_AVAILABLE' in flask.request.url:
+    log_state = 'Warning LOG'
+  stack_trace = [log_state]
 
   for trace in trace_back:
       stack_trace.append(
         "File : %s , Line : %d, Func.Name : %s, Message : %s" % (trace[0], trace[1], trace[2], trace[3]))
   
-  write_log(workerId, hitId, session_id, assignmentId, stack_trace)
+  write_log(global_variables, workerId, hitId, session_id, assignmentId, stack_trace)
   print (stack_trace)
 
 def handle_error(
-  error, workerId, hitId, session_id, assignmentId, turkSubmitTo):
+  global_variables, error, workerId, hitId, session_id, assignmentId, turkSubmitTo):
 
-  write_error_to_log(workerId, hitId, session_id, assignmentId)
+  write_error_to_log(global_variables, workerId, hitId, session_id, assignmentId)
 
-  return end_hit(session_id, turkSubmitTo, assignmentId)
+  return end_hit(global_variables, session_id, turkSubmitTo, assignmentId, workerId, hitId)
 
 def get_entity_verification(
-  instruction_data_df, workerId, hitId, session_id, assignmentId):
+  global_variables, instruction_data_df, workerId, hitId, session_id, assignmentId):
 
-  global global_variables
-
+  instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
   not_validated = instruction_data_df[instruction_data_df['valid']==False]
 
-
   if not_validated.shape[0]!=0:
-    sample = not_validated.sample(1).iloc[0]
+    min_verified_n = not_validated.iloc[0]['verified_n']
+    not_validated_min = not_validated[not_validated['verified_n']==min_verified_n]
+    print (not_validated_min[['verified_n', 'valid']])
+
+    sample = not_validated_min.sample(1).iloc[0]
   else:
     instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
     sample = instruction_data_df.iloc[0]
@@ -250,7 +259,7 @@ def get_entity_verification(
   except Exception as e:
     tb = e.__traceback__
 
-    id = workerId + hitId + str(global_variables[session_id]['task_n'])
+    id = workerId + hitId + str(global_variables.task_n)
     j_req = {
         'date': str(datetime.utcnow()),
         'hit_id': hitId,
@@ -275,12 +284,12 @@ def get_entity_verification(
 
   return entity, path_data, sample_n, sample
 
-def update_task_number(session_id):
-  global_variables[session_id]['task_n'] = global_variables[session_id]['task_n'] + 1
-  pd.DataFrame(global_variables).to_json(global_variables_path, orient="split")
-
+def update_task_number(global_variables, session_id):
+  global_variables.task_n += 1
+  update_global_variables(global_variables, session_id)
 
 def post_descriptions(
+  global_variables,
   entity, 
   folium_map, 
   path_map,
@@ -290,8 +299,6 @@ def post_descriptions(
   form_nav, 
   assignmentId, 
   turkSubmitTo):
-
-  global global_variables
 
   if os.path.exists(path_map):
     os.remove(path_map)
@@ -305,19 +312,19 @@ def post_descriptions(
     start_point = entity.geo_landmarks['start_point'].geometry
 
     try:
-      id = workerId + hitId + str(global_variables[session_id]['task_n'])
+      id = workerId + hitId + str(global_variables.task_n)
 
       j_req = {
       'hit_id': hitId,
       'work_id': workerId,
       'assignmentId': assignmentId, 
-      'rvs_sample_number': str(global_variables[session_id]['writing_task_n']),
+      'rvs_sample_number': str(global_variables.write.writing_task_n),
       'content': content,
       'rvs_path': rvs_path,
       'rvs_goal_point': [goal_point.y, goal_point.x],
       'rvs_start_point': [start_point.y, start_point.x],
-      'task': global_variables[session_id]['task_n'],
-      'date_start': str(global_variables[session_id]['start_session']),
+      'task': global_variables.task_n,
+      'date_start': str(global_variables.start_session),
       'date_finish': str(datetime.utcnow()),
       'key': id,
       'valid': False,
@@ -331,14 +338,19 @@ def post_descriptions(
         instructions_ref_sandbox.document(id).set(j_req)
       else:
         instructions_ref.document(id).set(j_req)
+
+      # write_log(workerId, hitId, session_id, assignmentId, f"Writing task - update data: {j_req}" )
+      global_variables.finished = True
+      update_global_variables(global_variables, session_id)
+
     except Exception as e:
       return f"An Error Occured: {e}"
 
     
-    global_variables[session_id]['writing_task_n'] = random.randint(0, size_dataset-1)
+    global_variables.write.writing_task_n = random.randint(0, size_dataset-1)
 
-    folium_map, _, landmarks, entity, _ = osm_maps_instructions[global_variables[session_id]['writing_task_n']]
-    path_map = os.path.join(dir_map,f"map_{global_variables[session_id]['writing_task_n']}.html") 
+    folium_map, _, landmarks, entity, _ = osm_maps_instructions[global_variables.write.writing_task_n]
+    path_map = os.path.join(dir_map,f"map_{global_variables.write.writing_task_n}.html") 
     if os.path.exists(path_map):
       os.remove(path_map)
     folium_map.save(path_map)
@@ -346,14 +358,16 @@ def post_descriptions(
     form_nav = NavigationForm()
     form_nav.landmarks = landmarks
     
-    update_task_number(session_id)
+    update_task_number(global_variables, session_id)
     
-    if global_variables[session_id]['task_n']>N_TASKS_PER_USER:
-      end_hit(session_id, turkSubmitTo, assignmentId)
+    if global_variables.task_n>N_TASKS_PER_USER:
+      return end_hit(global_variables, session_id, turkSubmitTo, assignmentId, workerId, hitId)
     else:
-      return home(workerId)
+      return home()
+
 
 def update_validation_session(
+  global_variables,
   sample, 
   workerId, 
   start_point, 
@@ -364,9 +378,6 @@ def update_validation_session(
   landmark_around, 
   landmark_main):
 
-  global global_variables
-
-
   workerId = flask.request.args.get("workerId") 
   hitId = flask.request.args.get("hitId") 
   workerId = workerId if workerId else DEFAULT_ARGS
@@ -374,32 +385,28 @@ def update_validation_session(
   
   session_id = str(workerId+hitId)
 
-  global_variables = pd.read_json(global_variables_path, orient='split').to_dict()
-
-  if session_id not in global_variables:
-    init_global_variable(session_id)
+  global_variables = init_global_variable(global_variables, session_id)
   
-  if 'validation' not in global_variables[session_id]:
+  if not global_variables.validation.rvs_sample_number:
 
-    global_variables[session_id]['validation'] = {}
-    global_variables[session_id]['validation']['rvs_sample_number'] = sample['rvs_sample_number']
-    global_variables[session_id]['validation']['rvs_path'] = sample['rvs_path']
-    global_variables[session_id]['validation']['rvs_start_point'] = start_point
-    global_variables[session_id]['validation']['rvs_goal_point'] = end_point
-    global_variables[session_id]['validation']['nav_instruction'] = nav_instruction
-    global_variables[session_id]['validation']['icon_path'] = icon_path
-    global_variables[session_id]['validation']['landmark_rest'] = landmark_rest
-    global_variables[session_id]['validation']['landmark_around'] = landmark_around
-    global_variables[session_id]['validation']['landmark_main'] = landmark_main
-    global_variables[session_id]['validation']['key'] = sample['key'] 
-    global_variables[session_id]['validation']['verified_n'] = sample['verified_n'] 
-
-  pd.DataFrame(global_variables).to_json(global_variables_path, orient="split")
+    global_variables.validation.rvs_sample_number = sample['rvs_sample_number']
+    global_variables.validation.rvs_path = sample['rvs_path']
+    global_variables.validation.rvs_start_point = start_point
+    global_variables.validation.rvs_goal_point = end_point
+    global_variables.validation.nav_instruction = nav_instruction
+    global_variables.validation.icon_path = icon_path
+    global_variables.validation.landmark_rest = landmark_rest
+    global_variables.validation.landmark_around = landmark_around
+    global_variables.validation.landmark_main = landmark_main
+    global_variables.validation.key = sample['key'] 
+    global_variables.validation.verified_n = sample['verified_n'].item()
+    
+    
+  update_global_variables(global_variables, session_id)
+  return global_variables
 
 def post_verification(
-  workerId, hitId, session_id, assignmentId, turkSubmitTo, instruction_table):
-
-  global global_variables
+  global_variables, workerId, hitId, session_id, assignmentId, turkSubmitTo, instruction_table):
 
   latlng_dict = flask.json.loads(
     flask.request.form['latlng'])
@@ -408,11 +415,11 @@ def post_verification(
   predicted_point = [lat, lng]
 
     
-  id = workerId + hitId + str(global_variables[session_id]['task_n']) + str(random.randint(0,1000000))
+  id = workerId + hitId + str(global_variables.task_n) + str(random.randint(0,1000000))
 
   point_pred = Point(float(lng), float(lat))
 
-  point_true = util.point_from_list_coord_yx(global_variables[session_id]['validation']['rvs_goal_point'])
+  point_true = util.point_from_list_coord_yx(global_variables.validation.rvs_goal_point)
 
   dist = round(util.get_distance_between_points(point_true, point_pred))
 
@@ -421,15 +428,15 @@ def post_verification(
   'hit_id': hitId,
   'work_id': workerId,
   'assignmentId': assignmentId, 
-  'rvs_sample_number': str(global_variables[session_id]['validation']['rvs_sample_number']),
-  'rvs_path': global_variables[session_id]['validation']['rvs_path'],
+  'rvs_sample_number': str(global_variables.validation.rvs_sample_number),
+  'rvs_path': global_variables.validation.rvs_path,
   'predict_goal_point': predicted_point,
-  'rvs_start_point': global_variables[session_id]['validation']['rvs_start_point'],
-  'task': global_variables[session_id]['task_n'],
-  'date_start': str(global_variables[session_id]['start_session']),
+  'rvs_start_point': global_variables.validation.rvs_start_point,
+  'task': global_variables.task_n,
+  'date_start': str(global_variables.start_session),
   'date_finish': str(datetime.utcnow()),
-  'rvs_goal_point': global_variables[session_id]['validation']['rvs_goal_point'],
-  'key_instruction': global_variables[session_id]['validation']['key'],
+  'rvs_goal_point': global_variables.validation.rvs_goal_point,
+  'key_instruction': global_variables.validation.key,
   'key': id,
   'dist_m': dist,
   }
@@ -441,16 +448,16 @@ def post_verification(
     verification_ref.document(id).set(j_req)
 
   # Update instruction with number of verifications
-  id = global_variables[session_id]['validation']['key']
+  id = global_variables.validation.key
   instruction_table.document(id).update(
     {
-      'verified_n': int(global_variables[session_id]['validation']['verified_n']+1),
+      'verified_n': int(global_variables.validation.verified_n+1),
       'valid': valid})
 
-  update_task_number(session_id)
-
-  if global_variables[session_id]['task_n']>N_TASKS_PER_USER:
-    global_variables[session_id]['task_n'] = 1
+  update_task_number(global_variables, session_id)
+  print ("Updated Verification task.")
+  if global_variables.task_n>N_TASKS_PER_USER:
+    global_variables.task_n = 1
     address = turkSubmitTo + '/mturk/externalSubmit'
     fullUrl = address + '?assignmentId=' + assignmentId + '&workerId=' + workerId + "&hitId=" + hitId
     return flask.render_template(
@@ -460,8 +467,7 @@ def post_verification(
     )
 
   else:
-
-    return home(workerId)
+    return home()
 
 
 def get_landmarks_verification(entity):
@@ -479,38 +485,42 @@ def get_landmarks_verification(entity):
       landmark_type=landmark_type,
       )
     if 'main' in landmark_type:
-      landmark_main[landmark_type] = (desc, landmark_geom)
+      landmark_main[landmark_type] = {}
+      landmark_main[landmark_type]["desc"] = desc
+      landmark_main[landmark_type]["point"] = landmark_geom
     elif 'around' in landmark_type:
-      landmark_around[landmark_type] = (desc, landmark_geom)
+      landmark_around[landmark_type] = {}
+      landmark_around[landmark_type]["desc"] = desc
+      landmark_around[landmark_type]["point"] = landmark_geom
     else:
-      landmark_rest[landmark_type] = (desc, landmark_geom)
+      landmark_rest[landmark_type] = {} 
+      landmark_rest[landmark_type]["desc"] = desc
+      landmark_rest[landmark_type]["point"] = landmark_geom
     
   return landmark_main, landmark_around, landmark_rest
 
-def update_task_bar_and_title(session_id):
-    global global_variables
+def update_task_bar_and_title(global_variables, session_id):
 
-    if global_variables[session_id]['task_n'] == 0:
+    if global_variables.task_n == 0:
       task_bar = 0
     else:
-      task_bar = global_variables[session_id]['task_n'] - 1
+      task_bar = global_variables.task_n - 1
     progress_task = round(task_bar / N_TASKS_PER_USER * 100)
     
-    title = 0 if global_variables[session_id]['task_n']==1 else global_variables[session_id]['task_n']
+    title = 0 if global_variables.task_n==1 else global_variables.task_n
 
     return progress_task, title
 
+
 def description_task(
-  workerId, hitId, assignmentId, session_id, turkSubmitTo):
-  global global_variables
+  global_variables, workerId, hitId, assignmentId, session_id, turkSubmitTo):
 
   try:
-
-    n_sample = int(global_variables[session_id]['writing_task_n'])
+    n_sample = global_variables.write.writing_task_n
 
     folium_map, _, landmarks, entity, _ = osm_maps_instructions[n_sample]
 
-    path_map = os.path.join(dir_map,f"map_{global_variables[session_id]['writing_task_n']}.html") 
+    path_map = os.path.join(dir_map,f"map_{global_variables.write.writing_task_n}.html") 
     if os.path.exists(path_map):
       os.remove(path_map)
 
@@ -521,9 +531,9 @@ def description_task(
 
     form_nav.landmarks = landmarks
 
-
-    if flask.request.method == 'POST': 
-      post_descriptions(
+    if flask.request.method == 'POST' and global_variables.write.post: 
+      return post_descriptions(
+        global_variables,
         entity, 
         folium_map, 
         path_map, 
@@ -534,11 +544,20 @@ def description_task(
         assignmentId, 
         turkSubmitTo)
 
-    global_variables[session_id]['start_session'] = str(datetime.utcnow())
+    global_variables.start_session = str(datetime.utcnow())
 
-    progress_task, title = update_task_bar_and_title(session_id)
+    progress_task, title = update_task_bar_and_title(global_variables, session_id)
 
-    n_sample = global_variables[session_id]['writing_task_n']
+    workerId = flask.request.args.get("workerId") 
+    workerId = workerId if workerId else DEFAULT_ARGS
+
+    session_id = str(workerId+hitId)
+    
+    global_variables.write.post = True
+
+    update_global_variables(global_variables, session_id)
+
+    n_sample = global_variables.write.writing_task_n
 
     return flask.render_template('instructor_task.html',
                           form=form_nav,
@@ -550,15 +569,16 @@ def description_task(
 
   except Exception as e:
     return handle_error(
-      e, workerId, hitId, session_id, assignmentId, turkSubmitTo)                        
+      global_variables, e, workerId, hitId, session_id, assignmentId, turkSubmitTo)                        
 
 def verification_task(
-  workerId, turkSubmitTo, session_id, hitId, assignmentId):
-  global global_variables
+  global_variables, workerId, turkSubmitTo, session_id, hitId, assignmentId):
  
-
   try: 
     
+    if not global_variables or not global_variables.session_id:
+      return home()
+
     # read from database
     if 'sandbox' in turkSubmitTo and SANDBOX_ON:
       instruction_table = instructions_ref_sandbox
@@ -567,16 +587,17 @@ def verification_task(
       instruction_table = instructions_ref
       instruction_data_all = instructions_ref_get
 
-    if session_id in global_variables and 'validation' in global_variables[session_id]:
+
+    if global_variables.validation.rvs_path: #and workerId:
+
       if flask.request.method == 'POST': 
 
         if flask.request.form.get("submit_button"):
-          
+
           return post_verification(
-            workerId, hitId, session_id, assignmentId, turkSubmitTo, instruction_table)
+            global_variables, workerId, hitId, session_id, assignmentId, turkSubmitTo, instruction_table)
       
     else: 
-
       instruction_data = [
         e.to_dict() for e in instruction_data_all if (
           workerId in qualified_workers or (
@@ -588,7 +609,7 @@ def verification_task(
       instruction_data_df = pd.DataFrame(instruction_data)
 
       entity, path_data, sample_n, sample = get_entity_verification(
-        instruction_data_df, workerId, hitId, session_id, assignmentId)
+        global_variables, instruction_data_df, workerId, hitId, session_id, assignmentId)
 
       start_point = util.list_yx_from_point(
         entity.geo_landmarks['start_point'].geometry)
@@ -604,13 +625,14 @@ def verification_task(
       if icon_path:
         icon_path = icon_path.split('osm_icons/')[-1]
 
-      global_variables[session_id]['start_session'] = str(datetime.utcnow())
+      global_variables.start_session = str(datetime.utcnow())
 
-      progress_task, title = update_task_bar_and_title(session_id)
+      progress_task, title = update_task_bar_and_title(global_variables, session_id)
 
       landmark_main, landmark_around, landmark_rest = get_landmarks_verification(entity)
 
-      update_validation_session(
+      global_variables = update_validation_session(
+        global_variables,
         sample,
         workerId, 
         start_point, 
@@ -621,7 +643,7 @@ def verification_task(
         landmark_around, 
         landmark_main)
       
-      progress_task, title = update_task_bar_and_title(session_id)
+      progress_task, title = update_task_bar_and_title(global_variables, session_id)
       
       form = ReviewForm()
 
@@ -630,28 +652,24 @@ def verification_task(
 
       session_id = str(workerId+hitId)
 
-      write_log(workerId, hitId, session_id, assignmentId, f"Show in verification: {global_variables[session_id]}" )
-
-      pd.DataFrame(global_variables).to_json(global_variables_path, orient="split")
-
-      global_variables = pd.read_json(global_variables_path, orient='split').to_dict()
+      update_global_variables(global_variables, session_id)
 
     return flask.render_template('follower_task.html',
-                          end_point=global_variables[session_id]['validation']['rvs_goal_point'],
-                          start_point=global_variables[session_id]['validation']['rvs_start_point'],
-                          nav_instruction=global_variables[session_id]['validation']['nav_instruction'],
+                          end_point=global_variables.validation.rvs_goal_point,
+                          start_point=global_variables.validation.rvs_start_point,
+                          nav_instruction=global_variables.validation.nav_instruction,
                           bar=progress_task,
                           title=title,
                           form=form,
-                          landmark_main=global_variables[session_id]['validation']['landmark_main'],
-                          landmark_around=global_variables[session_id]['validation']['landmark_around'],
-                          landmark_rest=global_variables[session_id]['validation']['landmark_rest'],
-                          icon_path=global_variables[session_id]['validation']['icon_path']
+                          landmark_main=global_variables.validation.landmark_main,
+                          landmark_around=global_variables.validation.landmark_around,
+                          landmark_rest=global_variables.validation.landmark_rest,
+                          icon_path=global_variables.validation.icon_path
                           )
 
   except Exception as e:
     return handle_error(
-      e, workerId, hitId, session_id, assignmentId, turkSubmitTo)
+      global_variables, e, workerId, hitId, session_id, assignmentId, turkSubmitTo)
   
 @app.errorhandler(500)
 def internal_server_error(e):
@@ -673,17 +691,9 @@ def map():
   session_id = str(workerId+hitId)
 
   try:
-
     return flask.render_template(f'map_{n_sample}.html')
   except:
-    assignmentId = flask.request.args.get("assignmentId") 
-    write_error_to_log(workerId, hitId, session_id, assignmentId)
-    n_sample = random.randint(0, size_dataset-1)
-    global_variables[session_id]['writing_task_n'] = n_sample
-    folium_map, _, _, _, _ = osm_maps_instructions[n_sample]
-    path_map = os.path.join(dir_map,f"map_{n_sample}.html") 
-    folium_map.save(path_map)
-    return flask.render_template(f'map_{n_sample}.html')
+    return home()
 
 port = int(os.environ.get('PORT', 5000))
 if __name__ == '__main__':
