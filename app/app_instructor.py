@@ -42,7 +42,7 @@ def log_info(content):
   logs.document(str(random.randint(0,100000))).set(j_req)
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v59.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v60.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}")
 
@@ -227,6 +227,8 @@ def handle_error(
 
   write_error_to_log(global_variables, workerId, hitId, session_id, assignmentId)
 
+  if 'ASSIGNMENT_ID_NOT_AVAILABLE' in flask.request.url:
+    return home()
   return end_hit(global_variables, session_id, turkSubmitTo, assignmentId, workerId, hitId)
 
 def get_entity_verification(
@@ -238,7 +240,6 @@ def get_entity_verification(
   if not_validated.shape[0]!=0:
     min_verified_n = not_validated.iloc[0]['verified_n']
     not_validated_min = not_validated[not_validated['verified_n']==min_verified_n]
-    print (not_validated_min[['verified_n', 'valid']])
 
     sample = not_validated_min.sample(1).iloc[0]
   else:
@@ -586,14 +587,17 @@ def verification_task(
     else:
       instruction_table = instructions_ref
       instruction_data_all = instructions_ref_get
-
+    
 
     if global_variables.validation.rvs_path: #and workerId:
-
-      if flask.request.method == 'POST': 
+      
+      try:
+        latlng_dict = flask.json.loads(flask.request.form['latlng'])
+      except:
+        latlng_dict = False
+      if flask.request.method == 'POST' and latlng_dict: 
 
         if flask.request.form.get("submit_button"):
-
           return post_verification(
             global_variables, workerId, hitId, session_id, assignmentId, turkSubmitTo, instruction_table)
       
@@ -642,17 +646,20 @@ def verification_task(
         landmark_rest, 
         landmark_around, 
         landmark_main)
-      
-      progress_task, title = update_task_bar_and_title(global_variables, session_id)
-      
-      form = ReviewForm()
-
+            
       workerId = flask.request.args.get("workerId") 
       workerId = workerId if workerId else DEFAULT_ARGS
 
       session_id = str(workerId+hitId)
 
       update_global_variables(global_variables, session_id)
+
+    progress_task = 0
+    title = 0
+    
+    if global_variables and session_id:
+      progress_task, title = update_task_bar_and_title(global_variables, session_id)
+    form = ReviewForm()
 
     return flask.render_template('follower_task.html',
                           end_point=global_variables.validation.rvs_goal_point,
@@ -666,6 +673,8 @@ def verification_task(
                           landmark_rest=global_variables.validation.landmark_rest,
                           icon_path=global_variables.validation.icon_path
                           )
+    # write_log(global_variables, workerId, hitId, session_id, assignmentId, "return home")
+    # return home()
 
   except Exception as e:
     return handle_error(
