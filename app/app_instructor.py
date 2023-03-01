@@ -26,7 +26,8 @@ import tasks
 
 REGION = 'Manhattan'
 DIST_THRESHOLD = 100
-N_TASKS_PER_USER = 2
+N_TASKS_PER_USER = 3
+N_VALIDATION = 2
 DEFAULT_ARGS = "1A"
 SANDBOX_ON = False
 
@@ -42,7 +43,7 @@ def log_info(content):
   logs.document(str(random.randint(0,100000))).set(j_req)
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v60.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v67.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}")
 
@@ -107,7 +108,7 @@ def home():
 
   try:     
 
-    global_variables = tasks.Tasks(sessions_id=session_id, size_dataset=size_dataset)    
+    global_variables = tasks.Tasks(sessions_id=session_id, size_dataset=size_dataset, n_validation=N_VALIDATION)    
 
     global_variables = init_global_variable(global_variables, session_id)    
    
@@ -118,7 +119,7 @@ def home():
 
       return end_hit(global_variables, session_id, turkSubmitTo, assignmentId, workerId, hitId)
 
-    if global_variables.task_n % 2!=0:
+    if global_variables.task_n <=N_VALIDATION:
 
       return verification_task(
         global_variables=global_variables,
@@ -141,14 +142,16 @@ def home():
       global_variables, e, workerId, hitId, session_id, assignmentId, turkSubmitTo)
 
 def init_global_variable(global_variables, session_id):
-  if not global_variables.validation.rvs_path:
+  if not global_variables.validations[global_variables.task_n-1].rvs_path:
     global_variables_specific = global_variables_db.document(session_id)
     doc = global_variables_specific.get()
 
     if doc.to_dict():
-      global_variables = tasks.Tasks.from_dict(doc=doc.to_dict(), size_dataset=size_dataset)
+      global_variables = tasks.Tasks.from_dict(
+        doc=doc.to_dict(), size_dataset=size_dataset, n_validation=N_VALIDATION)
     else:
-      global_variables = tasks.Tasks(sessions_id=session_id, size_dataset=size_dataset)    
+      global_variables = tasks.Tasks(
+        sessions_id=session_id, size_dataset=size_dataset, n_validation=N_VALIDATION)    
       global_variables_specific.set(global_variables.to_dict())
 
   return global_variables
@@ -187,14 +190,13 @@ def write_log(global_variables, workerId, hitId, session_id, assignmentId, conte
     'url': flask.request.url,
     }
 
+  validation_log = ""
   if global_variables and global_variables.session_id:   
-    validation_log = global_variables.validation.rvs_path
+    if  global_variables.task_n-1<len(global_variables.validations):
+      validation_log = global_variables.validations[global_variables.task_n-1].rvs_path
     j_req['task_session_n'] = global_variables.task_n
     j_req['sample_session_n'] = global_variables.write.writing_task_n
     j_req['start_session'] = global_variables.start_session
-
-  else:
-    validation_log = ""
 
   j_req['validation_session'] = validation_log
   # save to database
@@ -280,7 +282,6 @@ def get_entity_verification(
     path_data = os.path.abspath(sample['rvs_path'].replace("/app_instructor", "."))
 
     entities = util.load_entities(path_data)
-
     entity = entities[sample_n]
 
   return entity, path_data, sample_n, sample
@@ -388,19 +389,24 @@ def update_validation_session(
 
   global_variables = init_global_variable(global_variables, session_id)
   
-  if not global_variables.validation.rvs_sample_number:
 
-    global_variables.validation.rvs_sample_number = sample['rvs_sample_number']
-    global_variables.validation.rvs_path = sample['rvs_path']
-    global_variables.validation.rvs_start_point = start_point
-    global_variables.validation.rvs_goal_point = end_point
-    global_variables.validation.nav_instruction = nav_instruction
-    global_variables.validation.icon_path = icon_path
-    global_variables.validation.landmark_rest = landmark_rest
-    global_variables.validation.landmark_around = landmark_around
-    global_variables.validation.landmark_main = landmark_main
-    global_variables.validation.key = sample['key'] 
-    global_variables.validation.verified_n = sample['verified_n'].item()
+  n_validation = len(global_variables.validations)
+  if n_validation<global_variables.task_n:
+    global_variables.task_n = n_validation
+
+  if not global_variables.validations[global_variables.task_n-1].rvs_sample_number:
+
+    global_variables.validations[global_variables.task_n-1].rvs_sample_number = sample['rvs_sample_number']
+    global_variables.validations[global_variables.task_n-1].rvs_path = sample['rvs_path']
+    global_variables.validations[global_variables.task_n-1].rvs_start_point = start_point
+    global_variables.validations[global_variables.task_n-1].rvs_goal_point = end_point
+    global_variables.validations[global_variables.task_n-1].nav_instruction = nav_instruction
+    global_variables.validations[global_variables.task_n-1].icon_path = icon_path
+    global_variables.validations[global_variables.task_n-1].landmark_rest = landmark_rest
+    global_variables.validations[global_variables.task_n-1].landmark_around = landmark_around
+    global_variables.validations[global_variables.task_n-1].landmark_main = landmark_main
+    global_variables.validations[global_variables.task_n-1].key = sample['key'] 
+    global_variables.validations[global_variables.task_n-1].verified_n = sample['verified_n'].item()
     
     
   update_global_variables(global_variables, session_id)
@@ -420,7 +426,7 @@ def post_verification(
 
   point_pred = Point(float(lng), float(lat))
 
-  point_true = util.point_from_list_coord_yx(global_variables.validation.rvs_goal_point)
+  point_true = util.point_from_list_coord_yx(global_variables.validations[global_variables.task_n-1].rvs_goal_point)
 
   dist = round(util.get_distance_between_points(point_true, point_pred))
 
@@ -429,15 +435,15 @@ def post_verification(
   'hit_id': hitId,
   'work_id': workerId,
   'assignmentId': assignmentId, 
-  'rvs_sample_number': str(global_variables.validation.rvs_sample_number),
-  'rvs_path': global_variables.validation.rvs_path,
+  'rvs_sample_number': str(global_variables.validations[global_variables.task_n-1].rvs_sample_number),
+  'rvs_path': global_variables.validations[global_variables.task_n-1].rvs_path,
   'predict_goal_point': predicted_point,
-  'rvs_start_point': global_variables.validation.rvs_start_point,
+  'rvs_start_point': global_variables.validations[global_variables.task_n-1].rvs_start_point,
   'task': global_variables.task_n,
   'date_start': str(global_variables.start_session),
   'date_finish': str(datetime.utcnow()),
-  'rvs_goal_point': global_variables.validation.rvs_goal_point,
-  'key_instruction': global_variables.validation.key,
+  'rvs_goal_point': global_variables.validations[global_variables.task_n-1].rvs_goal_point,
+  'key_instruction': global_variables.validations[global_variables.task_n-1].key,
   'key': id,
   'dist_m': dist,
   }
@@ -449,10 +455,10 @@ def post_verification(
     verification_ref.document(id).set(j_req)
 
   # Update instruction with number of verifications
-  id = global_variables.validation.key
+  id = global_variables.validations[global_variables.task_n-1].key
   instruction_table.document(id).update(
     {
-      'verified_n': int(global_variables.validation.verified_n+1),
+      'verified_n': int(global_variables.validations[global_variables.task_n-1].verified_n+1),
       'valid': valid})
 
   update_task_number(global_variables, session_id)
@@ -588,16 +594,18 @@ def verification_task(
       instruction_table = instructions_ref
       instruction_data_all = instructions_ref_get
     
-
-    if global_variables.validation.rvs_path: #and workerId:
-      
+    if global_variables.validations[global_variables.task_n-1].rvs_path and global_variables.validations[global_variables.task_n-1].finished: #and workerId:
       try:
         latlng_dict = flask.json.loads(flask.request.form['latlng'])
       except:
         latlng_dict = False
-      if flask.request.method == 'POST' and latlng_dict: 
 
-        if flask.request.form.get("submit_button"):
+      if latlng_dict: #flask.request.method == 'POST' and latlng_dict: 
+
+        # if flask.request.form.get("submit_button"):
+
+          global_variables.validations[global_variables.task_n-1].finished = False
+          update_global_variables(global_variables, session_id)
           return post_verification(
             global_variables, workerId, hitId, session_id, assignmentId, turkSubmitTo, instruction_table)
       
@@ -611,7 +619,6 @@ def verification_task(
 
 
       instruction_data_df = pd.DataFrame(instruction_data)
-
       entity, path_data, sample_n, sample = get_entity_verification(
         global_variables, instruction_data_df, workerId, hitId, session_id, assignmentId)
 
@@ -647,12 +654,6 @@ def verification_task(
         landmark_around, 
         landmark_main)
             
-      workerId = flask.request.args.get("workerId") 
-      workerId = workerId if workerId else DEFAULT_ARGS
-
-      session_id = str(workerId+hitId)
-
-      update_global_variables(global_variables, session_id)
 
     progress_task = 0
     title = 0
@@ -661,20 +662,23 @@ def verification_task(
       progress_task, title = update_task_bar_and_title(global_variables, session_id)
     form = ReviewForm()
 
+    if global_variables.task_n <= len(global_variables.validations):
+
+      global_variables.validations[global_variables.task_n-1].finished = True
+      update_global_variables(global_variables, session_id)
+
     return flask.render_template('follower_task.html',
-                          end_point=global_variables.validation.rvs_goal_point,
-                          start_point=global_variables.validation.rvs_start_point,
-                          nav_instruction=global_variables.validation.nav_instruction,
+                          end_point=global_variables.validations[global_variables.task_n-1].rvs_goal_point,
+                          start_point=global_variables.validations[global_variables.task_n-1].rvs_start_point,
+                          nav_instruction=global_variables.validations[global_variables.task_n-1].nav_instruction,
                           bar=progress_task,
                           title=title,
                           form=form,
-                          landmark_main=global_variables.validation.landmark_main,
-                          landmark_around=global_variables.validation.landmark_around,
-                          landmark_rest=global_variables.validation.landmark_rest,
-                          icon_path=global_variables.validation.icon_path
+                          landmark_main=global_variables.validations[global_variables.task_n-1].landmark_main,
+                          landmark_around=global_variables.validations[global_variables.task_n-1].landmark_around,
+                          landmark_rest=global_variables.validations[global_variables.task_n-1].landmark_rest,
+                          icon_path=global_variables.validations[global_variables.task_n-1].icon_path
                           )
-    # write_log(global_variables, workerId, hitId, session_id, assignmentId, "return home")
-    # return home()
 
   except Exception as e:
     return handle_error(
@@ -692,12 +696,6 @@ def page_not_found(e):
 @app.route('/map')
 def map():
   n_sample = flask.request.args.get("n_sample") 
-  workerId = flask.request.args.get("workerId")
-  workerId = workerId if workerId else DEFAULT_ARGS
-
-  hitId = flask.request.args.get("hitId")  # remove
-  hitId = hitId if hitId else DEFAULT_ARGS # remove
-  session_id = str(workerId+hitId)
 
   try:
     return flask.render_template(f'map_{n_sample}.html')

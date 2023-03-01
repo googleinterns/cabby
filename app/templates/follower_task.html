@@ -65,7 +65,7 @@
 
         <form method="POST" action="">
             <p><input type = "hidden" name = "latlng" id="latlng" /></p>
-            <button type="submit" class="btn btn-primary" id="submit_button" name="submit_button" value="submit_b"> Submit and go to next task </button>
+            <button type="submit" onclick='this.disabled=true; submit()' class="btn btn-primary" id="submit_button" name="submit_button" value="submit_b"> Submit and go to next task </button>
 
         </form>    
    
@@ -74,6 +74,9 @@
 
 </div>
 
+<script type=text/javascript> 
+$(function() { $("#submit_button").click(function (event) { $.getJSON('/home', { },
+    function(data) { }); return latlng; }); }); </script> 
 
 <script type="text/javascript"> 
     var start_point = {{start_point|tojson}}

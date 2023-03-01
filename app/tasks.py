@@ -2,7 +2,7 @@ import random
 from datetime import datetime
 
 class Tasks():
-  def __init__(self, size_dataset, sessions_id=None):
+  def __init__(self, size_dataset, sessions_id=None, n_validation=1):
     
     self.session_id = sessions_id
     self.start_session = str(datetime.utcnow()) 
@@ -10,7 +10,7 @@ class Tasks():
 
     self.finished = False
 
-    self.validation = Validarion()
+    self.validations = [Validation()]*n_validation
 
     self.write = Write(size_dataset=size_dataset)
 
@@ -22,25 +22,30 @@ class Tasks():
     task_dict['start_session'] = self.start_session
     task_dict['task_n'] = self.task_n
     task_dict['finished'] = self.finished
-    task_dict['validation'] = {}
+    task_dict['validations'] = []
 
-    for k, v in self.validation.__dict__.items():
-        task_dict['validation'][k] = v
+    for val_idx, validation in enumerate(self.validations):
+      task_dict['validations'].append({})
+      for k, v in validation.__dict__.items():
+          task_dict['validations'][val_idx][k] = v
 
     return task_dict
 
   @staticmethod
-  def from_dict(doc, size_dataset):
-    task = Tasks(sessions_id=doc['session_id'], size_dataset=size_dataset)
+  def from_dict(doc, size_dataset, n_validation):
+    task = Tasks(
+      sessions_id=doc['session_id'], size_dataset=size_dataset, n_validation=n_validation)
     task.start_session = doc['start_session']
     task.task_n = doc['task_n']
     task.finished = doc['finished']
-    task.validation = Validarion(doc['validation'])
+    task.validations = []
+    for val_idx, validation in enumerate(doc['validations']):
+      task.validations.append(Validation(validation))
     task.write = Write(my_dict=doc['write'], size_dataset=size_dataset)
     return task
     
 
-class Validarion():
+class Validation():
   def __init__(self, my_dict=None):
     if my_dict:
       for key in my_dict:
@@ -68,10 +73,7 @@ class Write():
       for key in my_dict:
           setattr(self, key, my_dict[key])
     else: 
-      print ("size_dataset ", size_dataset)
-      x = random.randint(0, size_dataset-1)
       self.writing_task_n = random.randint(0, size_dataset-1)
 
       self.finished = False
       self.post = False
-

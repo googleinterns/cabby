@@ -426,8 +426,8 @@ class HumanDataset(Dataset):
 
     ds = pd.read_json(ds_path, lines=lines)
     ds['instructions'] = ds['content']
-    ds['end_point'] = ds['rvs_goal_point'].apply(gutil.point_from_str_coord_xy)
-    ds['start_point'] = ds['rvs_start_point'].apply(gutil.point_from_str_coord_xy)
+    ds['end_point'] = ds['rvs_goal_point'].apply(gutil.point_from_list_coord_yx)
+    ds['start_point'] = ds['rvs_start_point'].apply(gutil.point_from_list_coord_yx)
 
     if 'landmarks' in ds:
       ds['near_pivot'] = ds.landmarks.apply(
