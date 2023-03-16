@@ -145,15 +145,8 @@ class Dataset:
     return points
 
   def get_specific_landmark(self, landmarks_str_one_line, landmark_name):
+    return gutil.point_from_list_coord_yx(landmarks_str_one_line[landmark_name][0])
 
-    landmarks_str_list = landmarks_str_one_line.split(';')
-
-    landmark_found = None
-    for landmark_str in reversed(landmarks_str_list):
-      if landmark_name in landmark_str:
-        landmark_found = gutil.point_from_str_coord_yx(landmark_str.split(':')[-1])
-
-    return landmark_found
 
   def create_dataset(
     self, infer_only: bool = False, is_dist: bool = False,

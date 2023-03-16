@@ -43,7 +43,7 @@ def log_info(content):
   logs.document(str(random.randint(0,100000))).set(j_req)
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v67.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v79.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}")
 
@@ -96,7 +96,7 @@ dir_map = os.path.join(app.root_path,"templates")
 def home():
   
   assignmentId = flask.request.args.get("assignmentId") 
-  assignmentId = assignmentId if assignmentId else uuid.uuid4().hex
+  assignmentId = assignmentId if assignmentId else str(datetime.now().hour)
   hitId = flask.request.args.get("hitId")
   hitId = hitId if hitId else str(datetime.now().hour)
   turkSubmitTo = flask.request.args.get("turkSubmitTo")
@@ -104,7 +104,7 @@ def home():
   workerId = workerId if workerId else DEFAULT_ARGS
   turkSubmitTo = turkSubmitTo if turkSubmitTo else "https://workersandbox.mturk.com"
   
-  session_id = str(workerId+hitId)
+  session_id = str(workerId+assignmentId+hitId)
 
   try:     
 
@@ -142,7 +142,14 @@ def home():
       global_variables, e, workerId, hitId, session_id, assignmentId, turkSubmitTo)
 
 def init_global_variable(global_variables, session_id):
+  global instructions_ref_get
+  global instructions_ref
+
   if not global_variables.validations[global_variables.task_n-1].rvs_path:
+    try:
+      instructions_ref_get = list(instructions_ref.get()) 
+    except:
+      pass
     global_variables_specific = global_variables_db.document(session_id)
     doc = global_variables_specific.get()
 
@@ -160,6 +167,9 @@ def init_global_variable(global_variables, session_id):
 def end_hit(
   global_variables, session_id, turkSubmitTo, assignmentId, workerId, hitId):
 
+  global instructions_ref_get
+  global instructions_ref
+
   address = turkSubmitTo + '/mturk/externalSubmit'
   fullUrl = address + '?assignmentId=' + assignmentId #+ '&workerId=' + workerId + "&hitId=" + hitId
 
@@ -167,6 +177,8 @@ def end_hit(
     global_variables.finished = True
   except:
     write_error_to_log(global_variables, workerId, hitId, session_id, assignmentId)
+  
+  instructions_ref_get = list(instructions_ref.get()) 
 
   return flask.render_template(
     'end.html', 
@@ -241,7 +253,7 @@ def get_entity_verification(
 
   if not_validated.shape[0]!=0:
     min_verified_n = not_validated.iloc[0]['verified_n']
-    not_validated_min = not_validated[not_validated['verified_n']==min_verified_n]
+    not_validated_min = not_validated[not_validated['verified_n']<=min_verified_n+1]
 
     sample = not_validated_min.sample(1).iloc[0]
   else:
@@ -266,9 +278,11 @@ def get_entity_verification(
     j_req = {
         'date': str(datetime.utcnow()),
         'hit_id': hitId,
+        'sample_n': sample_n,
         'work_id': workerId,
         'session_id': session_id,
         'assignmentId': assignmentId, 
+        'path_data': path_data,
         'key': id,
         'content': f"Verification error line: {tb.tb_lineno}",
         }
@@ -282,6 +296,12 @@ def get_entity_verification(
     path_data = os.path.abspath(sample['rvs_path'].replace("/app_instructor", "."))
 
     entities = util.load_entities(path_data)
+    try:
+      entity = entities[sample_n]
+    except:
+      log_info(f"sample_n: {sample_n}\n path_data: {path_data}\n sample['rvs_path']: {sample['rvs_path']}")
+      log_info(f"entities: {len(entities)}")
+
     entity = entities[sample_n]
 
   return entity, path_data, sample_n, sample
@@ -381,11 +401,13 @@ def update_validation_session(
   landmark_main):
 
   workerId = flask.request.args.get("workerId") 
-  hitId = flask.request.args.get("hitId") 
+  assignmentId = flask.request.args.get("assignmentId") 
   workerId = workerId if workerId else DEFAULT_ARGS
+  assignmentId = assignmentId if assignmentId else str(datetime.now().hour)
+  hitId = flask.request.args.get("hitId")
   hitId = hitId if hitId else str(datetime.now().hour)
   
-  session_id = str(workerId+hitId)
+  session_id = str(workerId+assignmentId+hitId)
 
   global_variables = init_global_variable(global_variables, session_id)
   
@@ -413,7 +435,7 @@ def update_validation_session(
   return global_variables
 
 def post_verification(
-  global_variables, workerId, hitId, session_id, assignmentId, turkSubmitTo, instruction_table):
+  global_variables, workerId, hitId, session_id, assignmentId, turkSubmitTo, instruction_table, mismatch):
 
   latlng_dict = flask.json.loads(
     flask.request.form['latlng'])
@@ -430,7 +452,6 @@ def post_verification(
 
   dist = round(util.get_distance_between_points(point_true, point_pred))
 
-  valid = False if dist>DIST_THRESHOLD else True
   j_req = {
   'hit_id': hitId,
   'work_id': workerId,
@@ -446,6 +467,7 @@ def post_verification(
   'key_instruction': global_variables.validations[global_variables.task_n-1].key,
   'key': id,
   'dist_m': dist,
+  'mismatch': mismatch
   }
 
   # save to database
@@ -456,6 +478,8 @@ def post_verification(
 
   # Update instruction with number of verifications
   id = global_variables.validations[global_variables.task_n-1].key
+  valid = False if dist>DIST_THRESHOLD else True
+
   instruction_table.document(id).update(
     {
       'verified_n': int(global_variables.validations[global_variables.task_n-1].verified_n+1),
@@ -554,11 +578,6 @@ def description_task(
     global_variables.start_session = str(datetime.utcnow())
 
     progress_task, title = update_task_bar_and_title(global_variables, session_id)
-
-    workerId = flask.request.args.get("workerId") 
-    workerId = workerId if workerId else DEFAULT_ARGS
-
-    session_id = str(workerId+hitId)
     
     global_variables.write.post = True
 
@@ -601,13 +620,14 @@ def verification_task(
         latlng_dict = False
 
       if latlng_dict: #flask.request.method == 'POST' and latlng_dict: 
-
-        # if flask.request.form.get("submit_button"):
+          mismatch = False  
+          if flask.request.form.get('mismatch'):
+            mismatch = True 
 
           global_variables.validations[global_variables.task_n-1].finished = False
           update_global_variables(global_variables, session_id)
           return post_verification(
-            global_variables, workerId, hitId, session_id, assignmentId, turkSubmitTo, instruction_table)
+            global_variables, workerId, hitId, session_id, assignmentId, turkSubmitTo, instruction_table, mismatch)
       
     else: 
       instruction_data = [
