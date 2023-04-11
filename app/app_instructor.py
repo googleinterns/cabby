@@ -41,9 +41,10 @@ def log_info(content):
   }
   # save to database
   logs.document(str(random.randint(0,100000))).set(j_req)
+  print (content)
 
 try:
-  rvs_path = os.path.abspath("./data/manhattan_samples_v79.gpkg")
+  rvs_path = os.path.abspath("./data/manhattan_samples_v88.gpkg")
 except Exception as e:
   print (f"An Error Occured: {e}")
 
@@ -253,7 +254,7 @@ def get_entity_verification(
 
   if not_validated.shape[0]!=0:
     min_verified_n = not_validated.iloc[0]['verified_n']
-    not_validated_min = not_validated[not_validated['verified_n']<=min_verified_n+1]
+    not_validated_min = not_validated[not_validated['verified_n']<=min_verified_n+5]
 
     sample = not_validated_min.sample(1).iloc[0]
   else:
@@ -291,16 +292,14 @@ def get_entity_verification(
     logs.document(id).set(j_req)
         
     instruction_data_df.sort_values('verified_n', ascending=True, inplace=True)
+    
     sample = instruction_data_df.iloc[0]
+
+    sample_n = int(sample['rvs_sample_number'])
 
     path_data = os.path.abspath(sample['rvs_path'].replace("/app_instructor", "."))
 
     entities = util.load_entities(path_data)
-    try:
-      entity = entities[sample_n]
-    except:
-      log_info(f"sample_n: {sample_n}\n path_data: {path_data}\n sample['rvs_path']: {sample['rvs_path']}")
-      log_info(f"entities: {len(entities)}")
 
     entity = entities[sample_n]
 
@@ -480,10 +479,13 @@ def post_verification(
   id = global_variables.validations[global_variables.task_n-1].key
   valid = False if dist>DIST_THRESHOLD else True
 
-  instruction_table.document(id).update(
-    {
-      'verified_n': int(global_variables.validations[global_variables.task_n-1].verified_n+1),
-      'valid': valid})
+  try:
+    instruction_table.document(id).update(
+      {
+        'verified_n': int(global_variables.validations[global_variables.task_n-1].verified_n+1),
+        'valid': valid})
+  except:
+    log_info("update of valid and verified_n not working")
 
   update_task_number(global_variables, session_id)
   print ("Updated Verification task.")
@@ -547,22 +549,11 @@ def description_task(
   global_variables, workerId, hitId, assignmentId, session_id, turkSubmitTo):
 
   try:
-    n_sample = global_variables.write.writing_task_n
-
-    folium_map, _, landmarks, entity, _ = osm_maps_instructions[n_sample]
-
-    path_map = os.path.join(dir_map,f"map_{global_variables.write.writing_task_n}.html") 
-    if os.path.exists(path_map):
-      os.remove(path_map)
-
-    folium_map.save(path_map)
-
-
-    form_nav = NavigationForm()
-
-    form_nav.landmarks = landmarks
 
     if flask.request.method == 'POST' and global_variables.write.post: 
+      
+      folium_map, form_nav, path_map, entity, n_sample = get_map(global_variables, write_map=False)
+
       return post_descriptions(
         global_variables,
         entity, 
@@ -583,8 +574,10 @@ def description_task(
 
     update_global_variables(global_variables, session_id)
 
-    n_sample = global_variables.write.writing_task_n
+    folium_map, form_nav, path_map, entity, n_sample = get_map(global_variables)
 
+    # write_log(
+    #   global_variables, workerId, hitId, session_id, assignmentId, f"Map exists: {os.path.exists(path_map)}")
     return flask.render_template('instructor_task.html',
                           form=form_nav,
                           bar=progress_task,
@@ -596,6 +589,28 @@ def description_task(
   except Exception as e:
     return handle_error(
       global_variables, e, workerId, hitId, session_id, assignmentId, turkSubmitTo)                        
+
+
+def get_map(global_variables, write_map=True):
+
+    n_sample = global_variables.write.writing_task_n
+
+    folium_map, _, landmarks, entity, _ = osm_maps_instructions[n_sample]
+
+    path_map = os.path.join(dir_map,f"map_{n_sample}.html") 
+
+    if write_map:
+      if os.path.exists(path_map):
+        os.remove(path_map)
+
+      folium_map.save(path_map)
+
+    form_nav = NavigationForm()
+
+    form_nav.landmarks = landmarks
+
+    return  folium_map, form_nav, path_map, entity, n_sample
+
 
 def verification_task(
   global_variables, workerId, turkSubmitTo, session_id, hitId, assignmentId):
@@ -711,6 +726,57 @@ def internal_server_error(e):
 @app.errorhandler(404)
 def page_not_found(e):
   return flask.render_template("404.html", exc = e)
+
+
+def get_global_var():
+
+  assignmentId = flask.request.args.get("assignmentId") 
+  assignmentId = assignmentId if assignmentId else str(datetime.now().hour)
+  hitId = flask.request.args.get("hitId")
+  hitId = hitId if hitId else str(datetime.now().hour)
+  workerId = flask.request.args.get("workerId")
+  workerId = workerId if workerId else DEFAULT_ARGS
+
+  session_id = str(workerId+assignmentId+hitId)
+
+  global_variables = tasks.Tasks(sessions_id=session_id, n_validation=N_VALIDATION)    
+
+  global_variables = init_global_variable(global_variables, session_id)
+
+  return assignmentId, hitId, workerId, session_id, global_variables
+
+
+# @app.route('/map/<n_sample>', methods=['GET', 'POST'])
+# @app.route('/map')
+# def map():
+
+#   n_sample = flask.request.args.get("n_sample") 
+
+#   if not os.path.exists(f'map_{n_sample}.html'):
+
+#     assignmentId, hitId, workerId, session_id, global_variables = get_global_var()
+
+#     _, _, _, _, n_sample = get_map(global_variables)
+
+   
+#   try:
+
+#     return flask.render_template(f'map_{n_sample}.html')
+#   except:
+
+#     assignmentId, hitId, workerId, session_id, global_variables = get_global_var()
+#     _, _, _, _, n_sample = get_map(global_variables)
+
+#     if not os.path.exists(f'map_{n_sample}.html'):
+      
+#       turkSubmitTo = turkSubmitTo if turkSubmitTo else "https://workersandbox.mturk.com"
+
+#       log_info(f'map_{n_sample}.html does not exists in data')
+#       return handle_error(
+#         global_variables, e, workerId, hitId, session_id, assignmentId, turkSubmitTo)
+
+#   return flask.render_template(f'map_{n_sample}.html')
+
 
 @app.route('/map/<n_sample>', methods=['GET', 'POST'])
 @app.route('/map')

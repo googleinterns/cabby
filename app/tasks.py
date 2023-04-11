@@ -2,7 +2,7 @@ import random
 from datetime import datetime
 
 class Tasks():
-  def __init__(self, size_dataset, sessions_id=None, n_validation=1):
+  def __init__(self, size_dataset=1, sessions_id=None, n_validation=1):
     
     self.session_id = sessions_id
     self.start_session = str(datetime.utcnow()) 
@@ -68,7 +68,7 @@ class Validation():
 
 
 class Write():
-  def __init__(self, size_dataset, my_dict=None):
+  def __init__(self, size_dataset=1, my_dict=None):
     if my_dict:
       for key in my_dict:
           setattr(self, key, my_dict[key])
