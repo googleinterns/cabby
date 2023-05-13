@@ -39,15 +39,13 @@ flags.DEFINE_string(
 flags.DEFINE_string(
   "save_embedding_path", None, "Location of the embedding to be saved.")
 
-
 flags.DEFINE_integer(
-  'dimensions', default=64,
+  'dimensions', default=224,
   help=('dimensions of Node2Vec.'))
 
 flags.DEFINE_integer(
   'walk_length', default=30,
   help=('walk length of Node2Vec: How many nodes are in each random walk.'))
-
 
 flags.DEFINE_integer(
   'num_walks', default=200,
@@ -56,8 +54,15 @@ flags.DEFINE_integer(
 
 flags.DEFINE_integer(
   'window', default=10,
-  help=('context window size of Node2Vec fit.'))
+  help=('context window size of Node2Vec.'))
 
+flags.DEFINE_integer(
+  'workers', default=1,
+  help=('number of threads for Node2Vec.'))
+
+flags.DEFINE_integer(
+  'n_epochs', default=5,
+  help=('number of epochs of Node2Vec.'))
 
 # Required flags.
 flags.mark_flag_as_required("s2_node_levels")
@@ -67,7 +72,6 @@ flags.mark_flag_as_required("s2_level")
 flags.mark_flag_as_required("save_embedding_path")
 
 FLAGS = flags.FLAGS
-
 
 def main(argv):
   del argv  # Unused.
@@ -80,17 +84,16 @@ def main(argv):
 
   # Precompute probabilities and generate walks
 
-  workers = 1 if FLAGS.window>1 else 4
   node2vec = Node2Vec(
     graph,
     dimensions=FLAGS.dimensions,
     walk_length=FLAGS.walk_length,
-    num_walks=FLAGS.num_walks, workers=workers)
+    num_walks=FLAGS.num_walks, workers=FLAGS.workers)
 
   # Embed nodes
   # Any keywords acceptable by gensim.Word2Vec can be passed,
   # `dimensions` and `workers` are automatically passed (from the Node2Vec constructor)
-  model = node2vec.fit(window=FLAGS.window, min_count=1, batch_words=4)
+  model = node2vec.fit(window=FLAGS.window, min_count=1, batch_words=4, epochs=FLAGS.n_epochs)
 
   # Save embeddings for later use
   model.wv.save_word2vec_format(FLAGS.save_embedding_path)
