@@ -40,8 +40,10 @@ class Trainer:
     test_loader: DataLoader,
     unique_cells: Sequence[int],
     num_epochs: int,
-    cells_tensor: torch.tensor,
-    label_to_cellid: Dict[int, int],
+    cells_tensor_dev: torch.tensor,
+    cells_tensor_test: torch.tensor,
+    label_to_cellid_dev: Dict[int, int],
+    label_to_cellid_test: Dict[int, int],
     is_single_sample_train: bool = False,
     best_valid_loss: float = float("Inf")
 
@@ -52,12 +54,14 @@ class Trainer:
     self.optimizer = optimizer
     self.file_path = file_path
     self.train_loader = train_loader
-    self.valid_loader = valid_loader
+    self.dev_loader = valid_loader
     self.test_loader = test_loader
     self.unique_cells = unique_cells
     self.num_epochs = num_epochs
-    self.cells_tensor = cells_tensor.float().to(self.device)
-    self.label_to_cellid = label_to_cellid
+    self.cells_tensor_dev = cells_tensor_dev.float().to(self.device)
+    self.cells_tensor_test = cells_tensor_test.float().to(self.device)
+    self.label_to_cellid_dev = label_to_cellid_dev
+    self.label_to_cellid_test = label_to_cellid_test
     self.cos = nn.CosineSimilarity(dim=2)
     self.best_valid_loss = best_valid_loss
     if not os.path.exists(self.file_path):
@@ -71,9 +75,14 @@ class Trainer:
     '''Validate the model.'''
 
     if validation_set:
-      data_loader = self.valid_loader
+      data_loader = self.dev_loader
+      cells_tensor = self.cells_tensor_dev
+      label_to_cellid = self.label_to_cellid_dev
     else:
       data_loader = self.test_loader
+      cells_tensor = self.cells_tensor_test
+      label_to_cellid = self.label_to_cellid_test
+
       logging.info("Starting evaluation.")
 
     # Validation loop.
@@ -105,7 +114,7 @@ class Trainer:
         loss_val_total += loss.item()
 
         predictions = self.model.predict(
-          text, is_print, self.cells_tensor, self.label_to_cellid, batch)
+          text, is_print, cells_tensor, label_to_cellid, batch)
 
         predictions_list.append(predictions)
         labels = batch['label'].cpu()

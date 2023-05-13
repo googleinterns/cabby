@@ -31,29 +31,10 @@ from cabby.geo import regions
 from cabby.geo import util as gutil
 from cabby.model import dataset_item
 from cabby.model import util
-from transformers import DistilBertTokenizerFast, T5Tokenizer
 
-MODELS = [
-  'Dual-Encoder-Bert',
-  'Classification-Bert',
-  'S2-Generation-T5',
-  'S2-Generation-T5-Landmarks',
-  'S2-Generation-T5-Warmup-start-end',
-  'Text-2-Landmarks-NER-Generation-T5-Warmup',
-  'Landmarks-NER-2-S2-Generation-T5-Warmup',
-  'S2-Generation-T5-Path',
-  'S2-Generation-T5-start-text-input',
-  'S2-Generation-T5-Warmup-cell-embed-to-cell-label',
-  'S2-Generation-T5-start-embedding-text-input',
-  'S2-Generation-T5-Warmup-start-end-to-dist',
-  'S2-Generation-T5-text-start-to-end-dist',
-  'S2-Generation-T5-text-start-to-landmarks-dist',
-  'S2-Generation-T5-text-start-embedding-to-landmarks',
-  'S2-Generation-T5-text-start-embedding-to-landmarks-dist'
-]
 
-T5_TYPE = "t5-small"
-BERT_TYPE = 'distilbert-base-uncased'
+
+
 
 FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
 
@@ -62,7 +43,6 @@ FAR_DISTANCE_THRESHOLD = 2000 # Minimum distance between far cells in meters.
 DISTRIBUTION_SCALE_DISTANCE = 1000
 dprob = util.DistanceProbability(DISTRIBUTION_SCALE_DISTANCE)
 
-tokenizerT5 = T5Tokenizer.from_pretrained(T5_TYPE)
 
 
 class Dataset:
@@ -70,60 +50,46 @@ class Dataset:
     self,
     data_dir: str,
     s2level: int,
-    region: Optional[str],
+    train_region: Optional[str], 
+    dev_region: Optional[str], 
+    test_region: Optional[str], 
     model_type: str,
     n_fixed_points: int = 4,
-    graph_embed_path: str = "",
+    train_graph_embed_path: str = "", 
+    dev_graph_embed_path: str = "", 
+    test_graph_embed_path: str = ""
   ):
     self.data_dir = data_dir
     self.s2level = s2level
-    self.region = region
+    self.train_region = train_region
+    self.dev_region = dev_region
+    self.test_region = test_region
+
     self.model_type = model_type
     self.n_fixed_points = n_fixed_points
 
-    self.graph_embed_size = 0
-    self.graph_embed_file = None
-    if os.path.exists(graph_embed_path):
-      self.graph_embed_file = KeyedVectors.load_word2vec_format(graph_embed_path)
-      first_cell = self.graph_embed_file.index_to_key[0]
-      self.graph_embed_size = self.graph_embed_file[first_cell].shape[0]
+    self.graph_embed_size = {}
+    self.graph_embed_file = {}
+    
+    self.get_graph_embed(train_graph_embed_path, 'train')
+    self.get_graph_embed(dev_graph_embed_path, 'dev')
+    self.get_graph_embed(test_graph_embed_path, 'test')
 
-    logging.info(f"Dataset with graph embedding size {self.graph_embed_size}")
-
-    self.unique_cellid = {}
+    self.unique_cellids = {}
     self.cellid_to_label = {}
     self.label_to_cellid = {}
 
-    self.train = None
-    self.valid = None
-    self.test = None
+    self.train_raw = None
+    self.dev_raw = None
+    self.test_raw = None
 
-    self.set_tokenizers()
+  def get_graph_embed(self, graph_embed_path, set_type):
+    if os.path.exists(graph_embed_path):
+      self.graph_embed_file[set_type] = KeyedVectors.load_word2vec_format(graph_embed_path)
+      first_cell = self.graph_embed_file[set_type].index_to_key[0]
+      self.graph_embed_size[set_type] = self.graph_embed_file[set_type][first_cell].shape[0]
 
-  def set_tokenizers(self):
-    assert self.model_type in MODELS
-    if self.model_type in ['Dual-Encoder-Bert', 'Classification-Bert']:
-      self.text_tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_TYPE)
-      self.s2_tokenizer = util.binary_representation
-    elif 'T5' in self.model_type:
-      self.text_tokenizer = tokenizerT5
-      self.s2_tokenizer = self.tokenize_cell
-
-  def tokenize_cell(self, list_cells):
-    if isinstance(list_cells[0], list):
-      labels = []
-      for c_list in list_cells:
-        list_lables = []
-        for c in c_list:
-          list_lables.append(self.cellid_to_coord[c])
-
-        labels.append('; '.join(list_lables))
-
-    else:
-      labels = [util.get_valid_cell_label(self.cellid_to_coord, c) for c in list_cells]
-
-    return tokenizerT5(
-      labels, padding=True, truncation=True).input_ids
+      logging.info(f"Dataset-{set_type} with graph embedding size {self.graph_embed_size[set_type]}")
 
   def process_route(self, row):
     route_str = row.route
@@ -148,227 +114,67 @@ class Dataset:
     return gutil.point_from_list_coord_yx(landmarks_str_one_line[landmark_name][0])
 
 
+
   def create_dataset(
     self, infer_only: bool = False, is_dist: bool = False,
     far_cell_dist: int = FAR_DISTANCE_THRESHOLD
-                     ) -> dataset_item.TextGeoDataset:
+                     ): # -> dataset_item.TextGeoDataset:
     '''Loads data and creates datasets and train, validate and test sets.
     Returns:
       The train, validate and test sets and the dictionary of labels to cellids.
     '''
 
-    points = gutil.get_centers_from_s2cellids(self.unique_cellid)
-
-    unique_cells_df = pd.DataFrame(
-      {'point': points, 'cellid': self.unique_cellid})
-
-    self.cellid_to_coord, self.coord_to_cellid = self.create_grid(unique_cells_df)
-
-    logging.info(f"Created grid")
-    dist_matrix = unique_cells_df.point.mapply(
-      lambda x: calc_dist(x, unique_cells_df)
-    )
-    dist_matrix = dist_matrix.to_numpy()
-
-    unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
-      lambda x: gutil.far_cellid(x, unique_cells_df, far_cell_dist))
-
-    vec_cells = self.s2_tokenizer(unique_cells_df.cellid.tolist())
-    tens_cells = torch.tensor(vec_cells)
-
     # Create RUN dataset.
     train_dataset = None
-    val_dataset = None
+    dev_dataset = None
+
     logging.info("Starting to create the splits")
     if infer_only == False:
-      train_dataset = dataset_item.TextGeoSplit(
-        self.text_tokenizer,
-        self.s2_tokenizer,
-        self.train, self.s2level, unique_cells_df,
-        self.cellid_to_label, self.model_type,
-        dprob, self.cellid_to_coord,
+      train_set = dataset_item.TextGeoSplit(
+        set_type='train',
+        unique_cellids = self.unique_cellids['train'],
+        data=self.train_raw, 
+        s2level=self.s2level, 
+        cellid_to_label=self.cellid_to_label['train'], 
+        model_type=self.model_type,
+        dprob=dprob, 
         is_dist=is_dist,
-        dist_matrix=dist_matrix,
-        graph_embed_file=self.graph_embed_file)
+        far_cell_dist = far_cell_dist,
+        graph_embed_file=self.graph_embed_file['train'],
+        graph_embed_size = self.graph_embed_size['train'])
       logging.info(
-        f"Finished to create the train-set with {len(train_dataset)} samples")
-      val_dataset = dataset_item.TextGeoSplit(
-        self.text_tokenizer,
-        self.s2_tokenizer,
-        self.valid, self.s2level, unique_cells_df,
-        self.cellid_to_label, self.model_type,
-        dprob, self.cellid_to_coord,
+        f"Finished to create the train-set with {len(train_set)} samples")
+      
+      dev_set = dataset_item.TextGeoSplit(
+        set_type='dev',
+        unique_cellids = self.unique_cellids['dev'],
+        data=self.dev_raw, 
+        s2level=self.s2level, 
+        cellid_to_label=self.cellid_to_label['dev'], 
+        model_type=self.model_type,
+        dprob=dprob, 
         is_dist=is_dist,
-        dist_matrix=dist_matrix,
-        graph_embed_file=self.graph_embed_file)
+        far_cell_dist = far_cell_dist,
+        graph_embed_file=self.graph_embed_file['dev'],
+        graph_embed_size = self.graph_embed_size['dev'])
       logging.info(
-        f"Finished to create the valid-set with {len(val_dataset)} samples")
-    test_dataset = dataset_item.TextGeoSplit(
-      self.text_tokenizer,
-      self.s2_tokenizer,
-      self.test, self.s2level, unique_cells_df,
-      self.cellid_to_label, self.model_type,
-      dprob, self.cellid_to_coord,
+        f"Finished to create the dev-set with {len(dev_set)} samples")
+
+    test_set = dataset_item.TextGeoSplit(
+      set_type='test',
+      unique_cellids = self.unique_cellids['test'],
+      data=self.test_raw, 
+      s2level=self.s2level, 
+      cellid_to_label=self.cellid_to_label['test'], 
+      model_type=self.model_type,
+      dprob=dprob, 
       is_dist=is_dist,
-      dist_matrix=dist_matrix,
-      graph_embed_file=self.graph_embed_file)
+      far_cell_dist = far_cell_dist,
+      graph_embed_file=self.graph_embed_file['test'],
+      graph_embed_size = self.graph_embed_size['test'])
     logging.info(
-      f"Finished to create the test-set with {len(test_dataset)} samples")
-
-    return dataset_item.TextGeoDataset.from_TextGeoSplit(
-      train_dataset, val_dataset, test_dataset,
-      np.array(self.unique_cellid),
-      tens_cells, self.label_to_cellid, self.coord_to_cellid, self.graph_embed_size)
-
-  def create_grid(self, unique_cells_df):
-
-    unique_cells_df['lon'] = unique_cells_df.point.apply(lambda p: p.x)
-    unique_cells_df['lat'] = unique_cells_df.point.apply(lambda p: p.y)
-
-    unique_cells_df = unique_cells_df.sort_values(by=['lat', 'lon'], ascending=True)
-
-    cellid_to_coord = {}
-    coord_to_cellid = {}
-
-    full_cellid_list = unique_cells_df.cellid.tolist()
-    empty_cellid_list = []
-
-    x_current = 0
-    y_current = 0
-
-    current_cellid = unique_cells_df.cellid.tolist()[0]
-    size_region = len(unique_cells_df)
-    min_cell = current_cellid
-    tmp = []
-    begin_cell = None
-
-    for down_idx in range(20):
-      cell = s2.S2CellId(current_cellid)
-      down_cell = cell.GetEdgeNeighbors()[1]
-      current_cellid = down_cell.id()
-
-    for up_idx in range(20):
-      cell = s2.S2CellId(current_cellid)
-      up_cell = cell.GetEdgeNeighbors()[3]
-      current_cellid = up_cell.id()
-
-      for left_idx in range(round(size_region/20)):
-        cell = s2.S2CellId(current_cellid)
-        left_cell = cell.GetEdgeNeighbors()[0]
-        left_cell_id = left_cell.id()
-        current_cellid = left_cell_id
-        if current_cellid in full_cellid_list:
-          begin_cell = current_cellid
-
-      if begin_cell:
-        break
-
-      for right_idx in range(round(size_region/20)):
-        cell = s2.S2CellId(current_cellid)
-        right_cell = cell.GetEdgeNeighbors()[2]
-        right_cell_id = right_cell.id()
-        current_cellid = right_cell_id
-        if current_cellid in full_cellid_list:
-          begin_cell = current_cellid
-          break
-
-      if begin_cell:
-        break
-
-    current_cellid = begin_cell
-
-    status_cell_list = (len(full_cellid_list), 0)
-
-    while True:
-      cell = s2.S2CellId(current_cellid)
-      next_cell = cell.GetEdgeNeighbors()[2]
-      next_cellid = next_cell.id()
-
-
-      is_next = False
-
-      if current_cellid in full_cellid_list:
-        cellid_to_coord[current_cellid] = (x_current, y_current)
-
-        full_cellid_list.remove(current_cellid)
-        empty_cellid_list.append(current_cellid)
-
-        status_cell_list = (len(full_cellid_list), 0)
-        x_current += 1
-        current_cellid = next_cellid
-        is_next = True
-
-      if not is_next:
-        y_current += 1
-
-        upper_cell = cell.GetEdgeNeighbors()[3]
-        current_cellid = upper_cell.id()
-        prev_cell = upper_cell.GetEdgeNeighbors()[0]
-        prev_cell_id = prev_cell.id()
-
-        counter_move_left = 0
-        while prev_cell_id in full_cellid_list and counter_move_left<size_region:
-          counter_move_left += 1
-          cell = s2.S2CellId(current_cellid)
-          prev_cell = cell.GetEdgeNeighbors()[0]
-          prev_cell_id = prev_cell.id()
-          current_cellid = prev_cell_id
-          x_current -= 1
-
-        for i in range(round(size_region/10)):
-          cell = s2.S2CellId(current_cellid)
-          prev_cell = cell.GetEdgeNeighbors()[0]
-          prev_cell_id = prev_cell.id()
-          current_cellid = prev_cell_id
-          x_current -= 1
-
-        counter_move_right = 0
-        while current_cellid not in full_cellid_list and counter_move_right<size_region:
-          counter_move_right += 1
-          cell = s2.S2CellId(current_cellid)
-          next_cell = cell.GetEdgeNeighbors()[2]
-          next_cell_id = next_cell.id()
-          current_cellid = next_cell_id
-          x_current += 1
-
-      size_cell_list = len(full_cellid_list)
-      if size_cell_list == 0:
-        break
-
-      if size_cell_list==status_cell_list[0]:
-        status_cell_list = (size_cell_list, status_cell_list[1]+1)
-
-      if status_cell_list[1]>100:
-        sys.exit(f"Problem with creating grid. " +
-                 f"There are still {size_cell_list} cells not in grid: {full_cellid_list}. " +
-                 f"The beginig cell: {begin_cell}")
-
-    min_x = min(cellid_to_coord.items(), key=lambda x: x[1][0])[1][0]
-
-    if min_x < 0:
-
-      add_x = -1 * min_x
-      new_cellid_to_coord = {}
-      for cellid, (x, y) in cellid_to_coord.items():
-
-        new_x = x + add_x
-        new_cellid_to_coord[cellid] = (new_x, y)
-
-      cellid_to_coord = new_cellid_to_coord
-
-    min_x = min(cellid_to_coord.items(), key=lambda x: x[1][0])[1][0]
-    min_y = min(cellid_to_coord.items(), key=lambda x: x[1][1])[1][1]
-
-    assert min_x >= 0 and min_y >= 0
-
-    coord_format_to_cellid = {dataset_item.coord_format(coord): cellid for cellid, coord in cellid_to_coord.items()}
-    cellid_to_coord_format = {cellid: dataset_item.coord_format(coord) for cellid, coord in cellid_to_coord.items()}
-
-    assert len(
-      full_cellid_list) == 0, f"full_cellid_list: {len(full_cellid_list)} empty_cellid_list:{len(empty_cellid_list)}"
-    assert len(cellid_to_coord_format) == unique_cells_df.cellid.shape[0]
-
-    return cellid_to_coord_format, coord_format_to_cellid
+      f"Finished to create the test-set with {len(test_set)} samples")
+    return dataset_item.TextGeoDataset.from_TextGeoSplit(train_set=train_set, dev_set=dev_set, test_set=test_set)
 
   def get_fixed_point_along_route(self, row):
     points_list = row.route
@@ -391,26 +197,39 @@ class HumanDataset(Dataset):
   def __init__(
     self, data_dir: str,
     s2level: int,
-    region: Optional[str],
+    train_region: Optional[str],
+    dev_region: Optional[str],
+    test_region: Optional[str],
     n_fixed_points: int = 4,
-    graph_embed_path: str = "",
+    train_graph_embed_path: str = "",
+    dev_graph_embed_path: str = "",
+    test_graph_embed_path: str = "",
     model_type: str = "Dual-Encoder-Bert"):
 
     Dataset.__init__(
-      self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_path)
-    self.train = self.load_data(data_dir, 'train', lines=True)
-    self.valid = self.load_data(data_dir, 'dev', lines=True)
-    self.test = self.load_data(data_dir, 'test', lines=True)
+      self, data_dir, s2level, train_region, dev_region, test_region, 
+      model_type, n_fixed_points, train_graph_embed_path, dev_graph_embed_path, test_graph_embed_path)
+    self.train_raw = self.load_data(data_dir, 'train', lines=True)
+    self.dev_raw = self.load_data(data_dir, 'dev', lines=True)
+    self.test_raw = self.load_data(data_dir, 'test', lines=True)
 
-    # Get labels.
+    self.unique_cellid = {}
+    self.label_to_cellid = {}
+    self.cellid_to_label = {}
+
+    self.set_cells(train_region, s2level, 'train')
+    self.set_cells(dev_region, s2level, 'dev')
+    self.set_cells(test_region, s2level, 'test')
+
+  
+  def set_cells(self, region, s2level, set_type):
     active_region = regions.get_region(region)
-    unique_cellid = gutil.cellids_from_polygon(active_region.polygon, s2level)
-    label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
-    cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
+    self.unique_cellids[set_type] = gutil.cellids_from_polygon(active_region.polygon, s2level)
+    self.label_to_cellid[set_type] = {
+      idx: cellid for idx, cellid in enumerate(self.unique_cellids[set_type])}
+    self.cellid_to_label[set_type] = {
+      cellid: idx for idx, cellid in enumerate(self.unique_cellids[set_type])}
 
-    self.unique_cellid = unique_cellid
-    self.label_to_cellid = label_to_cellid
-    self.cellid_to_label = cellid_to_label
 
   def load_data(self, data_dir: str, ds_set: str, lines: bool):
 
@@ -454,7 +273,7 @@ class RUNDataset(Dataset):
       self, data_dir, s2level, None, model_type, n_fixed_points, graph_embed_path
     )
 
-    train_ds, valid_ds, test_ds, ds = self.load_data(data_dir, lines=False)
+    train_ds, dev_ds, test_ds, ds = self.load_data(data_dir, lines=False)
 
     # Get labels.
     map_1 = regions.get_region("RUN-map1")
@@ -475,7 +294,7 @@ class RUNDataset(Dataset):
     cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
     self.train = train_ds
-    self.valid = valid_ds
+    self.dev = dev_ds
     self.test = test_ds
     self.ds = ds
     self.unique_cellid = unique_cellid
@@ -499,12 +318,12 @@ class RUNDataset(Dataset):
     dataset_size = ds.shape[0]
     logging.info(f"Size of dataset: {ds.shape[0]}")
     train_size = round(dataset_size * 80 / 100)
-    valid_size = round(dataset_size * 10 / 100)
+    dev_size = round(dataset_size * 10 / 100)
 
     train_ds = ds.iloc[:train_size]
-    valid_ds = ds.iloc[train_size:train_size + valid_size]
-    test_ds = ds.iloc[train_size + valid_size:]
-    return train_ds, valid_ds, test_ds, ds
+    dev_ds = ds.iloc[train_size:train_size + dev_size]
+    test_ds = ds.iloc[train_size + dev_size:]
+    return train_ds, dev_ds, test_ds, ds
 
 
 class RVSDataset(Dataset):
@@ -520,7 +339,7 @@ class RVSDataset(Dataset):
     Dataset.__init__(
       self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_path)
     train_ds = self.load_data(data_dir, 'train', True)
-    valid_ds = self.load_data(data_dir, 'dev', True)
+    dev_ds = self.load_data(data_dir, 'dev', True)
     test_ds = self.load_data(data_dir, 'test', True)
 
     # Get labels.
@@ -530,7 +349,7 @@ class RVSDataset(Dataset):
     cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
     self.train = train_ds
-    self.valid = valid_ds
+    self.dev = dev_ds
     self.test = test_ds
     self.unique_cellid = unique_cellid
     self.label_to_cellid = label_to_cellid
@@ -619,9 +438,3 @@ class RVSDataset(Dataset):
       gutil.point_from_list_coord_xy(landmark) for landmark in reversed(route_list)]
     assert route[0] == end_point
     return route
-
-def calc_dist(start, unique_cells_df):
-  dists = unique_cells_df.apply(
-    lambda end: gutil.get_distance_between_points(start, end.point), axis=1)
-
-  return dists

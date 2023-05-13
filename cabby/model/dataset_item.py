@@ -25,8 +25,10 @@ from shapely.geometry.point import Point
 from shapely.geometry import box, mapping, LineString
 import sys
 import swifter
-from typing import Any, Dict, Text, Tuple
+from s2geometry import pywraps2 as s2
+from typing import Any, Dict, Text, Tuple, List
 import torch
+from transformers import DistilBertTokenizerFast, T5Tokenizer
 
 import mapply
 
@@ -41,6 +43,31 @@ mapply.init(
   n_workers=-1,
   progressbar=True,
 )
+T5_TYPE = "t5-small"
+BERT_TYPE = 'distilbert-base-uncased'
+
+MODELS = [
+  'Dual-Encoder-Bert',
+  'Classification-Bert',
+  'S2-Generation-T5',
+  'S2-Generation-T5-Landmarks',
+  'S2-Generation-T5-Warmup-start-end',
+  'Text-2-Landmarks-NER-Generation-T5-Warmup',
+  'Landmarks-NER-2-S2-Generation-T5-Warmup',
+  'S2-Generation-T5-Path',
+  'S2-Generation-T5-start-text-input',
+  'S2-Generation-T5-Warmup-cell-embed-to-cell-label',
+  'S2-Generation-T5-start-embedding-text-input',
+  'S2-Generation-T5-Warmup-start-end-to-dist',
+  'S2-Generation-T5-text-start-to-end-dist',
+  'S2-Generation-T5-text-start-to-landmarks-dist',
+  'S2-Generation-T5-text-start-embedding-to-landmarks',
+  'S2-Generation-T5-text-start-embedding-to-landmarks-dist'
+]
+
+
+tokenizerT5 = T5Tokenizer.from_pretrained(T5_TYPE)
+
 
 
 @attr.s
@@ -53,97 +80,87 @@ class TextGeoDataset:
   `unique_cellids_binary`  is the binary tensor of the unique S2Cells.
   `label_to_cellid` is the dictionary mapping labels to cellids.
   """
-  train: Any = attr.ib()
-  valid: Any = attr.ib()
-  test: Any = attr.ib()
-  unique_cellids: np.ndarray = attr.ib()
-  unique_cellids_binary: torch.tensor = attr.ib()
-  label_to_cellid: Dict[int, int] = attr.ib()
-  coord_to_cellid: Dict[str, int] = attr.ib()
-  graph_embed_size: int = attr.ib()
+  train_set: Any = attr.ib()
+  dev_set: Any = attr.ib()
+  test_set: Any = attr.ib()
 
   @classmethod
-  def from_TextGeoSplit(cls, train, valid, test, unique_cellids,
-                        unique_cellids_binary, label_to_cellid, coord_to_cellid, graph_embed_size):
+  def from_TextGeoSplit(cls, train_set, dev_set, test_set):
     """Construct a TextGeoDataset."""
     return TextGeoDataset(
-      train,
-      valid,
-      test,
-      unique_cellids,
-      unique_cellids_binary,
-      label_to_cellid,
-      coord_to_cellid,
-      graph_embed_size,
+      train_set,
+      dev_set,
+      test_set
     )
 
   @classmethod
-  def load(cls, dataset_dir: Text, model_type: Text = None,
-           s2_level: Text = None):
+  def load_set(cls, dataset_dir, set_type):
+
+    logging.info(f"Loading {set_type}-set from <== {dataset_dir}.")
+
+    path_dataset = os.path.join(dataset_dir, f'{set_type}.pth')
+    data_set = torch.load(path_dataset)
+    logging.info(f"Size of {set_type}-set: {len(data_set)}")
+    
+    # unique_cellid_path = os.path.join(dataset_dir, f"{set_type}_unique_cellid.npy")
+    # dataset_split.unique_cellids[set_type] = np.load(unique_cellid_path, allow_pickle='TRUE')
+
+    # tensor_cellid_path = os.path.join(dataset_dir, f"{set_type}_tensor_cellid.pth")
+    # dataset_split.dataset_splits[set_type].unique_cellids_binary = torch.load(tensor_cellid_path)
+
+    # label_to_cellid_path = os.path.join(dataset_dir, f"{set_type}_label_to_cellid.npy")
+    # dataset_split.label_to_cellid[set_type] = np.load(
+    #   label_to_cellid_path, allow_pickle='TRUE').item()
+
+    # coord_to_cellid_path = os.path.join(dataset_dir, f"{set_type}_coord_to_cellid.npy")
+    # dataset_split.coord_to_cellid[set_type] = np.load(coord_to_cellid_path, allow_pickle='TRUE').item()
+
+    # graph_embed_size_path = os.path.join(dataset_dir, f"{set_type}_graph_embed_size.npy")
+    # dataset_split.graph_embed_size[set_type] = np.load(graph_embed_size_path, allow_pickle='TRUE')
+    # logging.info(f"Loaded {set_type}-set with graph embedding size {dataset_split.graph_embed_size[set_type]}")
+
+    return data_set
+
+  @classmethod
+  def load(cls, dataset_dir, model_type, s2_level, train_region, dev_region, test_region):
     if model_type:
       dataset_dir = os.path.join(dataset_dir, str(model_type))
     if s2_level:
       dataset_dir = os.path.join(dataset_dir, str(s2_level))
-
-    train_path_dataset = os.path.join(dataset_dir, 'train.pth')
-    valid_path_dataset = os.path.join(dataset_dir, 'valid.pth')
-    test_path_dataset = os.path.join(dataset_dir, 'test.pth')
-    unique_cellid_path = os.path.join(dataset_dir, "unique_cellid.npy")
-    tensor_cellid_path = os.path.join(dataset_dir, "tensor_cellid.pth")
-    label_to_cellid_path = os.path.join(dataset_dir, "label_to_cellid.npy")
-    coord_to_cellid_path = os.path.join(dataset_dir, "coord_to_cellid.npy")
-    graph_embed_size_path = os.path.join(dataset_dir, "graph_embed_size.npy")
+    
+    train_set = cls.load_set(dataset_dir, 'train')
+    dev_set = cls.load_set(dataset_dir, 'dev')
+    test_set = cls.load_set(dataset_dir, 'test')
+    return  cls.from_TextGeoSplit(train_set, dev_set, test_set)
 
 
-    logging.info("Loading dataset from <== {}.".format(dataset_dir))
-    train_dataset = torch.load(train_path_dataset)
-    valid_dataset = torch.load(valid_path_dataset)
-    test_dataset = torch.load(test_path_dataset)
-    logging.info(f"Size of train set: {len(train_dataset)}" +
-                 f", Size of validation set: {len(valid_dataset)}, Size of test set: {len(test_dataset)}")
-
-    unique_cellid = np.load(unique_cellid_path, allow_pickle='TRUE')
-    label_to_cellid = np.load(
-      label_to_cellid_path, allow_pickle='TRUE').item()
-    tens_cells = torch.load(tensor_cellid_path)
-    coord_to_cellid = np.load(coord_to_cellid_path, allow_pickle='TRUE').item()
-    graph_embed_size = np.load(graph_embed_size_path, allow_pickle='TRUE')
-    logging.info(f"Loaded dataset with graph embedding size {graph_embed_size}")
-
-    dataset_text = TextGeoDataset(
-      train_dataset, valid_dataset, test_dataset,
-      unique_cellid, tens_cells, label_to_cellid, coord_to_cellid, graph_embed_size)
-
-    return dataset_text
 
   @classmethod
-  def save(cls, dataset_text: Any, dataset_path: Text,
-           graph_embed_size: int):
-    os.mkdir(dataset_path)
+  def save(cls, dataset_text: Any, dataset_dir: Text):
+    os.mkdir(dataset_dir)
 
-    train_path_dataset = os.path.join(dataset_path, 'train.pth')
-    valid_path_dataset = os.path.join(dataset_path, 'valid.pth')
-    test_path_dataset = os.path.join(dataset_path, 'test.pth')
-    unique_cellid_path = os.path.join(dataset_path, "unique_cellid.npy")
-    tensor_cellid_path = os.path.join(dataset_path, "tensor_cellid.pth")
-    label_to_cellid_path = os.path.join(dataset_path, "label_to_cellid.npy")
-    coord_to_cellid_path = os.path.join(dataset_path, "coord_to_cellid.npy")
-    graph_embed_size_path = os.path.join(dataset_path, "graph_embed_size.npy")
+    train_path_dataset = os.path.join(dataset_dir, 'train.pth')
+    valid_path_dataset = os.path.join(dataset_dir, 'dev.pth')
+    test_path_dataset = os.path.join(dataset_dir, 'test.pth')
+    # unique_cellid_path = os.path.join(dataset_path, "unique_cellid.npy")
+    # tensor_cellid_path = os.path.join(dataset_path, "tensor_cellid.pth")
+    # label_to_cellid_path = os.path.join(dataset_path, "label_to_cellid.npy")
+    # coord_to_cellid_path = os.path.join(dataset_path, "coord_to_cellid.npy")
+    # graph_embed_size_path = os.path.join(dataset_path, "graph_embed_size.npy")
 
-    torch.save(dataset_text.train, train_path_dataset)
-    torch.save(dataset_text.valid, valid_path_dataset)
-    torch.save(dataset_text.test, test_path_dataset)
-    np.save(unique_cellid_path, dataset_text.unique_cellids)
-    torch.save(dataset_text.unique_cellids_binary, tensor_cellid_path)
-    np.save(label_to_cellid_path, dataset_text.label_to_cellid)
-    np.save(coord_to_cellid_path, dataset_text.coord_to_cellid)
-    np.save(graph_embed_size_path, graph_embed_size)
+    torch.save(dataset_text.train_set, train_path_dataset)
+    torch.save(dataset_text.dev_set, valid_path_dataset)
+    torch.save(dataset_text.test_set, test_path_dataset)
+    # np.save(unique_cellid_path, dataset_text.unique_cellids)
+    # torch.save(dataset_text.unique_cellids_binary, tensor_cellid_path)
+    # np.save(label_to_cellid_path, dataset_text.label_to_cellid)
+    # np.save(coord_to_cellid_path, dataset_text.coord_to_cellid)
+    # np.save(graph_embed_size_path, graph_embed_size)
 
-    logging.info("Saved data to ==> {}.".format(dataset_path))
-
+    logging.info("Saved data to ==> {}.".format(dataset_dir))
 
 class TextGeoSplit(torch.utils.data.Dataset):
-  """A split of of the RUN dataset.
+  """A split of of the dataset.
   `points`: The ground true end-points of the samples.
   `labels`: The ground true label of the cellid.
   `cellids`: The ground truth S2Cell id.
@@ -153,29 +170,56 @@ class TextGeoSplit(torch.utils.data.Dataset):
   S2Cell id.
   """
 
-  def __init__(self, text_tokenizer, s2_tokenizer, data: pd.DataFrame, s2level: int,
-               unique_cells_df: pd.DataFrame, cellid_to_label: Dict[int, int],
+  def __init__(self, data: pd.DataFrame, s2level: int,
+               cellid_to_label: Dict[int, int],
+               unique_cellids: List[int],
                model_type: str, dprob: util.DistanceProbability,
-               cellid_to_coord, dist_matrix: pd.DataFrame,
+               far_cell_dist: int,
+               set_type: str,
+               graph_embed_size: int,
                graph_embed_file:Any = None, is_dist: Boolean = False
                ):
 
-    self.text_tokenizer = text_tokenizer
-    self.s2_tokenizer = s2_tokenizer
+
     self.cellid_to_label = cellid_to_label
-    self.cellid_to_coord = cellid_to_coord
     self.s2level = s2level
     self.is_dist = is_dist
     self.model_type = model_type
     self.graph_embed_file = graph_embed_file
+    self.set_type = set_type
+    self.unique_cellids = unique_cellids
+    self.graph_embed_size = graph_embed_size
+    
+    self.label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellids)}
+
+    points = gutil.get_centers_from_s2cellids(self.unique_cellids)
+
+    unique_cells_df = pd.DataFrame(
+      {'point': points, 'cellid': self.unique_cellids})
+
+    self.cellid_to_coord, self.coord_to_cellid = self.create_grid(unique_cells_df)
+
+    self.set_tokenizers()
+
+    vec_cells = self.s2_tokenizer(unique_cellids)
+    self.unique_cellids_binary = torch.tensor(vec_cells)
+
+
+    logging.info(f"Created grid")
+    dist_matrix = unique_cells_df.point.mapply(
+      lambda x: calc_dist(x, unique_cells_df)
+    )
+    dist_matrix = dist_matrix.to_numpy()
+
+    unique_cells_df['far'] = unique_cells_df.point.swifter.apply(
+      lambda x: gutil.far_cellid(x, unique_cells_df, far_cell_dist))
+   
 
     data = data.assign(end_point=data.end_point)
 
     data['cellid'] = data.end_point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
 
-    data['neighbor_cells'] = data.cellid.apply(
-      lambda x: gutil.neighbor_cellid(x, unique_cells_df.cellid.tolist()))
 
     # Tokenize instructions.
 
@@ -189,34 +233,37 @@ class TextGeoSplit(torch.utils.data.Dataset):
       data.instructions.tolist(), truncation=True,
       padding=True, add_special_tokens=True, max_length=200)
 
-    data['far_cells'] = data.cellid.apply(
-      lambda cellid: unique_cells_df[unique_cells_df['cellid'] == cellid].far.iloc[0])
-
     cellids_array = np.array(data.cellid.tolist())
-    neighbor_cells_array = np.array(data.neighbor_cells.tolist())
-    far_cells_array = np.array(data.far_cells.tolist())
 
     self.end_point = data.end_point.apply(
       lambda x: gutil.tuple_from_point(x)).tolist()
 
-
-    self.coords_end = data.cellid.apply(lambda x: cellid_to_coord[x]).tolist()
+    self.coords_end = data.cellid.apply(lambda x: self.cellid_to_coord[x]).tolist()
 
     self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
 
     self.start_cells = data.start_point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
 
-    self.coords_start = self.start_cells.apply(lambda x: cellid_to_coord[x]).tolist()
+    self.coords_start = self.start_cells.apply(lambda x: self.cellid_to_coord[x]).tolist()
 
     self.start_point_labels = self.get_cell_to_lablel(self.start_cells.tolist())
 
     self.cellids = self.s2_tokenizer(cellids_array)
 
+    if 'Dual-Encoder-Bert' in model_type:
+      data['neighbor_cells'] = data.cellid.apply(
+        lambda x: gutil.neighbor_cellid(x, unique_cells_df.cellid.tolist()))
+      data['far_cells'] = data.cellid.apply(
+        lambda cellid: unique_cells_df[unique_cells_df['cellid'] == cellid].far.iloc[0])
+      neighbor_cells_array = np.array(data.neighbor_cells.tolist())
+      far_cells_array = np.array(data.far_cells.tolist())
+      self.neighbor_cells = self.s2_tokenizer(neighbor_cells_array)
 
-    self.neighbor_cells = self.s2_tokenizer(neighbor_cells_array)
-
-    self.far_cells = self.s2_tokenizer(far_cells_array)
+      self.far_cells = self.s2_tokenizer(far_cells_array)
+    else:
+      self.neighbor_cells = [0]*len(self.cellids)
+      self.far_cells = [0]*len(self.cellids)
 
 
     self.start_text_input_list = [
@@ -269,12 +316,210 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
 
     self.set_generation_model(data)
+    self.data = data
 
 
-    del self.graph_embed_file
     # del self.start_point_cells
     del self.s2_tokenizer
     del self.text_tokenizer
+
+
+
+  def set_tokenizers(self):
+    assert self.model_type in MODELS
+    if self.model_type in ['Dual-Encoder-Bert', 'Classification-Bert']:
+      self.text_tokenizer = DistilBertTokenizerFast.from_pretrained(BERT_TYPE)
+      self.s2_tokenizer = util.binary_representation
+    elif 'T5' in self.model_type:
+      self.text_tokenizer = tokenizerT5
+      self.s2_tokenizer = self.tokenize_cell
+
+  def tokenize_cell(self, list_cells):
+    if isinstance(list_cells[0], list):
+      labels = []
+      for c_list in list_cells:
+        list_lables = []
+        for c in c_list:
+          list_lables.append(self.cellid_to_coord[c])
+
+        labels.append('; '.join(list_lables))
+
+    else:
+      labels = [util.get_valid_cell_label(self.cellid_to_coord, c) for c in list_cells]
+
+    return tokenizerT5(
+      labels, padding=True, truncation=True).input_ids
+
+  def create_grid(self, unique_cells_df):
+
+    unique_cells_df['lon'] = unique_cells_df.point.apply(lambda p: p.x)
+    unique_cells_df['lat'] = unique_cells_df.point.apply(lambda p: p.y)
+
+    unique_cells_df = unique_cells_df.sort_values(by=['lat', 'lon'], ascending=True)
+
+    cellid_to_coord = {}
+    coord_to_cellid = {}
+
+    full_cellid_list = unique_cells_df.cellid.tolist()
+    empty_cellid_list = []
+
+    x_current = 0
+    y_current = 0
+
+    current_cellid = unique_cells_df.cellid.tolist()[0]
+    size_region = len(unique_cells_df)
+    min_cell = current_cellid
+    tmp = []
+    begin_cell = None
+
+    for down_idx in range(20):
+      cell = s2.S2CellId(current_cellid)
+      down_cell = cell.GetEdgeNeighbors()[1]
+      current_cellid = down_cell.id()
+
+    for up_idx in range(20):
+      cell = s2.S2CellId(current_cellid)
+      up_cell = cell.GetEdgeNeighbors()[3]
+      current_cellid = up_cell.id()
+
+      for left_idx in range(round(size_region/20)):
+        cell = s2.S2CellId(current_cellid)
+        left_cell = cell.GetEdgeNeighbors()[0]
+        left_cell_id = left_cell.id()
+        current_cellid = left_cell_id
+        if current_cellid in full_cellid_list:
+          begin_cell = current_cellid
+
+      if begin_cell:
+        break
+
+      for right_idx in range(round(size_region/20)):
+        cell = s2.S2CellId(current_cellid)
+        right_cell = cell.GetEdgeNeighbors()[2]
+        right_cell_id = right_cell.id()
+        current_cellid = right_cell_id
+        if current_cellid in full_cellid_list:
+          begin_cell = current_cellid
+          break
+
+      if begin_cell:
+        break
+
+    current_cellid = begin_cell
+
+    status_cell_list = (len(full_cellid_list), 0)
+
+    while True:
+      cell = s2.S2CellId(current_cellid)
+      next_cell = cell.GetEdgeNeighbors()[2]
+      next_cellid = next_cell.id()
+
+
+      is_next = False
+
+      if current_cellid in full_cellid_list:
+        cellid_to_coord[current_cellid] = (x_current, y_current)
+
+        full_cellid_list.remove(current_cellid)
+        empty_cellid_list.append(current_cellid)
+
+        status_cell_list = (len(full_cellid_list), 0)
+        x_current += 1
+        current_cellid = next_cellid
+        is_next = True
+
+      if not is_next:
+        y_current += 1
+
+        upper_cell = cell.GetEdgeNeighbors()[3]
+        current_cellid = upper_cell.id()
+        prev_cell = upper_cell.GetEdgeNeighbors()[0]
+        prev_cell_id = prev_cell.id()
+
+        counter_move_left = 0
+        while prev_cell_id in full_cellid_list and counter_move_left<size_region:
+          counter_move_left += 1
+          cell = s2.S2CellId(current_cellid)
+          prev_cell = cell.GetEdgeNeighbors()[0]
+          prev_cell_id = prev_cell.id()
+          current_cellid = prev_cell_id
+          x_current -= 1
+
+        for i in range(round(size_region/10)):
+          cell = s2.S2CellId(current_cellid)
+          prev_cell = cell.GetEdgeNeighbors()[0]
+          prev_cell_id = prev_cell.id()
+          current_cellid = prev_cell_id
+          x_current -= 1
+
+        counter_move_right = 0
+        while current_cellid not in full_cellid_list and counter_move_right<size_region:
+          counter_move_right += 1
+          cell = s2.S2CellId(current_cellid)
+          next_cell = cell.GetEdgeNeighbors()[2]
+          next_cell_id = next_cell.id()
+          current_cellid = next_cell_id
+          x_current += 1
+
+      size_cell_list = len(full_cellid_list)
+      if size_cell_list == 0:
+        break
+
+      if size_cell_list==status_cell_list[0]:
+        status_cell_list = (size_cell_list, status_cell_list[1]+1)
+
+      if status_cell_list[1]>100:
+        sys.exit(f"Problem with creating grid. " +
+                 f"There are still {size_cell_list} cells not in grid: {full_cellid_list}. " +
+                 f"The beginig cell: {begin_cell}")
+
+    min_x = min(cellid_to_coord.items(), key=lambda x: x[1][0])[1][0]
+
+    if min_x < 0:
+
+      add_x = -1 * min_x
+      new_cellid_to_coord = {}
+      for cellid, (x, y) in cellid_to_coord.items():
+
+        new_x = x + add_x
+        new_cellid_to_coord[cellid] = (new_x, y)
+
+      cellid_to_coord = new_cellid_to_coord
+
+    min_x = min(cellid_to_coord.items(), key=lambda x: x[1][0])[1][0]
+    min_y = min(cellid_to_coord.items(), key=lambda x: x[1][1])[1][1]
+
+    assert min_x >= 0 and min_y >= 0
+
+    coord_format_to_cellid = {coord_format(coord): cellid for cellid, coord in cellid_to_coord.items()}
+    cellid_to_coord_format = {cellid: coord_format(coord) for cellid, coord in cellid_to_coord.items()}
+
+    assert len(
+      full_cellid_list) == 0, f"full_cellid_list: {len(full_cellid_list)} empty_cellid_list:{len(empty_cellid_list)}"
+    assert len(cellid_to_coord_format) == unique_cells_df.cellid.shape[0]
+
+    return cellid_to_coord_format, coord_format_to_cellid
+
+  def save(self, dataset_dir):
+    
+    os.makedirs(dataset_dir, exist_ok=True)
+
+    path_dataset = os.path.join(dataset_dir, f'{self.set_type}.pth')
+    unique_cellid_path = os.path.join(dataset_dir, f"{self.set_type}_unique_cellid.npy")
+    tensor_cellid_path = os.path.join(dataset_dir, f"{self.set_type}_tensor_cellid.pth")
+    label_to_cellid_path = os.path.join(dataset_dir, f"{self.set_type}_label_to_cellid.npy")
+    coord_to_cellid_path = os.path.join(dataset_dir, f"{self.set_type}_coord_to_cellid.npy")
+    graph_embed_size_path = os.path.join(dataset_dir, f"{self.set_type}_graph_embed_size.npy")
+
+    torch.save(self.data, path_dataset)
+    np.save(unique_cellid_path, self.unique_cellids)
+    torch.save(self.unique_cellids_binary, tensor_cellid_path)
+    np.save(label_to_cellid_path, self.label_to_cellid)
+    np.save(coord_to_cellid_path, self.coord_to_cellid)
+    np.save(graph_embed_size_path, self.graph_embed_size)
+
+    logging.info(f"Saved {self.set_type} data to ==> {dataset_dir}.")
+
 
   def get_cell_to_lablel(self, list_cells):
     if isinstance(list_cells[0], list):
@@ -454,7 +699,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     '''
 
     cellid = torch.tensor(self.cellids[idx])
-
+    
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
     end_point = torch.tensor(self.end_point[idx])
@@ -503,3 +748,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
 def coord_format(coord):
   x, y = coord
   return f'loc_{x} loc_{y}'
+
+
+def calc_dist(start, unique_cells_df):
+  dists = unique_cells_df.apply(
+    lambda end: gutil.get_distance_between_points(start, end.point), axis=1)
+
+  return dists

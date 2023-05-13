@@ -145,7 +145,6 @@ class DualEncoder(GeneralModel):
     cls_token = outputs.last_hidden_state[:, -1, :]
     return self.text_main(cls_token)
 
-
 class S2GenerationModel(GeneralModel):
   def __init__(
     self,

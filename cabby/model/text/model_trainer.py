@@ -35,6 +35,7 @@ $ bazel-bin/cabby/model/text/model_trainer \
   --task RVS
 """
 
+
 from absl import app
 from absl import flags
 
@@ -68,7 +69,15 @@ flags.DEFINE_string("dataset_dir", None,
                     "The directory to save\load dataloader.")
 
 flags.DEFINE_enum(
-  "region", None, regions.SUPPORTED_REGION_NAMES,
+  "train_region", None, regions.SUPPORTED_REGION_NAMES,
+  regions.REGION_SUPPORT_MESSAGE)
+
+flags.DEFINE_enum(
+  "dev_region", None, regions.SUPPORTED_REGION_NAMES,
+  regions.REGION_SUPPORT_MESSAGE)
+
+flags.DEFINE_enum(
+  "test_region", None, regions.SUPPORTED_REGION_NAMES,
   regions.REGION_SUPPORT_MESSAGE)
 
 flags.DEFINE_enum(
@@ -76,8 +85,8 @@ flags.DEFINE_enum(
   f"Supported datasets to train\evaluate on: {','.join(TASKS)}. ")
 
 flags.DEFINE_enum(
-  "model", "Dual-Encoder-Bert", datasets.MODELS,
-  f"Supported models to train\evaluate on:  {','.join(datasets.MODELS)}.")
+  "model", "Dual-Encoder-Bert", dataset_item.MODELS,
+  f"Supported models to train\evaluate on:  {','.join(dataset_item.MODELS)}.")
 
 flags.DEFINE_integer("s2_level", None, "S2 level of the S2Cells.")
 
@@ -91,7 +100,13 @@ flags.DEFINE_float(
 flags.DEFINE_string("model_path", None,
                     "A path of a model the model to be fine tuned\ evaluated.")
 
-flags.DEFINE_string("graph_embed_path", default="",
+flags.DEFINE_string("train_graph_embed_path", default="",
+                    help="The path to the graph embedding.")
+
+flags.DEFINE_string("dev_graph_embed_path", default="",
+                    help="The path to the graph embedding.")
+
+flags.DEFINE_string("test_graph_embed_path", default="",
                     help="The path to the graph embedding.")
 
 flags.DEFINE_integer(
@@ -136,7 +151,9 @@ flags.DEFINE_bool(
 # Required flags.
 flags.mark_flag_as_required("data_dir")
 flags.mark_flag_as_required("dataset_dir")
-flags.mark_flag_as_required("region")
+flags.mark_flag_as_required("train_region")
+flags.mark_flag_as_required("dev_region")
+flags.mark_flag_as_required("test_region")
 flags.mark_flag_as_required("s2_level")
 
 
@@ -167,17 +184,24 @@ def main(argv):
     dataset_text = dataset_item.TextGeoDataset.load(
       dataset_dir=FLAGS.dataset_dir,
       model_type=str(FLAGS.model),
-      s2_level=FLAGS.s2_level
+      s2_level=FLAGS.s2_level,
+      train_region=FLAGS.train_region,
+      dev_region=FLAGS.dev_region,
+      test_region=FLAGS.test_region
     )
 
   else:
     dataset = dataset_init(
       data_dir=FLAGS.data_dir,
-      region=FLAGS.region,
+      train_region=FLAGS.train_region,
+      dev_region=FLAGS.dev_region,
+      test_region=FLAGS.test_region,
       s2level=FLAGS.s2_level,
       model_type=FLAGS.model,
       n_fixed_points=FLAGS.n_fixed_points,
-      graph_embed_path=FLAGS.graph_embed_path)
+      train_graph_embed_path=FLAGS.train_graph_embed_path,
+      dev_graph_embed_path=FLAGS.dev_graph_embed_path,
+      test_graph_embed_path=FLAGS.test_graph_embed_path)
 
     if not os.path.exists(dataset_model_path):
       os.mkdir(dataset_model_path)
@@ -188,23 +212,17 @@ def main(argv):
       far_cell_dist=FLAGS.far_distance_threshold
     )
 
-    dataset_item.TextGeoDataset.save(
-      dataset_text=dataset_text,
-      dataset_path=dataset_path,
-      graph_embed_size=dataset.graph_embed_size)
+    dataset_item.TextGeoDataset.save(dataset_text=dataset_text, dataset_dir=dataset_path)
 
-  n_cells = len(dataset_text.unique_cellids)
-  logging.info("Number of unique cells: {}".format(
-    n_cells))
   train_loader = None
   valid_loader = None
   if FLAGS.infer_only == False:
     train_loader = DataLoader(
-      dataset_text.train, batch_size=FLAGS.train_batch_size, shuffle=True)
+      dataset_text.train_set, batch_size=FLAGS.train_batch_size, shuffle=True)
     valid_loader = DataLoader(
-      dataset_text.valid, batch_size=FLAGS.test_batch_size, shuffle=False)
+      dataset_text.dev_set, batch_size=FLAGS.test_batch_size, shuffle=False)
   test_loader = DataLoader(
-    dataset_text.test, batch_size=FLAGS.test_batch_size, shuffle=False)
+    dataset_text.test_set, batch_size=FLAGS.test_batch_size, shuffle=False)
 
   device = torch.device(
     'cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -215,9 +233,10 @@ def main(argv):
       device=device, is_distance_distribution=FLAGS.is_distance_distribution)
   elif 'T5' in FLAGS.model:
     run_model = models.S2GenerationModel(
-      dataset_text.coord_to_cellid, device=device, model_type=FLAGS.model,
-      vq_dim=dataset_text.graph_embed_size)
+      dataset_text.test_set.coord_to_cellid, device=device, model_type=FLAGS.model,
+      vq_dim=dataset_text.train_set.graph_embed_size)
   elif FLAGS.model == 'Classification-Bert':
+    n_cells = len(dataset_text.test_set.unique_cellids)
     run_model = models.ClassificationModel(n_cells, device=device)
   else:
     sys.exit("Model invalid")
@@ -250,10 +269,12 @@ def main(argv):
     train_loader=train_loader,
     valid_loader=valid_loader,
     test_loader=test_loader,
-    unique_cells=dataset_text.unique_cellids,
+    unique_cells=dataset_text.train_set.unique_cellids,
     file_path=FLAGS.output_dir,
-    cells_tensor=dataset_text.unique_cellids_binary,
-    label_to_cellid=dataset_text.label_to_cellid,
+    cells_tensor_dev=dataset_text.dev_set.unique_cellids_binary,
+    cells_tensor_test=dataset_text.test_set.unique_cellids_binary,
+    label_to_cellid_dev=dataset_text.dev_set.label_to_cellid,
+    label_to_cellid_test=dataset_text.test_set.label_to_cellid,
     best_valid_loss=run_model.best_valid_loss,
     is_single_sample_train=FLAGS.is_single_sample_train
   )
