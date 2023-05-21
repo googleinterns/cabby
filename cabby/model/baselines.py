@@ -82,9 +82,12 @@ def main(argv):
 
   dataset = dataset_init(
     data_dir=FLAGS.data_dir,
-    region=FLAGS.region,
-    s2level=18,
+    train_region=FLAGS.region,
+    dev_region=FLAGS.region,
+    test_region=FLAGS.region,
+    s2level=18,  
   )
+
 
   end_points = dataset.test.end_point.apply(gutil.list_yx_from_point).tolist()
   start_point = dataset.test.start_point.apply(gutil.list_yx_from_point).tolist()

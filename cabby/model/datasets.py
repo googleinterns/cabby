@@ -90,6 +90,11 @@ class Dataset:
       self.graph_embed_size[set_type] = self.graph_embed_file[set_type][first_cell].shape[0]
 
       logging.info(f"Dataset-{set_type} with graph embedding size {self.graph_embed_size[set_type]}")
+    
+    else:
+      self.graph_embed_file[set_type] = None
+      self.graph_embed_size[set_type] = 0
+
 
   def process_route(self, row):
     route_str = row.route
@@ -113,7 +118,14 @@ class Dataset:
   def get_specific_landmark(self, landmarks_str_one_line, landmark_name):
     return gutil.point_from_list_coord_yx(landmarks_str_one_line[landmark_name][0])
 
-
+  
+  def set_cells(self, region, s2level, set_type):
+    active_region = regions.get_region(region)
+    self.unique_cellids[set_type] = gutil.cellids_from_polygon(active_region.polygon, s2level)
+    self.label_to_cellid[set_type] = {
+      idx: cellid for idx, cellid in enumerate(self.unique_cellids[set_type])}
+    self.cellid_to_label[set_type] = {
+      cellid: idx for idx, cellid in enumerate(self.unique_cellids[set_type])}
 
   def create_dataset(
     self, infer_only: bool = False, is_dist: bool = False,
@@ -125,8 +137,6 @@ class Dataset:
     '''
 
     # Create RUN dataset.
-    train_dataset = None
-    dev_dataset = None
 
     logging.info("Starting to create the splits")
     if infer_only == False:
@@ -141,7 +151,7 @@ class Dataset:
         is_dist=is_dist,
         far_cell_dist = far_cell_dist,
         graph_embed_file=self.graph_embed_file['train'],
-        graph_embed_size = self.graph_embed_size['train'])
+        graph_embed_size=self.graph_embed_size['train'])
       logging.info(
         f"Finished to create the train-set with {len(train_set)} samples")
       
@@ -221,14 +231,6 @@ class HumanDataset(Dataset):
     self.set_cells(dev_region, s2level, 'dev')
     self.set_cells(test_region, s2level, 'test')
 
-  
-  def set_cells(self, region, s2level, set_type):
-    active_region = regions.get_region(region)
-    self.unique_cellids[set_type] = gutil.cellids_from_polygon(active_region.polygon, s2level)
-    self.label_to_cellid[set_type] = {
-      idx: cellid for idx, cellid in enumerate(self.unique_cellids[set_type])}
-    self.cellid_to_label[set_type] = {
-      cellid: idx for idx, cellid in enumerate(self.unique_cellids[set_type])}
 
 
   def load_data(self, data_dir: str, ds_set: str, lines: bool):
@@ -328,32 +330,34 @@ class RUNDataset(Dataset):
 
 class RVSDataset(Dataset):
   def __init__(
-    self,
-    data_dir: str,
+    self, data_dir: str,
     s2level: int,
-    region: Optional[str],
+    train_region: Optional[str],
+    dev_region: Optional[str],
+    test_region: Optional[str],
     n_fixed_points: int = 4,
-    graph_embed_path: str = "",
-    model_type: str = "Dual-Encoder-Bert"
-    ):
+    train_graph_embed_path: str = "",
+    dev_graph_embed_path: str = "",
+    test_graph_embed_path: str = "",
+    model_type: str = "Dual-Encoder-Bert"):
+
     Dataset.__init__(
-      self, data_dir, s2level, region, model_type, n_fixed_points, graph_embed_path)
-    train_ds = self.load_data(data_dir, 'train', True)
-    dev_ds = self.load_data(data_dir, 'dev', True)
-    test_ds = self.load_data(data_dir, 'test', True)
+      self, data_dir, s2level, train_region, dev_region, test_region, 
+      model_type, n_fixed_points, train_graph_embed_path, dev_graph_embed_path, test_graph_embed_path)
+    self.train_raw = self.load_data(data_dir, 'train', True)
+    self.dev_raw = self.load_data(data_dir, 'dev', True)
+    self.test_raw = self.load_data(data_dir, 'test', True)
+
+    self.unique_cellid = {}
+    self.label_to_cellid = {}
+    self.cellid_to_label = {}
 
     # Get labels.
-    active_region = regions.get_region(region)
-    unique_cellid = gutil.cellids_from_polygon(active_region.polygon, s2level)
-    label_to_cellid = {idx: cellid for idx, cellid in enumerate(unique_cellid)}
-    cellid_to_label = {cellid: idx for idx, cellid in enumerate(unique_cellid)}
 
-    self.train = train_ds
-    self.dev = dev_ds
-    self.test = test_ds
-    self.unique_cellid = unique_cellid
-    self.label_to_cellid = label_to_cellid
-    self.cellid_to_label = cellid_to_label
+    self.set_cells(train_region, s2level, 'train')
+    self.set_cells(dev_region, s2level, 'dev')
+    self.set_cells(test_region, s2level, 'test')
+
 
   def load_data(self, data_dir: str, split: str, lines: bool):
     path_ds = os.path.join(data_dir, f'ds_{split}.json')

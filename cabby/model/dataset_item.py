@@ -139,23 +139,14 @@ class TextGeoDataset:
   def save(cls, dataset_text: Any, dataset_dir: Text):
     os.mkdir(dataset_dir)
 
-    train_path_dataset = os.path.join(dataset_dir, 'train.pth')
-    valid_path_dataset = os.path.join(dataset_dir, 'dev.pth')
-    test_path_dataset = os.path.join(dataset_dir, 'test.pth')
-    # unique_cellid_path = os.path.join(dataset_path, "unique_cellid.npy")
-    # tensor_cellid_path = os.path.join(dataset_path, "tensor_cellid.pth")
-    # label_to_cellid_path = os.path.join(dataset_path, "label_to_cellid.npy")
-    # coord_to_cellid_path = os.path.join(dataset_path, "coord_to_cellid.npy")
-    # graph_embed_size_path = os.path.join(dataset_path, "graph_embed_size.npy")
+    train_path_dataset = os.path.join(dataset_dir, f'{dataset_text.train_set.region}.pth')
+    valid_path_dataset = os.path.join(dataset_dir, f'{dataset_text.dev_set.region}.pth')
+    test_path_dataset = os.path.join(dataset_dir, f'{dataset_text.test_set.region}.pth')
+
 
     torch.save(dataset_text.train_set, train_path_dataset)
     torch.save(dataset_text.dev_set, valid_path_dataset)
     torch.save(dataset_text.test_set, test_path_dataset)
-    # np.save(unique_cellid_path, dataset_text.unique_cellids)
-    # torch.save(dataset_text.unique_cellids_binary, tensor_cellid_path)
-    # np.save(label_to_cellid_path, dataset_text.label_to_cellid)
-    # np.save(coord_to_cellid_path, dataset_text.coord_to_cellid)
-    # np.save(graph_embed_size_path, graph_embed_size)
 
     logging.info("Saved data to ==> {}.".format(dataset_dir))
 
@@ -238,14 +229,14 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.end_point = data.end_point.apply(
       lambda x: gutil.tuple_from_point(x)).tolist()
 
-    self.coords_end = data.cellid.apply(lambda x: self.cellid_to_coord[x]).tolist()
+    self.coords_end = data.cellid.apply(lambda x: util.get_valid_cell_label(self.cellid_to_coord, x)).tolist()
 
-    self.labels = data.cellid.apply(lambda x: cellid_to_label[x]).tolist()
+    self.labels = data.cellid.apply(lambda x: util.get_valid_cell_label(cellid_to_label, x)).tolist()
 
     self.start_cells = data.start_point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
 
-    self.coords_start = self.start_cells.apply(lambda x: self.cellid_to_coord[x]).tolist()
+    self.coords_start = self.start_cells.apply(lambda x: util.get_valid_cell_label(self.cellid_to_coord, x)).tolist()
 
     self.start_point_labels = self.get_cell_to_lablel(self.start_cells.tolist())
 
@@ -527,7 +518,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
       for c_list in list_cells:
         list_lables = []
         for c in c_list:
-          list_lables.append(self.cellid_to_coord[c])
+          list_lables.append(util.get_valid_cell_label(self.cellid_to_coord, c))
 
         labels.append('; '.join(list_lables))
 
