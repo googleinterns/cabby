@@ -101,24 +101,7 @@ class TextGeoDataset:
     path_dataset = os.path.join(dataset_dir, f'{set_type}.pth')
     data_set = torch.load(path_dataset)
     logging.info(f"Size of {set_type}-set: {len(data_set)}")
-    
-    # unique_cellid_path = os.path.join(dataset_dir, f"{set_type}_unique_cellid.npy")
-    # dataset_split.unique_cellids[set_type] = np.load(unique_cellid_path, allow_pickle='TRUE')
-
-    # tensor_cellid_path = os.path.join(dataset_dir, f"{set_type}_tensor_cellid.pth")
-    # dataset_split.dataset_splits[set_type].unique_cellids_binary = torch.load(tensor_cellid_path)
-
-    # label_to_cellid_path = os.path.join(dataset_dir, f"{set_type}_label_to_cellid.npy")
-    # dataset_split.label_to_cellid[set_type] = np.load(
-    #   label_to_cellid_path, allow_pickle='TRUE').item()
-
-    # coord_to_cellid_path = os.path.join(dataset_dir, f"{set_type}_coord_to_cellid.npy")
-    # dataset_split.coord_to_cellid[set_type] = np.load(coord_to_cellid_path, allow_pickle='TRUE').item()
-
-    # graph_embed_size_path = os.path.join(dataset_dir, f"{set_type}_graph_embed_size.npy")
-    # dataset_split.graph_embed_size[set_type] = np.load(graph_embed_size_path, allow_pickle='TRUE')
-    # logging.info(f"Loaded {set_type}-set with graph embedding size {dataset_split.graph_embed_size[set_type]}")
-
+ 
     return data_set
 
   @classmethod
@@ -128,20 +111,18 @@ class TextGeoDataset:
     if s2_level:
       dataset_dir = os.path.join(dataset_dir, str(s2_level))
     
-    train_set = cls.load_set(dataset_dir, 'train')
-    dev_set = cls.load_set(dataset_dir, 'dev')
-    test_set = cls.load_set(dataset_dir, 'test')
+    train_set = cls.load_set(dataset_dir, train_region.lower())
+    dev_set = cls.load_set(dataset_dir, dev_region.lower())
+    test_set = cls.load_set(dataset_dir, test_region.lower())
     return  cls.from_TextGeoSplit(train_set, dev_set, test_set)
-
-
 
   @classmethod
   def save(cls, dataset_text: Any, dataset_dir: Text):
     os.mkdir(dataset_dir)
 
-    train_path_dataset = os.path.join(dataset_dir, f'{dataset_text.train_set.region}.pth')
-    valid_path_dataset = os.path.join(dataset_dir, f'{dataset_text.dev_set.region}.pth')
-    test_path_dataset = os.path.join(dataset_dir, f'{dataset_text.test_set.region}.pth')
+    train_path_dataset = os.path.join(dataset_dir, f'{dataset_text.train_set.region.lower()}.pth')
+    valid_path_dataset = os.path.join(dataset_dir, f'{dataset_text.dev_set.region.lower()}.pth')
+    test_path_dataset = os.path.join(dataset_dir, f'{dataset_text.test_set.region.lower()}.pth')
 
 
     torch.save(dataset_text.train_set, train_path_dataset)
@@ -161,7 +142,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
   S2Cell id.
   """
 
-  def __init__(self, data: pd.DataFrame, s2level: int,
+  def __init__(self, region: str, data: pd.DataFrame, s2level: int,
                cellid_to_label: Dict[int, int],
                unique_cellids: List[int],
                model_type: str, dprob: util.DistanceProbability,
@@ -171,7 +152,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
                graph_embed_file:Any = None, is_dist: Boolean = False
                ):
 
-
+    self.region = region
     self.cellid_to_label = cellid_to_label
     self.s2level = s2level
     self.is_dist = is_dist
