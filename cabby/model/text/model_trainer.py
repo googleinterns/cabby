@@ -158,6 +158,11 @@ flags.mark_flag_as_required("s2_level")
 
 
 def main(argv):
+
+  logging.info('parameter values:')
+  for name in FLAGS:
+    logging.info(f'  {name}: {getattr(FLAGS, name)}')
+    
   if not os.path.exists(FLAGS.dataset_dir):
     sys.exit("Dataset path doesn't exist: {}.".format(FLAGS.dataset_dir))
 
