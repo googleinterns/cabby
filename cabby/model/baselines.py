@@ -89,10 +89,10 @@ def main(argv):
   )
 
 
-  end_points = dataset.test.end_point.apply(gutil.list_yx_from_point).tolist()
-  start_point = dataset.test.start_point.apply(gutil.list_yx_from_point).tolist()
+  end_points = dataset.test_raw.end_point.apply(gutil.list_yx_from_point).tolist()
+  start_point = dataset.test_raw.start_point.apply(gutil.list_yx_from_point).tolist()
 
-  logging.info(f"dataset.test.end_point.tolist(): {dataset.test.end_point.tolist()[0]}")
+  logging.info(f"size of test: {dataset.test_raw.end_point.tolist()[0]}")
   util.save_metrics_last_only(
     metrics_path,
     end_points,

@@ -24,6 +24,8 @@ from vector_quantize_pytorch import VectorQuantize
 from transformers import ViTForMaskedImageModeling
 
 from typing import Dict, Sequence
+import re
+
 
 from cabby.model import util as mutil
 from cabby.geo import util as gutil
@@ -31,7 +33,6 @@ from cabby.geo import util as gutil
 T5_TYPE = "t5-small"
 T5_DIM = 512 if T5_TYPE == "t5-small" else 768
 BERT_TYPE = "distilbert-base-uncased"
-N_TOKEN = 1024
 
 criterion = nn.CosineEmbeddingLoss()
 
@@ -150,8 +151,9 @@ class S2GenerationModel(GeneralModel):
     self,
     label_to_cellid,
     device,
+    graph_codebook,
     model_type='S2-Generation-T5',
-    vq_dim=224
+    vq_dim=224,
   ):
     GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
@@ -160,15 +162,17 @@ class S2GenerationModel(GeneralModel):
     self.label_to_cellid = label_to_cellid
     self.model_type = model_type
     self.max_size = len(str(len(label_to_cellid)))
+    self.graph_codebook = graph_codebook
 
     self.decoder = ViTForMaskedImageModeling.from_pretrained("google/vit-base-patch16-224-in21k")
     self.num_patches = (self.decoder.config.image_size // self.decoder.config.patch_size) ** 2
     self.discriminator = Discriminator()
     self.vq_dim = vq_dim
+    logging.info(f"Vector quantization size {vq_dim}")
 
     self.vq = VectorQuantize(
       dim=vq_dim,
-      codebook_size=N_TOKEN,
+      codebook_size=graph_codebook,
       codebook_dim=16,
       decay = 0.8,             # the exponential moving average decay, lower means the dictionary will change faster
       commitment_weight = 1.   # the weight on the commitment loss
@@ -183,7 +187,7 @@ class S2GenerationModel(GeneralModel):
       self.original_size_tokenizer = len(self.tokenizer)
       logging.info(f"Size of tokenizer before resized: {self.original_size_tokenizer}")
 
-      add_tokens = [f"GRAPH_{t}" for t in range(N_TOKEN)]
+      add_tokens = [f"GRAPH_{t}" for t in range(self.graph_codebook)]
       self.tokenizer.add_tokens(add_tokens)
       self.model.resize_token_embeddings(len(self.tokenizer))
       logging.info(f"Resized tokenizer to: {len(self.tokenizer)}")
@@ -215,9 +219,9 @@ class S2GenerationModel(GeneralModel):
     text_dim = text['input_ids'].shape[0]
     return text_dim, text, cellid
 
-  def predict(self, text, is_print, *args):
+  def predict(self, text, is_print, cells_tensor, label_to_cellid, batch):
 
-    batch = args[-1]
+    # batch = args[-1]
 
     input_ids, attention_mask, _ = self.get_input_output(batch, text)
 
@@ -239,7 +243,7 @@ class S2GenerationModel(GeneralModel):
         min_length=1,
       )
 
-      add_tokens = [f"GRAPH_{t}" for t in range(N_TOKEN)]
+      add_tokens = [f"GRAPH_{t}" for t in range(self.graph_codebook)]
       self.tokenizer.add_tokens(add_tokens)
       self.model.resize_token_embeddings(len(self.tokenizer))
 
@@ -249,28 +253,40 @@ class S2GenerationModel(GeneralModel):
     if is_print:
       logging.info(f"Actual prediction decoded: {prediction[0]}")
 
-    prediction_cellids = []
+    prediction_coords = []
 
-    for pred_raw in prediction:
+    pattern = r'loc_\d+ loc_\d+'
+
+    start_list = batch['start_point'].squeeze().detach().cpu().tolist()
+
+    for pred_raw, start_point in zip(prediction, start_list):
 
       coord = pred_raw.split(";")[0].strip()
-      if coord in self.label_to_cellid:
-        cell_id = self.label_to_cellid[coord]
+      
+      try:
+        coord_regex = re.findall(pattern, coord)[0]
+      except:
+        coord_regex = coord
+
+      if coord_regex in label_to_cellid:
+        cell_id = label_to_cellid[coord_regex]
+        prediction_coords.append(gutil.get_center_from_s2cellids([cell_id])[0])
       else:
-        first_key = list(self.label_to_cellid.keys())[0]
-        cell_id = self.label_to_cellid[first_key]
-      prediction_cellids.append(cell_id)
+        # logging.info(pred_raw)
+        # logging.info(f"!!!! coord not in dict: {coord_regex}")
+        # logging.info(list(label_to_cellid.keys())[-1])
+        # logging.info(f"start_point: {start_point} {type(start_point)}")
+        # logging.info(f"apposed to: {prediction_coords[0]} {type(prediction_coords[0])}")
+        prediction_coords.append(start_point)
 
-    prediction_coords = gutil.get_center_from_s2cellids(prediction_cellids)
-
-    return prediction_coords
+    return np.array(prediction_coords)
 
   def get_vg(self, graph_embed):
     quantized, indices, vq_loss = self.vq(graph_embed)  # (1, 1024, 256), (1, 1024), (1)
 
-    assert torch.max(indices)<N_TOKEN, indices
+    assert torch.max(indices)<self.graph_codebook, indices
     indices += self.original_size_tokenizer
-    assert torch.max(indices)<N_TOKEN+self.original_size_tokenizer , indices
+    assert torch.max(indices)<self.graph_codebook+self.original_size_tokenizer , indices
 
     return quantized, indices, vq_loss
 

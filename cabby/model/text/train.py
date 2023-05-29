@@ -88,6 +88,7 @@ class Trainer:
     # Validation loop.
     true_points_list, pred_points_list = [], []
     predictions_list, true_vals = [], []
+    start_points_list = []
     correct = 0
     total = 0
     loss_val_total = 0
@@ -120,14 +121,17 @@ class Trainer:
         labels = batch['label'].cpu()
         true_vals.append(labels)
         true_points_list.append(batch['end_point'].cpu())
+        start_points_list.append(batch['start_point'].cpu())
+
 
     true_points_list = np.concatenate(true_points_list, axis=0)
+    start_points_list = np.concatenate(start_points_list, axis=0)
     pred_points_list = np.concatenate(predictions_list, axis=0)
     true_vals = np.concatenate(true_vals, axis=0)
     average_valid_loss = loss_val_total / len(data_loader)
 
     return (average_valid_loss, predictions_list, true_vals,
-            true_points_list, pred_points_list)
+            true_points_list, pred_points_list, start_points_list)
 
   def train_model(self):
 
@@ -137,6 +141,7 @@ class Trainer:
 
     # Training loop.
     self.model.train()
+    evaluator = eu.Evaluator()
 
     for epoch in range(self.num_epochs):
       running_loss = 0.0
@@ -168,9 +173,19 @@ class Trainer:
 
         if self.is_single_sample_train:
           break
-
       # Evaluation step.
-      valid_loss, predictions, true_vals, true_points, pred_points = self.evaluate()
+
+      valid_loss, predictions, true_vals, true_points, pred_points, start_points = self.evaluate()
+
+      # util.save_metrics_last_only(
+      # self.metrics_path,
+      # true_points,
+      # pred_points,
+      # start_points)
+
+      # error_distances = evaluator.get_error_distances(self.metrics_path)
+      # evaluator.compute_metrics(error_distances)
+
 
       average_train_loss = running_loss / (batch_idx + 1)
 
@@ -202,15 +217,15 @@ class Trainer:
 
     logging.info('Start testing.')
 
-    test_loss, predictions, true_vals, true_points, pred_points = self.evaluate(
+    test_loss, predictions, true_vals, true_points, pred_points, start_points = self.evaluate(
       validation_set=False)
 
     util.save_metrics_last_only(
       self.metrics_path,
       true_points,
-      pred_points)
+      pred_points,
+      start_points)
 
-    evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(self.metrics_path)
     evaluator.compute_metrics(error_distances)
 
