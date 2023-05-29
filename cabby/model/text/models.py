@@ -272,11 +272,6 @@ class S2GenerationModel(GeneralModel):
         cell_id = label_to_cellid[coord_regex]
         prediction_coords.append(gutil.get_center_from_s2cellids([cell_id])[0])
       else:
-        # logging.info(pred_raw)
-        # logging.info(f"!!!! coord not in dict: {coord_regex}")
-        # logging.info(list(label_to_cellid.keys())[-1])
-        # logging.info(f"start_point: {start_point} {type(start_point)}")
-        # logging.info(f"apposed to: {prediction_coords[0]} {type(prediction_coords[0])}")
         prediction_coords.append(start_point)
 
     return np.array(prediction_coords)
