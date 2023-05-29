@@ -368,7 +368,7 @@ class RVSDataset(Dataset):
     ds = pd.read_json(path_ds, lines=lines)
     max_sample = 10000 if ds.shape[0]>10000 else ds.shape[0]
     ds = ds.iloc[:max_sample]
-    logging.info(f"!!!!!!!!!!!!!!!!!!!!!!!!!{split}-set size {ds.shape[0]}")
+    logging.info(f"{split}-set size {ds.shape[0]}")
 
     if 'geo_landmarks' in ds:
       ds['landmarks'] = ds.apply(self.process_landmarks, axis=1)

@@ -117,29 +117,9 @@ class TextGeoDataset:
       dataset_dir = os.path.join(dataset_dir, str(s2_level))
     
     train_set = cls.load_set(dataset_dir, train_region.lower())
-    logging.info(f"Number of cells in the train region: {len(train_set.cellid_to_label)}")
-    
-    active_region = regions.get_region(train_region)
-    area = abs(geod.geometry_area_perimeter(active_region.polygon)[0])
-    logging.info('Train region area: {:.3f} m^2'.format(area))
-
     dev_set = cls.load_set(dataset_dir, dev_region.lower())
-    logging.info(f"Number of cells in the development region: {len(dev_set.cellid_to_label)}")
-
-    active_region = regions.get_region(dev_region)
-    area = abs(geod.geometry_area_perimeter(active_region.polygon)[0])
-    logging.info('Development region area: {:.3f} m^2'.format(area))
-
     test_set = cls.load_set(dataset_dir, test_region.lower())
-    logging.info(f"Number of cells in the test region: {len(test_set.cellid_to_label)}")
-    
-    active_region = regions.get_region(test_region)
-    area = abs(geod.geometry_area_perimeter(active_region.polygon)[0])
-    logging.info('Test region area: {:.3f} m^2'.format(area))
-
-
     return  cls.from_TextGeoSplit(train_set, dev_set, test_set)
-
 
   @classmethod
   def save(cls, dataset_text: Any, dataset_dir: Text):
@@ -176,8 +156,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
                graph_embed_size: int,
                graph_embed_file:Any = None, is_dist: Boolean = False
                ):
-
-    logging.info(f"Creating dataset for {region}")
 
     self.region = region
     self.cellid_to_label = cellid_to_label
