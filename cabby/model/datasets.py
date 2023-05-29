@@ -141,6 +141,7 @@ class Dataset:
     logging.info("Starting to create the splits")
     if infer_only == False:
       train_set = dataset_item.TextGeoSplit(
+        region=self.train_region,
         set_type='train',
         unique_cellids = self.unique_cellids['train'],
         data=self.train_raw, 
@@ -156,6 +157,7 @@ class Dataset:
         f"Finished to create the train-set with {len(train_set)} samples")
       
       dev_set = dataset_item.TextGeoSplit(
+        region=self.dev_region,
         set_type='dev',
         unique_cellids = self.unique_cellids['dev'],
         data=self.dev_raw, 
@@ -171,6 +173,7 @@ class Dataset:
         f"Finished to create the dev-set with {len(dev_set)} samples")
 
     test_set = dataset_item.TextGeoSplit(
+      region=self.test_region,
       set_type='test',
       unique_cellids = self.unique_cellids['test'],
       data=self.test_raw, 
@@ -219,9 +222,9 @@ class HumanDataset(Dataset):
     Dataset.__init__(
       self, data_dir, s2level, train_region, dev_region, test_region, 
       model_type, n_fixed_points, train_graph_embed_path, dev_graph_embed_path, test_graph_embed_path)
-    self.train_raw = self.load_data(data_dir, 'train', lines=True)
-    self.dev_raw = self.load_data(data_dir, 'dev', lines=True)
-    self.test_raw = self.load_data(data_dir, 'test', lines=True)
+    self.train_raw = self.load_data(data_dir, train_region.lower(), lines=True)
+    self.dev_raw = self.load_data(data_dir, dev_region.lower(), lines=True)
+    self.test_raw = self.load_data(data_dir, test_region.lower(), lines=True)
 
     self.unique_cellid = {}
     self.label_to_cellid = {}
@@ -344,9 +347,9 @@ class RVSDataset(Dataset):
     Dataset.__init__(
       self, data_dir, s2level, train_region, dev_region, test_region, 
       model_type, n_fixed_points, train_graph_embed_path, dev_graph_embed_path, test_graph_embed_path)
-    self.train_raw = self.load_data(data_dir, 'train', True)
-    self.dev_raw = self.load_data(data_dir, 'dev', True)
-    self.test_raw = self.load_data(data_dir, 'test', True)
+    self.train_raw = self.load_data(data_dir, train_region.lower(), lines=True)
+    self.dev_raw = self.load_data(data_dir, dev_region.lower(), lines=True)
+    self.test_raw = self.load_data(data_dir, test_region.lower(), lines=True)
 
     self.unique_cellid = {}
     self.label_to_cellid = {}
@@ -363,6 +366,9 @@ class RVSDataset(Dataset):
     path_ds = os.path.join(data_dir, f'ds_{split}.json')
     assert os.path.exists(path_ds), path_ds
     ds = pd.read_json(path_ds, lines=lines)
+    max_sample = 10000 if ds.shape[0]>10000 else ds.shape[0]
+    ds = ds.iloc[:max_sample]
+    logging.info(f"!!!!!!!!!!!!!!!!!!!!!!!!!{split}-set size {ds.shape[0]}")
 
     if 'geo_landmarks' in ds:
       ds['landmarks'] = ds.apply(self.process_landmarks, axis=1)

@@ -148,6 +148,11 @@ flags.DEFINE_bool(
     'Add probability over cells according to the distance from start point.' +
     'This is optional only for RVS and RUN.'))
 
+flags.DEFINE_integer(
+  'graph_codebook', default=1024,
+  help=('graph quantization'))
+
+
 # Required flags.
 flags.mark_flag_as_required("data_dir")
 flags.mark_flag_as_required("dataset_dir")
@@ -158,6 +163,11 @@ flags.mark_flag_as_required("s2_level")
 
 
 def main(argv):
+
+  logging.info('parameter values:')
+  for name in FLAGS:
+    logging.info(f'  {name}: {getattr(FLAGS, name)}')
+    
   if not os.path.exists(FLAGS.dataset_dir):
     sys.exit("Dataset path doesn't exist: {}.".format(FLAGS.dataset_dir))
 
@@ -233,8 +243,9 @@ def main(argv):
       device=device, is_distance_distribution=FLAGS.is_distance_distribution)
   elif 'T5' in FLAGS.model:
     run_model = models.S2GenerationModel(
-      dataset_text.test_set.coord_to_cellid, device=device, model_type=FLAGS.model,
-      vq_dim=dataset_text.train_set.graph_embed_size)
+      label_to_cellid=dataset_text.test_set.coord_to_cellid, device=device, model_type=FLAGS.model,
+      vq_dim=dataset_text.train_set.graph_embed_size,
+      graph_codebook=FLAGS.graph_codebook)
   elif FLAGS.model == 'Classification-Bert':
     n_cells = len(dataset_text.test_set.unique_cellids)
     run_model = models.ClassificationModel(n_cells, device=device)
@@ -273,8 +284,8 @@ def main(argv):
     file_path=FLAGS.output_dir,
     cells_tensor_dev=dataset_text.dev_set.unique_cellids_binary,
     cells_tensor_test=dataset_text.test_set.unique_cellids_binary,
-    label_to_cellid_dev=dataset_text.dev_set.label_to_cellid,
-    label_to_cellid_test=dataset_text.test_set.label_to_cellid,
+    label_to_cellid_dev=dataset_text.dev_set.coord_to_cellid,
+    label_to_cellid_test=dataset_text.test_set.coord_to_cellid,
     best_valid_loss=run_model.best_valid_loss,
     is_single_sample_train=FLAGS.is_single_sample_train
   )

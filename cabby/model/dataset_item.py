@@ -16,6 +16,7 @@
 from xmlrpc.client import Boolean
 from absl import logging
 import geopandas as gpd
+from pyproj import Geod
 from geopandas import GeoDataFrame, GeoSeries
 import numpy as np
 import os
@@ -34,6 +35,7 @@ import mapply
 
 import attr
 
+from cabby.geo import regions
 from cabby.geo import util as gutil
 from cabby.model import util
 
@@ -45,6 +47,9 @@ mapply.init(
 )
 T5_TYPE = "t5-small"
 BERT_TYPE = 'distilbert-base-uncased'
+
+geod = Geod(ellps="WGS84")
+
 
 MODELS = [
   'Dual-Encoder-Bert',
@@ -101,24 +106,7 @@ class TextGeoDataset:
     path_dataset = os.path.join(dataset_dir, f'{set_type}.pth')
     data_set = torch.load(path_dataset)
     logging.info(f"Size of {set_type}-set: {len(data_set)}")
-    
-    # unique_cellid_path = os.path.join(dataset_dir, f"{set_type}_unique_cellid.npy")
-    # dataset_split.unique_cellids[set_type] = np.load(unique_cellid_path, allow_pickle='TRUE')
-
-    # tensor_cellid_path = os.path.join(dataset_dir, f"{set_type}_tensor_cellid.pth")
-    # dataset_split.dataset_splits[set_type].unique_cellids_binary = torch.load(tensor_cellid_path)
-
-    # label_to_cellid_path = os.path.join(dataset_dir, f"{set_type}_label_to_cellid.npy")
-    # dataset_split.label_to_cellid[set_type] = np.load(
-    #   label_to_cellid_path, allow_pickle='TRUE').item()
-
-    # coord_to_cellid_path = os.path.join(dataset_dir, f"{set_type}_coord_to_cellid.npy")
-    # dataset_split.coord_to_cellid[set_type] = np.load(coord_to_cellid_path, allow_pickle='TRUE').item()
-
-    # graph_embed_size_path = os.path.join(dataset_dir, f"{set_type}_graph_embed_size.npy")
-    # dataset_split.graph_embed_size[set_type] = np.load(graph_embed_size_path, allow_pickle='TRUE')
-    # logging.info(f"Loaded {set_type}-set with graph embedding size {dataset_split.graph_embed_size[set_type]}")
-
+ 
     return data_set
 
   @classmethod
@@ -128,20 +116,38 @@ class TextGeoDataset:
     if s2_level:
       dataset_dir = os.path.join(dataset_dir, str(s2_level))
     
-    train_set = cls.load_set(dataset_dir, 'train')
-    dev_set = cls.load_set(dataset_dir, 'dev')
-    test_set = cls.load_set(dataset_dir, 'test')
-    return  cls.from_TextGeoSplit(train_set, dev_set, test_set)
+    train_set = cls.load_set(dataset_dir, train_region.lower())
+    logging.info(f"Number of cells in the train region: {len(train_set.cellid_to_label)}")
+    
+    active_region = regions.get_region(train_region)
+    area = abs(geod.geometry_area_perimeter(active_region.polygon)[0])
+    logging.info('Train region area: {:.3f} m^2'.format(area))
 
+    dev_set = cls.load_set(dataset_dir, dev_region.lower())
+    logging.info(f"Number of cells in the development region: {len(dev_set.cellid_to_label)}")
+
+    active_region = regions.get_region(dev_region)
+    area = abs(geod.geometry_area_perimeter(active_region.polygon)[0])
+    logging.info('Development region area: {:.3f} m^2'.format(area))
+
+    test_set = cls.load_set(dataset_dir, test_region.lower())
+    logging.info(f"Number of cells in the test region: {len(test_set.cellid_to_label)}")
+    
+    active_region = regions.get_region(test_region)
+    area = abs(geod.geometry_area_perimeter(active_region.polygon)[0])
+    logging.info('Test region area: {:.3f} m^2'.format(area))
+
+
+    return  cls.from_TextGeoSplit(train_set, dev_set, test_set)
 
 
   @classmethod
   def save(cls, dataset_text: Any, dataset_dir: Text):
     os.mkdir(dataset_dir)
 
-    train_path_dataset = os.path.join(dataset_dir, f'{dataset_text.train_set.region}.pth')
-    valid_path_dataset = os.path.join(dataset_dir, f'{dataset_text.dev_set.region}.pth')
-    test_path_dataset = os.path.join(dataset_dir, f'{dataset_text.test_set.region}.pth')
+    train_path_dataset = os.path.join(dataset_dir, f'{dataset_text.train_set.region.lower()}.pth')
+    valid_path_dataset = os.path.join(dataset_dir, f'{dataset_text.dev_set.region.lower()}.pth')
+    test_path_dataset = os.path.join(dataset_dir, f'{dataset_text.test_set.region.lower()}.pth')
 
 
     torch.save(dataset_text.train_set, train_path_dataset)
@@ -161,7 +167,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
   S2Cell id.
   """
 
-  def __init__(self, data: pd.DataFrame, s2level: int,
+  def __init__(self, region: str, data: pd.DataFrame, s2level: int,
                cellid_to_label: Dict[int, int],
                unique_cellids: List[int],
                model_type: str, dprob: util.DistanceProbability,
@@ -171,7 +177,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
                graph_embed_file:Any = None, is_dist: Boolean = False
                ):
 
+    logging.info(f"Creating dataset for {region}")
 
+    self.region = region
     self.cellid_to_label = cellid_to_label
     self.s2level = s2level
     self.is_dist = is_dist
@@ -229,12 +237,17 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.end_point = data.end_point.apply(
       lambda x: gutil.tuple_from_point(x)).tolist()
 
+    self.start_point = data.start_point.apply(
+      lambda x: gutil.tuple_from_point(x)).tolist()
+
     self.coords_end = data.cellid.apply(lambda x: util.get_valid_cell_label(self.cellid_to_coord, x)).tolist()
 
     self.labels = data.cellid.apply(lambda x: util.get_valid_cell_label(cellid_to_label, x)).tolist()
 
     self.start_cells = data.start_point.apply(
       lambda x: gutil.cellid_from_point(x, s2level))
+
+    self.start_cells_list = self.start_cells.tolist()
 
     self.coords_start = self.start_cells.apply(lambda x: util.get_valid_cell_label(self.cellid_to_coord, x)).tolist()
 
@@ -309,10 +322,6 @@ class TextGeoSplit(torch.utils.data.Dataset):
     self.set_generation_model(data)
     self.data = data
 
-
-    # del self.start_point_cells
-    del self.s2_tokenizer
-    del self.text_tokenizer
 
 
 
@@ -481,6 +490,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
     min_y = min(cellid_to_coord.items(), key=lambda x: x[1][1])[1][1]
 
     assert min_x >= 0 and min_y >= 0
+
+    max_x = max(cellid_to_coord.items(), key=lambda x: x[1][0])[1][0]
+    max_y = max(cellid_to_coord.items(), key=lambda x: x[1][1])[1][1]
+
+    logging.info(f"Grid axis: X: 0-{max_x} / Y: 0-{max_y}")
 
     coord_format_to_cellid = {coord_format(coord): cellid for cellid, coord in cellid_to_coord.items()}
     cellid_to_coord_format = {cellid: coord_format(coord) for cellid, coord in cellid_to_coord.items()}
@@ -694,6 +708,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
     neighbor_cells = torch.tensor(self.neighbor_cells[idx])
     far_cells = torch.tensor(self.far_cells[idx])
     end_point = torch.tensor(self.end_point[idx])
+    start_point = torch.tensor(self.start_point[idx])
 
     label = torch.tensor(self.labels[idx])
 
@@ -714,11 +729,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     text_output = torch.tensor(self.text_output_tokenized[idx])
 
-
-    sample = {'text': text_input, 'cellid': cellid,
-              'neighbor_cells': neighbor_cells,
-              'far_cells': far_cells, 'end_point': end_point, 'label': label,
-              'prob': prob, 'text_output': text_output, 'graph_embed_start': graph_embed_start
+    sample = {'text': text_input, 'cellid': cellid, 
+              'neighbor_cells': neighbor_cells, 'far_cells': far_cells, 
+              'end_point': end_point, 'start_point': start_point, 'label': label, 'prob': prob, 
+              'text_output': text_output, 'graph_embed_start': graph_embed_start
               }
 
     return sample
