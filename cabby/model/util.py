@@ -129,6 +129,7 @@ def load_checkpoint(load_path: Text, model:  torch.nn.Module,
     return
 
   state_dict = torch.load(load_path, map_location=device)
+      
 
   if isinstance(model, nn.DataParallel):
     model.module.load_state_dict(state_dict['model_state_dict'])
@@ -144,16 +145,24 @@ def load_checkpoint(load_path: Text, model:  torch.nn.Module,
 
 def save_metrics_last_only(save_path: Text,
          true_points_list: Sequence[Tuple[float, float]],
-         pred_points_list: Sequence[Tuple[float, float]]):
+         pred_points_list: Sequence[Tuple[float, float]],
+         start_points_list: Sequence[Tuple[float, float]] = list()):
   '''Function for saving results.'''
 
   if save_path == None:
     return
+
+  assert len(true_points_list) == len(pred_points_list)
+  assert len(true_points_list) == len(start_points_list)
+
   state_dict = {
           'true_points_lat': [lat for lat, lon in true_points_list],
           'true_points_lon': [lon for lat, lon in true_points_list],
           'pred_points_lat': [lat for lat, lon in pred_points_list],
           'pred_points_lon': [lon for lat, lon in pred_points_list],
+          'start_point_lat': [lat for lat, lon in start_points_list],
+          'start_point_lon': [lon for lat, lon in start_points_list],
+
   }
 
   state_df = pd.DataFrame(state_dict)

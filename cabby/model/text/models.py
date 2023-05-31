@@ -167,11 +167,12 @@ class S2GenerationModel(GeneralModel):
     self.decoder = ViTForMaskedImageModeling.from_pretrained("google/vit-base-patch16-224-in21k")
     self.num_patches = (self.decoder.config.image_size // self.decoder.config.patch_size) ** 2
     self.discriminator = Discriminator()
-    self.vq_dim = vq_dim
-    logging.info(f"Vector quantization size {vq_dim}")
+    self.vq_dim = vq_dim if graph_codebook else 0
+    logging.info(f"Vector quantization size {self.vq_dim}")
+
 
     self.vq = VectorQuantize(
-      dim=vq_dim,
+      dim=self.vq_dim,
       codebook_size=graph_codebook,
       codebook_dim=16,
       decay = 0.8,             # the exponential moving average decay, lower means the dictionary will change faster

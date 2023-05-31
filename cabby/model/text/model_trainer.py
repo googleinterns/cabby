@@ -149,7 +149,7 @@ flags.DEFINE_bool(
     'This is optional only for RVS and RUN.'))
 
 flags.DEFINE_integer(
-  'graph_codebook', default=1024,
+  'graph_codebook', default=0,
   help=('graph quantization'))
 
 
