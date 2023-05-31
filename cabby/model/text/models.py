@@ -21,7 +21,6 @@ import torch.nn as nn
 from transformers import DistilBertModel, DistilBertForSequenceClassification
 from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model
 from vector_quantize_pytorch import VectorQuantize
-from transformers import ViTForMaskedImageModeling
 
 from typing import Dict, Sequence
 import re
@@ -91,6 +90,7 @@ class DualEncoder(GeneralModel):
 
     return text_embedding.shape[0], text_embedding, cellid_embedding
 
+
   def predict(self, text, is_print, all_cells, *args):
     batch = args[1]
     batch_dim, text_embedding_exp, cellid_embedding = self.get_embed(text, all_cells)
@@ -151,9 +151,9 @@ class S2GenerationModel(GeneralModel):
     self,
     label_to_cellid,
     device,
-    graph_codebook,
     model_type='S2-Generation-T5',
     vq_dim=224,
+    graph_codebook=1024,
   ):
     GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
@@ -164,15 +164,11 @@ class S2GenerationModel(GeneralModel):
     self.max_size = len(str(len(label_to_cellid)))
     self.graph_codebook = graph_codebook
 
-    self.decoder = ViTForMaskedImageModeling.from_pretrained("google/vit-base-patch16-224-in21k")
-    self.num_patches = (self.decoder.config.image_size // self.decoder.config.patch_size) ** 2
-    self.discriminator = Discriminator()
-    self.vq_dim = vq_dim if graph_codebook else 0
-    logging.info(f"Vector quantization size {self.vq_dim}")
-
+    self.vq_dim = vq_dim
+    logging.info(f"Vector quantization size {vq_dim}")
 
     self.vq = VectorQuantize(
-      dim=self.vq_dim,
+      dim=vq_dim,
       codebook_size=graph_codebook,
       codebook_dim=16,
       decay = 0.8,             # the exponential moving average decay, lower means the dictionary will change faster
@@ -220,9 +216,8 @@ class S2GenerationModel(GeneralModel):
     text_dim = text['input_ids'].shape[0]
     return text_dim, text, cellid
 
-  def predict(self, text, is_print, cells_tensor, label_to_cellid, batch):
 
-    # batch = args[-1]
+  def predict(self, text, is_print, cells_tensor, label_to_cellid, batch):
 
     input_ids, attention_mask, _ = self.get_input_output(batch, text)
 
@@ -273,6 +268,7 @@ class S2GenerationModel(GeneralModel):
         cell_id = label_to_cellid[coord_regex]
         prediction_coords.append(gutil.get_center_from_s2cellids([cell_id])[0])
       else:
+        logging.info("Used start point in model pred")
         prediction_coords.append(start_point)
 
     return np.array(prediction_coords)
@@ -302,34 +298,13 @@ class S2GenerationModel(GeneralModel):
 
     graph_embed_start = batch['graph_embed_start']
 
-    graph_size = graph_embed_start.shape[-1]
-    batch_size = graph_embed_start.shape[0]
-
-    final_input, quantized, vq_loss = self.get_input_indices_for_embedding(
+    final_input, _, vq_loss = self.get_input_indices_for_embedding(
       graph_embed_start, text_input)
-
-    graph_embed_fake = torch.randn(batch_size, graph_size).to(self.device)
-
-    _, quantized_fake, vq_loss_fake = self.get_input_indices_for_embedding(
-      graph_embed_fake, text_input)
-
-    bool_masked_pos = torch.randint(
-      low=0, high=1, size=(1, self.num_patches)).bool().to(self.device)
-    decoded_output = self.decoder(
-      quantized.unsqueeze(1).expand(-1, 3, quantized.shape[-1], -1), bool_masked_pos=bool_masked_pos)
-
-    decoded_output_fake = self.decoder(quantized_fake.unsqueeze(1).expand(-1, 3, quantized_fake.shape[-1], -1),
-                                       bool_masked_pos=bool_masked_pos)
-
-    discriminator_true = self.discriminator(decoded_output.logits).squeeze(0)
-    discriminator_fake = self.discriminator(decoded_output_fake.logits).squeeze(0)
-
-    loss_D = hinge_loss_dis(discriminator_fake, discriminator_true)
 
     loss_t5 = self.model(
       input_ids=final_input, labels=labels, return_dict=True).loss
 
-    all_loss = vq_loss + decoded_output.loss + loss_t5 + loss_D
+    all_loss = vq_loss + loss_t5 
 
     return all_loss, final_input
 
@@ -373,36 +348,3 @@ class ClassificationModel(GeneralModel):
     points = mutil.predictions_to_points(predictions, label_to_cellid)
     return points
 
-
-
-def hinge_loss_dis(fake, real):
-  # assert fake.dim() == 2 and fake.shape[1] == 1 and real.shape == fake.shape, f'{fake.shape} {real.shape}'
-  loss = torch.nn.functional.relu(1.0 - real).mean() + \
-         torch.nn.functional.relu(1.0 + fake).mean()
-  return loss.mean()
-
-class Discriminator(torch.nn.Module):
-    # Adapted from https://github.com/christiancosgrove/pytorch-spectral-normalization-gan
-    def __init__(self, sn=True):
-        super(Discriminator, self).__init__()
-        sn_fn = torch.nn.utils.spectral_norm if sn else lambda x: x
-        self.conv1 = sn_fn(torch.nn.Conv2d(3, 64, 3, stride=1, padding=(1,1)))
-        self.conv2 = sn_fn(torch.nn.Conv2d(64, 64, 4, stride=2, padding=(1,1)))
-        self.conv3 = sn_fn(torch.nn.Conv2d(64, 128, 3, stride=1, padding=(1,1)))
-        self.conv4 = sn_fn(torch.nn.Conv2d(128, 128, 4, stride=2, padding=(1,1)))
-        self.conv5 = sn_fn(torch.nn.Conv2d(128, 256, 3, stride=1, padding=(1,1)))
-        self.conv6 = sn_fn(torch.nn.Conv2d(256, 256, 4, stride=2, padding=(1,1)))
-        self.conv7 = sn_fn(torch.nn.Conv2d(256, 512, 3, stride=1, padding=(1,1)))
-        self.fc = sn_fn(torch.nn.Linear(4 * 4 * 512, 1))
-        self.act = torch.nn.LeakyReLU(0.1)
-
-    def forward(self, x):
-        m = self.act(self.conv1(x))
-        m = self.act(self.conv2(m))
-        m = self.act(self.conv3(m))
-        m = self.act(self.conv4(m))
-        m = self.act(self.conv5(m))
-        m = self.act(self.conv6(m))
-        m = self.act(self.conv7(m))
-
-        return self.fc(m.reshape(m.shape[0],-1, 4 * 4 * 512))
