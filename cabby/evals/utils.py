@@ -56,9 +56,10 @@ class Evaluator:
     """
     error_distances = []
     total_examples = 0
+    self.eval_logger.info(f"Opening file <= {input_file}")
     for line in open(input_file):
       toks = line.strip().split("\t")
-      if len(toks) != 5:
+      if len(toks) != 7:
         self.eval_logger.warning(
           "Unexpected line format: [%s]. Skipping", line)
         continue
@@ -78,6 +79,7 @@ class Evaluator:
         eval_logger: Logger object.
     """
     num_examples = len(error_distances)
+    self.eval_logger.info(f"Started evaluation with {num_examples} samples") 
     if num_examples == 0:
       self.eval_logger.error("No examples to be evaluated.")
     accuracy = float(
