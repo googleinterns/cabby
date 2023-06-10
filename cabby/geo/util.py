@@ -28,6 +28,12 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry.multipolygon import MultiPolygon
 from shapely.geometry import box, mapping, LineString, LinearRing
 from shapely.geometry.base import BaseGeometry
+
+import pyproj
+from functools import partial
+
+from shapely.ops import transform
+
 from absl import logging
 
 import sys
@@ -87,8 +93,11 @@ def neighbor_cellid(cellid: int, celllist: Optional[List[int]]) -> int:
   Returns:
     A cellid of a neighbor cell.
   '''
-
-  cell = s2.S2CellId(cellid)
+  try:
+    cell = s2.S2CellId(int(cellid))
+  except:
+    logging.info(f"problem with creating S2CellId for {cellid} {type(cellid)}")
+    logging.info(f"center: {get_center_from_s2cellids([cellid][0])}")
 
   four_neighbors = cell.GetEdgeNeighbors()
   if not celllist:
@@ -339,6 +348,8 @@ def cellid_from_point(point: Point, level: int) -> int:
   if cellids is None:
     sys.exit("S2cellid covering failed because the point is a None.")
   cellid = cellids[0]
+  if cellid.id()<0:
+    logging.info(f"cell id: {cellid.id()} for point: {list_xy_from_point(point)}")
   return cellid.id()
 
 
@@ -639,6 +650,61 @@ def get_centers_from_s2cellids(
     lng = s2_latlng.lng().degrees()
     prediction_coords.append(Point(lng, lat))
   return prediction_coords
+
+
+def get_circle(point, radius):
+    
+  lat, lon = point.y, point.x
+  local_azimuthal_projection = "+proj=aeqd +R=6371000 +units=m +lat_0={} +lon_0={}".format(
+      lat, lon
+  )
+  wgs84_to_aeqd = partial(
+      pyproj.transform,
+      pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),
+      pyproj.Proj(local_azimuthal_projection),
+  )
+  aeqd_to_wgs84 = partial(
+      pyproj.transform,
+      pyproj.Proj(local_azimuthal_projection),
+      pyproj.Proj("+proj=longlat +datum=WGS84 +no_defs"),
+  )
+
+  center = Point(float(lon), float(lat))
+  point_transformed = transform(wgs84_to_aeqd, center)
+  buffer = point_transformed.buffer(radius)
+  # Get the polygon with lat lon coordinates
+  circle_poly = transform(aeqd_to_wgs84, buffer)
+
+  return circle_poly
+
+
+def get_point_within_distance(point_1, point_2, distance):
+    """
+    Returns a point within a distance toward a second point.
+    """
+
+    # Create your circle buffer from one of the points
+    
+    distance_line = get_distance_between_points(point_1, point_2)
+    if distance_line<distance:
+      return point_2
+
+
+    circle_coords = get_circle(point_1, distance)
+
+
+    # Get the intersection between the buffer and the line connecting the two points
+
+    line_start_center = LineString([point_1,point_2])
+
+
+    intersection_line = line_start_center.intersection(circle_coords)
+
+    intersection_point = Point(intersection_line.coords[-1])
+
+    assert intersection_point!=point_1, f'intersection: {intersection_line}, start: {point_1} center:{point_2}' 
+
+    return intersection_point
 
 
 def get_center_from_s2cellids(
