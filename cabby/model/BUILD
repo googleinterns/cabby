@@ -25,11 +25,11 @@ py_binary(
     srcs = ['baselines.py'],
     deps = [
           ":datasets",
+          "//cabby/geo:osm",
           "//cabby/geo:util",
           "//cabby/model:util",
           "//cabby/geo:regions",
           "//cabby/evals:utils"
-
     ],
 )
 
