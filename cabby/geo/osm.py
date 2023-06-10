@@ -66,7 +66,8 @@ NON_SPECIFIC_TAGS = {'amenity': False, 'brand': False, 'shop': 'after',
 
 
 PROMINENT_TAGS_ORDERED = [
-  'wikipedia', 'wikidata', 'brand', 'tourism', 'tourism','amenity', 'shop', 'leisure']
+  'wikipedia', 'wikidata', 'brand', 'tourism','amenity', 'shop', 'leisure']
+
 
 NEGLIGIBLE_AMENITY = [
   'bicycle_parking', 'drinking_water', 'picnic_site', 'bicycle_rental',
