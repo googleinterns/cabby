@@ -197,7 +197,7 @@ def main(argv):
       s2_level=FLAGS.s2_level,
       train_region=FLAGS.train_region,
       dev_region=FLAGS.dev_region,
-      test_region=FLAGS.test_region
+      test_region=FLAGS.test_region 
     )
 
   else:
@@ -291,13 +291,14 @@ def main(argv):
   )
   if FLAGS.infer_only:
     logging.info("Starting to infer model.")
-    valid_loss, predictions, true_vals, true_points, pred_points = (
+    valid_loss, predictions, true_vals, true_points, pred_points, start_points = (
       trainer.evaluate(validation_set=False))
 
     util.save_metrics_last_only(
       trainer.metrics_path,
       true_points,
-      pred_points)
+      pred_points,
+      start_points)
 
     evaluator = eu.Evaluator()
     error_distances = evaluator.get_error_distances(trainer.metrics_path)

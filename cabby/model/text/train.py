@@ -177,15 +177,6 @@ class Trainer:
 
       valid_loss, predictions, true_vals, true_points, pred_points, start_points = self.evaluate()
 
-      # util.save_metrics_last_only(
-      # self.metrics_path,
-      # true_points,
-      # pred_points,
-      # start_points)
-
-      # error_distances = evaluator.get_error_distances(self.metrics_path)
-      # evaluator.compute_metrics(error_distances)
-
 
       average_train_loss = running_loss / (batch_idx + 1)
 
