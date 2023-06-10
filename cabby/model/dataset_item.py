@@ -295,19 +295,22 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     self.landmarks_dist_raw = []
 
-    data['landmarks_cells'] = data.landmarks.apply(
-      lambda l: [gutil.cellid_from_point(x, self.s2level) for x in l])
+    if 'landmarks' in data:
+      data['landmarks_cells'] = data.landmarks.apply(
+        lambda l: [gutil.cellid_from_point(x, self.s2level) for x in l])
 
-    self.landmark_label = self.get_cell_to_lablel(data['landmarks_cells'].tolist())
+      self.landmark_label = self.get_cell_to_lablel(data['landmarks_cells'].tolist())
 
-    for s_p, lan_l, lan_p in zip(data.start_point.tolist(), self.landmark_label, data.landmarks.tolist()):
-      landmark_dist_cur = []
-      for e_p, l in zip(lan_p, lan_l.split(";")):
-        dist = round(gutil.get_distance_between_points(s_p, e_p))
-        landmark_dist_cur.append(f"{l}; distance: {dist}")
+      for s_p, lan_l, lan_p in zip(data.start_point.tolist(), self.landmark_label, data.landmarks.tolist()):
+        landmark_dist_cur = []
+        for e_p, l in zip(lan_p, lan_l.split(";")):
+          dist = round(gutil.get_distance_between_points(s_p, e_p))
+          landmark_dist_cur.append(f"{l}; distance: {dist}")
 
-      self.landmarks_dist_raw.append('; '.join(landmark_dist_cur))
+        self.landmarks_dist_raw.append('; '.join(landmark_dist_cur))
 
+    else:
+      self.landmark_label = ['0']*data.shape[0]
     if is_dist:
       logging.info(f"Calculating distances between {dist_matrix.shape[0]} cells")
       dist_lists = self.start_cells.apply(lambda start: self.calc_dist(start, dist_matrix))
@@ -558,8 +561,11 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.text_output_tokenized = output_text
       self.text_input_tokenized = input_text
       return
-    self.text_output_tokenized = self.text_tokenizer(
-      output_text, truncation=True, padding=True, add_special_tokens=True).input_ids
+    try:
+      self.text_output_tokenized = self.text_tokenizer(
+        output_text, truncation=True, padding=True, add_special_tokens=True).input_ids
+    except:
+      logging.info(f"????? {output_text}")
 
     self.text_input_tokenized = self.text_tokenizer(
       input_text, truncation=True, padding='max_length', add_special_tokens=True, max_length=200)
@@ -728,10 +734,15 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     text_output = torch.tensor(self.text_output_tokenized[idx])
 
+    key = self.data.iloc[idx].key
+
+    # print ("!!!!!!!!!! ", key)
+
     sample = {'text': text_input, 'cellid': cellid, 
               'neighbor_cells': neighbor_cells, 'far_cells': far_cells, 
               'end_point': end_point, 'start_point': start_point, 'label': label, 'prob': prob, 
-              'text_output': text_output, 'graph_embed_start': graph_embed_start
+              'text_output': text_output, 'graph_embed_start': graph_embed_start,
+              'key': key
               }
 
     return sample
