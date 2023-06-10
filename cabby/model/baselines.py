@@ -34,12 +34,18 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from transformers import AdamW
+import osmnx as ox
+from shapely.geometry.point import Point
+
+import swifter
+
 
 from cabby.model import datasets
 from cabby.geo import util as gutil
 from cabby.evals import utils as eu
 from cabby.model import util
 from cabby.geo import regions
+from cabby.geo import osm
 
 TASKS = ["RVS", "RUN", "human"]
 
@@ -89,19 +95,80 @@ def main(argv):
   )
 
 
-  end_points = dataset.test_raw.end_point.apply(gutil.list_yx_from_point).tolist()
+  # # STOP baseline
+  # end_points = dataset.test_raw.end_point.apply(gutil.list_yx_from_point).tolist()
   start_point = dataset.test_raw.start_point.apply(gutil.list_yx_from_point).tolist()
 
-  logging.info(f"size of test: {dataset.test_raw.end_point.tolist()[0]}")
+  # logging.info(f"size of test: {dataset.test_raw.end_point.tolist()[0]}")
+  # util.save_metrics_last_only(
+  #   metrics_path,
+  #   end_points,
+  #   start_point,
+  #   start_point)
+
+  # logging.info(f"NO-MOVE evaluation for task {FLAGS.task}:")
+  # evaluator = eu.Evaluator()
+  # error_distances = evaluator.get_error_distances(metrics_path)
+  # evaluator.compute_metrics(error_distances)
+
+
+
+  # # CENTER
+  # center_point = regions.get_region(FLAGS.region).polygon.centroid
+
+  # pred_points = dataset.test_raw.start_point.apply(lambda s: gutil.get_point_within_distance(s,center_point, 1000 ))
+  
+  # pred_points_yx =pred_points.apply(gutil.list_yx_from_point).tolist()
+
+  # util.save_metrics_last_only(
+  #   metrics_path,
+  #   pred_points_yx,
+  #   start_point,
+  #   start_point)
+
+  # logging.info(f"CENTER-MOVE evaluation for task {FLAGS.task}:")
+  # evaluator = eu.Evaluator()
+
+  # error_distances = evaluator.get_error_distances(metrics_path)
+
+  # evaluator.compute_metrics(error_distances)
+
+
+  # LANDMARK
+
+  pred_points_yx = dataset.test_raw.start_point.swifter.apply(get_prominent_osm)
+
   util.save_metrics_last_only(
     metrics_path,
-    end_points,
+    pred_points_yx,
+    start_point,
     start_point)
 
-  logging.info(f"NO-MOVE evaluation for task {FLAGS.task}:")
+  logging.info(f"CENTER-MOVE evaluation for task {FLAGS.task}:")
   evaluator = eu.Evaluator()
+
   error_distances = evaluator.get_error_distances(metrics_path)
+
   evaluator.compute_metrics(error_distances)
+
+  
+dict_prominent_tags = {x: True for x in osm.PROMINENT_TAGS_ORDERED}
+
+def get_prominent_osm(start_point):
+  
+  poi_near = ox.geometries.geometries_from_point(
+    center_point = gutil.list_yx_from_point(start_point),tags=dict_prominent_tags,dist=1000)
+
+  for type_poi in osm.PROMINENT_TAGS_ORDERED:
+    pois_prominent = poi_near[poi_near[type_poi].isnull()==False]
+    if pois_prominent.shape[0]:
+
+      geom = pois_prominent.geometry.iloc[0]
+      if not isinstance(geom, Point):
+        geom = geom.centroid
+      return gutil.list_yx_from_point(geom)
+
+  return start_point
 
 
 if __name__ == '__main__':
