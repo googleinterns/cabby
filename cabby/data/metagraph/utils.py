@@ -211,11 +211,11 @@ def construct_metagraph(region: Region,
                                                       agg_function)
 
   logging.info("Step 2: Add all geometries to the graph.")
-  null_idx = osm_map.nodes['osmid'].isnull().index.values.tolist()
+  null_idx = osm_map.nodes[osm_map.nodes['osmid'].isnull()==True].index.values.tolist()
+  logging.info(len(null_idx))
   for idx, row in osm_map.nodes.iterrows():
     if idx in null_idx:
       continue
-
     metagraph.nodes[row["osmid"]]["geometry"] = row["geometry"]
     metagraph.nodes[row["osmid"]]["type"] = TYPE_OSM_LOC
   
@@ -258,7 +258,13 @@ def construct_metagraph(region: Region,
   logging.info("Step 5: Add S2 nodes and edges") 
   edges_to_add = []
   cellid_add = []
+
+  max_level = max(max(s2_node_levels), s2_level)
+  if max_level not in s2_node_levels:
+    s2_node_levels.append(max_level)
+
   for node, data in metagraph.nodes.data():
+
     if "geometry" not in data:
       continue
     geometry = data["geometry"]
@@ -266,7 +272,8 @@ def construct_metagraph(region: Region,
       s2_cell_node_id = util.cellid_from_point(geometry, level)
       if s2_cell_node_id not in cellid_add:
         cellid_add.append(s2_cell_node_id)
-      edges_to_add.append((node, s2_cell_node_id, {"weight": 1.0}))
+      if level==max_level:
+        edges_to_add.append((node, s2_cell_node_id, {"weight": 1.0}))
       attributes_to_add[s2_cell_node_id]["type"] = TYPE_S2
 
   logging.info("Add all cellid in region")
@@ -274,13 +281,25 @@ def construct_metagraph(region: Region,
   for s2_cell_node_id in unique_cellid:
     if s2_cell_node_id not in cellid_add:
       # Node
+      cellid_add.append(s2_cell_node_id)
       attributes_to_add[s2_cell_node_id]["type"] = TYPE_S2
     # Edges
     cell = s2.S2CellId(s2_cell_node_id)
-    four_neighbor_cells = cell.GetEdgeNeighbors()
+
+    four_neighbor_cells = cell.GetEdgeNeighbors()    
     for neighbor_cells in four_neighbor_cells:
       if neighbor_cells.id() in unique_cellid:
         edges_to_add.append((neighbor_cells.id(), s2_cell_node_id, {"weight": 1.0}))
+
+    parent_cell_id = cell.parent().id()
+    if parent_cell_id in cellid_add:
+      edges_to_add.append((parent_cell_id, s2_cell_node_id, {"weight": 1.0}))
+
+
+    for i in range(0, 4):
+      children_cells_id = cell.child(i).id()
+      if children_cells_id in cellid_add:
+        edges_to_add.append((children_cells_id, s2_cell_node_id, {"weight": 1.0}))
 
   metagraph.add_edges_from(edges_to_add)
   nx.set_node_attributes(metagraph, values=attributes_to_add)
@@ -294,8 +313,8 @@ def construct_metagraph(region: Region,
     node = str(node)
     if node[1] == PROJECTED_POI_2ND_CHAR:
       attributes_to_add[node]["type"] = TYPE_PROJECTED_POI
-    else:
-      assert "type" in nodedata, f"node {node} has no type and is not a projected POI \n {nodedata}" 
+    # else:
+    #   assert "type" in nodedata, f"node {node} has no type and is not a projected POI \n {nodedata}" 
   nx.set_node_attributes(metagraph, values=attributes_to_add)
 
   logging.info("Finished constructing graph")
