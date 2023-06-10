@@ -153,7 +153,7 @@ def save_metrics_last_only(save_path: Text,
     return
 
   assert len(true_points_list) == len(pred_points_list)
-  assert len(true_points_list) == len(start_points_list)
+  assert len(true_points_list) == len(start_points_list), f"start_points_list: {len(start_points_list)}"
 
   state_dict = {
           'true_points_lat': [lat for lat, lon in true_points_list],
