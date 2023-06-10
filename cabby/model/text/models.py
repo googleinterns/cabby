@@ -20,7 +20,7 @@ import torch
 import torch.nn as nn
 from transformers import DistilBertModel, DistilBertForSequenceClassification
 from transformers import T5Tokenizer, T5ForConditionalGeneration, T5Model
-from vector_quantize_pytorch import VectorQuantize
+from vector_quantize_pytorch import VectorQuantize, ResidualVQ
 
 from typing import Dict, Sequence
 import re
@@ -152,7 +152,7 @@ class S2GenerationModel(GeneralModel):
     label_to_cellid,
     device,
     model_type='S2-Generation-T5',
-    vq_dim=224,
+    vq_dim=0,
     graph_codebook=1024,
   ):
     GeneralModel.__init__(self, device)
@@ -164,16 +164,18 @@ class S2GenerationModel(GeneralModel):
     self.max_size = len(str(len(label_to_cellid)))
     self.graph_codebook = graph_codebook
 
-    self.vq_dim = vq_dim
-    logging.info(f"Vector quantization size {vq_dim}")
+    self.vq_dim = vq_dim if graph_codebook else 0
+    logging.info(f"Vector quantization size {self.vq_dim}")
 
     self.vq = VectorQuantize(
       dim=vq_dim,
       codebook_size=graph_codebook,
-      codebook_dim=16,
-      decay = 0.8,             # the exponential moving average decay, lower means the dictionary will change faster
-      commitment_weight = 1.   # the weight on the commitment loss
+      codebook_dim=16, #16!!! 
+      decay = 0.8,            # the exponential moving average decay, lower means the dictionary will change faster
+      commitment_weight = 1.,   # the weight on the commitment loss
+      use_cosine_sim = True,
     )
+
 
     if model_type not in ['S2-Generation-T5']:
       self.max_size = self.max_size * 100
@@ -268,7 +270,7 @@ class S2GenerationModel(GeneralModel):
         cell_id = label_to_cellid[coord_regex]
         prediction_coords.append(gutil.get_center_from_s2cellids([cell_id])[0])
       else:
-        logging.info("Used start point in model pred")
+        logging.info(f"Used start point in model pred: |{coord_regex}|")
         prediction_coords.append(start_point)
 
     return np.array(prediction_coords)

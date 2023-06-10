@@ -92,6 +92,7 @@ class Dataset:
       logging.info(f"Dataset-{set_type} with graph embedding size {self.graph_embed_size[set_type]}")
     
     else:
+      logging.info(f"Dataset-{set_type} no graph found in path: {graph_embed_path}")
       self.graph_embed_file[set_type] = None
       self.graph_embed_size[set_type] = 0
 

@@ -99,15 +99,30 @@ class TextGeoDataset:
     )
 
   @classmethod
-  def load_set(cls, dataset_dir, set_type):
+  def load_set(cls, dataset_dir, set_region):
 
-    logging.info(f"Loading {set_type}-set from <== {dataset_dir}.")
+    logging.info(f"Loading {set_region}-set from <== {dataset_dir}.")
 
-    path_dataset = os.path.join(dataset_dir, f'{set_type}.pth')
+    path_dataset = os.path.join(dataset_dir, f'{set_region.lower()}.pth')
     data_set = torch.load(path_dataset)
-    logging.info(f"Size of {set_type}-set: {len(data_set)}")
- 
+    logging.info(f"Size of {set_region}-set: {len(data_set)}")
+
+    logging.info(f"Number of cells in the {set_region} region: {len(data_set.cellid_to_label)}")
+
+    active_region = regions.get_region(set_region)
+    area = abs(geod.geometry_area_perimeter(active_region.polygon)[0])
+    logging.info(f'{set_region} region area: {round(area, 3)} m^2')
+
+
+    loc_x_loc_y_list = [xy.split(' ') for xy in list(data_set.cellid_to_coord.values())]
+
+    max_x = max([int(re.search(r'\d+', xy[0]).group()) for xy in loc_x_loc_y_list])
+    max_y = max([int(re.search(r'\d+', xy[1]).group()) for xy in loc_x_loc_y_list])
+
+    logging.info(f"Grid axis in {set_region}: X: 0-{max_x} / Y: 0-{max_y}")
+
     return data_set
+
 
   @classmethod
   def load(cls, dataset_dir, model_type, s2_level, train_region, dev_region, test_region):
@@ -116,28 +131,12 @@ class TextGeoDataset:
     if s2_level:
       dataset_dir = os.path.join(dataset_dir, str(s2_level))
     
-    train_set = cls.load_set(dataset_dir, train_region.lower())
-    logging.info(f"Number of cells in the train region: {len(train_set.cellid_to_label)}")
+    train_set = cls.load_set(dataset_dir, train_region)
     
-    active_region = regions.get_region(train_region)
-    area = abs(geod.geometry_area_perimeter(active_region.polygon)[0])
-    logging.info('Train region area: {:.3f} m^2'.format(area))
-
-    dev_set = cls.load_set(dataset_dir, dev_region.lower())
-    logging.info(f"Number of cells in the development region: {len(dev_set.cellid_to_label)}")
-
-    active_region = regions.get_region(dev_region)
-    area = abs(geod.geometry_area_perimeter(active_region.polygon)[0])
-    logging.info('Development region area: {:.3f} m^2'.format(area))
-
-    test_set = cls.load_set(dataset_dir, test_region.lower())
-    logging.info(f"Number of cells in the test region: {len(test_set.cellid_to_label)}")
+    dev_set = cls.load_set(dataset_dir, dev_region)
+   
+    test_set = cls.load_set(dataset_dir, test_region)
     
-    active_region = regions.get_region(test_region)
-    area = abs(geod.geometry_area_perimeter(active_region.polygon)[0])
-    logging.info('Test region area: {:.3f} m^2'.format(area))
-
-
     return  cls.from_TextGeoSplit(train_set, dev_set, test_set)
 
 
