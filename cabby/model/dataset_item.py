@@ -279,12 +279,15 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.graph_embed_start = self.start_cells.apply(
         lambda cell: util.get_valid_graph_embed(self.graph_embed_file, str(cell)))
 
-      data['landmarks_cells'] = data.landmarks.apply(
-        lambda l: [gutil.cellid_from_point(x, self.s2level) for x in l])
+      if 'landmarks' in data:
+        data['landmarks_cells'] = data.landmarks.apply(
+          lambda l: [gutil.cellid_from_point(x, self.s2level) for x in l])
 
-      self.graph_embed_landmarks = data.landmarks_cells.apply(
-        lambda l: [util.get_valid_graph_embed(
-          self.graph_embed_file, str(cell)) for cell in l])
+        self.graph_embed_landmarks = data.landmarks_cells.apply(
+          lambda l: [util.get_valid_graph_embed(
+            self.graph_embed_file, str(cell)) for cell in l])
+      else:
+        self.graph_embed_landmarks = ['0']*data.instructions.shape[0]
 
       self.start_embed_text_input_list = [
         str(i).replace(':', f': Start at {str(s)}.') for s, i in zip(
@@ -310,6 +313,7 @@ class TextGeoSplit(torch.utils.data.Dataset):
         self.landmarks_dist_raw.append('; '.join(landmark_dist_cur))
 
     else:
+      logging.info(self.region)
       self.landmark_label = ['0']*data.shape[0]
     if is_dist:
       logging.info(f"Calculating distances between {dist_matrix.shape[0]} cells")
@@ -561,11 +565,9 @@ class TextGeoSplit(torch.utils.data.Dataset):
       self.text_output_tokenized = output_text
       self.text_input_tokenized = input_text
       return
-    try:
-      self.text_output_tokenized = self.text_tokenizer(
-        output_text, truncation=True, padding=True, add_special_tokens=True).input_ids
-    except:
-      logging.info(f"????? {output_text}")
+    
+    self.text_output_tokenized = self.text_tokenizer(
+      output_text, truncation=True, padding=True, add_special_tokens=True).input_ids
 
     self.text_input_tokenized = self.text_tokenizer(
       input_text, truncation=True, padding='max_length', add_special_tokens=True, max_length=200)
@@ -734,15 +736,10 @@ class TextGeoSplit(torch.utils.data.Dataset):
 
     text_output = torch.tensor(self.text_output_tokenized[idx])
 
-    key = self.data.iloc[idx].key
-
-    # print ("!!!!!!!!!! ", key)
-
     sample = {'text': text_input, 'cellid': cellid, 
               'neighbor_cells': neighbor_cells, 'far_cells': far_cells, 
               'end_point': end_point, 'start_point': start_point, 'label': label, 'prob': prob, 
               'text_output': text_output, 'graph_embed_start': graph_embed_start,
-              'key': key
               }
 
     return sample

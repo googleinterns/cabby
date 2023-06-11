@@ -261,7 +261,6 @@ class HumanDataset(Dataset):
 
       ds['start_end'] = ds.apply(self.get_fixed_point_along_route, axis=1)
 
-    ds = shuffle(ds)
     ds.reset_index(inplace=True, drop=True)
     return ds
 
@@ -318,7 +317,6 @@ class RUNDataset(Dataset):
       ['map', 'id', 'instructions', 'end_point', 'start_point'])
     ds.drop(columns_keep, 1, inplace=True)
 
-    ds = shuffle(ds)
     ds.reset_index(inplace=True, drop=True)
 
     dataset_size = ds.shape[0]

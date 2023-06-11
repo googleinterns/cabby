@@ -18,7 +18,7 @@ import collections
 import numpy as np
 from geopy.distance import great_circle
 
-from cabby import logger
+from absl import logging
 
 # Object for storing each evaluation tuple parsed from the input file.
 EvalDataTuple = collections.namedtuple(
@@ -39,9 +39,7 @@ class Evaluator:
   """Class for evaluating geo models."""
 
   def __init__(self):
-    self.eval_logger = logger.create_logger(
-      "rvs_geo_eval.log", "rvs_geo_eval")
-    self.eval_logger.info("Starting evaluation.")
+    logging.info("Starting evaluation.")
 
   def get_error_distances(self, input_file):
     """Compute error distance in meters between true and predicted coordinates.
@@ -56,11 +54,11 @@ class Evaluator:
     """
     error_distances = []
     total_examples = 0
-    self.eval_logger.info(f"Opening file <= {input_file}")
+    logging.info(f"Opening file <= {input_file}")
     for line in open(input_file):
       toks = line.strip().split("\t")
       if len(toks) != 7:
-        self.eval_logger.warning(
+        logging.warning(
           "Unexpected line format: [%s]. Skipping", line)
         continue
       eval_tuple = EvalDataTuple(toks[0], float(toks[1]), float(toks[2]),
@@ -79,9 +77,9 @@ class Evaluator:
         eval_logger: Logger object.
     """
     num_examples = len(error_distances)
-    self.eval_logger.info(f"Started evaluation with {num_examples} samples") 
+    logging.info(f"Started evaluation with {num_examples} samples") 
     if num_examples == 0:
-      self.eval_logger.error("No examples to be evaluated.")
+      logging.error("No examples to be evaluated.")
     accuracy = float(
       len(np.where(np.array(error_distances) == 0.)[0])) / num_examples
 
@@ -91,8 +89,8 @@ class Evaluator:
     accuracy_100m = float(
       len(np.where(np.array(error_distances) <= 100.)[0])) / num_examples
 
-    accuracy_1000m = float(
-      len(np.where(np.array(error_distances) <= 1000.)[0])) / num_examples
+    accuracy_250m = float(
+      len(np.where(np.array(error_distances) <= 250.)[0])) / num_examples
 
     mean_distance, median_distance, max_error = np.mean(error_distances), np.median(
       error_distances), np.max(error_distances)
@@ -104,11 +102,11 @@ class Evaluator:
     # Normalized AUC by maximum error possible.
     norm_auc = auc / (_MAX_LOG_HAVERSINE_DIST * (num_examples - 1))
 
-    self.eval_logger.info(
+    logging.info(
       "Metrics: \nExact accuracy : [%.2f]\n10 m accuracy : [%.2f]\n100 m accuracy : [%.2f]" +
-      "\n1000 m accuracy : [%.2f]" + "\nmean error [%.2f], " +
+      "\n250 m accuracy : [%.2f]" + "\nmean error [%.2f], " +
       "\nmedian error [%.2f]\nmax error [%.2f]\n" +
-      "AUC of error curve [%.2f]", accuracy, accuracy_10m, accuracy_100m, accuracy_1000m,
+      "AUC of error curve [%.2f]", accuracy, accuracy_10m, accuracy_100m, accuracy_250m,
       mean_distance, median_distance, max_error, norm_auc)
-    return EvalMetrics(accuracy, accuracy_10m, accuracy_100m, accuracy_1000m,
+    return EvalMetrics(accuracy, accuracy_10m, accuracy_100m, accuracy_250m,
                mean_distance, median_distance, max_error, norm_auc)
