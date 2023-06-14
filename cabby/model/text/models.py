@@ -153,7 +153,7 @@ class S2GenerationModel(GeneralModel):
     device,
     model_type='S2-Generation-T5',
     vq_dim=0,
-    graph_codebook=1024,
+    graph_codebook=256,
   ):
     GeneralModel.__init__(self, device)
     self.model = T5ForConditionalGeneration.from_pretrained(T5_TYPE)
@@ -170,7 +170,7 @@ class S2GenerationModel(GeneralModel):
     self.vq = VectorQuantize(
       dim=vq_dim,
       codebook_size=graph_codebook,
-      codebook_dim=16, #16!!! 
+      # codebook_dim=16,  
       decay = 0.8,            # the exponential moving average decay, lower means the dictionary will change faster
       commitment_weight = 1.,   # the weight on the commitment loss
       use_cosine_sim = True,
@@ -276,9 +276,9 @@ class S2GenerationModel(GeneralModel):
     return np.array(prediction_coords)
 
   def get_vg(self, graph_embed):
-    quantized, indices, vq_loss = self.vq(graph_embed)  # (1, 1024, 256), (1, 1024), (1)
+    quantized, indices, vq_loss = self.vq(graph_embed)  # (batch, 1, size_graph), (batch, 1), (1)
 
-    assert torch.max(indices)<self.graph_codebook, indices
+    assert torch.max(indices)<self.graph_codebook, f"max indices: {torch.max(indices)}, codebook: {self.graph_codebook} "
     indices += self.original_size_tokenizer
     assert torch.max(indices)<self.graph_codebook+self.original_size_tokenizer , indices
 

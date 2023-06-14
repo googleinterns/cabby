@@ -48,7 +48,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from transformers import AdamW
+from transformers import AdamW, Adafactor
 
 from cabby.evals import utils as eu
 from cabby.model.text import train
@@ -263,14 +263,18 @@ def main(argv):
 
   run_model.to(device)
 
-  optimizer = torch.optim.Adam(
-    run_model.parameters(), lr=FLAGS.learning_rate)
+
+  optimizer = AdamW(
+    run_model.parameters(), weight_decay=0.001, lr=1e-4)
 
   if FLAGS.is_distance_distribution and FLAGS.task == 'WikiGeo':
     sys.exit("Wikigeo does not have a distance distribution option.")
 
   if not FLAGS.is_val_loss_from_model:
     run_model.best_valid_loss = float("Inf")
+  else:
+    logging.info(f"Current validation loss: {run_model.best_valid_loss}")
+
 
   trainer = train.Trainer(
     model=run_model,

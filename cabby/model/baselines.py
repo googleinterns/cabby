@@ -96,42 +96,42 @@ def main(argv):
 
 
   # # STOP baseline
-  # end_points = dataset.test_raw.end_point.apply(gutil.list_yx_from_point).tolist()
+  end_points = dataset.test_raw.end_point.apply(gutil.list_yx_from_point).tolist()
   start_point = dataset.test_raw.start_point.apply(gutil.list_yx_from_point).tolist()
 
-  # logging.info(f"size of test: {dataset.test_raw.end_point.tolist()[0]}")
-  # util.save_metrics_last_only(
-  #   metrics_path,
-  #   end_points,
-  #   start_point,
-  #   start_point)
+  logging.info(f"size of test: {dataset.test_raw.end_point.tolist()[0]}")
+  util.save_metrics_last_only(
+    metrics_path,
+    end_points,
+    start_point,
+    start_point)
 
-  # logging.info(f"NO-MOVE evaluation for task {FLAGS.task}:")
-  # evaluator = eu.Evaluator()
-  # error_distances = evaluator.get_error_distances(metrics_path)
-  # evaluator.compute_metrics(error_distances)
+  logging.info(f"NO-MOVE evaluation for task {FLAGS.task}:")
+  evaluator = eu.Evaluator()
+  error_distances = evaluator.get_error_distances(metrics_path)
+  evaluator.compute_metrics(error_distances)
 
 
 
   # # CENTER
-  # center_point = regions.get_region(FLAGS.region).polygon.centroid
+  center_point = regions.get_region(FLAGS.region).polygon.centroid
 
-  # pred_points = dataset.test_raw.start_point.apply(lambda s: gutil.get_point_within_distance(s,center_point, 1000 ))
+  pred_points = dataset.test_raw.start_point.apply(lambda s: gutil.get_point_within_distance(s,center_point, 1000 ))
   
-  # pred_points_yx =pred_points.apply(gutil.list_yx_from_point).tolist()
+  pred_points_yx =pred_points.apply(gutil.list_yx_from_point).tolist()
 
-  # util.save_metrics_last_only(
-  #   metrics_path,
-  #   pred_points_yx,
-  #   start_point,
-  #   start_point)
+  util.save_metrics_last_only(
+    metrics_path,
+    pred_points_yx,
+    start_point,
+    start_point)
 
-  # logging.info(f"CENTER-MOVE evaluation for task {FLAGS.task}:")
-  # evaluator = eu.Evaluator()
+  logging.info(f"CENTER-MOVE evaluation for task {FLAGS.task}:")
+  evaluator = eu.Evaluator()
 
-  # error_distances = evaluator.get_error_distances(metrics_path)
+  error_distances = evaluator.get_error_distances(metrics_path)
 
-  # evaluator.compute_metrics(error_distances)
+  evaluator.compute_metrics(error_distances)
 
 
   # LANDMARK
