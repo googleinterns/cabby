@@ -150,7 +150,7 @@ class Trainer:
       running_loss = 0.0
       early_stop +=1
 
-      logging.info("Epoch number: {}".format(epoch))
+      logging.info(f"Epoch number: {epoch}, early stop: {early_stop}")
       for batch_idx, batch in enumerate(self.train_loader):
         self.optimizer.zero_grad()
         text = {key: val.to(self.device) for key, val in batch['text'].items()}
@@ -168,7 +168,7 @@ class Trainer:
         )
 
         loss.backward()
-        # ensure_shared_grads(self.model)
+        # check_grads(self.model)
         self.optimizer.step()
 
         # Update running values.
@@ -264,7 +264,6 @@ class Trainer:
           )
 
         loss.backward()
-        # ensure_shared_grads(self.model)
 
         self.optimizer.step()
 
@@ -341,7 +340,7 @@ def infer_text(model: torch.nn.Module, text: str):
 
 
 
-def ensure_shared_grads(model):
+def check_grads(model):
   list_not_learned = []
   list_learned = []
   for name, param in model.named_parameters():
