@@ -27,6 +27,7 @@ from torch.utils.data import DataLoader
 from cabby.evals import utils as eu
 from cabby.model import util
 
+EARLY_STOP = 50
 
 class Trainer:
   def __init__(
@@ -143,8 +144,12 @@ class Trainer:
     self.model.train()
     evaluator = eu.Evaluator()
 
+    early_stop=0
+
     for epoch in range(self.num_epochs):
       running_loss = 0.0
+      early_stop +=1
+
       logging.info("Epoch number: {}".format(epoch))
       for batch_idx, batch in enumerate(self.train_loader):
         self.optimizer.zero_grad()
@@ -192,11 +197,15 @@ class Trainer:
       if self.best_valid_loss > valid_loss:
         self.best_valid_loss = valid_loss
         util.save_checkpoint(self.model_path, self.model, self.best_valid_loss)
-
+        early_stop = 0
+      if early_stop>=EARLY_STOP:
+        logging.info("Early stop training")
+        break
       self.model.train()
 
       if self.is_single_sample_train:
         return
+        
 
     logging.info('Finished Training.')
 

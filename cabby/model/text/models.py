@@ -170,7 +170,7 @@ class S2GenerationModel(GeneralModel):
     self.vq = VectorQuantize(
       dim=vq_dim,
       codebook_size=graph_codebook,
-      # codebook_dim=16,  
+      codebook_dim=16,  
       decay = 0.8,            # the exponential moving average decay, lower means the dictionary will change faster
       commitment_weight = 1.,   # the weight on the commitment loss
       use_cosine_sim = True,
@@ -198,7 +198,7 @@ class S2GenerationModel(GeneralModel):
     input_ids, attention_mask, labels = self.get_input_output(batch, text)
 
     if self.vq_dim:
-      loss, input_ids = self.get_loss_for_graph_embed(batch, input_ids, labels)
+      loss, input_ids = self.get_loss_for_graph_embed(batch, input_ids, labels, attention_mask=attention_mask)
 
     else:
       loss = self.model(input_ids=input_ids, attention_mask=attention_mask, labels=labels, return_dict=True).loss
@@ -223,27 +223,18 @@ class S2GenerationModel(GeneralModel):
 
     input_ids, attention_mask, _ = self.get_input_output(batch, text)
 
-    output_sequences = self.model.generate(
+    if self.vq_dim:
+      graph_embed_start = batch['graph_embed_start']
+      input_ids, _, _ , attention_mask= self.get_input_indices_for_embedding(
+        graph_embed_start, input_ids, attention_mask)
+
+    output_sequences=self.model.generate(
       input_ids=input_ids,
       attention_mask=attention_mask,
       num_beams=2,
       max_length=self.max_size + 2,
       min_length=1,
     )
-
-    if self.vq_dim:
-      graph_embed_start = batch['graph_embed_start']
-      input_ids, _, _ = self.get_input_indices_for_embedding(graph_embed_start, input_ids)
-      output_sequences = self.model.generate(
-        input_ids=input_ids,
-        num_beams=2,
-        max_length=self.max_size + 2,
-        min_length=1,
-      )
-
-      add_tokens = [f"GRAPH_{t}" for t in range(self.graph_codebook)]
-      self.tokenizer.add_tokens(add_tokens)
-      self.model.resize_token_embeddings(len(self.tokenizer))
 
     prediction = self.tokenizer.batch_decode(
       output_sequences, skip_special_tokens=True)
@@ -284,29 +275,32 @@ class S2GenerationModel(GeneralModel):
 
     return quantized, indices, vq_loss
 
-  def get_input_indices_for_embedding(self, graph_embed_start, text_input):
+  def get_input_indices_for_embedding(self, graph_embed_start, text_input, attention_mask):
 
     batch_size = graph_embed_start.shape[0]
 
     graph_embed = graph_embed_start.unsqueeze(1).expand(batch_size, 1, -1)
 
     quantized, indices, vq_loss = self.get_vg(graph_embed)
-
     final_input = torch.cat((text_input, indices), axis=-1)
 
-    return final_input, quantized, vq_loss
+    final_attention_mask = torch.cat(
+      (attention_mask, torch.ones(attention_mask.shape[0], 1).to(self.device)), axis=-1)
 
-  def get_loss_for_graph_embed(self, batch, text_input, labels):
+    return final_input, quantized, vq_loss, final_attention_mask
+
+  def get_loss_for_graph_embed(self, batch, text_input, labels, attention_mask):
 
     graph_embed_start = batch['graph_embed_start']
 
-    final_input, _, vq_loss = self.get_input_indices_for_embedding(
-      graph_embed_start, text_input)
 
+    final_input, _, vq_loss, final_attention_mask = self.get_input_indices_for_embedding(
+      graph_embed_start, text_input, attention_mask)
+    
     loss_t5 = self.model(
-      input_ids=final_input, labels=labels, return_dict=True).loss
+      input_ids=final_input, labels=labels, attention_mask=final_attention_mask, return_dict=True).loss
 
-    all_loss = vq_loss + loss_t5 
+    all_loss =  loss_t5 +vq_loss 
 
     return all_loss, final_input
 

@@ -94,7 +94,7 @@ flags.DEFINE_string("output_dir", None,
                     "The directory where the model and results will be save to.")
 
 flags.DEFINE_float(
-  'learning_rate', default=5e-5,
+  'learning_rate', default=1e-4,
   help=('The learning rate for the Adam optimizer.'))
 
 flags.DEFINE_string("model_path", None,
@@ -265,7 +265,7 @@ def main(argv):
 
 
   optimizer = AdamW(
-    run_model.parameters(), weight_decay=0.001, lr=1e-4)
+    run_model.parameters(), weight_decay=0.001, lr=FLAGS.learning_rate)
 
   if FLAGS.is_distance_distribution and FLAGS.task == 'WikiGeo':
     sys.exit("Wikigeo does not have a distance distribution option.")
