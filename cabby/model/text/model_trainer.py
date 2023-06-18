@@ -95,7 +95,7 @@ flags.DEFINE_string("output_dir", None,
 
 flags.DEFINE_float(
   'learning_rate', default=1e-4,
-  help=('The learning rate for the Adam optimizer.'))
+  help=('The learning rate for the AdamW optimizer.'))
 
 flags.DEFINE_string("model_path", None,
                     "A path of a model the model to be fine tuned\ evaluated.")
