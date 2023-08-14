@@ -262,7 +262,7 @@ toolz==0.10.0
 torch==1.7.1
 torchtext==0.8.1
 torchvision==0.2.2
-tornado==6.1
+tornado==6.3.3
 tqdm @ file:///home/conda/feedstock_root/build_artifacts/tqdm_1594937875116/work
 traitlets==4.3.3
 transformers==4.1.1
