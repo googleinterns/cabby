@@ -276,7 +276,7 @@ watchdog @ file:///home/conda/feedstock_root/build_artifacts/watchdog_1595646275
 wcwidth @ file:///home/conda/feedstock_root/build_artifacts/wcwidth_1595859607677/work
 webcolors==1.11.1
 webencodings==0.5.1
-Werkzeug==1.0.1
+Werkzeug==3.0.1
 widgetsnbextension @ file:///home/conda/feedstock_root/build_artifacts/widgetsnbextension_1594164347302/work
 wrapt==1.12.1
 wurlitzer==2.0.0
