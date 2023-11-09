@@ -171,7 +171,7 @@ prompt-toolkit @ file:///home/conda/feedstock_root/build_artifacts/prompt-toolki
 psutil @ file:///home/conda/feedstock_root/build_artifacts/psutil_1594826921622/work
 ptyprocess==0.6.0
 py @ file:///home/conda/feedstock_root/build_artifacts/py_1593088446458/work
-pyarrow==3.0.0
+pyarrow==14.0.1
 pycodestyle @ file:///home/conda/feedstock_root/build_artifacts/pycodestyle_1589305246696/work
 pycosat==0.6.3
 pycparser @ file:///home/conda/feedstock_root/build_artifacts/pycparser_1593275161868/work
