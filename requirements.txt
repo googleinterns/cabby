@@ -259,7 +259,7 @@ tifffile @ file:///home/conda/feedstock_root/build_artifacts/tifffile_1595673894
 tokenizers==0.9.4
 toml @ file:///home/conda/feedstock_root/build_artifacts/toml_1589469402899/work
 toolz==0.10.0
-torch==1.7.1
+torch==2.7.0
 torchtext==0.8.1
 torchvision==0.2.2
 tornado==6.1
