@@ -63,7 +63,7 @@ Flask==1.1.2
 folium @ file:///home/conda/feedstock_root/build_artifacts/folium_1588861378954/work
 fsspec==0.7.4
 furl==2.1.0
-future==0.18.2
+future==1.0.0
 fuzzywuzzy==0.17.0
 GDAL==3.0.4
 gensim==4.2.0
