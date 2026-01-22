@@ -221,7 +221,7 @@ scipy @ file:///home/conda/feedstock_root/build_artifacts/scipy_1595583586868/wo
 seaborn @ file:///home/conda/feedstock_root/build_artifacts/seaborn-base_1591878760859/work
 SecretStorage==3.1.2
 Send2Trash==1.5.0
-sentencepiece==0.1.95
+sentencepiece==0.2.1
 seqeval==1.2.2
 Shapely==1.7.0
 simplegeneric==0.8.1
