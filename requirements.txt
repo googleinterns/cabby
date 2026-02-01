@@ -68,7 +68,7 @@ fuzzywuzzy==0.17.0
 GDAL==3.0.4
 gensim==4.2.0
 geographiclib==1.50
-geopandas==0.8.2
+geopandas==1.1.2
 geopy @ file:///home/conda/feedstock_root/build_artifacts/geopy_1593296620954/work
 gevent @ file:///home/conda/feedstock_root/build_artifacts/gevent_1592657467591/work
 glob2==0.7
