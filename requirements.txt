@@ -193,7 +193,7 @@ PyQtWebEngine==5.12.1
 pyrsistent==0.16.0
 pyshp==2.1.0
 PySocks==1.7.1
-pytest==6.0.0
+pytest==9.0.3
 python-dateutil==2.8.1
 python-jsonrpc-server @ file:///home/conda/feedstock_root/build_artifacts/python-jsonrpc-server_1588783985962/work
 python-language-server @ file:///home/conda/feedstock_root/build_artifacts/python-language-server_1593716034648/work
