@@ -126,7 +126,7 @@ mkl-service==2.3.0
 mock @ file:///home/conda/feedstock_root/build_artifacts/mock_1588618847833/work
 more-itertools==8.4.0
 mpmath==1.1.0
-msgpack==1.0.0
+msgpack==1.2.1
 multipledispatch==0.6.0
 multiprocess==0.70.11.1
 munch==2.5.0
